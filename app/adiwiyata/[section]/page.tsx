@@ -19,7 +19,10 @@ export async function generateMetadata({ params }: { params: Promise<{ section: 
   const page = Object.hasOwn(content.pages, section) ? content.pages[section as keyof typeof content.pages] : null
   const title = section === 'tentang' ? 'Tentang Kami' : page?.title ?? 'Informasi Adiwiyata'
   const description = section === 'tentang' ? 'Kenali platform digital, tujuan pemantauan sampah, dan tim pengembang Adiwiyata 55 SMAN 55 Jakarta.' : page?.intro ?? 'Pusat Informasi Adiwiyata SMAN 55 Jakarta.'
-  return { title: `${title} Adiwiyata | SMAN 55 Jakarta`, description }
+  // Judul halaman seperti 'Kader Adiwiyata' sudah mengandung kata Adiwiyata:
+  // jangan ditambah lagi agar tidak ganda ('Kader Adiwiyata Adiwiyata').
+  const fullTitle = title.endsWith('Adiwiyata') ? title : `${title} Adiwiyata`
+  return { title: `${fullTitle} | SMAN 55 Jakarta`, description }
 }
 
 export default async function AdiwiyataSectionPage({ params }: { params: Promise<{ section: string }> }) {
