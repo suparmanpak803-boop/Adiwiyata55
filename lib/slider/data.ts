@@ -160,20 +160,27 @@ export async function getAdminSliderData(): Promise<SliderPageData> {
 
 // Beranda (publik): hanya slide aktif dan di dalam jadwal tampil.
 export async function getSliderHomepageData(): Promise<SliderPageData> {
-  await ensureSliderSchema()
-  const today = getSliderToday()
-  const [slidesResult, settings] = await Promise.all([
-    pool.query<SlideRow>(
-      `SELECT id::text, image_url, alt_text, judul, deskripsi, cta_teks, cta_url,
-              urutan, aktif, tanggal_mulai::text AS tanggal_mulai, tanggal_selesai::text AS tanggal_selesai
-         FROM public.slider_slides
-        WHERE aktif = true
-          AND (tanggal_mulai IS NULL OR tanggal_mulai <= $1::date)
-          AND (tanggal_selesai IS NULL OR tanggal_selesai >= $1::date)
-        ORDER BY urutan ASC, created_at ASC`,
-      [today],
-    ),
-    readSettings(),
-  ])
-  return { slides: slidesResult.rows.map(toSlide), settings }
+  try {
+    await ensureSliderSchema()
+    const today = getSliderToday()
+    const [slidesResult, settings] = await Promise.all([
+      pool.query<SlideRow>(
+        `SELECT id::text, image_url, alt_text, judul, deskripsi, cta_teks, cta_url,
+                urutan, aktif, tanggal_mulai::text AS tanggal_mulai, tanggal_selesai::text AS tanggal_selesai
+           FROM public.slider_slides
+          WHERE aktif = true
+            AND (tanggal_mulai IS NULL OR tanggal_mulai <= $1::date)
+            AND (tanggal_selesai IS NULL OR tanggal_selesai >= $1::date)
+          ORDER BY urutan ASC, created_at ASC`,
+        [today],
+      ),
+      readSettings(),
+    ])
+    return { slides: slidesResult.rows.map(toSlide), settings }
+  } catch (error) {
+    // Portal beranda tidak boleh mati hanya karena slider gagal dibaca
+    // (mis. koneksi DB bermasalah): tampilkan tanpa slide.
+    console.error('[slider/homepage]', error)
+    return { slides: [], settings: DEFAULT_SLIDER_SETTINGS }
+  }
 }
