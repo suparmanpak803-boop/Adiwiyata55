@@ -24,7 +24,11 @@ export function useGameSession(gameKey: string, onFinished: (score: number) => v
     log.current = []; finishing.current = false
     try {
       const response = await fetch('/api/game/session', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ gameKey }) })
-      const body = await readJsonResponse<SessionPayload>(response)
+      const body = await readJsonResponse<SessionPayload & { error?: unknown }>(response)
+      // Server mengembalikan { error } bila gagal (mis. game nonaktif,
+      // soal belum cukup, atau gangguan server). Tampilkan pesan aslinya
+      // agar tidak tertutup pesan generik di bawah.
+      if (!response.ok || typeof body.error === 'string') throw new Error(typeof body.error === 'string' && body.error.trim() ? body.error : `Gagal memulai game (${response.status}).`)
       if (typeof body.token !== 'string' || typeof body.durasiDetik !== 'number') throw new Error('Respons sesi game tidak lengkap.')
       token.current = body.token
       setSessionData(body)
@@ -45,7 +49,8 @@ export function useGameSession(gameKey: string, onFinished: (score: number) => v
     setPhase('menyimpan')
     try {
       const response = await fetch('/api/game/score', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: token.current, log: log.current }) })
-      const body = await readJsonResponse<Record<string, unknown>>(response)
+      const body = await readJsonResponse<Record<string, unknown> & { error?: unknown }>(response)
+      if (!response.ok || typeof body.error === 'string') throw new Error(typeof body.error === 'string' && body.error.trim() ? body.error : `Gagal menyimpan skor (${response.status}).`)
       if (typeof body.skor !== 'number' || typeof body.poin !== 'number') throw new Error('Respons skor tidak lengkap.')
       setResult(body as unknown as SessionResult)
       onFinished(body.skor)
