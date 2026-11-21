@@ -47,7 +47,7 @@ export type AdiwiyataSiteContent = {
     publikasi: { title: string; intro: string }
     dokumen: { title: string; intro: string; noteTitle: string; noteBody: string }
   }
-  activities: { title: string; category: string; date: string; description: string }[]
+  activities: { title: string; category: string; date: string; description: string; images?: string[] }[]
   divisions: { name: string; focus: string; duties: string }[]
   articles: { title: string; category: string; date: string; description: string; source: string }[]
 }
@@ -110,22 +110,82 @@ export const DEFAULT_ADIWIYATA_SITE_CONTENT: AdiwiyataSiteContent = {
   },
   activities: [
     {
-      title: 'Pembersihan Drainase Sekolah',
+      title: 'Pembibitan TOGA',
+      category: 'Penghijauan',
+      date: 'Juli 2024 & Agustus 2025',
+      description:
+        'Pembibitan TOGA dalam dua tahap (Juli 2024 dan Agustus 2025) untuk memastikan bibit berkualitas. Kader TOGA (siswa dan guru) belajar langsung membenih dan merawat tanaman obat keluarga.',
+      images: ['/dokumentasi/pembibitan-toga-1.jpg', '/dokumentasi/pembibitan-toga-2.jpg'],
+    },
+    {
+      title: 'Pemeliharaan Hidroponik',
+      category: 'Hidroponik',
+      date: 'Juli 2024 – Januari 2025',
+      description:
+        'Piket harian kader guru dan siswa: membuat cairan nutrisi AB Mix, mengecek tanaman, serta memantau pH dan suhu air. Periode 1 (17 Juli 2024) dan periode 2 (23 Januari 2025).',
+      images: ['/dokumentasi/pemeliharaan-hidroponik-1.jpg', '/dokumentasi/pemeliharaan-hidroponik-2.jpg'],
+    },
+    {
+      title: 'Penanaman & Peremajaan TOGA',
+      category: 'Penghijauan',
+      date: 'September 2024',
+      description:
+        'Penanaman dari bibit hasil pembenihan dan benih Agrowisata, dilanjutkan peremajaan berkala: mengganti tanaman yang tidak produktif, memangkas, dan memupuk. Melibatkan siswa, guru, orang tua, kepala sekolah, dan Kasubag TU.',
+      images: ['/dokumentasi/penanaman-peremajaan-toga-1.jpg', '/dokumentasi/penanaman-peremajaan-toga-2.jpg'],
+    },
+    {
+      title: 'Membersihkan Lapangan',
       category: 'Kebersihan',
-      date: 'Jumat, 07 November 2026',
-      description: 'Kader drainase membersihkan saluran air di sekitar lapangan agar tidak tersumbat saat hujan.',
+      date: '17 & 20 September 2024',
+      description:
+        'Kerja bakti warga sekolah dua minggu sekali dan petugas kebersihan setiap hari. Pembersihan detail juga dilakukan sebelum kegiatan kesiswaan yang dikoordinir OSIS.',
+      images: ['/dokumentasi/membersihkan-lapangan-1.jpg', '/dokumentasi/membersihkan-lapangan-2.jpg'],
     },
     {
-      title: 'Bank Sampah Kelas X',
-      category: 'Pemilahan Sampah',
-      date: 'Senin, 03 November 2026',
-      description: 'Kelas X memulai setoran bank sampah mingguan: botol plastik dan kertas dipilah dan ditimbang.',
+      title: 'Membersihkan Selasar',
+      category: 'Kebersihan',
+      date: '18 & 20 September 2024',
+      description: 'Setiap hari oleh petugas caraka dan piket harian siswa sepulang sekolah.',
+      images: ['/dokumentasi/membersihkan-selasar-1.jpg', '/dokumentasi/membersihkan-selasar-2.jpg'],
     },
     {
-      title: 'Panen Kompos Kebun Sekolah',
-      category: 'Kompos',
-      date: 'Kamis, 30 Oktober 2026',
-      description: 'Kompos dari sampah organik kantin dipanen dan dipakai untuk pupuk tanaman di kebun sekolah.',
+      title: 'Membersihkan Toilet',
+      category: 'Kebersihan',
+      date: 'Setiap hari & 13 Agustus 2024',
+      description:
+        'Rutin setiap hari oleh petugas kebersihan (caraka); peserta didik membantu saat kerja bakti dua mingguan. 9 peserta. Bentuk kesadaran bersama menjaga toilet tetap bersih.',
+      images: ['/dokumentasi/membersihkan-toilet-1.jpg', '/dokumentasi/membersihkan-toilet-2.jpg'],
+    },
+    {
+      title: 'Membersihkan Kelas',
+      category: 'Kebersihan',
+      date: 'Setiap hari & 2 minggu sekali',
+      description:
+        'Piket harian sepulang sekolah dan kerja bakti dua minggu sekali dengan pantauan guru/wali kelas. Setiap kelas: 7 siswa merawat taman, sisanya membersihkan kelas.',
+      images: ['/dokumentasi/membersihkan-kelas-1.jpg', '/dokumentasi/membersihkan-kelas-2.jpg'],
+    },
+    {
+      title: 'Pemeliharaan Lahan TOGA',
+      category: 'Penghijauan',
+      date: 'Rutin setiap hari',
+      description:
+        'Piket bergilir perwakilan siswa, orang tua, dan guru: menyiram tanaman, memangkas yang layu atau lebat, serta membersihkan lahan dari gulma dan sampah.',
+      images: ['/dokumentasi/pemeliharaan-toga-1.jpg', '/dokumentasi/pemeliharaan-toga-2.jpg'],
+    },
+    {
+      title: 'Sosialisasi Sekolah Bebas Plastik',
+      category: 'Pengelolaan Sampah',
+      date: '2024',
+      description:
+        'Sosialisasi ke peserta didik, orang tua, guru, pihak kantin, dan kepala sekolah: memahami pengelolaan sampah plastik dan beralih dari plastik sekali pakai ke wadah yang dapat digunakan kembali atau didaur ulang.',
+      images: ['/dokumentasi/sekolah-bebas-plastik-1.jpg', '/dokumentasi/sekolah-bebas-plastik-2.jpg'],
+    },
+    {
+      title: 'Kebersihan oleh Beberapa Unsur Warga',
+      category: 'Kebersihan',
+      date: '2024',
+      description: 'Kegiatan kebersihan yang melibatkan berbagai unsur warga sekolah.',
+      images: ['/dokumentasi/kebersihan-warga-1.jpg'],
     },
   ],
   divisions: [
@@ -170,6 +230,7 @@ function parseStringFields(record: Record<string, unknown>, fields: string[]): R
 function parseItemList<T extends Record<string, unknown>>(
   value: unknown,
   fields: string[],
+  extra?: (item: Record<string, unknown>, parsed: Record<string, unknown>) => boolean,
 ): T[] | null {
   if (!Array.isArray(value) || value.length > 50) return null
   const out: T[] = []
@@ -177,9 +238,20 @@ function parseItemList<T extends Record<string, unknown>>(
     if (!isStringRecord(item)) return null
     const parsed = parseStringFields(item, fields)
     if (!parsed) return null
+    if (extra && !extra(item, parsed)) return null
     out.push(parsed as T)
   }
   return out
+}
+
+// Daftar alamat foto lokal (mis. /dokumentasi/....jpg). Opsional per item;
+// bila ada harus berupa array berisi alamat lokal.
+function parseImageList(value: unknown): string[] | null {
+  if (!Array.isArray(value) || value.length === 0 || value.length > 10) return null
+  for (const item of value) {
+    if (typeof item !== 'string' || !item.startsWith('/') || item.length > 3000) return null
+  }
+  return value as string[]
 }
 
 // null bila input tidak valid (dipakai route PUT: 400).
@@ -207,7 +279,13 @@ export function parseAdiwiyataSiteContent(input: unknown): AdiwiyataSiteContent 
   const dokumen = isStringRecord(pages.dokumen) ? parseStringFields(pages.dokumen, ['title', 'intro', 'noteTitle', 'noteBody']) : null
   if (!profil || !program || !dokumentasi || !publikasi || !dokumen) return null
 
-  const activities = parseItemList(input.activities, ['title', 'category', 'date', 'description'])
+  const activities = parseItemList(input.activities, ['title', 'category', 'date', 'description'], (item, parsed) => {
+    if (item.images === undefined) return true
+    const images = parseImageList(item.images)
+    if (!images) return false
+    parsed.images = images
+    return true
+  })
   const divisions = parseItemList(input.divisions, ['name', 'focus', 'duties'])
   const articles = parseItemList(input.articles, ['title', 'category', 'date', 'description', 'source'])
   if (!activities || !divisions || !articles) return null

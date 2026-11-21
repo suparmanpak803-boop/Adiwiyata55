@@ -191,3 +191,35 @@ perilaku runtime terhadap DB sungguhan):
   game + leaderboard, laporan, dan sinkronisasi laporan.
   Jalankan migrasi dari `db/README.md` lalu uji dengan
   `.env.local` yang terisi sebelum deploy.
+
+## Tambahan 2026-11-22 — Informasi Adiwiyata: 10 kegiatan nyata + foto dokumentasi
+
+Sumber: 10 file PDF laporan kader yang diunggah user (2026-11-22). Teks kegiatan
+diambil dari isi PDF; foto diekstrak dari PDF, dipilih 2 foto per kegiatan
+(1 foto untuk "Kebersihan oleh Beberapa Unsur Warga"), diperkecil ke sisi
+panjang maks 1000 px (JPEG q80), total 19 foto ±2,7 MB di `public/dokumentasi/`.
+
+Kegiatan (menggantikan 3 aktivitas placeholder di konten bawaan):
+Pembibitan TOGA (Jul 2024 & Agu 2025), Pemeliharaan Hidroponik (Jul 2024–Jan 2025),
+Penanaman & Peremajaan TOGA (Sep 2024), Membersihkan Lapangan (17 & 20 Sep 2024),
+Membersihkan Selasar (18 & 20 Sep 2024), Membersihkan Toilet (harian & 13 Agu 2024),
+Membersihkan Kelas (harian & 2 minggu sekali), Pemeliharaan Lahan TOGA (harian),
+Sosialisasi Sekolah Bebas Plastik (2024 — tanggal persis tidak tertulis di PDF),
+Kebersihan oleh Beberapa Unsur Warga (2024 — PDF tanpa teks/tanggal).
+
+Perubahan kode:
+- `lib/adiwiyata-site-content.ts`: item kegiatan mendapat field opsional
+  `images?: string[]` (alamat lokal `/dokumentasi/...`); parser
+  `parseAdiwiyataSiteContent` mempertahankannya, sehingga penyimpanan lewat
+  panel admin tidak menghapus foto.
+- `components/adiwiyata/public-hub.tsx`: kartu kegiatan (beranda + halaman
+  Program & kegiatan) menampilkan foto utama; halaman Dokumentasi mendapat
+  galeri "Dokumentasi kegiatan" (19 foto) dengan lightbox (klik untuk
+  memperbesar, Esc/klik untuk menutup) memakai class CSS `.adi-gallery` /
+  `.adi-lightbox` yang sudah ada di `adiwiyata.css` tapi belum terpakai.
+- `app/adiwiyata/adiwiyata.css`: aturan `.adi-activity-photo`,
+  `.adi-activity-card.has-photo .adi-card-index`, `.adi-gallery-intro`.
+
+Catatan: file PDF laporan aslinya TIDAK diunggah sebagai dokumen unduhan
+(butuh Vercel Blob / `BLOB_READ_WRITE_TOKEN` yang belum disiapkan); yang
+ditampilkan adalah isi + fotonya.
