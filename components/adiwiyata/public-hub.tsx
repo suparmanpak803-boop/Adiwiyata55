@@ -1,0 +1,61 @@
+'use client'
+
+import { useEffect, useState } from 'react'
+import Link from 'next/link'
+import { ArrowDownToLine, ArrowRight, BookOpen, CalendarDays, ChevronDown, Leaf, Menu, Moon, Sun, X } from 'lucide-react'
+import { AdiwiyataLogoMark } from '@/components/adiwiyata/logo-mark'
+import { GreenActionQuiz } from '@/components/adiwiyata/green-action-quiz'
+import { AboutSection } from '@/components/adiwiyata/about-section'
+import type { AdiwiyataDocument } from '@/lib/documents'
+import { DEFAULT_ADIWIYATA_SITE_CONTENT, type AdiwiyataSiteContent } from '@/lib/adiwiyata-site-content'
+
+type Section = 'beranda' | 'tentang' | 'profil' | 'program' | 'dokumentasi' | 'publikasi' | 'dokumen'
+type PublicDocument = Pick<AdiwiyataDocument, 'title' | 'description' | 'url' | 'category'>
+
+const navigation: { id: Section; label: string }[] = [
+  { id: 'beranda', label: 'Beranda' }, { id: 'tentang', label: 'Tentang Kami' }, { id: 'profil', label: 'Profil' }, { id: 'program', label: 'Program & kegiatan' },
+  { id: 'dokumentasi', label: 'Divisi kader' }, { id: 'publikasi', label: 'Artikel & berita' }, { id: 'dokumen', label: 'Dokumen & arsip' },
+]
+
+
+export function AdiwiyataPublicHub({ section = 'beranda', documents = [], content = DEFAULT_ADIWIYATA_SITE_CONTENT }: { section?: Section; documents?: PublicDocument[]; content?: AdiwiyataSiteContent }) {
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [darkMode, setDarkMode] = useState<boolean | null>(null)
+  const [filter, setFilter] = useState('Semua')
+
+  useEffect(() => {
+    const currentTheme = document.documentElement.dataset.theme
+    setDarkMode(currentTheme ? currentTheme === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches)
+  }, [])
+
+  useEffect(() => {
+    if (darkMode !== null) document.documentElement.dataset.theme = darkMode ? 'dark' : 'light'
+  }, [darkMode])
+  const title = section === 'beranda' ? 'Beranda' : section === 'tentang' ? 'Tentang Kami' : content.pages[section].title
+  const categories = ['Semua', ...Array.from(new Set(content.activities.map((activity) => activity.category)))]
+  const visibleActivities = content.activities.filter((activity) => filter === 'Semua' || activity.category === filter)
+
+  return <main className="adi-site">
+    <header className="adi-header">
+      <Link href="/adiwiyata" className="adi-brand" aria-label="Adiwiyata 55, beranda"><span className="adi-brand-mark"><AdiwiyataLogoMark /></span><span><strong>Adiwiyata <i>55</i></strong><small>SMAN 55 JAKARTA</small></span></Link>
+      <button className="adi-theme-toggle" type="button" aria-label={darkMode ? 'Aktifkan tema terang' : 'Aktifkan tema gelap'} aria-pressed={darkMode === true} onClick={() => setDarkMode((value) => !value)}>{darkMode ? <Sun aria-hidden="true" /> : <Moon aria-hidden="true" />}</button>
+      <button className="adi-menu-toggle" aria-label={menuOpen ? 'Tutup navigasi' : 'Buka navigasi'} aria-expanded={menuOpen} onClick={() => setMenuOpen(!menuOpen)}>{menuOpen ? <X /> : <Menu />}</button>
+      <nav className={menuOpen ? 'adi-nav is-open' : 'adi-nav'} aria-label="Navigasi Adiwiyata">{navigation.map((item) => <Link key={item.id} href={item.id === 'beranda' ? '/adiwiyata' : `/adiwiyata/${item.id}`} aria-current={section === item.id ? 'page' : undefined} onClick={() => setMenuOpen(false)}>{item.id === 'beranda' ? 'Beranda' : item.id === 'tentang' ? item.label : content.pages[item.id].title}</Link>)}<Link className="adi-nav-portal" href="/">Portal sekolah <ArrowRight aria-hidden="true" /></Link></nav>
+    </header>
+
+    {section === 'beranda' ? <>
+      <section className="adi-hero"><div className="adi-hero-copy"><span className="adi-eyebrow"><span /> {content.home.eyebrow}</span><h1>{content.home.title}<br /><em>{content.home.emphasis}</em></h1><p>{content.home.description}</p><div className="adi-actions"><Link className="adi-primary" href="/adiwiyata/program">{content.home.primaryAction} <ArrowRight aria-hidden="true" /></Link><Link className="adi-secondary" href="/adiwiyata/dokumen">{content.home.secondaryAction} <ArrowDownToLine aria-hidden="true" /></Link></div><span className="adi-hero-caption">{content.home.caption}</span></div><div className="adi-hero-visual"><div className="adi-photo-note"><span>{content.home.visualLabel}</span><strong>{content.home.visualTitle}</strong><small>{content.home.visualSchool}</small></div><div className="adi-leaf-orbit"><Leaf aria-hidden="true" /></div><div className="adi-visual-stamp">ADIWIYATA<br /><b>55</b></div></div><div className="adi-hero-bottom"><span>AKSI NYATA, TERCATAT BERSAMA</span><a href="#kegiatan">Jelajahi konten <ChevronDown aria-hidden="true" /></a></div></section>
+      <section className="adi-section" id="kegiatan"><div className="adi-section-heading"><div><span className="adi-eyebrow">{content.home.activitiesEyebrow}</span><h2>{content.home.activitiesTitle}</h2></div><Link href="/adiwiyata/dokumentasi">{content.home.activitiesLink} <ArrowRight aria-hidden="true" /></Link></div><div className="adi-activity-grid">{content.activities.slice(0, 3).map((item, index) => <article className={`adi-activity-card activity-${index + 1}`} key={item.title}><span className="adi-card-index">0{index + 1}</span><span className="adi-tag">{item.category}</span><h3>{item.title}</h3><p>{item.description}</p><span className="adi-card-date"><CalendarDays aria-hidden="true" />{item.date}</span>{(() => { const docUrl = documents.find((doc) => doc.title === item.title || (item.title.includes('Drainase') && doc.title.includes('Drainase')))?.url; return docUrl ? <a href={docUrl} target="_blank" rel="noreferrer">Baca dokumen <ArrowRight aria-hidden="true" /></a> : <a href="/adiwiyata/dokumen">Lihat arsip dokumen <ArrowRight aria-hidden="true" /></a> })()}</article>)}</div></section>
+      <GreenActionQuiz />
+      <section className="adi-profile-strip"><span className="adi-profile-icon"><BookOpen aria-hidden="true" /></span><div><span className="adi-eyebrow">{content.home.profileEyebrow}</span><h2>{content.home.profileTitle}</h2><p>{content.home.profileDescription}</p></div><Link className="adi-round-link" href="/adiwiyata/profil" aria-label="Buka profil Adiwiyata"><ArrowRight aria-hidden="true" /></Link></section>
+    </> : <section className="adi-inner-page"><div className="adi-breadcrumb"><Link href="/adiwiyata">Beranda</Link><span>/</span><span>{title}</span></div><div className="adi-page-heading"><span className="adi-eyebrow">PUSAT INFORMASI ADIWIYATA</span><h1>{title}</h1><p>{section === 'tentang' ? 'Kenali platform, tujuan, dan tim di balik sistem monitoring Adiwiyata SMAN 55 Jakarta.' : content.pages[section].intro}</p></div>
+      {section === 'tentang' && <AboutSection />}
+      {section === 'profil' && <div className="adi-profile-content"><article><span className="adi-eyebrow">{content.pages.profil.historyEyebrow}</span><h2>{content.pages.profil.historyTitle}</h2><p>{content.pages.profil.historyBody}</p></article><article><span className="adi-eyebrow">{content.pages.profil.programsEyebrow}</span><h2>{content.pages.profil.programsTitle}</h2><p>{content.pages.profil.programsBody}</p><Link href="/adiwiyata/dokumen">Telusuri sumber dokumen <ArrowRight aria-hidden="true" /></Link></article><div className="adi-source-note"><strong>{content.pages.profil.noteTitle}</strong><p>{content.pages.profil.noteBody}</p></div></div>}
+      {section === 'program' && <><div className="adi-filters" role="group" aria-label="Filter kategori kegiatan">{categories.map((category) => <button type="button" className={filter === category ? 'is-active' : ''} key={category} onClick={() => setFilter(category)}>{category}</button>)}</div><div className="adi-activity-grid">{visibleActivities.map((item, index) => <article className={`adi-activity-card activity-${index % 3 + 1}`} key={item.title}><span className="adi-card-index">{String(index + 1).padStart(2, '0')}</span><span className="adi-tag">{item.category}</span><h2>{item.title}</h2><p>{item.description}</p><span className="adi-card-date"><CalendarDays aria-hidden="true" />{item.date}</span></article>)}</div></>}
+      {section === 'dokumentasi' && <div className="adi-division-grid">{content.divisions.map((division, index) => <article className="adi-division-card" key={division.name}><span className="adi-card-index">{String(index + 1).padStart(2, '0')}</span><span className="adi-tag">{division.focus}</span><h2>{division.name}</h2><p>{division.duties}</p></article>)}</div>}
+      {section === 'publikasi' && <div className="adi-article-grid">{content.articles.map((article) => <article className="adi-article-card" key={article.title}><span className="adi-tag">{article.category}</span><span className="adi-card-date"><CalendarDays aria-hidden="true" />{article.date}</span><h2>{article.title}</h2><p>{article.description}</p><small>Sumber: {article.source}</small><Link href="/adiwiyata/dokumen">Lihat arsip sumber <ArrowRight aria-hidden="true" /></Link></article>)}</div>}
+      {section === 'dokumen' && <><div className="adi-source-note"><strong>{content.pages.dokumen.noteTitle}</strong><p>{content.pages.dokumen.noteBody}</p></div><div className="adi-doc-grid">{documents.length ? documents.map((doc) => <article className="adi-doc-card" key={doc.title}><span className="adi-tag">{doc.category}</span><strong>{doc.title}</strong><small>{doc.description || 'Dokumen kegiatan Adiwiyata SMAN 55 Jakarta.'}</small><a className="adi-doc-link" href={doc.url} target="_blank" rel="noreferrer">Buka atau unduh dokumen <ArrowDownToLine aria-hidden="true" /></a></article>) : <p className="adi-doc-empty">Belum ada dokumen yang dipublikasikan.</p>}</div></>}
+    </section>}
+    <footer className="adi-footer"><Link href="/adiwiyata" className="adi-brand"><span className="adi-brand-mark"><AdiwiyataLogoMark /></span><span><strong>Adiwiyata <i>55</i></strong><small>SMAN 55 JAKARTA</small></span></Link><p>{content.home.footerText}</p><Link href="/">Kembali ke portal sekolah <ArrowRight aria-hidden="true" /></Link></footer>
+  </main>
+}

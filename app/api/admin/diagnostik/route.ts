@@ -1,0 +1,60 @@
+import { NextResponse } from 'next/server'
+import { requirePortalRole } from '@/lib/auth/access'
+import { pool } from '@/lib/db'
+import { seedGameDefaults } from '@/lib/game-content-seed'
+
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+
+const requiredTables: Record<string, string> = {
+  users: 'neon_auth.user', master_kelas: 'adiwiyata_classes', data_sampah: 'adiwiyata_deposits',
+  kuis_soal: 'kuis_soal', item_sampah: 'item_sampah', misi_mingguan: 'misi_mingguan', video_edukasi: 'video_edukasi',
+  game_settings: 'game_settings', app_settings: 'app_settings', game_sessions: 'game_sessions', game_scores: 'game_scores',
+  leaderboard_periods: 'leaderboard_periods', leaderboard_settings: 'leaderboard_settings', laporan: 'laporan', slider_slides: 'slider_slides',
+}
+
+function respond(data: unknown, status = 200) {
+  return NextResponse.json(status >= 400
+    ? { galat: true, kode: status === 401 ? 'BELUM_LOGIN' : status === 403 ? 'AKSES_DITOLAK' : 'DIAGNOSTIK_GAGAL', pesan: typeof data === 'string' ? data : 'Permintaan belum dapat diproses.' }
+    : { galat: false, data }, { status, headers: { 'Cache-Control': 'private, no-store' } })
+}
+
+export async function GET() {
+  const startedAt = Date.now()
+  try {
+    await requirePortalRole(['admin'])
+    await pool.query('SELECT 1')
+    const tables = await pool.query<{ table_schema: string; table_name: string }>(`SELECT table_schema, table_name FROM information_schema.tables WHERE table_schema IN ('public','neon_auth') AND table_type = 'BASE TABLE'`)
+    const present = new Set(tables.rows.map((row) => `${row.table_schema}.${row.table_name}`))
+    const checks = Object.entries(requiredTables).map(([label, qualifiedName]) => ({ label, table: qualifiedName, ready: present.has(qualifiedName.includes('.') ? qualifiedName : `public.${qualifiedName}`) }))
+    let activePeriod: { id: string; startedAt: string | null } | null = null
+    if (present.has('public.leaderboard_settings') && present.has('public.leaderboard_periods')) {
+      const period = await pool.query<{ id: string | null; mulai: string | null }>(`SELECT p.id, p.mulai::text AS mulai FROM public.leaderboard_settings s LEFT JOIN public.leaderboard_periods p ON p.id = s.period_id WHERE s.id = true`)
+      if (period.rows[0]?.id) activePeriod = { id: period.rows[0].id, startedAt: period.rows[0].mulai }
+    }
+    return respond({ database: { connected: true, responseMs: Date.now() - startedAt }, tables: checks, activePeriod })
+  } catch (error) {
+    const message = error instanceof Error ? error.message : ''
+    if (message === 'UNAUTHORIZED') return respond('Silakan login kembali.', 401)
+    if (message === 'FORBIDDEN') return respond('Halaman ini hanya untuk Admin.', 403)
+    console.error('[api/admin/diagnostik GET]', error)
+    return respond('Diagnostik database belum dapat dimuat.', 503)
+  }
+}
+
+export async function POST(request: Request) {
+  if (request.headers.get('origin') && request.headers.get('origin') !== new URL(request.url).origin) return respond('Permintaan tidak valid.', 403)
+  try {
+    const user = await requirePortalRole(['admin'])
+    const body = await request.json().catch(() => null) as { aksi?: unknown } | null
+    if (body?.aksi !== 'buat_data_awal') return respond('Tindakan diagnostik tidak dikenal.', 400)
+    const seed = await seedGameDefaults(user.id)
+    return respond(seed)
+  } catch (error) {
+    const message = error instanceof Error ? error.message : ''
+    if (message === 'UNAUTHORIZED') return respond('Silakan login kembali.', 401)
+    if (message === 'FORBIDDEN') return respond('Tindakan ini hanya untuk Admin.', 403)
+    console.error('[api/admin/diagnostik POST]', error)
+    return respond('Data awal belum dapat dibuat. Periksa koneksi database.', 500)
+  }
+}

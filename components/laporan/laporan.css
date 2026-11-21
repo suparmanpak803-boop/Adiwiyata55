@@ -1,0 +1,76 @@
+.lap-list, .lap-detail, .lap-form { max-width: 760px; margin: 22px auto 0; padding: 22px; border: 1px solid var(--line); border-radius: 16px; background: var(--card); }
+.lap-list h2, .lap-detail h2 { margin: 18px 0 8px; font-size: 16px; }
+.lap-list h2 { margin-top: 0; }
+.lap-detail h1, .lap-form h1 { margin: 12px 0 6px; font-family: Georgia, serif; font-size: 30px; font-weight: 400; }
+.lap-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; border-top: 1px solid var(--line); color: inherit; text-decoration: none; }
+.lap-row small, .lap-meta, .lap-comment small, .lap-timeline small { display: block; color: var(--ink-soft); font-size: 12px; }
+.lap-meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.lap-empty { color: var(--ink-soft); font-size: 13px; }
+.lap-badge { padding: 3px 10px; border-radius: 999px; color: #fff; font-size: 11px; font-weight: 700; white-space: nowrap; }
+.lap-baru { background: #2b6cb0; } .lap-diproses { background: #b8860b; } .lap-selesai { background: #2f7d4f; } .lap-ditolak { background: #b83232; }
+.lap-body { white-space: pre-wrap; line-height: 1.7; }
+.lap-photos { display: flex; flex-wrap: wrap; gap: 10px; margin: 12px 0; }
+.lap-photos img { width: 150px; height: 110px; object-fit: cover; border-radius: 10px; border: 1px solid var(--line); }
+.lap-thumb { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+.lap-box { padding: 12px 16px; border-radius: 12px; background: color-mix(in srgb, var(--sage) 60%, var(--card)); }
+.lap-timeline { margin: 0; padding-left: 18px; font-size: 13px; line-height: 1.7; }
+.lap-timeline span { display: block; color: var(--ink-soft); }
+.lap-comment { margin: 8px 0; padding: 10px 14px; border-radius: 12px; border: 1px solid var(--line); }
+.lap-comment.admin { background: color-mix(in srgb, var(--sage) 60%, var(--card)); }
+.lap-comment p { margin: 4px 0; font-size: 14px; }
+.lap-form-inline, .lap-form { display: flex; flex-direction: column; gap: 14px; }
+.lap-form label, .lap-form legend { display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600; }
+.lap-form small { color: var(--ink-soft); font-weight: 400; }
+.lap-form select, .lap-form input:not([type=checkbox]):not([type=radio]), .lap-form textarea, .lap-form-inline textarea { padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--background); color: var(--foreground); font: inherit; font-weight: 400; }
+.lap-form fieldset { border: 0; padding: 0; margin: 0; }
+.lap-radios { display: flex; gap: 18px; margin-top: 6px; }
+.lap-radios label, .lap-check { flex-direction: row !important; align-items: center; flex-wrap: wrap; gap: 8px !important; font-weight: 500 !important; }
+.lap-error { color: #e5484d; font-size: 13px; font-weight: 600; }
+.lap-stars { display: flex; gap: 4px; }
+.lap-stars button { border: 0; background: transparent; color: var(--line); font-size: 30px; cursor: pointer; }
+.lap-stars button.on { color: #e0a800; }
+.lap-bell { position: relative; }
+.lap-bell > button { position: relative; }
+.lap-count { margin-left: 6px; padding: 0 6px; border-radius: 999px; background: #e5484d; color: #fff; font-size: 11px; }
+.lap-pop { position: absolute; z-index: 20; top: 110%; left: 0; width: min(340px, 86vw); max-height: 360px; overflow: auto; padding: 8px; border: 1px solid var(--line); border-radius: 14px; background: var(--card); box-shadow: 0 12px 30px rgb(0 0 0 / .18); }
+.lap-notif { display: flex; flex-direction: column; gap: 2px; padding: 10px; border-radius: 10px; color: inherit; font-size: 13px; text-decoration: none; }
+.lap-notif.unread { background: color-mix(in srgb, var(--sage) 60%, var(--card)); }
+.lap-notif small { color: var(--ink-soft); }
+
+/* Tahap 6: panel kelola laporan */
+.lap-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; max-width: 980px; margin: 18px auto 0; }
+.lap-summary > div { padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--card); }
+.lap-summary span { display: block; color: var(--ink-soft); font-size: 11px; }
+.lap-summary b { font-size: 22px; }
+.lap-summary .late { border-color: #b83232; } .lap-summary .late b { color: #b83232; }
+.lap-admin-panel { max-width: 980px; margin: 0 auto; padding: 18px 0 40px; }
+.lap-filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; align-items: end; }
+.lap-filters label { display: flex; flex-direction: column; gap: 4px; font-size: 11px; color: var(--ink-soft); }
+.lap-filters input, .lap-filters select, .lap-bulk input, .lap-bulk select, .lap-settings input:not([type=checkbox]) { padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); color: inherit; font: inherit; font-size: 13px; }
+.lap-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 14px 0; }
+.lap-toolbar > .lap-empty { margin-right: auto; }
+.lap-bulk { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 12px; padding: 10px 14px; border-radius: 12px; background: color-mix(in srgb, var(--sage) 60%, var(--card)); }
+.lap-table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; background: var(--card); }
+.lap-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.lap-table th, .lap-table td { padding: 10px 12px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+.lap-table th { color: var(--ink-soft); font-size: 11px; font-weight: 700; white-space: nowrap; }
+.lap-table small { display: block; color: var(--ink-soft); font-size: 11px; }
+.lap-table .nowrap { white-space: nowrap; }
+.lap-table tr.late { background: color-mix(in srgb, #b83232 8%, var(--card)); }
+.lap-link { padding: 0; border: 0; background: none; color: var(--green); font: inherit; font-weight: 700; text-align: left; text-decoration: underline; cursor: pointer; }
+.lap-urg { display: inline-block; margin-right: 6px; font-weight: 700; }
+.lap-urg-tinggi { color: #b83232; } .lap-urg-sedang { color: #b8860b; } .lap-urg-rendah { color: var(--ink-soft); }
+.lap-badge.lap-late { background: #b83232; margin-left: 4px; } .lap-badge.lap-best { background: #7a4fb0; margin-left: 4px; }
+.lap-ok { color: #2f7d4f; font-size: 13px; font-weight: 600; }
+.lap-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
+.lap-chart { margin: 0; padding: 16px; border: 1px solid var(--line); border-radius: 14px; background: var(--card); }
+.lap-chart figcaption { margin-bottom: 8px; font-size: 13px; font-weight: 700; }
+.lap-overlay { position: fixed; inset: 0; z-index: 60; display: flex; justify-content: center; align-items: flex-start; overflow-y: auto; padding: 24px 12px; background: rgb(0 0 0 / 55%); }
+.lap-dialog { position: relative; width: min(680px, 100%); padding: 22px; border: 1px solid var(--line); border-radius: 16px; background: var(--card); color: var(--ink); }
+.lap-dialog h2 { margin: 10px 0 4px; font-family: Georgia, serif; font-size: 24px; font-weight: 400; }
+.lap-dialog h3 { margin: 18px 0 6px; font-size: 14px; }
+.lap-close { position: absolute; top: 14px; right: 14px; }
+.lap-meta-line { margin: 2px 0; color: var(--ink-soft); font-size: 12px; }
+.lap-admin-form { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line); }
+.lap-danger { border-color: #b83232 !important; color: #b83232 !important; }
+.lap-settings { max-width: 560px; }
