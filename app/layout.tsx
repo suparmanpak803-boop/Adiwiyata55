@@ -7,8 +7,8 @@ export const metadata: Metadata = {
   description: 'Website Adiwiyata SMAN 55 Jakarta: edukasi lingkungan, program, dokumentasi kegiatan, publikasi, arsip, pelaporan sampah, dan aksi hijau.',
   generator: 'v0.app',
   icons: {
-    icon: '/adiwiyata-logo.svg',
-    apple: '/adiwiyata-logo.svg',
+    icon: '/adiwiyata-logo.png',
+    apple: '/adiwiyata-logo.png',
   },
 }
 
