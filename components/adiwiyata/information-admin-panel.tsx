@@ -54,8 +54,8 @@ const fieldGroups: { title: string; description: string; fields: { path: string;
     ],
   },
   {
-    title: 'Divisi kader',
-    description: 'Atur judul dan pengantar halaman divisi kader.',
+    title: 'Kader Adiwiyata',
+    description: 'Atur judul dan pengantar halaman kader Adiwiyata.',
     fields: [
       { path: 'pages.dokumentasi.title', label: 'Nama bagian' },
       { path: 'pages.dokumentasi.intro', label: 'Pengantar halaman', multiline: true },
@@ -86,7 +86,7 @@ type StringRecord = Record<string, string>
 
 const collectionGroups: { key: CollectionKey; title: string; description: string; addLabel: string; emptyRecord: StringRecord; fields: { key: string; label: string; multiline?: boolean }[] }[] = [
   { key: 'activities', title: 'Program & kegiatan', description: 'Daftar ini tampil pada halaman kegiatan dan sorotan beranda.', addLabel: 'Tambah kegiatan', emptyRecord: { title: '', category: '', date: '', description: '' }, fields: [{ key: 'title', label: 'Nama kegiatan' }, { key: 'category', label: 'Kategori' }, { key: 'date', label: 'Waktu kegiatan' }, { key: 'description', label: 'Keterangan', multiline: true }] },
-  { key: 'divisions', title: 'Divisi kader', description: 'Atur nama divisi, fokus, dan uraian tugas yang tampil untuk publik.', addLabel: 'Tambah divisi', emptyRecord: { name: '', focus: '', duties: '' }, fields: [{ key: 'name', label: 'Nama divisi' }, { key: 'focus', label: 'Fokus kerja' }, { key: 'duties', label: 'Uraian tugas', multiline: true }] },
+  { key: 'divisions', title: 'Kader Adiwiyata', description: 'Atur nama kader, fokus, dan ringkasan tugas yang tampil untuk publik.', addLabel: 'Tambah kader', emptyRecord: { name: '', focus: '', duties: '' }, fields: [{ key: 'name', label: 'Nama kader' }, { key: 'focus', label: 'Fokus kerja' }, { key: 'duties', label: 'Ringkasan tugas', multiline: true }] },
   { key: 'articles', title: 'Artikel & berita', description: 'Kelola ringkasan publikasi beserta sumber informasinya.', addLabel: 'Tambah artikel', emptyRecord: { title: '', category: '', date: '', description: '', source: '' }, fields: [{ key: 'title', label: 'Judul artikel' }, { key: 'category', label: 'Kategori' }, { key: 'date', label: 'Tanggal' }, { key: 'description', label: 'Ringkasan', multiline: true }, { key: 'source', label: 'Sumber dokumen' }] },
 ]
 
