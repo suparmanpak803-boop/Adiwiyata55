@@ -24,3 +24,8 @@
 .adi-tasks-label{display:block;margin-top:14px;font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--adi-green)}
 .adi-division-card ol{margin:8px 0 0;padding-left:18px;list-style:decimal;color:var(--adi-muted);font-size:11px;line-height:1.7}
 .adi-division-card ol li{margin-bottom:6px}
+.adi-division-card{min-height:0}
+.adi-division-card h2 .adi-division-toggle{width:100%;padding:0;display:flex;align-items:flex-start;justify-content:space-between;gap:10px;border:0;background:none;color:inherit;font:inherit;text-align:left;cursor:pointer}
+.adi-division-toggle:focus-visible{outline:3px solid var(--adi-green);outline-offset:3px}
+.adi-division-toggle svg{width:18px;height:18px;flex:none;margin-top:4px;transition:transform .2s ease}
+.adi-division-toggle[aria-expanded="true"] svg{transform:rotate(180deg)}
