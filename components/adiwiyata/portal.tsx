@@ -108,10 +108,10 @@ function SectionContent({ section }: { section: (typeof EDU_DEFAULTS.sections)[n
       <div className="education-copy">
         <p>{section.introduction}</p>
         <div className="subsection-heading">
-          <div><span className="eyebrow">AKSI HARIAN</span><h3>Struktur Kader Lingkungan</h3></div>
-          <span className="count-pill">{KADER_LIST.length} kelompok</span>
+          <div><span className="eyebrow">AKSI HARIAN</span><h3>Struktur Kader Adiwiyata</h3></div>
+          <span className="count-pill">{KADER_LIST.length} kader</span>
         </div>
-        <p>Untuk menjalankan program harian secara terfokus, SMAN 55 Jakarta membentuk {KADER_LIST.length} kelompok kader siswa:</p>
+        <p>Untuk menjalankan program harian secara terfokus, SMAN 55 Jakarta membentuk {KADER_LIST.length} kader:</p>
         <ol className="kader-grid">
           {KADER_LIST.map((kader, index) => <li key={kader}><span>{String(index + 1).padStart(2, '0')}</span>{kader}</li>)}
         </ol>

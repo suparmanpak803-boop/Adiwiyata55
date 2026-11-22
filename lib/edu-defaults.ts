@@ -2,24 +2,29 @@
 // PERINGATAN: isi teks di bawah ini adalah rekonstruksi — tidak ada
 // salinan teks aslinya yang tersisa di repo (lihat PERBAIKAN.md).
 // Bentuk/strukturnya persis mengikuti pemakaian di
-// components/adiwiyata/portal.tsx (SectionContent). KADER_LIST harus
-// berisi 14 nama yang sama dengan KADER_REPORT_TASKS; ganti dengan
-// daftar resmi sekolah bila sudah ada.
+// components/adiwiyata/portal.tsx (SectionContent). KADER_LIST berisi
+// 15 kader resmi sekolah (SK Kepala SMA Negeri 55 Jakarta Nomor 027
+// Tahun 2026 + spreadsheet uraian tugas) — sama dengan daftar di
+// halaman Kader Adiwiyata (lib/adiwiyata-site-content.ts).
+// KADER_REPORT_TASKS (lib/kader-report-tasks.ts) adalah daftar terpisah
+// untuk formulir Laporan Kinerja Kader dan masih memakai 14 nama lama;
+// perbarui daftar itu saat Google Form laporan dihubungkan.
 export const KADER_LIST: string[] = [
-  'Kader Kebersihan',
-  'Kader Penghijauan',
-  'Kader Bank Sampah',
-  'Kader Kompos',
-  'Kader Daur Ulang',
-  'Kader Hemat Energi',
-  'Kader Hemat Air',
-  'Kader Kantin Sehat',
-  'Kader Taman Sekolah',
-  'Kader Drainase',
-  'Kader Edukasi Lingkungan',
-  'Kader Dokumentasi',
-  'Kader Kebun Sekolah',
-  'Kader Zero Waste',
+  'Kader Pilah',
+  'Kader Olah Organik',
+  'Kader Maggot',
+  'Kader Bank Sampah dan Daur Ulang',
+  'Kader Lingkungan Sehat',
+  'Kader Hijau dan Biodiversitas',
+  'Kader Energi Lestari',
+  'Kader Air Lestari',
+  'Kader Edu-Lingkungan',
+  'Kader Budaya Lingkungan',
+  'Kader Inovasi Hijau',
+  'Kader Kantin Hijau',
+  'Kader Data Hijau',
+  'Kader Eco-Communication',
+  'Kader Jejaring Hijau',
 ]
 
 export const EDU_DEFAULTS = {
@@ -66,7 +71,7 @@ export const EDU_DEFAULTS = {
       joss: 'JOSS — Jaga & Olah Sampah Sekolah — adalah kebiasaan harian warga SMAN 55 Jakarta: pilah sampahmu, catat setoranmu, dan olah yang masih bisa dimanfaatkan.',
       impact: [
         { value: '24', unit: 'kelas', description: 'Kelas X, XI, dan XII yang aktif memilah sampah setiap hari.' },
-        { value: '14', unit: 'kelompok kader', description: 'Kelompok kader siswa yang menjalankan tugas lingkungan.' },
+        { value: '15', unit: 'kader', description: 'Kader siswa yang menjalankan tugas lingkungan.' },
         { value: '5', unit: 'jenis sampah', description: 'Organik, anorganik, kertas, residu, dan B3 dipilah terpisah.' },
       ],
       dailyRule:
