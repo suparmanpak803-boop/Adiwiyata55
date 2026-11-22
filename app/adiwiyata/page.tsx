@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { AdiwiyataPublicHub } from '@/components/adiwiyata/public-hub'
 import { getAdiwiyataDocuments } from '@/lib/documents'
 import { getAdiwiyataSiteContent } from '@/lib/adiwiyata-site-content.server'
+import { getSliderHomepageData } from '@/lib/slider/data'
 import './adiwiyata.css'
 
 export const metadata: Metadata = {
@@ -12,6 +13,6 @@ export const metadata: Metadata = {
 export const dynamic = 'force-dynamic'
 
 export default async function AdiwiyataHomePage() {
-  const [documents, content] = await Promise.all([getAdiwiyataDocuments(), getAdiwiyataSiteContent()])
-  return <AdiwiyataPublicHub documents={documents} content={content} />
+  const [documents, content, sliderData] = await Promise.all([getAdiwiyataDocuments(), getAdiwiyataSiteContent(), getSliderHomepageData()])
+  return <AdiwiyataPublicHub documents={documents} content={content} sliderData={sliderData} />
 }

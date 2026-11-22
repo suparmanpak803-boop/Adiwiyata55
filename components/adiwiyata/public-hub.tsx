@@ -6,6 +6,8 @@ import { ArrowDownToLine, ArrowRight, BookOpen, CalendarDays, ChevronDown, Leaf,
 import { AdiwiyataLogoMark } from '@/components/adiwiyata/logo-mark'
 import { GreenActionQuiz } from '@/components/adiwiyata/green-action-quiz'
 import { AboutSection } from '@/components/adiwiyata/about-section'
+import { HomeSlider } from '@/components/adiwiyata/home-slider'
+import { DEFAULT_SLIDER_SETTINGS, type SliderPageData } from '@/lib/slider/data'
 import type { AdiwiyataDocument } from '@/lib/documents'
 import { DEFAULT_ADIWIYATA_SITE_CONTENT, type AdiwiyataSiteContent } from '@/lib/adiwiyata-site-content'
 
@@ -18,7 +20,7 @@ const navigation: { id: Section; label: string }[] = [
 ]
 
 
-export function AdiwiyataPublicHub({ section = 'beranda', documents = [], content = DEFAULT_ADIWIYATA_SITE_CONTENT }: { section?: Section; documents?: PublicDocument[]; content?: AdiwiyataSiteContent }) {
+export function AdiwiyataPublicHub({ section = 'beranda', documents = [], content = DEFAULT_ADIWIYATA_SITE_CONTENT, sliderData = { slides: [], settings: DEFAULT_SLIDER_SETTINGS } }: { section?: Section; documents?: PublicDocument[]; content?: AdiwiyataSiteContent; sliderData?: SliderPageData }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [darkMode, setDarkMode] = useState<boolean | null>(null)
   const [filter, setFilter] = useState('Semua')
@@ -54,7 +56,7 @@ export function AdiwiyataPublicHub({ section = 'beranda', documents = [], conten
     </header>
 
     {section === 'beranda' ? <>
-      <section className="adi-hero"><div className="adi-hero-copy"><span className="adi-eyebrow"><span /> {content.home.eyebrow}</span><h1>{content.home.title}<br /><em>{content.home.emphasis}</em></h1><p>{content.home.description}</p><div className="adi-actions"><Link className="adi-primary" href="/adiwiyata/program">{content.home.primaryAction} <ArrowRight aria-hidden="true" /></Link><Link className="adi-secondary" href="/adiwiyata/dokumen">{content.home.secondaryAction} <ArrowDownToLine aria-hidden="true" /></Link></div><span className="adi-hero-caption">{content.home.caption}</span></div><div className="adi-hero-visual"><div className="adi-photo-note"><span>{content.home.visualLabel}</span><strong>{content.home.visualTitle}</strong><small>{content.home.visualSchool}</small></div><div className="adi-leaf-orbit"><Leaf aria-hidden="true" /></div><div className="adi-visual-stamp">ADIWIYATA<br /><b>55</b></div></div><div className="adi-hero-bottom"><span>AKSI NYATA, TERCATAT BERSAMA</span><a href="#kegiatan">Jelajahi konten <ChevronDown aria-hidden="true" /></a></div></section>
+      <HomeSlider {...sliderData} />
       <section className="adi-section" id="kegiatan"><div className="adi-section-heading"><div><span className="adi-eyebrow">{content.home.activitiesEyebrow}</span><h2>{content.home.activitiesTitle}</h2></div><Link href="/adiwiyata/dokumentasi">{content.home.activitiesLink} <ArrowRight aria-hidden="true" /></Link></div><div className="adi-activity-grid">{content.activities.slice(0, 3).map((item, index) => <article className={`adi-activity-card activity-${index + 1}${item.images?.length ? ' has-photo' : ''}`} key={item.title}>{item.images?.[0] ? <img className="adi-activity-photo" src={item.images[0]} alt={`Dokumentasi ${item.title}`} loading="lazy" /> : null}<span className="adi-card-index">0{index + 1}</span><span className="adi-tag">{item.category}</span><h3>{item.title}</h3><p>{item.description}</p><span className="adi-card-date"><CalendarDays aria-hidden="true" />{item.date}</span>{(() => { const docUrl = documents.find((doc) => doc.title === item.title || (item.title.includes('Drainase') && doc.title.includes('Drainase')))?.url; return docUrl ? <a href={docUrl} target="_blank" rel="noreferrer">Baca dokumen <ArrowRight aria-hidden="true" /></a> : <a href="/adiwiyata/dokumen">Lihat arsip dokumen <ArrowRight aria-hidden="true" /></a> })()}</article>)}</div></section>
       <GreenActionQuiz />
       <section className="adi-profile-strip"><span className="adi-profile-icon"><BookOpen aria-hidden="true" /></span><div><span className="adi-eyebrow">{content.home.profileEyebrow}</span><h2>{content.home.profileTitle}</h2><p>{content.home.profileDescription}</p></div><Link className="adi-round-link" href="/adiwiyata/profil" aria-label="Buka profil Adiwiyata"><ArrowRight aria-hidden="true" /></Link></section>
