@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { ArrowRight, Check, RotateCcw, Sparkles } from 'lucide-react'
+import { ProgressFill } from '@/components/animations'
 
 const questions = [
   {
@@ -72,7 +73,7 @@ export function GreenActionQuiz() {
               <span>{score} POIN</span>
             </div>
             <div className="adi-quiz-progress" role="progressbar" aria-label="Progres kuis" aria-valuemin={0} aria-valuemax={questions.length} aria-valuenow={step + 1}>
-              <span style={{ width: `${((step + 1) / questions.length) * 100}%` }} />
+              <ProgressFill ratio={(step + 1) / questions.length} />
             </div>
             <h3 className="adi-quiz-question">{question.prompt}</h3>
             <div className="adi-quiz-answers">

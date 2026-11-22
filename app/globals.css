@@ -1417,3 +1417,11 @@ button.bento-card { cursor: pointer; }
 .struktur-admin-note { margin: 14px 0 0; color: var(--ink-soft); font-size: 12px; line-height: 1.6; }
 .struktur-admin-empty { margin: 0 0 4px; color: var(--ink-soft); font-size: 12px; }
 .struktur-admin-anggota { margin-top: 10px; }
+
+/* Animasi (Motion + Lenis) — bilah skor / bilah progres.
+ * Isi bilah dianimasikan lewat scaleX (transform), bukan width.
+ * Tanpa JavaScript, bilah tidak dirender (komponen React) sehingga
+ * tidak ada konten yang tersembunyi atau menyesatkan. */
+.anim-bar-track { display: block; height: 5px; margin-top: 6px; overflow: hidden; border-radius: 999px; background: color-mix(in srgb, currentColor 16%, transparent); }
+.anim-bar-fill { display: block; height: 100%; border-radius: inherit; background: var(--green); }
+.anim-bar-track--slim { height: 4px; }

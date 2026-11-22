@@ -1,7 +1,9 @@
 'use client'
 
 import { useState } from 'react'
+import { motion } from 'motion/react'
 import { Gamepad2, Lock, Play, Trophy } from 'lucide-react'
+import { WordReveal, fadeUpChild, staggerParent } from '@/components/animations'
 import { TangkapSampah } from '@/components/game/tangkap-sampah'
 import { KuisAdiwiyata } from '@/components/game/kuis-adiwiyata'
 import '@/components/leaderboard/leaderboard.css'
@@ -28,7 +30,7 @@ export function GameHub({ active, best }: { active: Record<string, boolean>; bes
         <a href="/" className="leaderboard-back">← Kembali ke beranda</a>
         <div className="leaderboard-title-row">
           <span className="leaderboard-mark"><Gamepad2 aria-hidden="true" /></span>
-          <div><span className="eyebrow">ADIWIYATA · BERMAIN SAMBIL BELAJAR</span><h1>Main Game</h1><p>Kumpulkan poin dan naiki leaderboard.</p></div>
+          <div><span className="eyebrow">ADIWIYATA · BERMAIN SAMBIL BELAJAR</span><h1 aria-label="Main Game"><WordReveal text="Main Game" /></h1><p>Kumpulkan poin dan naiki leaderboard.</p></div>
         </div>
         <a className="game-link" href="/leaderboard"><Trophy aria-hidden="true" /> Lihat leaderboard</a>
       </header>
@@ -39,11 +41,11 @@ export function GameHub({ active, best }: { active: Record<string, boolean>; bes
           return <Runner onExit={() => setPlaying(null)} onFinished={(score) => setRecords((current) => ({ ...current, [playing]: Math.max(current[playing] ?? 0, score) }))} />
         })()
       ) : (
-        <section className="game-grid" aria-label="Daftar game">
+        <motion.section className="game-grid" aria-label="Daftar game" variants={staggerParent} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-40px' }}>
           {GAMES.map((game) => {
             const enabled = game.ready && active[game.key] !== false
             return (
-              <article className="game-card" key={game.key}>
+              <motion.article className="game-card" key={game.key} variants={fadeUpChild} whileHover={{ y: -4 }} whileTap={{ scale: 0.98 }}>
                 <h2>{game.title}</h2>
                 <p>{game.description}</p>
                 <div className="game-card-foot">
@@ -52,10 +54,10 @@ export function GameHub({ active, best }: { active: Record<string, boolean>; bes
                     {enabled ? <><Play aria-hidden="true" /> Main</> : <><Lock aria-hidden="true" /> {game.ready ? 'Nonaktif' : 'Terkunci'}</>}
                   </button>
                 </div>
-              </article>
+              </motion.article>
             )
           })}
-        </section>
+        </motion.section>
       )}
     </main>
   )

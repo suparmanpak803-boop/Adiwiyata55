@@ -5,13 +5,16 @@ import {
   labelTahunAjaranBerjalan,
   namaFileArsipExcel,
 } from '@/lib/arsip-excel'
+import { buatArsipBulanan, namaFileArsipBulanan, uraikanBulan } from '@/lib/arsip-bulanan'
 import { labelTahunAjaranValid } from '@/lib/tahun-ajaran'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
 
-// Unduh arsip tahun ajaran sebagai file Excel (.xlsx). Hanya admin.
-// Query `?tahun=2026/2027` (opsional; default tahun ajaran berjalan).
+// Unduh arsip sebagai file Excel (.xlsx). Hanya admin.
+// Query `?bulan=2026-11` → arsip bulanan (diutamakan bila ada);
+// tanpa itu, query `?tahun=2026/2027` → arsip tahunan (opsional;
+// default tahun ajaran berjalan).
 export async function GET(request: Request) {
   try {
     await requirePortalRole(['admin'])
@@ -23,7 +26,35 @@ export async function GET(request: Request) {
       { status: belumLogin ? 401 : 403 },
     )
   }
-  const tahun = new URL(request.url).searchParams.get('tahun') ?? labelTahunAjaranBerjalan()
+  const params = new URL(request.url).searchParams
+  const bulanParam = params.get('bulan')
+  if (bulanParam !== null) {
+    const diurai = uraikanBulan(bulanParam)
+    if (!diurai) {
+      return NextResponse.json(
+        { galat: true, kode: 'BULAN_TIDAK_VALID', pesan: 'Bulan tidak valid (format YYYY-MM, bulan 01–12).' },
+        { status: 400 },
+      )
+    }
+    try {
+      const buffer = await buatArsipBulanan(diurai.tahun, diurai.bulan)
+      return new NextResponse(new Uint8Array(buffer), {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          'Content-Disposition': `attachment; filename="${namaFileArsipBulanan(diurai.tahun, diurai.bulan)}"`,
+          'Cache-Control': 'private, no-store',
+        },
+      })
+    } catch (error) {
+      console.error('[api/admin/arsip-excel]', error)
+      return NextResponse.json(
+        { galat: true, kode: 'ARSIP_GAGAL', pesan: 'Arsip Excel belum dapat dibuat.' },
+        { status: 500 },
+      )
+    }
+  }
+  const tahun = params.get('tahun') ?? labelTahunAjaranBerjalan()
   if (!labelTahunAjaranValid(tahun)) {
     return NextResponse.json(
       { galat: true, kode: 'TAHUN_TIDAK_VALID', pesan: 'Label tahun ajaran tidak valid (format YYYY/YYYY+1).' },

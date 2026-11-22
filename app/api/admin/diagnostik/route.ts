@@ -5,7 +5,7 @@ import { allowRequest } from '@/lib/rate-limit'
 import { repairDatabase } from '@/lib/db-repair'
 import { seedGameDefaults } from '@/lib/game-content-seed'
 import { seedKegiatanMedia } from '@/lib/kegiatan-media-seed'
-import { jalankanPergantianTahunAjaran, pratinjauPergantianTahunAjaran } from '@/lib/tahun-ajaran'
+import { jalankanPergantianTahunAjaran, pratinjauPergantianTahunAjaran, pulihkanCadanganXI } from '@/lib/tahun-ajaran'
 import { readJsonBody } from '@/lib/request-body'
 
 export const dynamic = 'force-dynamic'
@@ -54,7 +54,7 @@ export async function POST(request: Request) {
     const user = await requirePortalRole(['admin'])
     // B-04: batas laju aksi diagnostik berat (10/menit per admin).
     if (!(await allowRequest(`admin-diagnostik:${user.id}`, 10, 60))) return respond('Terlalu banyak permintaan. Coba lagi sebentar.', 429)
-    const parsed = await readJsonBody<{ aksi?: unknown; paksa?: unknown }>(request)
+    const parsed = await readJsonBody<{ aksi?: unknown; paksa?: unknown; tahunAjaran?: unknown }>(request)
     if (!parsed.ok) return respond(parsed.reason === 'too_large' ? 'Data terlalu besar.' : 'Data tidak valid.', parsed.reason === 'too_large' ? 413 : 400)
     const body = parsed.data
     if (body?.aksi === 'pratinjau_tahun_ajaran') {
@@ -63,6 +63,11 @@ export async function POST(request: Request) {
     }
     if (body?.aksi === 'jalankan_tahun_ajaran') {
       const hasil = await jalankanPergantianTahunAjaran({ paksa: body?.paksa === true })
+      return respond(hasil)
+    }
+    if (body?.aksi === 'pulihkan_cadangan_tahun_ajaran') {
+      const tahunAjaran = typeof body?.tahunAjaran === 'string' ? body.tahunAjaran : undefined
+      const hasil = await pulihkanCadanganXI(tahunAjaran ? { tahunAjaran } : {})
       return respond(hasil)
     }
     if (body?.aksi === 'perbaiki_tabel') {

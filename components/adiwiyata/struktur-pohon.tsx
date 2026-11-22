@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Petugas, StrukturPetugas } from '@/lib/struktur-petugas-data'
+import { CountUp } from '@/components/animations'
 import {
   CariIcon,
   ChevronBawahIcon,
@@ -111,15 +112,15 @@ export function StrukturPohon({ data }: { data: StrukturPetugas }) {
         <dl className="pohon-stat">
           <div>
             <dt>Total petugas</dt>
-            <dd>{totalPetugas}</dd>
+            <dd><CountUp value={totalPetugas} /></dd>
           </div>
           <div>
             <dt>Tim</dt>
-            <dd>{data.tim.length}</dd>
+            <dd><CountUp value={data.tim.length} /></dd>
           </div>
           <div>
             <dt>Pengurus inti</dt>
-            <dd>{data.pengurusInti.length}</dd>
+            <dd><CountUp value={data.pengurusInti.length} /></dd>
           </div>
         </dl>
       </div>
@@ -274,6 +275,7 @@ export function StrukturPohon({ data }: { data: StrukturPetugas }) {
             role="dialog"
             aria-modal="true"
             aria-labelledby="pohon-dialog-nama"
+            data-lenis-prevent
             onClick={(event) => event.stopPropagation()}
           >
             <button ref={tombolTutupRef} type="button" className="pohon-dialog-tutup" aria-label="Tutup kartu petugas" onClick={() => setDialogOrang(null)}>

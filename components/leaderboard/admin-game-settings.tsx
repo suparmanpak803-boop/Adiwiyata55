@@ -129,7 +129,7 @@ export function AdminGameSettings({ initialData }: { initialData: AdminData }) {
         <div className="admin-save-row"><p role="status">{message}</p><button className="admin-save-button" type="submit" disabled={busy}><Save aria-hidden="true" /> {busy ? 'Menyimpan…' : 'Simpan pengaturan'}</button></div>
       </form>
       <section className="admin-setting-card admin-reset-card"><div><span className="eyebrow">TINDAKAN MANUAL</span><h2>Mulai periode baru sekarang</h2><p>Leaderboard aktif akan diarsipkan untuk pengguna, kelas, dan game. Data pada periode baru dimulai dari nol.</p></div><div className="admin-reset-controls"><label>Ketik RESET untuk mengonfirmasi<input value={confirmation} onChange={(event) => setConfirmation(event.target.value)} autoComplete="off" /></label><button type="button" onClick={() => void resetNow()} disabled={busy || confirmation !== 'RESET'}>Reset leaderboard</button></div></section>
-      <div className="admin-class-info"><h2>Jumlah siswa per kelas</h2><p>Leaderboard per-siswa memerlukan jumlah siswa yang dikelola pada data kelas.</p><ul>{initialData.classes.map((item) => <li key={String(item.name)}>{String(item.name)} <span>{item.student_count ? `${item.student_count} siswa` : 'Belum diatur'}</span></li>)}</ul></div>
+      <div className="admin-class-info"><h2>Jumlah siswa per kelas</h2><p>Leaderboard per-siswa memerlukan jumlah siswa yang dikelola pada data kelas.</p><ul data-lenis-prevent>{initialData.classes.map((item) => <li key={String(item.name)}>{String(item.name)} <span>{item.student_count ? `${item.student_count} siswa` : 'Belum diatur'}</span></li>)}</ul></div>
     </main>
   )
 }

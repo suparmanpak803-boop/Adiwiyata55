@@ -1,6 +1,8 @@
 'use client'
 
+import { motion } from 'motion/react'
 import { Activity, ArrowDownUp, BarChart3, BookOpenCheck, Database, GraduationCap, Leaf, Recycle, ShieldCheck, UsersRound } from 'lucide-react'
+import { CountUp, fadeUpChild, staggerParent } from '@/components/animations'
 
 const wasteCategories = ['Organik', 'Anorganik', 'Residu', 'B3', 'Kertas']
 
@@ -19,8 +21,8 @@ const features = [
 export function AboutSection() {
   return (
     <section className="adi-about" aria-label="Tentang Adiwiyata 55">
-      <div className="adi-about-grid">
-        <article className="adi-about-card adi-about-story">
+      <motion.div className="adi-about-grid" variants={staggerParent} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-40px' }}>
+        <motion.article className="adi-about-card adi-about-story" variants={fadeUpChild} whileHover={{ y: -4 }}>
           <span className="adi-about-kicker"><Leaf aria-hidden="true" /> PLATFORM DIGITAL · SMAN 55 JAKARTA</span>
           <h2>Data yang lebih jernih untuk sekolah yang lebih hijau.</h2>
           <p>Adiwiyata 55 adalah platform digital berbasis web untuk sistem monitoring program Adiwiyata di lingkungan SMAN 55 Jakarta.</p>
@@ -30,27 +32,27 @@ export function AboutSection() {
             <ArrowDownUp aria-hidden="true" />
             <span><BarChart3 aria-hidden="true" /> Monitoring digital</span>
           </div>
-        </article>
+        </motion.article>
 
-        <article className="adi-about-card adi-about-impact">
+        <motion.article className="adi-about-card adi-about-impact" variants={fadeUpChild} whileHover={{ y: -4 }}>
           <span className="adi-about-kicker"><BarChart3 aria-hidden="true" /> TUJUAN PENELITIAN</span>
-          <strong className="adi-about-impact-number">5</strong>
+          <strong className="adi-about-impact-number"><CountUp value={5} /></strong>
           <h2>Kategori sampah terpilah</h2>
           <p>Mengukur efektivitas kebijakan membawa tempat makan dan tumbler dari rumah terhadap penurunan volume sampah.</p>
           <div className="adi-about-tags" aria-label="Lima kategori sampah">
             {wasteCategories.map((category) => <span key={category}>{category}</span>)}
           </div>
-        </article>
+        </motion.article>
 
-        <article className="adi-about-card adi-about-awareness">
+        <motion.article className="adi-about-card adi-about-awareness" variants={fadeUpChild} whileHover={{ y: -4 }}>
           <span className="adi-about-icon"><ShieldCheck aria-hidden="true" /></span>
           <span className="adi-about-kicker">DAMPAK YANG DIHARAPKAN</span>
           <h2>Kebiasaan baik, tumbuh bersama.</h2>
           <p>Meningkatkan kesadaran, kedisiplinan, dan literasi lingkungan seluruh warga sekolah SMAN 55 Jakarta.</p>
           <div className="adi-about-pillars"><span>Kesadaran</span><span>Kedisiplinan</span><span>Literasi</span></div>
-        </article>
+        </motion.article>
 
-        <article className="adi-about-card adi-about-team">
+        <motion.article className="adi-about-card adi-about-team" variants={fadeUpChild} whileHover={{ y: -4 }}>
           <div className="adi-about-card-heading">
             <span className="adi-about-icon"><UsersRound aria-hidden="true" /></span>
             <div><span className="adi-about-kicker">KELOMPOK 49 · KELAS XII-E</span><h2>Tim pengembang</h2></div>
@@ -65,19 +67,19 @@ export function AboutSection() {
               </div>
             ))}
           </div>
-        </article>
+        </motion.article>
 
         {features.map(({ icon: Icon, title, description }, index) => (
-          <article className={`adi-about-card adi-about-feature feature-${index + 1}`} key={title}>
+          <motion.article className={`adi-about-card adi-about-feature feature-${index + 1}`} key={title} variants={fadeUpChild} whileHover={{ y: -4 }}>
             <span className="adi-about-icon"><Icon aria-hidden="true" /></span>
             <span className="adi-about-kicker">KEUNGGULAN 0{index + 1}</span>
             <h2>{title}</h2>
             <p>{description}</p>
-          </article>
+          </motion.article>
         ))}
 
         <div className="adi-about-footnote"><Recycle aria-hidden="true" /><p>Memilah hari ini, memahami dampaknya untuk esok.</p></div>
-      </div>
+      </motion.div>
     </section>
   )
 }

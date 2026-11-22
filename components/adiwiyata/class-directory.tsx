@@ -2,6 +2,8 @@
 
 import { useMemo, useState, useTransition, type FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
+import { motion } from 'motion/react'
+import { CountUp, fadeUpChild, staggerParent } from '@/components/animations'
 import { GraduationCap, Leaf, Search, Users } from 'lucide-react'
 import { saveClass, type getDepositPageData } from '@/app/actions/deposits'
 
@@ -40,12 +42,12 @@ export function ClassDirectory({ classes, isAdmin }: { classes: Classes; isAdmin
 
   return (
     <section className="directory-page" aria-labelledby="directory-title">
-      <div className="directory-heading"><div><span className="eyebrow">WARGA SEKOLAH</span><h1 id="directory-title">Daftar Kelas &amp; Petugas</h1><p>Admin dapat melengkapi jumlah siswa, wali kelas, dan petugas Adiwiyata untuk setiap kelas di portal.</p></div><span className="directory-total"><strong>{classData.length}</strong> kelas</span></div>
+      <div className="directory-heading"><div><span className="eyebrow">WARGA SEKOLAH</span><h1 id="directory-title">Daftar Kelas &amp; Petugas</h1><p>Admin dapat melengkapi jumlah siswa, wali kelas, dan petugas Adiwiyata untuk setiap kelas di portal.</p></div><span className="directory-total"><strong><CountUp value={classData.length} /></strong> kelas</span></div>
       <label className="search-field"><Search aria-hidden="true" /><span className="sr-only">Cari kelas</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Cari kelas, mis. XI-C" /></label>
       {error && <p className="auth-error" role="alert">{error}</p>}
       {message && <p className="auth-success" role="status">{message}</p>}
-      <div className="class-grid">
-        {filteredClasses.map((item) => <article className="class-card" key={item.name}>
+      <motion.div className="class-grid" variants={staggerParent} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-40px' }}>
+        {filteredClasses.map((item) => <motion.article className="class-card" key={item.name} variants={fadeUpChild} whileHover={{ y: -4 }}>
           <div className="class-card-top"><span className="class-grade">TINGKAT {item.grade}</span><span className="class-status">{item.student_count ? 'Data terisi' : 'Perlu dilengkapi'}</span></div>
           <h2>{item.name}</h2>
           <div className="class-details"><span><GraduationCap aria-hidden="true" />Jumlah siswa</span><strong>{item.student_count ?? 'Belum diisi'}</strong></div>
@@ -57,8 +59,8 @@ export function ClassDirectory({ classes, isAdmin }: { classes: Classes; isAdmin
             <label className="deposit-field"><span>Petugas Adiwiyata</span><input name="officerName" maxLength={100} defaultValue={item.officer_name} /></label>
             <button className="text-button" type="submit" disabled={pending}>{pending ? 'Menyimpan…' : 'Simpan data kelas'}</button>
           </form>}
-        </article>)}
-      </div>
+        </motion.article>)}
+      </motion.div>
       {filteredClasses.length === 0 && <div className="empty-search"><Search aria-hidden="true" /><strong>Kelas tidak ditemukan</strong><span>Coba gunakan kata kunci lain.</span></div>}
     </section>
   )

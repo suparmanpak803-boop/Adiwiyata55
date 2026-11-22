@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useRef, useState, type ReactNode } from 'react'
+import { CountUp } from '@/components/animations'
 import { readJsonResponse } from '@/lib/api-client'
 
 export type SessionResult = { skor: number; poin: number; rekorBaru: boolean; peringkat: number | null; ditinjau: boolean }
@@ -75,7 +76,7 @@ export function SessionShell({ session, onExit, title = 'Selesai', children }: {
   if (phase === 'selesai' && result) return (
     <section className="game-stage" aria-live="polite">
       <h2>{title}</h2>
-      <p className="game-big">{result.skor}</p>
+      <p className="game-big"><CountUp value={result.skor} /></p>
       <p>{result.ditinjau ? 'Skor ini sedang ditinjau dan belum menambah poin.' : `+${result.poin} poin${result.rekorBaru ? ' · Rekor baru!' : ''}${result.peringkat ? ` · Peringkat #${result.peringkat}` : ''}`}</p>
       <div className="game-actions"><button className="game-play" onClick={() => void start()}>Main lagi</button><a className="game-ghost" href="/leaderboard">Leaderboard</a><button className="game-ghost" onClick={onExit}>Menu game</button></div>
     </section>

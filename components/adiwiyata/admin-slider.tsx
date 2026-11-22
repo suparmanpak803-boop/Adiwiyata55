@@ -314,7 +314,7 @@ export function AdminSlider({ data }: { data: SliderPageData }) {
       />}
 
       {preview && <div className="slider-modal-scrim" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setPreview(false) }}>
-        <section className="slider-preview-dialog" role="dialog" aria-modal="true" aria-labelledby="slider-preview-title">
+        <section className="slider-preview-dialog" data-lenis-prevent role="dialog" aria-modal="true" aria-labelledby="slider-preview-title">
           <div className="slider-preview-heading"><div><span className="eyebrow">PRATINJAU</span><h2 id="slider-preview-title">Tampilan Beranda</h2></div><button className="slider-icon-button" type="button" aria-label="Tutup pratinjau" onClick={() => setPreview(false)}><X aria-hidden="true" /></button></div>
           <HomeSlider slides={previewSlides} settings={settingsDraft} preview />
           <p>Pratinjau menggunakan perubahan formulir yang belum disimpan.</p>
@@ -379,7 +379,7 @@ function SlideEditor({ draft, setDraft, file, setFile, imagePreview, busy, onClo
   }
 
   return <div className="slider-modal-scrim" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose() }}>
-    <section className="slider-editor-dialog" role="dialog" aria-modal="true" aria-labelledby="slider-editor-title">
+    <section className="slider-editor-dialog" data-lenis-prevent role="dialog" aria-modal="true" aria-labelledby="slider-editor-title">
       <div className="slider-editor-heading"><div><span className="eyebrow">KONTEN VISUAL</span><h2 id="slider-editor-title">{draft.id ? 'Edit Slide' : 'Tambah Slide'}</h2></div><button className="slider-icon-button" type="button" aria-label="Tutup formulir" onClick={onClose}><X aria-hidden="true" /></button></div>
       <form onSubmit={onSubmit}>
         <label className={`slider-upload-zone${dragOver ? ' is-dragover' : ''}`} onDragOver={(event) => { event.preventDefault(); setDragOver(true) }} onDragLeave={() => setDragOver(false)} onDrop={(event) => { event.preventDefault(); setDragOver(false); void acceptFile(event.dataTransfer.files[0]) }}>

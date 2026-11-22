@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { motion } from 'motion/react'
+import { CountUp, WordReveal, fadeUpChild, staggerParent } from '@/components/animations'
 import {
   ArrowDownRight,
   ArrowRight,
@@ -92,15 +94,15 @@ function SectionContent({ section }: { section: (typeof EDU_DEFAULTS.sections)[n
     return (
       <div className="education-copy">
         <p>{section.introduction}</p>
-        <div className="pillar-grid">
+        <motion.div className="pillar-grid" variants={staggerParent} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-40px' }}>
           {section.pillars.map((pillar, index) => (
-            <article className="pillar-card" key={pillar.title}>
+            <motion.article className="pillar-card" key={pillar.title} variants={fadeUpChild} whileHover={{ y: -4 }}>
               <span className="number-chip">0{index + 1}</span>
               <h3>{pillar.title}</h3>
               <p>{pillar.text}</p>
-            </article>
+            </motion.article>
           ))}
-        </div>
+        </motion.div>
       </div>
     )
   }
@@ -114,9 +116,9 @@ function SectionContent({ section }: { section: (typeof EDU_DEFAULTS.sections)[n
           <span className="count-pill">{KADER_LIST.length} kader</span>
         </div>
         <p>Untuk menjalankan program harian secara terfokus, SMAN 55 Jakarta membentuk {KADER_LIST.length} kader:</p>
-        <ol className="kader-grid">
-          {KADER_LIST.map((kader, index) => <li key={kader}><span>{String(index + 1).padStart(2, '0')}</span>{kader}</li>)}
-        </ol>
+        <motion.ol className="kader-grid" variants={staggerParent} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-40px' }}>
+          {KADER_LIST.map((kader, index) => <motion.li key={kader} variants={fadeUpChild}><span>{String(index + 1).padStart(2, '0')}</span>{kader}</motion.li>)}
+        </motion.ol>
       </div>
     )
   }
@@ -124,9 +126,9 @@ function SectionContent({ section }: { section: (typeof EDU_DEFAULTS.sections)[n
   return (
     <div className="education-copy">
       <div className="joss-callout"><span className="joss-mark">JOSS</span><div><h3>Jaga & Olah Sampah Sekolah</h3><p>{section.joss}</p></div></div>
-      <div className="impact-grid">
-        {section.impact.map((item) => <article className="impact-card" key={item.value}><strong>{item.value}<small>{item.unit}</small></strong><p>{item.description}</p></article>)}
-      </div>
+      <motion.div className="impact-grid" variants={staggerParent} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-40px' }}>
+        {section.impact.map((item) => <motion.article className="impact-card" key={item.value} variants={fadeUpChild} whileHover={{ y: -4 }}><strong><CountUp value={Number(item.value)} /><small>{item.unit}</small></strong><p>{item.description}</p></motion.article>)}
+      </motion.div>
       <div className="zero-rule"><ShieldCheck aria-hidden="true" /><div><span className="eyebrow">KEBIASAAN BAIK</span><h3>Aturan Zero Waste Harian</h3><p>{section.dailyRule}</p></div></div>
       <div className="shortcut-row"><span>Jelajahi portal</span><span className="shortcut-note"><BarChart3 aria-hidden="true" /> Monitoring tersedia setelah autentikasi aktif</span></div>
     </div>
@@ -149,24 +151,24 @@ function EducationSections() {
   return (
     <section className="education-section" id="edukasi" aria-labelledby="education-title">
       <div className="section-intro">
-        <div><span className="eyebrow">BELAJAR & BERGERAK</span><h2 id="education-title">Kenali gerakan Adiwiyata</h2></div>
+        <div><span className="eyebrow">BELAJAR & BERGERAK</span><h2 id="education-title" aria-label="Kenali gerakan Adiwiyata"><WordReveal text="Kenali gerakan Adiwiyata" /></h2></div>
         <p>Memahami lingkungan adalah langkah pertama untuk merawatnya bersama.</p>
       </div>
-      <div className="education-list">
+      <motion.div className="education-list" variants={staggerParent} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-40px' }}>
         {EDU_DEFAULTS.sections.map((section, index) => {
           const isOpen = openSections.includes(section.id)
           return (
-            <article className={`education-card education-card-${index + 1}${isOpen ? ' is-open' : ''}`} key={section.id}>
+            <motion.article className={`education-card education-card-${index + 1}${isOpen ? ' is-open' : ''}`} key={section.id} variants={fadeUpChild}>
               <button className="education-trigger" type="button" aria-expanded={isOpen} aria-controls={`education-content-${section.id}`} onClick={() => toggle(section.id)}>
                 <span className="education-icon" aria-hidden="true">{section.icon}</span>
                 <span className="education-heading"><small>0{index + 1} / 04</small><strong>{section.title}</strong></span>
                 <ChevronDown className="accordion-chevron" aria-hidden="true" />
               </button>
               {isOpen && <div className="education-content" id={`education-content-${section.id}`}><SectionContent section={section} /></div>}
-            </article>
+            </motion.article>
           )
         })}
-      </div>
+      </motion.div>
     </section>
   )
 }
@@ -175,7 +177,7 @@ function EducationSections() {
 // ("Fitur monitoring belum dibuka") — bukan panduan. Dialog ini berisi
 // panduan penggunaan portal yang sebenarnya.
 function GuideDialog({ onClose, role }: { onClose: () => void; role: 'admin' | 'petugas' | 'pengunjung' }) {
-  return <div className="notice-backdrop" role="presentation" onClick={onClose}><section className="notice-dialog" role="dialog" aria-modal="true" aria-labelledby="guide-title" onClick={(event) => event.stopPropagation()}><button className="icon-button notice-close" aria-label="Tutup panduan" onClick={onClose}><X /></button><span className="notice-icon"><CircleHelp aria-hidden="true" /></span><span className="eyebrow">PANDUAN</span><h2 id="guide-title">Cara memakai portal</h2><div className="guide-body">
+  return <div className="notice-backdrop" role="presentation" onClick={onClose}><section className="notice-dialog" role="dialog" aria-modal="true" aria-labelledby="guide-title" data-lenis-prevent onClick={(event) => event.stopPropagation()}><button className="icon-button notice-close" aria-label="Tutup panduan" onClick={onClose}><X /></button><span className="notice-icon"><CircleHelp aria-hidden="true" /></span><span className="eyebrow">PANDUAN</span><h2 id="guide-title">Cara memakai portal</h2><div className="guide-body">
     <h3>Masuk</h3>
     <p>Ketuk &ldquo;Lanjutkan dengan Google&rdquo;, lalu pilih akun Gmail kamu. Menu yang tampil menyesuaikan peranmu.</p>
     <h3>Menu utama</h3>
@@ -334,17 +336,17 @@ export function AdiwiyataPortal({ user, depositData, sheetsConfig, educationVide
         </div>
       </header>
 
-      {drawerOpen && <div className="drawer-scrim" onClick={() => setDrawerOpen(false)}><aside className="nav-drawer" aria-label="Menu navigasi" onClick={(event) => event.stopPropagation()}><div className="drawer-header"><span className="eyebrow">MENU UTAMA</span><button className="icon-button" aria-label="Tutup menu" onClick={() => setDrawerOpen(false)}><X /></button></div><nav><a className="drawer-link" href="/adiwiyata"><Leaf aria-hidden="true" /><span>INFORMASI ADIWIYATA</span><ArrowRight className="drawer-arrow" aria-hidden="true" /></a><a className="drawer-link" href="/adiwiyata/tentang"><BookOpen aria-hidden="true" /><span>TENTANG KAMI</span><ArrowRight className="drawer-arrow" aria-hidden="true" /></a>{visibleNavigation(user.role).map((item) => { const Icon = item.icon; return <button key={item.id} className={view === item.id ? 'drawer-link active' : 'drawer-link'} onClick={() => selectView(item.id)}><Icon aria-hidden="true" /><span>{item.label}</span></button> })}<button className="drawer-link" onClick={() => { setDrawerOpen(false); setGuideOpen(true) }}><CircleHelp aria-hidden="true" /><span>Panduan</span><ArrowRight className="drawer-arrow" aria-hidden="true" /></button></nav><div className="drawer-footer"><span className="brand-emblem"><AdiwiyataLogoMark /></span><span>Peduli lingkungan,<br />mulai dari sekolah.</span></div></aside></div>}
+      {drawerOpen && <div className="drawer-scrim" onClick={() => setDrawerOpen(false)}><aside className="nav-drawer" aria-label="Menu navigasi" data-lenis-prevent onClick={(event) => event.stopPropagation()}><div className="drawer-header"><span className="eyebrow">MENU UTAMA</span><button className="icon-button" aria-label="Tutup menu" onClick={() => setDrawerOpen(false)}><X /></button></div><nav><a className="drawer-link" href="/adiwiyata"><Leaf aria-hidden="true" /><span>INFORMASI ADIWIYATA</span><ArrowRight className="drawer-arrow" aria-hidden="true" /></a><a className="drawer-link" href="/adiwiyata/tentang"><BookOpen aria-hidden="true" /><span>TENTANG KAMI</span><ArrowRight className="drawer-arrow" aria-hidden="true" /></a>{visibleNavigation(user.role).map((item) => { const Icon = item.icon; return <button key={item.id} className={view === item.id ? 'drawer-link active' : 'drawer-link'} onClick={() => selectView(item.id)}><Icon aria-hidden="true" /><span>{item.label}</span></button> })}<button className="drawer-link" onClick={() => { setDrawerOpen(false); setGuideOpen(true) }}><CircleHelp aria-hidden="true" /><span>Panduan</span><ArrowRight className="drawer-arrow" aria-hidden="true" /></button></nav><div className="drawer-footer"><span className="brand-emblem"><AdiwiyataLogoMark /></span><span>Peduli lingkungan,<br />mulai dari sekolah.</span></div></aside></div>}
 
       {view === 'pengaturan' ? <SheetsSettingsPanel initialUrl={sheetsConfig?.url ?? ''} initiallyConfigured={sheetsConfig?.configured ?? false} /> : view === 'video' ? <EducationVideoSettingsPanel data={educationVideoData ?? { videos: [], error: null }} /> : view === 'monitoring' ? <MonitoringDashboard summary={depositData.sheetsSummary} initialError={depositData.sheetsError} classes={depositData.classes} role={user.role} /> : view === 'setoran' ? <DepositWorkspace data={depositData} /> : view === 'kelas' ? <ClassDirectory classes={depositData.classes} isAdmin={user.role === 'admin'} /> : view === 'syaratpetugas' ? <SyaratPetugasView /> : <>
         <section className="hero-section">
-          <div className="hero-copy"><span className="hero-kicker"><span className="pulse-dot" /> MASALAH DI SEKOLAH KITA</span><h1>Sampah menumpuk.<br /><em>Saatnya memilah.</em></h1><p>{totalKg > 0 ? <>Sekolah kita sudah memilah <strong>{formatKg(pilahKg)} kg</strong> sampah — tapi <strong>{formatKg(residualKg)} kg</strong> masih berakhir sebagai residu. Bersama warga SMAN 55 Jakarta, rawat lingkungan mulai hari ini. Bumi ini kita pinjam dari generasi mendatang.</> : <>Sekolah kita memilah sampah setiap hari — tapi sebagian masih berakhir sebagai residu. Bersama warga SMAN 55 Jakarta, rawat lingkungan mulai hari ini. Bumi ini kita pinjam dari generasi mendatang.</>}</p><div className="hero-actions"><button className="primary-button" onClick={() => document.getElementById('edukasi')?.scrollIntoView({ behavior: 'smooth' })}>Jelajahi Adiwiyata <ArrowDownRight aria-hidden="true" /></button><button className="text-button" onClick={() => selectView('edukasi')}>Video edukasi <ArrowRight aria-hidden="true" /></button></div><div className="hero-caption"><span className="hero-caption-line" /> <span>MASALAH · AKSI · BUKTI</span></div></div>
+          <div className="hero-copy"><span className="hero-kicker"><span className="pulse-dot" /> MASALAH DI SEKOLAH KITA</span><h1 aria-label="Sampah menumpuk. Saatnya memilah."><WordReveal text="Sampah menumpuk." /><br /><em><WordReveal text="Saatnya memilah." /></em></h1><p>{totalKg > 0 ? <>Sekolah kita sudah memilah <strong>{formatKg(pilahKg)} kg</strong> sampah — tapi <strong>{formatKg(residualKg)} kg</strong> masih berakhir sebagai residu. Bersama warga SMAN 55 Jakarta, rawat lingkungan mulai hari ini. Bumi ini kita pinjam dari generasi mendatang.</> : <>Sekolah kita memilah sampah setiap hari — tapi sebagian masih berakhir sebagai residu. Bersama warga SMAN 55 Jakarta, rawat lingkungan mulai hari ini. Bumi ini kita pinjam dari generasi mendatang.</>}</p><div className="hero-actions"><button className="primary-button" onClick={() => document.getElementById('edukasi')?.scrollIntoView({ behavior: 'smooth' })}>Jelajahi Adiwiyata <ArrowDownRight aria-hidden="true" /></button><button className="text-button" onClick={() => selectView('edukasi')}>Video edukasi <ArrowRight aria-hidden="true" /></button></div><div className="hero-caption"><span className="hero-caption-line" /> <span>MASALAH · AKSI · BUKTI</span></div></div>
           <div className="hero-art"><HomeSlider slides={sliderData.slides} settings={sliderData.settings} /></div>
           <div className="hero-bottom"><span>01 — MASALAH</span><span>GULIR UNTUK MENJELAJAHI <ChevronDown aria-hidden="true" /></span></div>
         </section>
         <EducationSections />
-        <section className="portal-bento" aria-labelledby="portal-title"><div className="bento-heading"><div><span className="eyebrow">JAWABAN KAMI</span><h2 id="portal-title">Gerakan yang bisa kita mulai</h2></div><p>Jawaban kami atas masalah sampah: gerakan yang bisa diikuti, bukti yang bisa dilihat, dan orang-orang di baliknya.</p></div><div className="bento-grid"><button className="bento-card bento-class" onClick={() => selectView('kelas')}><span className="bento-icon"><Users aria-hidden="true" /></span><span className="eyebrow">ORANG-ORANGNYA</span><strong>Kenali kelas<br />dan kadernya.</strong><span className="bento-link">Buka daftar kelas <ArrowRight aria-hidden="true" /></span><span className="bento-decoration">{depositData.classes.length}</span></button><button className="bento-card bento-monitor" onClick={() => selectView('monitoring')}><span className="bento-icon"><BarChart3 aria-hidden="true" /></span><span className="eyebrow">BUKTI NYATA</span><strong>{totalKg > 0 ? <>{pilahPct}% sampah<br />sudah terpilah.</> : <>Pantau aksi<br />bersama.</>}</strong><span className="bento-link">Lihat dashboard <ArrowRight aria-hidden="true" /></span><span className="monitor-bars"><i /><i /><i /><i /><i /><i /><i /></span></button><article className="bento-card bento-note"><span className="eyebrow">KOMITMEN KITA</span><strong>Lebih bijak<br />memilah.</strong><p>Kenali jenis sampah, kurangi yang sekali pakai, dan bawa wadah makan dari rumah.</p><Leaf className="bento-leaf" aria-hidden="true" /></article></div></section>
-        <section className="story-cta" aria-labelledby="story-cta-title"><span className="eyebrow">AJAKAN</span><h2 id="story-cta-title">Bumi ini kita pinjam dari generasi mendatang.</h2><p>Gerakan ini butuh kamu. Mainkan gamenya, kirim laporanmu, dan ajak kelasmu memilah lebih baik minggu ini.</p><div className="hero-actions"><button className="primary-button" onClick={() => selectView('main')}>Main Game <ArrowRight aria-hidden="true" /></button><button className="text-button" onClick={() => selectView('laporan')}>Kirim Laporan <ArrowRight aria-hidden="true" /></button></div></section>
+        <section className="portal-bento" aria-labelledby="portal-title"><div className="bento-heading"><div><span className="eyebrow">JAWABAN KAMI</span><h2 id="portal-title" aria-label="Gerakan yang bisa kita mulai"><WordReveal text="Gerakan yang bisa kita mulai" /></h2></div><p>Jawaban kami atas masalah sampah: gerakan yang bisa diikuti, bukti yang bisa dilihat, dan orang-orang di baliknya.</p></div><motion.div className="bento-grid" variants={staggerParent} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-40px' }}><motion.button className="bento-card bento-class" variants={fadeUpChild} whileHover={{ y: -4 }} whileTap={{ scale: 0.98 }} onClick={() => selectView('kelas')}><span className="bento-icon"><Users aria-hidden="true" /></span><span className="eyebrow">ORANG-ORANGNYA</span><strong>Kenali kelas<br />dan kadernya.</strong><span className="bento-link">Buka daftar kelas <ArrowRight aria-hidden="true" /></span><span className="bento-decoration"><CountUp value={depositData.classes.length} /></span></motion.button><motion.button className="bento-card bento-monitor" variants={fadeUpChild} whileHover={{ y: -4 }} whileTap={{ scale: 0.98 }} onClick={() => selectView('monitoring')}><span className="bento-icon"><BarChart3 aria-hidden="true" /></span><span className="eyebrow">BUKTI NYATA</span><strong>{totalKg > 0 ? <>{pilahPct}% sampah<br />sudah terpilah.</> : <>Pantau aksi<br />bersama.</>}</strong><span className="bento-link">Lihat dashboard <ArrowRight aria-hidden="true" /></span><span className="monitor-bars"><i /><i /><i /><i /><i /><i /><i /></span></motion.button><motion.article className="bento-card bento-note" variants={fadeUpChild} whileHover={{ y: -4 }}><span className="eyebrow">KOMITMEN KITA</span><strong>Lebih bijak<br />memilah.</strong><p>Kenali jenis sampah, kurangi yang sekali pakai, dan bawa wadah makan dari rumah.</p><Leaf className="bento-leaf" aria-hidden="true" /></motion.article></motion.div></section>
+        <section className="story-cta" aria-labelledby="story-cta-title"><span className="eyebrow">AJAKAN</span><h2 id="story-cta-title" aria-label="Bumi ini kita pinjam dari generasi mendatang."><WordReveal text="Bumi ini kita pinjam dari generasi mendatang." /></h2><p>Gerakan ini butuh kamu. Mainkan gamenya, kirim laporanmu, dan ajak kelasmu memilah lebih baik minggu ini.</p><div className="hero-actions"><button className="primary-button" onClick={() => selectView('main')}>Main Game <ArrowRight aria-hidden="true" /></button><button className="text-button" onClick={() => selectView('laporan')}>Kirim Laporan <ArrowRight aria-hidden="true" /></button></div></section>
       </>}
 
       <footer className="site-footer"><div className="footer-brand"><span className="brand-emblem"><AdiwiyataLogoMark /></span><span><strong>SMAN 55 Jakarta</strong><small>PROGRAM ADIWIYATA</small></span></div><p>Merawat lingkungan dimulai dari kebiasaan bersama.</p><span className="footer-mark">ADIWIYATA <span>·</span> JAKARTA</span></footer>

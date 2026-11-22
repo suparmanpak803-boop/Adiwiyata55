@@ -93,6 +93,14 @@ function adalahRingkasan(nilai: unknown): nilai is RingkasanRollover {
   return Array.isArray(r.dipromosikan) && Array.isArray(r.diarsipkan)
 }
 
+// Keterangan baris arsip berdasarkan tingkat kelas: XII = lulus,
+// X = diarsipkan karena rolling jurusan (siswa diacak ulang ke XI).
+function keteranganArsip(nama: string): string {
+  if (/^XII-/.test(nama)) return 'Lulus — data dan riwayat tetap tersimpan'
+  if (/^X-/.test(nama)) return 'Diarsipkan — siswa diacak ulang ke kelas XI (jurusan/rolling)'
+  return 'Diarsipkan — data dan riwayat tetap tersimpan'
+}
+
 function barisDariRingkasan(ringkasan: RingkasanRollover): BarisDaftarKelas[] {
   const baris: BarisDaftarKelas[] = []
   for (const item of ringkasan.dipromosikan ?? []) {
@@ -101,11 +109,11 @@ function barisDariRingkasan(ringkasan: RingkasanRollover): BarisDaftarKelas[] {
   }
   for (const nama of ringkasan.diarsipkan ?? []) {
     if (typeof nama !== 'string') continue
-    baris.push({ kelas: nama, status: 'Diarsipkan', keterangan: 'Lulus — data dan riwayat tetap tersimpan' })
+    baris.push({ kelas: nama, status: 'Diarsipkan', keterangan: keteranganArsip(nama) })
   }
   for (const item of ringkasan.arsipDipindah ?? []) {
     if (typeof item?.dari !== 'string' || typeof item?.ke !== 'string') continue
-    baris.push({ kelas: item.ke, status: 'Diarsipkan', keterangan: `Arsip lama (sebelumnya ${item.dari})` })
+    baris.push({ kelas: item.ke, status: 'Diarsipkan', keterangan: `Dipindah namanya (sebelumnya ${item.dari})` })
   }
   for (const nama of ringkasan.dilewati ?? []) {
     if (typeof nama !== 'string') continue
@@ -162,8 +170,8 @@ async function susunDaftarKelas(tahunAjaran: string): Promise<{ baris: BarisDaft
   )
   const baris: BarisDaftarKelas[] = []
   for (const item of rencana.renames) baris.push({ kelas: item.dari, status: 'Dipromosikan', keterangan: `Naik menjadi ${item.ke}` })
-  for (const nama of rencana.archives) baris.push({ kelas: nama, status: 'Diarsipkan', keterangan: 'Lulus — data dan riwayat tetap tersimpan' })
-  for (const item of rencana.arsipDipindah) baris.push({ kelas: item.ke, status: 'Diarsipkan', keterangan: `Arsip lama (sebelumnya ${item.dari})` })
+  for (const nama of rencana.archives) baris.push({ kelas: nama, status: 'Diarsipkan', keterangan: keteranganArsip(nama) })
+  for (const item of rencana.arsipDipindah) baris.push({ kelas: item.ke, status: 'Diarsipkan', keterangan: `Dipindah namanya (sebelumnya ${item.dari})` })
   for (const nama of rencana.dilewati) baris.push({ kelas: nama, status: 'Dilewati', keterangan: 'Tidak cocok pola tingkat kelas' })
   return {
     baris,
