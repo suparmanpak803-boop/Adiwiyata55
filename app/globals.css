@@ -367,6 +367,22 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .story-cta { padding: 8px 22px 90px; text-align: center; }
 .story-cta h2 { max-width: 560px; margin: 12px auto; font-size: clamp(24px, 6vw, 34px); line-height: 1.2; }
 .story-cta p { max-width: 520px; margin: 0 auto 8px; color: var(--ink-soft); font-size: 13px; line-height: 1.7; }
+
+/* Dokumen Petugas — barisan kartu mengikuti kartu kader
+   (.adi-division-card di halaman publik): nomor, label, judul yang
+   diketuk untuk membuka keterangan, lalu tautan ke PDF. */
+.petugas-doc-list { display: grid; gap: 12px; }
+.petugas-doc-card { position: relative; padding: 20px 22px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); }
+.petugas-doc-index { position: absolute; top: 20px; right: 20px; color: var(--ink-soft); font: italic 14px Georgia, serif; }
+.petugas-doc-tag { width: fit-content; padding: 5px 8px; border-radius: 4px; background: var(--sage); color: var(--green); font-size: 8px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.petugas-doc-card h3 { margin: 15px 0 0; font: 400 21px/1.3 Georgia, serif; }
+.petugas-doc-toggle { width: 100%; padding: 0; display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.petugas-doc-toggle:focus-visible { outline: 3px solid var(--green); outline-offset: 3px; }
+.petugas-doc-toggle svg { width: 18px; height: 18px; flex: none; margin-top: 4px; transition: transform .2s ease; }
+.petugas-doc-toggle[aria-expanded="true"] svg { transform: rotate(180deg); }
+.petugas-doc-card p { margin: 9px 0 0; color: var(--ink-soft); font-size: 11px; line-height: 1.75; }
+.petugas-doc-link { margin-top: 14px; display: inline-flex; align-items: center; gap: 7px; color: var(--green); font-size: 11px; font-weight: 700; }
+.petugas-doc-link svg { width: 14px; }
 .story-cta .hero-actions { justify-content: center; margin-top: 20px; }
 .bento-grid { display: grid; grid-template-columns: 1fr 1fr .8fr; gap: 13px; }
 .bento-card { position: relative; display: flex; min-height: 248px; overflow: hidden; flex-direction: column; align-items: flex-start; padding: 22px; border: 1px solid var(--line); border-radius: 8px; text-align: left; }

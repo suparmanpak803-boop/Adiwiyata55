@@ -211,18 +211,20 @@ function GuideDialog({ onClose, role }: { onClose: () => void; role: 'admin' | '
 // Dokumen khusus petugas (dan admin): SK Kader Adiwiyata. File PDF
 // disajikan lewat /api/petugas/dokumen/sk-kader yang memeriksa peran,
 // jadi pengunjung tidak pernah melihat tautan ini maupun isi filenya.
+// Tampilannya mengikuti kartu kader (barisan bernomor + judul yang
+// diketuk untuk membuka keterangan), bukan kartu bento beranda.
 function PetugasDokumenView() {
+  const [open, setOpen] = useState(false)
   return (
     <section className="portal-bento" aria-labelledby="dokumen-petugas-title">
-      <div className="bento-heading"><div><span className="eyebrow">KHUSUS PETUGAS</span><h2 id="dokumen-petugas-title">Dokumen Petugas</h2></div><p>Dokumen resmi yang hanya bisa dibuka petugas dan admin.</p></div>
-      <div className="bento-grid">
-        <a className="bento-card bento-monitor" href="/api/petugas/dokumen/sk-kader" target="_blank" rel="noreferrer">
-          <span className="bento-icon"><FileText aria-hidden="true" /></span>
-          <span className="eyebrow">SURAT KEPUTUSAN</span>
-          <strong>SK Kader Adiwiyata<br />2026–2027</strong>
-          <p>Keputusan Kepala SMA Negeri 55 Jakarta Nomor 027 Tahun 2026 tentang Tim Kader Adiwiyata, ditetapkan 12 November 2026 — beserta daftar nama kader.</p>
-          <span className="bento-link">Buka dokumen (PDF) <ArrowRight aria-hidden="true" /></span>
-        </a>
+      <div className="bento-heading"><div><span className="eyebrow">KHUSUS PETUGAS</span><h2 id="dokumen-petugas-title">Dokumen Petugas</h2></div><p>Dokumen resmi yang hanya bisa dibuka petugas dan admin. Ketuk judul dokumen untuk melihat keterangannya.</p></div>
+      <div className="petugas-doc-list">
+        <article className="petugas-doc-card">
+          <span className="petugas-doc-index">01</span>
+          <span className="petugas-doc-tag">Surat Keputusan</span>
+          <h3><button type="button" className="petugas-doc-toggle" aria-expanded={open} onClick={() => setOpen(!open)}><span>SK Kader Adiwiyata 2026–2027</span><ChevronDown aria-hidden="true" /></button></h3>
+          {open && <><p>Keputusan Kepala SMA Negeri 55 Jakarta Nomor 027 Tahun 2026 tentang Tim Kader Adiwiyata, ditetapkan 12 November 2026 — beserta daftar nama kader.</p><a className="petugas-doc-link" href="/api/petugas/dokumen/sk-kader" target="_blank" rel="noreferrer">Buka dokumen (PDF) <ArrowRight aria-hidden="true" /></a></>}
+        </article>
       </div>
     </section>
   )
