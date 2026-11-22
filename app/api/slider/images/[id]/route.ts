@@ -2,6 +2,7 @@ import { eq } from 'drizzle-orm'
 import { NextResponse } from 'next/server'
 import { getPortalUser } from '@/lib/auth/access'
 import { db } from '@/lib/db'
+import { allowRequest } from '@/lib/rate-limit'
 import { sliderImages, sliderSlides } from '@/lib/db/schema'
 import { getSliderToday } from '@/lib/slider/data'
 
@@ -10,6 +11,8 @@ export const dynamic = 'force-dynamic'
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   const user = await getPortalUser()
   if (!user) return NextResponse.json({ error: 'Sesi masuk diperlukan.' }, { status: 401 })
+  // B-13: batas laju pengambilan gambar slider (60/menit per pengguna).
+  if (!(await allowRequest(`slider-image:${user.id}`, 60, 60))) return NextResponse.json({ error: 'Terlalu banyak permintaan.' }, { status: 429 })
 
   const { id } = await params
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)) {

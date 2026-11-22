@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server'
 import { requirePortalRole } from '@/lib/auth/access'
 import { pool } from '@/lib/db'
+import { allowRequest } from '@/lib/rate-limit'
 import { repairDatabase } from '@/lib/db-repair'
 import { seedGameDefaults } from '@/lib/game-content-seed'
 import { seedKegiatanMedia } from '@/lib/kegiatan-media-seed'
+import { readJsonBody } from '@/lib/request-body'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -48,7 +50,11 @@ export async function POST(request: Request) {
   if (request.headers.get('origin') !== new URL(request.url).origin) return respond('Permintaan tidak valid.', 403)
   try {
     const user = await requirePortalRole(['admin'])
-    const body = await request.json().catch(() => null) as { aksi?: unknown } | null
+    // B-04: batas laju aksi diagnostik berat (10/menit per admin).
+    if (!(await allowRequest(`admin-diagnostik:${user.id}`, 10, 60))) return respond('Terlalu banyak permintaan. Coba lagi sebentar.', 429)
+    const parsed = await readJsonBody<{ aksi?: unknown }>(request)
+    if (!parsed.ok) return respond(parsed.reason === 'too_large' ? 'Data terlalu besar.' : 'Data tidak valid.', parsed.reason === 'too_large' ? 413 : 400)
+    const body = parsed.data
     if (body?.aksi === 'perbaiki_tabel') {
       const result = await repairDatabase()
       return respond(result)

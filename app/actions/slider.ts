@@ -3,6 +3,7 @@
 import { eq } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { requirePortalRole } from '@/lib/auth/access'
+import { allowRequest } from '@/lib/rate-limit'
 import { db } from '@/lib/db'
 import { sliderActivityLog, sliderImages, sliderSettings, sliderSlides } from '@/lib/db/schema'
 import { ensureSliderSchema, type SliderTransition } from '@/lib/slider/data'
@@ -41,6 +42,8 @@ function invalidateSliderPages() {
 export async function saveSliderSlide(formData: FormData) {
   const admin = await requirePortalRole(['admin'])
   await ensureSliderSchema()
+  // B-04: batas laju perubahan slider (30/jam per admin).
+  if (!(await allowRequest(`slider:${admin.id}`, 30, 3600))) throw new Error('Terlalu banyak perubahan. Coba lagi nanti.')
 
   const rawId = String(formData.get('id') ?? '').trim()
   const id = rawId || crypto.randomUUID()
@@ -135,6 +138,8 @@ export async function saveSliderSlide(formData: FormData) {
 export async function toggleSliderSlide(id: string, aktif: boolean) {
   const admin = await requirePortalRole(['admin'])
   await ensureSliderSchema()
+  // B-04: batas laju perubahan slider (30/jam per admin).
+  if (!(await allowRequest(`slider:${admin.id}`, 30, 3600))) throw new Error('Terlalu banyak perubahan. Coba lagi nanti.')
   if (!uuidPattern.test(id) || typeof aktif !== 'boolean') throw new Error('Perubahan status slide tidak valid.')
   await db.transaction(async (transaction) => {
     const [slide] = await transaction.update(sliderSlides).set({ aktif }).where(eq(sliderSlides.id, id)).returning({ id: sliderSlides.id, judul: sliderSlides.judul })
@@ -148,6 +153,8 @@ export async function toggleSliderSlide(id: string, aktif: boolean) {
 export async function duplicateSliderSlide(id: string) {
   const admin = await requirePortalRole(['admin'])
   await ensureSliderSchema()
+  // B-04: batas laju perubahan slider (30/jam per admin).
+  if (!(await allowRequest(`slider:${admin.id}`, 30, 3600))) throw new Error('Terlalu banyak perubahan. Coba lagi nanti.')
   if (!uuidPattern.test(id)) throw new Error('Slide tidak ditemukan.')
   const [source] = await db.select().from(sliderSlides).where(eq(sliderSlides.id, id)).limit(1)
   if (!source) throw new Error('Slide tidak ditemukan.')
@@ -180,6 +187,8 @@ export async function duplicateSliderSlide(id: string) {
 export async function deleteSliderSlide(id: string) {
   const admin = await requirePortalRole(['admin'])
   await ensureSliderSchema()
+  // B-04: batas laju perubahan slider (30/jam per admin).
+  if (!(await allowRequest(`slider:${admin.id}`, 30, 3600))) throw new Error('Terlalu banyak perubahan. Coba lagi nanti.')
   if (!uuidPattern.test(id)) throw new Error('Slide tidak ditemukan.')
   const [slide] = await db.select({ id: sliderSlides.id, judul: sliderSlides.judul }).from(sliderSlides).where(eq(sliderSlides.id, id)).limit(1)
   if (!slide) throw new Error('Slide tidak ditemukan.')
@@ -194,6 +203,8 @@ export async function deleteSliderSlide(id: string) {
 export async function saveSliderOrder(ids: string[]) {
   const admin = await requirePortalRole(['admin'])
   await ensureSliderSchema()
+  // B-04: batas laju perubahan slider (30/jam per admin).
+  if (!(await allowRequest(`slider:${admin.id}`, 30, 3600))) throw new Error('Terlalu banyak perubahan. Coba lagi nanti.')
   if (!Array.isArray(ids) || ids.length > 100 || ids.some((id) => !uuidPattern.test(id)) || new Set(ids).size !== ids.length) {
     throw new Error('Urutan slide tidak valid.')
   }
@@ -218,6 +229,8 @@ export async function saveSliderSettings(input: {
 }) {
   const admin = await requirePortalRole(['admin'])
   await ensureSliderSchema()
+  // B-04: batas laju perubahan slider (30/jam per admin).
+  if (!(await allowRequest(`slider:${admin.id}`, 30, 3600))) throw new Error('Terlalu banyak perubahan. Coba lagi nanti.')
   if (!input || !Number.isInteger(input.intervalDetik) || input.intervalDetik < 2 || input.intervalDetik > 15) throw new Error('Kecepatan slider harus 2–15 detik.')
   if (input.transisi !== 'fade' && input.transisi !== 'slide') throw new Error('Jenis transisi tidak valid.')
   if ([input.autoplay, input.tampilPanah, input.tampilDots].some((value) => typeof value !== 'boolean')) throw new Error('Pengaturan kontrol tidak valid.')

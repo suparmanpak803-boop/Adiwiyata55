@@ -3,6 +3,7 @@
 import { eq, inArray } from 'drizzle-orm'
 import { revalidatePath, revalidateTag } from 'next/cache'
 import { requirePortalRole } from '@/lib/auth/access'
+import { allowRequest } from '@/lib/rate-limit'
 import { db } from '@/lib/db'
 import { adiwiyataEducationVideos, adiwiyataVideoDisplaySettings } from '@/lib/db/schema'
 import { getYouTubeId } from '@/lib/education-videos'
@@ -33,7 +34,9 @@ function validateVideoInput(input: EducationVideoInput) {
 }
 
 export async function saveEducationVideo(input: EducationVideoInput) {
-  await requirePortalRole(['admin'])
+  const admin = await requirePortalRole(['admin'])
+  // B-04: batas laju perubahan video edukasi (30/jam per admin).
+  if (!(await allowRequest(`video-edukasi:${admin.id}`, 30, 3600))) throw new Error('Terlalu banyak perubahan. Coba lagi nanti.')
   const validated = validateVideoInput(input)
   const originalVideoId = input.originalVideoId?.trim()
 
@@ -74,7 +77,9 @@ export async function saveEducationVideo(input: EducationVideoInput) {
 }
 
 export async function deleteEducationVideo(videoId: string) {
-  await requirePortalRole(['admin'])
+  const admin = await requirePortalRole(['admin'])
+  // B-04: batas laju perubahan video edukasi (30/jam per admin).
+  if (!(await allowRequest(`video-edukasi:${admin.id}`, 30, 3600))) throw new Error('Terlalu banyak perubahan. Coba lagi nanti.')
   if (typeof videoId !== 'string' || !/^[A-Za-z0-9_-]{11}$/.test(videoId)) throw new Error('Video tidak ditemukan.')
   await db.transaction(async (transaction) => {
     await transaction.delete(adiwiyataVideoDisplaySettings).where(eq(adiwiyataVideoDisplaySettings.videoId, videoId))
@@ -90,7 +95,9 @@ export async function deleteEducationVideo(videoId: string) {
 export type EducationVideoSettingInput = { videoId: string; enabled: boolean; displayOrder: number }
 
 export async function saveEducationVideoSettings(settings: EducationVideoSettingInput[]) {
-  await requirePortalRole(['admin'])
+  const admin = await requirePortalRole(['admin'])
+  // B-04: batas laju perubahan video edukasi (30/jam per admin).
+  if (!(await allowRequest(`video-edukasi:${admin.id}`, 30, 3600))) throw new Error('Terlalu banyak perubahan. Coba lagi nanti.')
   if (!Array.isArray(settings) || settings.length > 300) throw new Error('Daftar pengaturan video tidak valid.')
   const rows = await db.select({ videoId: adiwiyataEducationVideos.videoId }).from(adiwiyataEducationVideos)
   const availableIds = new Set(rows.map((row) => row.videoId))

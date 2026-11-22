@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getPortalUser } from '@/lib/auth/access'
 import { pool } from '@/lib/db'
 import { allowRequest } from '@/lib/rate-limit'
+import { readJsonBody } from '@/lib/request-body'
 
 export const dynamic = 'force-dynamic'
 
@@ -38,7 +39,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const report = await load(id, user.id)
   if (!report) return NextResponse.json({ error: 'Laporan tidak ditemukan.' }, { status: 404 })
   if (!(await allowRequest(`laporan-aksi:${user.id}`, 20, 60, { failClosed: true }))) return NextResponse.json({ error: 'Terlalu banyak permintaan.' }, { status: 429 })
-  const body = await request.json().catch(() => null) as { aksi?: unknown; isi?: unknown; rating?: unknown } | null
+  const parsed = await readJsonBody<{ aksi?: unknown; isi?: unknown; rating?: unknown }>(request)
+  if (!parsed.ok) return NextResponse.json({ error: parsed.reason === 'too_large' ? 'Data terlalu besar.' : 'Data tidak valid.' }, { status: parsed.reason === 'too_large' ? 413 : 400 })
+  const body = parsed.data
 
   if (body?.aksi === 'komentar') {
     const isi = typeof body.isi === 'string' ? body.isi.trim() : ''

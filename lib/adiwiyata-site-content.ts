@@ -461,7 +461,7 @@ function parseItemList<T extends Record<string, unknown>>(
 function parseImageList(value: unknown): string[] | null {
   if (!Array.isArray(value) || value.length === 0 || value.length > 10) return null
   for (const item of value) {
-    if (typeof item !== 'string' || !item.startsWith('/') || item.length > 3000) return null
+    if (typeof item !== 'string' || !item.startsWith('/') || item.startsWith('//') || item.length > 3000) return null
   }
   return value as string[]
 }

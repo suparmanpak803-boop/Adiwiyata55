@@ -446,6 +446,24 @@ export async function updateReports(ids: string[], patch: ReportPatch, user: Por
   if (patch.status !== undefined && !(STATUS_IDS as readonly string[]).includes(patch.status)) {
     throw withStatus('Status tidak valid.', 400)
   }
+  // B-06: batas panjang teks tanggapan/catatan/alasan (kolom TEXT tanpa batas).
+  if (typeof patch.tanggapan === 'string' && patch.tanggapan.length > 2000) {
+    throw withStatus('Tanggapan maksimal 2000 karakter.', 400)
+  }
+  if (typeof patch.catatanInternal === 'string' && patch.catatanInternal.length > 2000) {
+    throw withStatus('Catatan internal maksimal 2000 karakter.', 400)
+  }
+  if (typeof patch.alasan === 'string' && patch.alasan.length > 500) {
+    throw withStatus('Alasan maksimal 500 karakter.', 400)
+  }
+  // B-06: penanggung jawab harus staf yang ada (admin/petugas) — UUID sampah
+  // membuat laporan "yatim" yang tidak bisa disentuh petugas mana pun.
+  if (patch.penanggungJawab !== undefined && patch.penanggungJawab !== null && patch.penanggungJawab !== '') {
+    const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+    if (!uuidPattern.test(patch.penanggungJawab)) throw withStatus('Petugas yang dipilih tidak valid.', 400)
+    const staff = await listStaff()
+    if (!staff.some((member) => member.id === patch.penanggungJawab)) throw withStatus('Petugas yang dipilih tidak valid.', 400)
+  }
   if (patch.status === 'ditolak' && (patch.alasan ?? '').trim().length < 5) {
     throw withStatus('Isi alasan penolakan (minimal 5 karakter).', 400)
   }

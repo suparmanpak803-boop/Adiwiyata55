@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { requirePortalRole } from '@/lib/auth/access'
 import { pool } from '@/lib/db'
+import { allowRequest } from '@/lib/rate-limit'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -72,6 +73,7 @@ function validate(type: ContentType, source: InputRecord, isUpdate = false): Inp
   if (type === 'kuis') {
     if (record.jawaban !== undefined && !['a', 'b', 'c', 'd'].includes(String(record.jawaban))) throw new InputValidationError('Kunci jawaban harus a, b, c, atau d.')
     if (record.tingkat_kesulitan !== undefined && !['mudah', 'sedang', 'sulit'].includes(String(record.tingkat_kesulitan))) throw new InputValidationError('Tingkat kesulitan tidak valid.')
+    if (record.link_video !== undefined && typeof record.link_video === 'string' && record.link_video.trim() !== '' && !/^https:\/\//i.test(record.link_video.trim())) throw new InputValidationError('Tautan video harus diawali https://.')
   }
   if (type === 'sampah') {
     if (record.jenis !== undefined && !['organik', 'anorganik', 'kertas', 'residu', 'b3'].includes(String(record.jenis))) throw new InputValidationError('Jenis sampah tidak valid.')
@@ -143,6 +145,8 @@ export async function POST(request: Request) {
   if (request.headers.get('origin') !== new URL(request.url).origin) return json('Permintaan tidak valid.', 403)
   try {
     const user = await requirePortalRole(['admin'])
+    // B-04: batas laju perubahan konten game (30/menit per admin).
+    if (!(await allowRequest(`admin-game-content:${user.id}`, 30, 60))) return json('Terlalu banyak permintaan. Coba lagi sebentar.', 429)
     const body = await readBody(request)
     if (!body) return json('Data permintaan tidak valid atau terlalu besar.', 400)
     const type = body.jenis as ContentType
@@ -219,6 +223,8 @@ export async function DELETE(request: Request) {
   if (request.headers.get('origin') !== new URL(request.url).origin) return json('Permintaan tidak valid.', 403)
   try {
     const user = await requirePortalRole(['admin'])
+    // B-04: batas laju perubahan konten game (30/menit per admin).
+    if (!(await allowRequest(`admin-game-content:${user.id}`, 30, 60))) return json('Terlalu banyak permintaan. Coba lagi sebentar.', 429)
     const body = await readBody(request)
     const type = body?.jenis as ContentType
     const id = typeof body?.id === 'string' && /^[0-9a-f-]{36}$/i.test(body.id) ? body.id : ''

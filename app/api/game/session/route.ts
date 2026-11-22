@@ -5,6 +5,7 @@ import { pool } from '@/lib/db'
 import { ensureStarterGameContent } from '@/lib/game-content-seed'
 import { GAME_KEYS, resetLeaderboardIfDue, type GameKey } from '@/lib/leaderboard-data'
 import { allowRequest } from '@/lib/rate-limit'
+import { readJsonBody } from '@/lib/request-body'
 
 export const dynamic = 'force-dynamic'
 
@@ -16,7 +17,9 @@ export async function POST(request: Request) {
   try {
     const user = await getPortalUser()
     if (!user) return NextResponse.json({ error: 'Silakan masuk terlebih dahulu.' }, { status: 401 })
-    const body = await request.json().catch(() => null) as { gameKey?: unknown } | null
+    const parsed = await readJsonBody<{ gameKey?: unknown }>(request)
+    if (!parsed.ok) return NextResponse.json({ error: parsed.reason === 'too_large' ? 'Data terlalu besar.' : 'Data tidak valid.' }, { status: parsed.reason === 'too_large' ? 413 : 400 })
+    const body = parsed.data
     const gameKey = typeof body?.gameKey === 'string' ? body.gameKey : ''
     if (!GAME_KEYS.includes(gameKey as GameKey)) return NextResponse.json({ error: 'Game tidak dikenal.' }, { status: 400 })
     const allowed = await allowRequest(`sesi:${user.id}`, 20, 60).catch((error) => {

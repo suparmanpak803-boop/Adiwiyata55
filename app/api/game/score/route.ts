@@ -5,6 +5,7 @@ import { pool } from '@/lib/db'
 import { GAME_RULES, pointsFromScore, type GameAction } from '@/lib/game-scoring'
 import { GAME_KEYS, resetLeaderboardIfDue, type GameKey } from '@/lib/leaderboard-data'
 import { allowRequest } from '@/lib/rate-limit'
+import { readJsonBody } from '@/lib/request-body'
 
 export const dynamic = 'force-dynamic'
 
@@ -32,7 +33,6 @@ function parseLog(value: unknown): GameAction[] | null {
 export async function POST(request: Request) {
   const origin = request.headers.get('origin')
   if (origin !== new URL(request.url).origin) return NextResponse.json({ error: 'Permintaan tidak valid.' }, { status: 403 })
-  if (Number(request.headers.get('content-length') ?? 0) > 60_000) return NextResponse.json({ error: 'Data terlalu besar.' }, { status: 413 })
   let user: NonNullable<Awaited<ReturnType<typeof getPortalUser>>>
   try {
     const authenticatedUser = await getPortalUser()
@@ -44,7 +44,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Layanan autentikasi belum dapat dihubungi.' }, { status: 503 })
   }
 
-  const body = await request.json().catch(() => null) as { token?: unknown; log?: unknown } | null
+  const parsed = await readJsonBody<{ token?: unknown; log?: unknown }>(request, 60_000)
+  if (!parsed.ok) return NextResponse.json({ error: parsed.reason === 'too_large' ? 'Data terlalu besar.' : 'Data skor tidak valid.' }, { status: parsed.reason === 'too_large' ? 413 : 400 })
+  const body = parsed.data
   const token = typeof body?.token === 'string' && body.token.length < 100 ? body.token : ''
   const log = parseLog(body?.log)
   if (!token || !log) return NextResponse.json({ error: 'Data skor tidak valid.' }, { status: 400 })

@@ -48,9 +48,13 @@ export function AuthRecoveryForm({ mode, token }: AuthRecoveryFormProps) {
         router.replace('/sign-in?password-reset=success')
       }
     } catch {
-      setError(mode === 'request'
-        ? 'Permintaan belum dapat diproses. Periksa email dan coba lagi.'
-        : 'Tautan tidak valid atau kedaluwarsa. Minta tautan pemulihan yang baru.')
+      if (mode === 'request') {
+        // Anti-enumerasi: tampilkan layar sukses yang sama walau SDK error,
+        // agar tidak bisa dibedakan apakah email terdaftar atau tidak.
+        setComplete(true)
+      } else {
+        setError('Tautan tidak valid atau kedaluwarsa. Minta tautan pemulihan yang baru.')
+      }
     } finally {
       setPending(false)
     }

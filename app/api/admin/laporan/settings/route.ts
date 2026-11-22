@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { getLaporanSettings, normalizeWaNumber, saveLaporanSettings, validSpreadsheetUrl } from '@/lib/laporan-admin'
 import { errorResponse, requireStaff } from '@/lib/laporan-admin-guard'
+import { allowRequest } from '@/lib/rate-limit'
+import { readJsonBody } from '@/lib/request-body'
 
 export const dynamic = 'force-dynamic'
 
@@ -20,7 +22,11 @@ export async function PUT(request: Request) {
   const auth = await requireStaff(request, { mutating: true, adminOnly: true })
   if ('response' in auth) return auth.response
   try {
-    const body = (await request.json().catch(() => null)) as { spreadsheetUrl?: unknown; waAktif?: unknown; waNomor?: unknown } | null
+    // B-04: batas laju perubahan pengaturan laporan (30/menit per admin).
+    if (!(await allowRequest(`admin-laporan-settings:${auth.user.id}`, 30, 60))) return NextResponse.json({ error: 'Terlalu banyak permintaan.' }, { status: 429 })
+    const parsed = await readJsonBody<{ spreadsheetUrl?: unknown; waAktif?: unknown; waNomor?: unknown }>(request)
+    if (!parsed.ok) return NextResponse.json({ error: parsed.reason === 'too_large' ? 'Data terlalu besar.' : 'Data tidak valid.' }, { status: parsed.reason === 'too_large' ? 413 : 400 })
+    const body = parsed.data
     const spreadsheetUrl = typeof body?.spreadsheetUrl === 'string' ? body.spreadsheetUrl.trim() : ''
     if (spreadsheetUrl && !validSpreadsheetUrl(spreadsheetUrl)) return NextResponse.json({ error: 'Tautan harus berupa alamat Google Spreadsheet (docs.google.com/spreadsheets).' }, { status: 400 })
     const waAktif = body?.waAktif === true

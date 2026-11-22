@@ -3,6 +3,7 @@ import * as XLSX from 'xlsx'
 import { KATEGORI, STATUS_LABEL, URGENSI } from '@/lib/laporan'
 import { exportRows, parseFilters } from '@/lib/laporan-admin'
 import { errorResponse, requireStaff } from '@/lib/laporan-admin-guard'
+import { allowRequest } from '@/lib/rate-limit'
 
 export const dynamic = 'force-dynamic'
 
@@ -11,13 +12,16 @@ const HEADERS = ['Nomor Tiket', 'Tanggal', 'Kategori', 'Kelas/Lokasi', 'Judul', 
 // Mencegah formula injection saat dibuka di Excel/Sheets.
 const safe = (value: unknown) => {
   const text = value == null ? '' : String(value)
-  return /^[=+\-@\t\r]/.test(text) ? `'${text}` : text
+  const trimmed = text.replace(/^[\s]+/, '')
+  return /^[=+\-@\t\r]/.test(trimmed) ? `'${text}` : text
 }
 const fmt = (value: unknown) => (value ? new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Jakarta' }).format(new Date(value as string)) : '')
 
 export async function GET(request: Request) {
   const auth = await requireStaff(request)
   if ('response' in auth) return auth.response
+  // B-04: batas laju ekspor laporan (30/menit per staf).
+  if (!(await allowRequest(`admin-laporan-export:${auth.user.id}`, 30, 60))) return NextResponse.json({ error: 'Terlalu banyak permintaan.' }, { status: 429 })
   try {
     const params = new URL(request.url).searchParams
     const rows = (await exportRows(parseFilters(params), auth.user)).map((r) => [

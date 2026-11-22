@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { revalidatePath } from 'next/cache'
 import { requirePortalRole } from '@/lib/auth/access'
 import { db } from '@/lib/db'
+import { allowRequest } from '@/lib/rate-limit'
 import { appSettings } from '@/lib/db/schema'
 import { parseAdiwiyataSiteContent } from '@/lib/adiwiyata-site-content'
 import { getAdiwiyataSiteContent } from '@/lib/adiwiyata-site-content.server'
@@ -39,6 +40,8 @@ export async function PUT(request: Request) {
 
   try {
     const user = await requirePortalRole(['admin'])
+    // B-04: batas laju perubahan konten Informasi Adiwiyata (30/menit per admin).
+    if (!(await allowRequest(`admin-informasi:${user.id}`, 30, 60))) return response({ error: 'Terlalu banyak permintaan. Coba lagi sebentar.' }, 429)
     const raw = await request.text()
     if (!raw || raw.length > 1_000_000) return response({ error: 'Data terlalu besar atau kosong.' }, 400)
 

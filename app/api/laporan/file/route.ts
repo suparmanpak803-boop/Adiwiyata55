@@ -2,19 +2,22 @@ import { get } from '@vercel/blob'
 import { NextResponse, type NextRequest } from 'next/server'
 import { getPortalUser } from '@/lib/auth/access'
 import { pool } from '@/lib/db'
+import { allowRequest } from '@/lib/rate-limit'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
   const user = await getPortalUser()
   if (!user) return NextResponse.json({ error: 'Silakan masuk terlebih dahulu.' }, { status: 401 })
+  // B-13: batas laju pengambilan foto laporan (60/menit per pengguna).
+  if (!(await allowRequest(`laporan-file:${user.id}`, 60, 60))) return new NextResponse('Terlalu banyak permintaan.', { status: 429 })
   const pathname = request.nextUrl.searchParams.get('pathname') ?? ''
   if (!/^laporan\/[a-f0-9]{32}\.(jpg|png|webp)$/.test(pathname)) return new NextResponse('Not found', { status: 404 })
 
   const allowed = await pool.query(
     `SELECT 1 FROM public.laporan_foto_unggahan WHERE pathname = $1 AND user_id = $2
      UNION ALL SELECT 1 FROM public.laporan_foto f JOIN public.laporan l ON l.id = f.laporan_id
-       WHERE f.pathname = $1 AND (l.user_id = $2 OR $3 = 'admin' OR (l.anonim = false AND $3 = 'petugas')) LIMIT 1`,
+       WHERE f.pathname = $1 AND (l.user_id = $2 OR $3 = 'admin' OR l.penanggung_jawab = $2) LIMIT 1`,
     [pathname, user.id, user.role],
   )
   if (!allowed.rowCount) return new NextResponse('Not found', { status: 404 })

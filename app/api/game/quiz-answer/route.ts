@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 import { getPortalUser } from '@/lib/auth/access'
 import { pool } from '@/lib/db'
 import { allowRequest } from '@/lib/rate-limit'
+import { readJsonBody } from '@/lib/request-body'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -32,7 +33,9 @@ export async function POST(request: Request) {
   }
 
   try {
-    const body = await request.json().catch(() => null) as { token?: unknown; questionId?: unknown; optionKey?: unknown } | null
+    const parsed = await readJsonBody<{ token?: unknown; questionId?: unknown; optionKey?: unknown }>(request)
+    if (!parsed.ok) return error(parsed.reason === 'too_large' ? 'Data terlalu besar.' : 'Data tidak valid.', parsed.reason === 'too_large' ? 413 : 400, parsed.reason === 'too_large' ? 'DATA_TERLALU_BESAR' : 'DATA_TIDAK_VALID')
+    const body = parsed.data
     const token = typeof body?.token === 'string' && body.token.length < 100 ? body.token : ''
     const questionId = typeof body?.questionId === 'string' && /^[0-9a-f-]{36}$/i.test(body.questionId) ? body.questionId : ''
     const optionKey = body?.optionKey === null ? null : typeof body?.optionKey === 'string' ? body.optionKey : ''

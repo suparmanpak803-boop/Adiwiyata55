@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { requirePortalRole } from '@/lib/auth/access'
+import { allowRequest } from '@/lib/rate-limit'
 import { pool } from '@/lib/db'
 import { encryptSheetsToken, getSheetsConfigStatus as readSheetsConfigStatus, validateAppsScriptUrl } from '@/lib/sheets-config'
 
@@ -12,6 +13,8 @@ export async function getSheetsConfigStatus() {
 
 export async function saveSheetsConfig(input: { url: string; token: string }) {
   const admin = await requirePortalRole(['admin'])
+  // B-04: batas laju perubahan konfigurasi Sheets (30/jam per admin).
+  if (!(await allowRequest(`sheets-config:${admin.id}`, 30, 3600))) throw new Error('Terlalu banyak perubahan. Coba lagi nanti.')
   const url = input.url.trim()
   const token = input.token.trim()
   if (!validateAppsScriptUrl(url)) throw new Error('Masukkan URL Web App Apps Script yang valid (script.google.com/macros/s/.../exec).')

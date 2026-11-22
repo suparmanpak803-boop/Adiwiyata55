@@ -7,6 +7,7 @@ import { isActiveClassCode } from '@/lib/class-master'
 import { normalizeClassCode } from '@/lib/class-codes'
 import { GENERAL_LOCATIONS } from '@/lib/general-locations'
 import { allowRequest } from '@/lib/rate-limit'
+import { readJsonBody } from '@/lib/request-body'
 
 export const dynamic = 'force-dynamic'
 
@@ -44,7 +45,9 @@ export async function POST(request: Request) {
     // berlaku antar instance serverless).
     if (!(await allowRequest(`kirim:${user.id}`, 20, 60))) return NextResponse.json({ error: 'Terlalu banyak pengiriman. Silakan coba lagi satu menit lagi.' }, { status: 429 })
 
-    const body = await request.json() as { records?: unknown; replace?: unknown }
+    const parsed = await readJsonBody<{ records?: unknown; replace?: unknown }>(request)
+    if (!parsed.ok) return NextResponse.json({ error: parsed.reason === 'too_large' ? 'Data terlalu besar.' : 'Data tidak valid.' }, { status: parsed.reason === 'too_large' ? 413 : 400 })
+    const body = parsed.data
     if (!Array.isArray(body.records) || body.records.length < 1 || body.records.length > 5) {
       return NextResponse.json({ error: 'Data setoran tidak valid.' }, { status: 400 })
     }

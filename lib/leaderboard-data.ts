@@ -412,8 +412,19 @@ export async function getAdminLeaderboardSettings(): Promise<AdminLeaderboardDat
   }
 }
 
-function validationError(message: string): Error {
-  return new Error(message)
+// B-08: error validasi input dibedakan dari error lain (mis. driver pg)
+// agar route API bisa mengembalikan pesan validasi ke klien tanpa
+// membocorkan pesan error mentah. Subclass dari Error, jadi semua
+// pemakaian `throw validationError(...)` yang sudah ada tetap aman.
+export class InputValidationError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'InputValidationError'
+  }
+}
+
+function validationError(message: string): InputValidationError {
+  return new InputValidationError(message)
 }
 
 function asRecord(value: unknown): Record<string, unknown> {
@@ -472,7 +483,7 @@ export async function saveAdminLeaderboardSettings(input: Record<string, unknown
   const tanggal = Number(input.tanggal ?? 1)
   if (!Number.isInteger(tanggal) || tanggal < 1 || tanggal > 31) throw validationError('Tanggal reset harus 1–31.')
   const jam = String(input.jam ?? '00:00')
-  if (!/^\d{2}:\d{2}$/.test(jam)) throw validationError('Jam reset harus format HH:MM.')
+  if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(jam)) throw validationError('Jam reset harus format HH:MM (00:00–23:59).')
   const cakupan = String(input.cakupan ?? 'semua')
   if (!['semua', 'game', 'kelas_pengguna'].includes(cakupan)) throw validationError('Cakupan reset tidak valid.')
   const gameKey = input.game_key == null ? null : String(input.game_key)

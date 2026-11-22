@@ -1,6 +1,7 @@
 import { NextResponse, after } from 'next/server'
 import { deleteReport, getReportDetail, syncReports, updateReports, type ReportPatch } from '@/lib/laporan-admin'
 import { errorResponse, requireStaff } from '@/lib/laporan-admin-guard'
+import { readJsonBody } from '@/lib/request-body'
 
 export const dynamic = 'force-dynamic'
 
@@ -23,7 +24,9 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   try {
     const { id } = await params
     if (!/^\d{1,15}$/.test(id)) return NextResponse.json({ error: 'Laporan tidak ditemukan.' }, { status: 404 })
-    const body = (await request.json().catch(() => null)) as Record<string, unknown> | null
+    const parsed = await readJsonBody<Record<string, unknown>>(request)
+    if (!parsed.ok) return NextResponse.json({ error: parsed.reason === 'too_large' ? 'Data terlalu besar.' : 'Data tidak valid.' }, { status: parsed.reason === 'too_large' ? 413 : 400 })
+    const body = parsed.data as Record<string, unknown> | null
     if (!body || typeof body !== 'object') return NextResponse.json({ error: 'Data tidak valid.' }, { status: 400 })
     const patch: ReportPatch = {}
     if (typeof body.status === 'string') patch.status = body.status

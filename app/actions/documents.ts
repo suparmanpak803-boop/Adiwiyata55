@@ -4,11 +4,14 @@ import { del } from '@vercel/blob'
 import { eq } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { requirePortalRole } from '@/lib/auth/access'
+import { allowRequest } from '@/lib/rate-limit'
 import { db } from '@/lib/db'
 import { adiwiyataDocuments } from '@/lib/db/schema'
 
 export async function deleteAdiwiyataDocument(id: string) {
-  await requirePortalRole(['admin'])
+  const admin = await requirePortalRole(['admin'])
+  // B-04: batas laju hapus dokumen (30/jam per admin).
+  if (!(await allowRequest(`dokumen:${admin.id}`, 30, 3600))) throw new Error('Terlalu banyak perubahan. Coba lagi nanti.')
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)) {
     throw new Error('Dokumen tidak ditemukan.')
   }

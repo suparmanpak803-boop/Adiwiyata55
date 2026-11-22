@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { readJsonResponse } from '@/lib/api-client'
 import { getAppsScriptConfig } from '@/lib/sheets-config'
 import { allowRequest, getClientIp } from '@/lib/rate-limit'
+import { readJsonBody } from '@/lib/request-body'
 
 export const dynamic = 'force-dynamic'
 
@@ -19,7 +20,9 @@ export async function POST(request: Request) {
   if (!(await allowRequest(`video-view:${getClientIp(request)}`, 60, 60))) return NextResponse.json({ success: false }, { status: 429 })
 
   try {
-    const body = await request.json() as { videoId?: unknown; title?: unknown }
+    const parsed = await readJsonBody<{ videoId?: unknown; title?: unknown }>(request)
+    if (!parsed.ok) return NextResponse.json({ success: false }, { status: parsed.reason === 'too_large' ? 413 : 400 })
+    const body = parsed.data
     const videoId = normalizeText(body.videoId, 11)
     const title = normalizeText(body.title, 160)
     if (!/^[A-Za-z0-9_-]{11}$/.test(videoId) || !title) return NextResponse.json({ success: false }, { status: 400 })

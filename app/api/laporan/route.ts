@@ -4,6 +4,7 @@ import { getPortalUser } from '@/lib/auth/access'
 import { pool } from '@/lib/db'
 import { ALLOWED_LOCATIONS, DAILY_LIMIT, KATEGORI, MAX_PHOTOS, URGENSI } from '@/lib/laporan'
 import { allowRequest } from '@/lib/rate-limit'
+import { readJsonBody } from '@/lib/request-body'
 
 export const dynamic = 'force-dynamic'
 
@@ -22,7 +23,9 @@ export async function POST(request: Request) {
   if (origin !== new URL(request.url).origin) return NextResponse.json({ error: 'Permintaan tidak valid.' }, { status: 403 })
   const user = await getPortalUser()
   if (!user) return NextResponse.json({ error: 'Silakan masuk terlebih dahulu.' }, { status: 401 })
-  const body = await request.json().catch(() => null) as Record<string, unknown> | null
+  const parsed = await readJsonBody<Record<string, unknown>>(request)
+  if (!parsed.ok) return NextResponse.json({ error: parsed.reason === 'too_large' ? 'Data terlalu besar.' : 'Data tidak valid.' }, { status: parsed.reason === 'too_large' ? 413 : 400 })
+  const body = parsed.data
   if (!body) return NextResponse.json({ error: 'Data tidak valid.' }, { status: 400 })
 
   const kategori = KATEGORI.find((k) => k.id === body.kategori)

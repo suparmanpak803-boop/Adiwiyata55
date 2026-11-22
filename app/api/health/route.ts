@@ -5,6 +5,7 @@
 import { NextResponse } from 'next/server'
 import { pool } from '@/lib/db'
 import { getPortalUser } from '@/lib/auth/access'
+import { allowRequest, getClientIp } from '@/lib/rate-limit'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -19,8 +20,12 @@ const requiredTables: Record<string, string> = {
   dokumen: 'adiwiyata_documents', peran_pengguna: 'adiwiyata_user_roles',
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    // B-13: batas laju pemeriksaan kesehatan (30/menit per IP).
+    if (!(await allowRequest(`health:${getClientIp(request)}`, 30, 60))) {
+      return NextResponse.json({ error: 'Terlalu banyak permintaan.' }, { status: 429, headers: { 'Cache-Control': 'no-store' } })
+    }
     await pool.query('SELECT 1')
     const user = await getPortalUser().catch(() => null)
     if (user?.role !== 'admin') {
