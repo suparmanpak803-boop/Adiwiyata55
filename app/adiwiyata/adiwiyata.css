@@ -26,6 +26,13 @@
 .adi-division-card ol li{margin-bottom:6px}
 .adi-division-card{min-height:0}
 .adi-division-card h2 .adi-division-toggle{width:100%;padding:0;display:flex;align-items:flex-start;justify-content:space-between;gap:10px;border:0;background:none;color:inherit;font:inherit;text-align:left;cursor:pointer}
+.adi-subtitle-first{margin-top:10px}
+.adi-division-card .adi-division-coordinator{margin-top:2px;font-size:10px;font-weight:700}
+.adi-structure-list{margin:0 0 8px;padding:0;list-style:none;border-top:1px solid var(--adi-line)}
+.adi-structure-list li{padding:11px 2px;display:flex;align-items:baseline;justify-content:space-between;gap:16px;border-bottom:1px solid var(--adi-line);font-size:11px}
+.adi-structure-list li span{color:var(--adi-muted)}
+.adi-structure-list li strong{font-weight:700;text-align:right}
+.adi-source-note a{color:var(--adi-green);font-weight:700}
 .adi-division-toggle:focus-visible{outline:3px solid var(--adi-green);outline-offset:3px}
 .adi-division-toggle svg{width:18px;height:18px;flex:none;margin-top:4px;transition:transform .2s ease}
 .adi-division-toggle[aria-expanded="true"] svg{transform:rotate(180deg)}
