@@ -31,13 +31,13 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const origin = request.headers.get('origin')
-  if (origin && origin !== new URL(request.url).origin) return NextResponse.json({ error: 'Permintaan tidak valid.' }, { status: 403 })
+  if (origin !== new URL(request.url).origin) return NextResponse.json({ error: 'Permintaan tidak valid.' }, { status: 403 })
   const user = await getPortalUser()
   if (!user) return NextResponse.json({ error: 'Silakan masuk terlebih dahulu.' }, { status: 401 })
   const { id } = await params
   const report = await load(id, user.id)
   if (!report) return NextResponse.json({ error: 'Laporan tidak ditemukan.' }, { status: 404 })
-  if (!(await allowRequest(`laporan-aksi:${user.id}`, 20, 60))) return NextResponse.json({ error: 'Terlalu banyak permintaan.' }, { status: 429 })
+  if (!(await allowRequest(`laporan-aksi:${user.id}`, 20, 60, { failClosed: true }))) return NextResponse.json({ error: 'Terlalu banyak permintaan.' }, { status: 429 })
   const body = await request.json().catch(() => null) as { aksi?: unknown; isi?: unknown; rating?: unknown } | null
 
   if (body?.aksi === 'komentar') {

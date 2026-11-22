@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { db } from '@/lib/db'
 import { adiwiyataDocuments } from '@/lib/db/schema'
 import { getPortalUser } from '@/lib/auth/access'
+import { matchesMagicBytes } from '@/lib/file-magic'
 
 export const runtime = 'nodejs'
 
@@ -25,6 +26,8 @@ function textValue(value: FormDataEntryValue | null, maxLength: number) {
 }
 
 export async function POST(request: NextRequest) {
+  const origin = request.headers.get('origin')
+  if (origin !== new URL(request.url).origin) return NextResponse.json({ error: 'Permintaan tidak valid.' }, { status: 403 })
   const user = await getPortalUser()
   if (!user) return NextResponse.json({ error: 'Silakan masuk terlebih dahulu.' }, { status: 401 })
   if (user.role !== 'admin') return NextResponse.json({ error: 'Hanya admin yang dapat mengelola dokumen.' }, { status: 403 })
@@ -42,10 +45,15 @@ export async function POST(request: NextRequest) {
     if (!allowedTypes.has(file.type)) {
       return NextResponse.json({ error: 'Format yang didukung: PDF, gambar, Word, Excel, atau PowerPoint.' }, { status: 400 })
     }
+    // L-03: periksa isi berkas, bukan hanya MIME dari klien.
+    const bytes = Buffer.from(await file.arrayBuffer())
+    if (!matchesMagicBytes(bytes, file.type)) {
+      return NextResponse.json({ error: 'Isi berkas tidak sesuai format yang dipilih.' }, { status: 400 })
+    }
     if (!title) return NextResponse.json({ error: 'Judul dokumen wajib diisi.' }, { status: 400 })
 
     const safeName = file.name.normalize('NFKC').replace(/[^\p{L}\p{N}._-]+/gu, '-').replace(/^-+|-+$/g, '').slice(-120) || 'dokumen'
-    const blob = await put(`adiwiyata-documents/${safeName}`, file, { access: 'public', addRandomSuffix: true })
+    const blob = await put(`adiwiyata-documents/${safeName}`, bytes, { access: 'public', addRandomSuffix: true })
 
     try {
       const [document] = await db.insert(adiwiyataDocuments).values({

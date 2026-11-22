@@ -29,7 +29,12 @@ function getPool(): Pool {
       max: 10,
       idleTimeoutMillis: 30_000,
       connectionTimeoutMillis: 10_000,
-      ssl: { rejectUnauthorized: false },
+      // M-02: sertifikat TLS Postgres DIVERIFIKASI (sebelumnya
+      // rejectUnauthorized: false). Neon memakai sertifikat dari CA
+      // publik, jadi verifikasi standar Node sudah cukup. Bila koneksi
+      // DB gagal setelah perubahan ini, kembalikan ke false dan catat
+      // sebagai risiko yang diterima — jangan diam-diam.
+      ssl: { rejectUnauthorized: true },
     })
     poolInstance.on('error', (error) => {
       console.error('[db] idle client error', error)

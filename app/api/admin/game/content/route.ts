@@ -140,7 +140,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  if (request.headers.get('origin') && request.headers.get('origin') !== new URL(request.url).origin) return json('Permintaan tidak valid.', 403)
+  if (request.headers.get('origin') !== new URL(request.url).origin) return json('Permintaan tidak valid.', 403)
   try {
     const user = await requirePortalRole(['admin'])
     const body = await readBody(request)
@@ -216,7 +216,7 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  if (request.headers.get('origin') && request.headers.get('origin') !== new URL(request.url).origin) return json('Permintaan tidak valid.', 403)
+  if (request.headers.get('origin') !== new URL(request.url).origin) return json('Permintaan tidak valid.', 403)
   try {
     const user = await requirePortalRole(['admin'])
     const body = await readBody(request)

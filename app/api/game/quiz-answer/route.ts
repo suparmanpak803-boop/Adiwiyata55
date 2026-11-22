@@ -20,12 +20,12 @@ function error(message: string, status: number, code: string) {
 }
 
 export async function POST(request: Request) {
-  if (request.headers.get('origin') && request.headers.get('origin') !== new URL(request.url).origin) return error('Permintaan tidak valid.', 403, 'AKSES_DITOLAK')
+  if (request.headers.get('origin') !== new URL(request.url).origin) return error('Permintaan tidak valid.', 403, 'AKSES_DITOLAK')
   let user: Awaited<ReturnType<typeof getPortalUser>>
   try {
     user = await getPortalUser()
     if (!user) return error('Silakan masuk kembali.', 401, 'BELUM_LOGIN')
-    if (!(await allowRequest(`kuis-jawaban:${user.id}`, 40, 60))) return error('Terlalu banyak jawaban. Coba lagi sebentar.', 429, 'BATAS_PERMINTAAN')
+    if (!(await allowRequest(`kuis-jawaban:${user.id}`, 40, 60, { failClosed: true }))) return error('Terlalu banyak jawaban. Coba lagi sebentar.', 429, 'BATAS_PERMINTAAN')
   } catch (cause) {
     console.error('[api/game/quiz-answer auth]', cause)
     return error('Layanan autentikasi belum dapat dihubungi.', 503, 'AUTENTIKASI_GAGAL')

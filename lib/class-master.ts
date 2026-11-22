@@ -1,9 +1,9 @@
 // Master kelas dari Apps Script (sheet Master_Kelas).
-// Sumber: GET <apps_script_url>?action=classes&token=...
-// mengembalikan { success, master: { classes, byGrade, locations } }.
+// Sumber: POST <apps_script_url> { action: 'classes', token } (token di
+// body, bukan URL — lihat lib/apps-script-client.ts) mengembalikan
+// { success, master: { classes, byGrade, locations } }.
 // Melempar bila gagal — caller memakai .catch(() => getFallbackClassMaster()).
-import { readJsonResponse } from '@/lib/api-client'
-import { getAppsScriptConfig } from '@/lib/sheets-config'
+import { callAppsScriptRead } from '@/lib/apps-script-client'
 import { LOKASI_KELAS } from '@/lib/laporan'
 
 export type ClassMasterItem = {
@@ -37,12 +37,7 @@ export function getFallbackClassMaster(): ClassMasterData {
 }
 
 export async function getClassMasterData(): Promise<ClassMasterData> {
-  const { url, token } = await getAppsScriptConfig()
-  const target = new URL(url)
-  target.searchParams.set('action', 'classes')
-  target.searchParams.set('token', token)
-  const response = await fetch(target, { cache: 'no-store', signal: AbortSignal.timeout(15_000) })
-  const result = await readJsonResponse<{ success?: boolean; master?: unknown; error?: string }>(response)
+  const result = await callAppsScriptRead<{ success?: boolean; master?: unknown; error?: string }>('classes')
   if (!result.success || !result.master || typeof result.master !== 'object') {
     throw new Error(result.error || 'Master kelas tidak dapat dimuat dari Apps Script.')
   }

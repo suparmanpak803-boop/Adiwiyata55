@@ -7,6 +7,7 @@ import { adiwiyataUserRoles, neonAuthUsers } from '@/lib/db/schema'
 import { getFallbackClassMaster, getClassMasterData } from '@/lib/class-master'
 import { normalizeClassCode } from '@/lib/class-codes'
 import { requirePortalRole } from '@/lib/auth/access'
+import { allowRequest } from '@/lib/rate-limit'
 import { getManagedAccounts, type ManagedPortalRole } from '@/lib/admin-user-management'
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
@@ -36,6 +37,8 @@ export async function searchAdminUsers(search: string) {
 export async function updateAdminUserRole(input: { userId: string; role: ManagedPortalRole; className: string; expiresOn: string | null }) {
   try {
     const actor = await requirePortalRole(['admin'])
+    // M-07: batas laju perubahan peran (10/menit per admin).
+    if (!(await allowRequest(`peran:${actor.id}`, 10, 60))) throw new UserManagementError('Terlalu banyak perubahan peran. Coba lagi sebentar.')
     if (!input || typeof input !== 'object' || typeof input.userId !== 'string' || !UUID_PATTERN.test(input.userId)) {
       throw new UserManagementError('Akun yang dipilih tidak valid.')
     }

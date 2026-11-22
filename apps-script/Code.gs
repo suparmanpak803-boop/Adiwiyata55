@@ -296,6 +296,16 @@ function doPost(event) {
       const synced = syncLaporanReports(spreadsheet, body.reports)
       return jsonResponse({ success: true, synced: synced })
     }
+    // L-02: aksi baca juga dilayani lewat POST (token di body, bukan di
+    // URL yang tercatat di log). Logika baca tetap di doGet — di sini
+    // hanya diteruskan parameternya.
+    if (body.action === 'classes' || body.action === 'videos' || body.action === 'summary') {
+      const params = { action: body.action, token: body.token }
+      ;['from', 'to', 'grade', 'className', 'classNames'].forEach(function(key) {
+        if (body[key] !== undefined && body[key] !== '') params[key] = String(body[key])
+      })
+      return doGet({ parameter: params })
+    }
     const sheet = ensureSheets(spreadsheet)
     if (body.action !== 'submit' || !Array.isArray(body.records) || body.records.length < 1 || body.records.length > 5) throw new Error('Permintaan tidak valid.')
     const staff = normalizeText(body.staff, 100)

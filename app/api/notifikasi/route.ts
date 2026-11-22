@@ -16,7 +16,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   const origin = request.headers.get('origin')
-  if (origin && origin !== new URL(request.url).origin) return NextResponse.json({ error: 'Permintaan tidak valid.' }, { status: 403 })
+  if (origin !== new URL(request.url).origin) return NextResponse.json({ error: 'Permintaan tidak valid.' }, { status: 403 })
   const user = await getPortalUser()
   if (!user) return NextResponse.json({ error: 'Silakan masuk terlebih dahulu.' }, { status: 401 })
   await pool.query(`UPDATE public.notifikasi SET dibaca = true WHERE user_id = $1 AND dibaca = false`, [user.id])

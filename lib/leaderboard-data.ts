@@ -200,7 +200,9 @@ export async function getLeaderboardPayload(searchParams: URLSearchParams): Prom
       skor: Number(row.skor ?? 0),
       created_at: row.created_at,
       nama_tampil: row.user_id ? displayName(row.nama, row.tampil_inisial === true, row.user_id) : row.kode_kelas,
-      nama: row.nama,
+      // H-01: nama lengkap hanya untuk baris sendiri / admin. Pengguna lain
+      // hanya mendapat nama_tampil (inisial bila tampil_inisial aktif).
+      ...(row.user_id === user.id || user.role === 'admin' ? { nama: row.nama } : {}),
     }))
     return base
   }
@@ -343,7 +345,8 @@ export async function getLeaderboardPayload(searchParams: URLSearchParams): Prom
     .map((row, index) => ({
       peringkat: index + 1,
       user_id: row.user_id,
-      nama: row.nama,
+      // H-01: nama lengkap hanya untuk baris sendiri / admin.
+      ...(row.user_id === user.id || user.role === 'admin' ? { nama: row.nama } : {}),
       nama_tampil: displayName(row.nama, row.tampil_inisial, row.user_id),
       kode_kelas: row.kode_kelas,
       skor: Number(row.skor ?? 0),

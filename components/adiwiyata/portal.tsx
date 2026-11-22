@@ -240,7 +240,17 @@ export function AdiwiyataPortal({ user, depositData, sheetsConfig, educationVide
     if (signingOut) return
     setSigningOut(true)
     try {
-      await authClient.signOut().catch(() => undefined)
+      // L-08: coba cabut sesi di server hingga 3 kali sebelum memakai
+      // fallback /api/logout (yang hanya menghapus cookie lokal).
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          const result = await authClient.signOut() as { error?: unknown } | undefined
+          if (!result || !result.error) break
+        } catch {
+          // Coba lagi.
+        }
+        await new Promise((resolve) => setTimeout(resolve, 500))
+      }
     } finally {
       await fetch('/api/logout', { method: 'POST', credentials: 'same-origin' }).catch(() => undefined)
       window.location.replace('/sign-in')

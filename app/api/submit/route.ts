@@ -1,14 +1,15 @@
 import { NextResponse } from 'next/server'
 import { readJsonResponse } from '@/lib/api-client'
+import { callAppsScriptRead } from '@/lib/apps-script-client'
 import { getPortalUser } from '@/lib/auth/access'
 import { getAppsScriptConfig } from '@/lib/sheets-config'
 import { isActiveClassCode } from '@/lib/class-master'
 import { normalizeClassCode } from '@/lib/class-codes'
 import { GENERAL_LOCATIONS } from '@/lib/general-locations'
+import { allowRequest } from '@/lib/rate-limit'
 
 export const dynamic = 'force-dynamic'
 
-const sendWindows = new Map<string, { count: number; resetAt: number }>()
 const allowedWasteTypes = new Set(['Organik', 'Anorganik', 'B3', 'Residu', 'Kertas'])
 
 type SheetRecord = {
@@ -32,24 +33,16 @@ function validDate(value: string) {
   return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day && value <= today
 }
 
-function rateLimit(userId: string) {
-  const now = Date.now()
-  const window = sendWindows.get(userId)
-  if (!window || window.resetAt <= now) {
-    sendWindows.set(userId, { count: 1, resetAt: now + 60_000 })
-    return true
-  }
-  if (window.count >= 20) return false
-  window.count += 1
-  return true
-}
-
 export async function POST(request: Request) {
   try {
+    const origin = request.headers.get('origin')
+    if (origin !== new URL(request.url).origin) return NextResponse.json({ error: 'Permintaan tidak valid.' }, { status: 403 })
     const user = await getPortalUser()
     if (!user) return NextResponse.json({ error: 'Silakan masuk kembali.' }, { status: 401 })
     if (user.role !== 'admin' && user.role !== 'petugas') return NextResponse.json({ error: 'Hanya Admin dan Petugas Adiwiyata yang dapat mengirim setoran.' }, { status: 403 })
-    if (!rateLimit(user.id)) return NextResponse.json({ error: 'Terlalu banyak pengiriman. Silakan coba lagi satu menit lagi.' }, { status: 429 })
+    // M-06: rate limit berbasis Postgres (bukan Map in-memory yang tidak
+    // berlaku antar instance serverless).
+    if (!(await allowRequest(`kirim:${user.id}`, 20, 60))) return NextResponse.json({ error: 'Terlalu banyak pengiriman. Silakan coba lagi satu menit lagi.' }, { status: 429 })
 
     const body = await request.json() as { records?: unknown; replace?: unknown }
     if (!Array.isArray(body.records) || body.records.length < 1 || body.records.length > 5) {
@@ -87,12 +80,17 @@ export async function POST(request: Request) {
       signal: AbortSignal.timeout(15_000),
     })
     const result = await readJsonResponse<{ success?: boolean; error?: string; message?: string }>(response)
-    if (!result.success) return NextResponse.json({ error: result.error || 'Spreadsheet belum dapat menerima data. Silakan coba lagi.' }, { status: 502 })
+    // L-01: jangan teruskan pesan error Apps Script apa adanya ke klien.
+    if (!result.success) {
+      console.error('[api/submit] Apps Script menolak kiriman:', result.error)
+      return NextResponse.json({ error: 'Spreadsheet belum dapat menerima data. Silakan coba lagi.' }, { status: 502 })
+    }
     return NextResponse.json({ success: true, message: 'Data berhasil tersimpan ke Spreadsheet.' })
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Pengiriman ke Spreadsheet gagal.'
-    const status = message.includes('belum dikonfigurasi') ? 503 : 502
-    return NextResponse.json({ error: message }, { status })
+    // L-01: pesan error mentah (driver/Apps Script) hanya masuk log server.
+    console.error('[api/submit]', error)
+    const notConfigured = error instanceof Error && error.message.includes('belum dikonfigurasi')
+    return NextResponse.json({ error: notConfigured ? 'Layanan Spreadsheet belum dikonfigurasi.' : 'Pengiriman ke Spreadsheet gagal.' }, { status: notConfigured ? 503 : 502 })
   }
 }
 
@@ -101,33 +99,37 @@ export async function GET(request: Request) {
     const user = await getPortalUser()
     if (!user) return NextResponse.json({ error: 'Silakan masuk kembali.' }, { status: 401 })
     if (user.role !== 'admin' && user.role !== 'petugas' && user.role !== 'pengunjung') return NextResponse.json({ error: 'Akses rekap tidak diizinkan.' }, { status: 403 })
-    const { url, token } = await getAppsScriptConfig()
+    // M-06: GET rekap juga dibatasi — sebelumnya tanpa limit dan
+    // mem-proxy ke Apps Script (kuota bisa dikuras).
+    if (!(await allowRequest(`rekap:${user.id}`, 30, 60))) return NextResponse.json({ error: 'Terlalu banyak permintaan rekap. Coba lagi sebentar.' }, { status: 429 })
     const params = new URL(request.url).searchParams
-    const target = new URL(url)
-    target.searchParams.set('action', 'summary')
-    target.searchParams.set('token', token)
     const grade = params.get('grade')
-    if (user.role === 'admin' && (grade === 'X' || grade === 'XI' || grade === 'XII')) target.searchParams.set('grade', grade)
     const requestedClasses = user.role === 'admin'
       ? (params.get('classNames') || '').split(',').map((value) => normalizeClassCode(value) || ['Kantin', 'Halaman', 'Lab', 'Perpustakaan', 'Taman'].find((location) => location.toLowerCase() === value.trim().toLowerCase()) || '').filter(Boolean)
       : []
     if (user.role === 'admin' && requestedClasses.length) {
       const valid = await Promise.all(requestedClasses.map(async (name) => !normalizeClassCode(name) || isActiveClassCode(name)))
       if (valid.some((item) => !item)) return NextResponse.json({ error: 'Filter memuat kelas yang tidak aktif di Master_Kelas.' }, { status: 400 })
-      target.searchParams.set('classNames', requestedClasses.join(','))
-    } else if (user.role === 'petugas' && user.className) {
-      target.searchParams.set('className', normalizeClassCode(user.className) || user.className)
     }
-    for (const key of ['from', 'to'] as const) {
+    const dateParam = (key: 'from' | 'to') => {
       const value = params.get(key)
-      if (value && /^\d{4}-\d{2}-\d{2}$/.test(value)) target.searchParams.set(key, value)
+      return value && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : undefined
     }
-    const response = await fetch(target, { cache: 'no-store', signal: AbortSignal.timeout(15_000) })
-    const result = await readJsonResponse<{ success?: boolean; error?: string } & Record<string, unknown>>(response)
-    if (!result.success) return NextResponse.json({ error: result.error || 'Rekap Spreadsheet belum dapat dimuat.' }, { status: 502 })
+    // L-02: token Apps Script dikirim lewat body POST, bukan query string.
+    const result = await callAppsScriptRead<{ success?: boolean; error?: string } & Record<string, unknown>>('summary', {
+      grade: user.role === 'admin' && (grade === 'X' || grade === 'XI' || grade === 'XII') ? grade : undefined,
+      classNames: user.role === 'admin' && requestedClasses.length ? requestedClasses.join(',') : undefined,
+      className: user.role === 'petugas' && user.className ? normalizeClassCode(user.className) || user.className : undefined,
+      from: dateParam('from'),
+      to: dateParam('to'),
+    })
+    if (!result.success) {
+      console.error('[api/submit] Apps Script menolak rekap:', result.error)
+      return NextResponse.json({ error: 'Rekap Spreadsheet belum dapat dimuat.' }, { status: 502 })
+    }
     return NextResponse.json(result)
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Rekap Spreadsheet belum dapat dimuat.'
-    return NextResponse.json({ error: message }, { status: 503 })
+    console.error('[api/submit] GET', error)
+    return NextResponse.json({ error: 'Rekap Spreadsheet belum dapat dimuat.' }, { status: 503 })
   }
 }

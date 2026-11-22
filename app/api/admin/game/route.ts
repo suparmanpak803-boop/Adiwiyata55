@@ -6,8 +6,9 @@ import { resetLeaderboardIfDue, saveAdminLeaderboardSettings } from '@/lib/leade
 export const dynamic = 'force-dynamic'
 
 function sameOrigin(request: Request) {
+  // L-05: ketat — Origin yang absen juga ditolak (bukan hanya yang beda).
   const origin = request.headers.get('origin')
-  return !origin || origin === new URL(request.url).origin
+  return origin === new URL(request.url).origin
 }
 
 export async function GET() {

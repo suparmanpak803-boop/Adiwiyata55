@@ -19,7 +19,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   const origin = request.headers.get('origin')
-  if (origin && origin !== new URL(request.url).origin) return NextResponse.json({ error: 'Permintaan tidak valid.' }, { status: 403 })
+  if (origin !== new URL(request.url).origin) return NextResponse.json({ error: 'Permintaan tidak valid.' }, { status: 403 })
   const user = await getPortalUser()
   if (!user) return NextResponse.json({ error: 'Silakan masuk terlebih dahulu.' }, { status: 401 })
   const body = await request.json().catch(() => null) as Record<string, unknown> | null
@@ -40,7 +40,7 @@ export async function POST(request: Request) {
   if (isi.length < 20 || isi.length > 1000) return NextResponse.json({ error: 'Isi laporan 20 sampai 1000 karakter.' }, { status: 400 })
   if (!urgensi) return NextResponse.json({ error: 'Pilih tingkat urgensi.' }, { status: 400 })
   if (fotos.length > MAX_PHOTOS) return NextResponse.json({ error: `Maksimal ${MAX_PHOTOS} foto.` }, { status: 400 })
-  if (!(await allowRequest(`laporan:${user.id}`, 10, 60))) return NextResponse.json({ error: 'Terlalu banyak permintaan.' }, { status: 429 })
+  if (!(await allowRequest(`laporan:${user.id}`, 10, 60, { failClosed: true }))) return NextResponse.json({ error: 'Terlalu banyak permintaan.' }, { status: 429 })
 
   const today = await pool.query<{ n: number }>(`SELECT count(*)::int AS n FROM public.laporan WHERE user_id = $1 AND dibuat_pada >= date_trunc('day', now() AT TIME ZONE 'Asia/Jakarta') AT TIME ZONE 'Asia/Jakarta'`, [user.id])
   if ((today.rows[0]?.n ?? 0) >= DAILY_LIMIT) return NextResponse.json({ error: `Batas ${DAILY_LIMIT} laporan per hari sudah tercapai.` }, { status: 429 })

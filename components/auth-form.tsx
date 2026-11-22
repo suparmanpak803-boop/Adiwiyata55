@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ArrowRight, Eye, EyeOff, LoaderCircle } from 'lucide-react'
@@ -20,7 +20,8 @@ function getAuthErrorMessage(error: unknown, mode: AuthFormProps['mode']) {
     }
 
     if (mode === 'sign-up' && (details.status === 409 || details.code === 'USER_ALREADY_EXISTS')) {
-      return 'Email ini sudah terdaftar. Coba masuk dengan akun tersebut.'
+      // M-04: jangan mengonfirmasi apakah email sudah terdaftar.
+      return 'Periksa inbox Anda untuk kode verifikasi. Jika email ini sudah terdaftar, silakan masuk dengan akun tersebut.'
     }
 
     if (details.status === 403 || details.code === 'INVALID_ORIGIN') {
@@ -41,6 +42,15 @@ export function AuthForm({ mode }: AuthFormProps) {
   const [verificationComplete, setVerificationComplete] = useState(false)
   const [verificationEmail, setVerificationEmail] = useState('')
   const [verificationNotice, setVerificationNotice] = useState('')
+  // M-04: jeda kirim ulang OTP agar tombol tidak bisa ditekan berulang
+  // (spam OTP ke inbox korban / kuras kuota email).
+  const [resendCooldown, setResendCooldown] = useState(0)
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return
+    const timer = setTimeout(() => setResendCooldown((value) => value - 1), 1000)
+    return () => clearTimeout(timer)
+  }, [resendCooldown])
   const isSignUp = mode === 'sign-up'
 
   async function handleVerifyEmail(event: FormEvent<HTMLFormElement>) {
@@ -69,7 +79,7 @@ export function AuthForm({ mode }: AuthFormProps) {
   }
 
   async function handleResendVerification() {
-    if (pending || !verificationEmail) return
+    if (pending || !verificationEmail || resendCooldown > 0) return
 
     setPending(true)
     setError('')
@@ -81,6 +91,7 @@ export function AuthForm({ mode }: AuthFormProps) {
         type: 'email-verification',
       })
       if (result.error) throw result.error
+      setResendCooldown(60)
       setVerificationNotice('Kode verifikasi baru sudah dikirim. Periksa juga folder spam.')
     } catch {
       setError('Kode baru belum berhasil dikirim. Silakan coba lagi.')
@@ -202,8 +213,8 @@ export function AuthForm({ mode }: AuthFormProps) {
             </form>
             <p className="auth-switch">
               Tidak menerima kode?{' '}
-              <button className="auth-resend-button" disabled={pending} onClick={handleResendVerification} type="button">
-                Kirim ulang kode
+              <button className="auth-resend-button" disabled={pending || resendCooldown > 0} onClick={handleResendVerification} type="button">
+                {resendCooldown > 0 ? `Kirim ulang kode (${resendCooldown} dtk)` : 'Kirim ulang kode'}
               </button>
             </p>
           </>

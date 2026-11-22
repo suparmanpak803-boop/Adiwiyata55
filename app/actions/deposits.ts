@@ -1,10 +1,10 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { readJsonResponse } from '@/lib/api-client'
+import { callAppsScriptRead } from '@/lib/apps-script-client'
 import { getPortalUser, requirePortalRole } from '@/lib/auth/access'
 import { pool } from '@/lib/db'
-import { getAppsScriptConfig } from '@/lib/sheets-config'
+import { allowRequest } from '@/lib/rate-limit'
 import { getClassMasterData, getFallbackClassMaster, isActiveClassCode } from '@/lib/class-master'
 import { normalizeClassCode } from '@/lib/class-codes'
 import { GENERAL_LOCATIONS } from '@/lib/general-locations'
@@ -99,16 +99,12 @@ async function getWriter() {
 
 async function fetchSheetSummary(user: NonNullable<Awaited<ReturnType<typeof getPortalUser>>>, filters: { from?: string; to?: string; className?: string } = {}) {
   try {
-    const { url: appsScriptUrl, token } = await getAppsScriptConfig()
-    const target = new URL(appsScriptUrl)
-    target.searchParams.set('action', 'summary')
-    target.searchParams.set('token', token)
     const className = user.role === 'petugas' ? normalizeClassCode(user.className) || user.className : filters.className
-    if (className) target.searchParams.set('className', className)
-    if (filters.from) target.searchParams.set('from', filters.from)
-    if (filters.to) target.searchParams.set('to', filters.to)
-    const response = await fetch(target, { cache: 'no-store', signal: AbortSignal.timeout(15_000) })
-    const result = await readJsonResponse<{ success?: boolean; error?: string } & Partial<SpreadsheetSummary>>(response)
+    const result = await callAppsScriptRead<{ success?: boolean; error?: string } & Partial<SpreadsheetSummary>>('summary', {
+      className: className ?? undefined,
+      from: filters.from,
+      to: filters.to,
+    })
     if (!result.success) return { summary: null, error: result.error || 'Rekap Spreadsheet belum dapat dimuat.' }
     return { summary: result as SpreadsheetSummary, error: null }
   } catch {
@@ -175,8 +171,10 @@ export async function getDepositPageData() {
       grade: item.grade,
       rombel: item.rombel,
       student_count: saved?.student_count ?? null,
-      homeroom_teacher: saved?.homeroom_teacher || item.homeroomTeacher,
-      officer_name: saved?.officer_name || '',
+      // L-06: nama wali kelas & petugas hanya untuk admin/petugas — bukan
+      // untuk pengunjung (payload ini ikut ke komponen klien).
+      homeroom_teacher: user.role === 'pengunjung' ? '' : (saved?.homeroom_teacher || item.homeroomTeacher),
+      officer_name: user.role === 'pengunjung' ? '' : (saved?.officer_name || ''),
     }
   })
   return { classes, deposits: deposits.rows, report: report.rows, sheetsSummary: sheets.summary, sheetsError: sheets.error, totals: totals.rows[0] ?? null, role: user.role, className: assignedClass, userId: user.id }
@@ -184,7 +182,18 @@ export async function getDepositPageData() {
 
 export async function saveDeposit(input: DepositInput) {
   const user = await getWriter()
+  // M-05/M-07: batas laju penulisan setoran (30/jam per akun).
+  if (!(await allowRequest(`setoran:${user.id}`, 30, 3600))) throw new Error('Terlalu banyak penyimpanan setoran. Coba lagi nanti.')
   input = await validateInput(input)
+  // M-05: tanggal mundur maksimal 30 hari (tanggal lebih lama hanya
+  // lewat admin) agar leaderboard tidak bisa digelembungkan backfill.
+  if (user.role !== 'admin') {
+    const earliest = new Date()
+    earliest.setDate(earliest.getDate() - 30)
+    if (input.date < earliest.toISOString().slice(0, 10)) {
+      throw new Error('Tanggal setoran maksimal 30 hari ke belakang. Untuk tanggal yang lebih lama, minta admin.')
+    }
+  }
   const isGeneralLocation = GENERAL_LOCATIONS.includes(input.className as (typeof GENERAL_LOCATIONS)[number])
   if (user.role === 'petugas' && !isGeneralLocation && (normalizeClassCode(user.className) || user.className) !== input.className) throw new Error('Petugas hanya dapat mengelola setoran kelasnya atau lokasi umum.')
 
@@ -200,7 +209,9 @@ export async function saveDeposit(input: DepositInput) {
   const id = `${input.date}_${input.className}`
   const existing = await pool.query<{ user_id: string }>(`SELECT user_id FROM public.adiwiyata_deposits WHERE id = $1`, [id])
   if (existing.rowCount && !input.overwrite) return { needsConfirmation: true as const }
-  if (existing.rowCount && user.role !== 'admin' && existing.rows[0]?.user_id !== user.id) {
+  // L-07: lokasi umum boleh ditimpa petugas mana pun (kepemilikan jatuh
+  // ke penulis terakhir); setoran kelas tetap hanya pemilik/admin.
+  if (existing.rowCount && !isGeneralLocation && user.role !== 'admin' && existing.rows[0]?.user_id !== user.id) {
     throw new Error('Setoran ini dibuat oleh akun lain. Hubungi Admin untuk menggantinya.')
   }
 
@@ -215,15 +226,21 @@ export async function saveDeposit(input: DepositInput) {
        submitter_name = EXCLUDED.submitter_name, sync_status = 'pending', updated_at = NOW()
      WHERE $14::boolean OR public.adiwiyata_deposits.user_id = EXCLUDED.user_id
      RETURNING id`,
-    [id, input.date, input.className, studentCount, input.organic, input.inorganic, input.residual, input.hazardous, input.paper, input.tumbler, input.lunchbox, user.id, user.name, user.role === 'admin'],
+    [id, input.date, input.className, studentCount, input.organic, input.inorganic, input.residual, input.hazardous, input.paper, input.tumbler, input.lunchbox, user.id, user.name, user.role === 'admin' || isGeneralLocation],
   )
   if (!saved.rowCount) throw new Error('Setoran ini dibuat oleh akun lain. Hubungi Admin untuk menggantinya.')
+  // M-05: jejak audit penulisan setoran.
+  await pool.query(`INSERT INTO public.log_aktivitas (actor_id, aksi, detail) VALUES ($1, 'setoran_simpan', $2::jsonb)`, [user.id, JSON.stringify({ date: input.date, className: input.className })]).catch(() => undefined)
   revalidatePath('/')
   return { needsConfirmation: false as const }
 }
 
 export async function saveClass(input: { name: string; studentCount: number | null; homeroomTeacher: string; officerName: string }) {
-  await requirePortalRole(['admin'])
+  const actor = await requirePortalRole(['admin'])
+  // M-07: batas laju perubahan data kelas.
+  if (!(await allowRequest(`kelas:${actor.id}`, 30, 3600))) {
+    return { success: false, error: 'Terlalu banyak perubahan data kelas. Coba lagi nanti.' }
+  }
   const className = normalizeClassCode(input.name)
   const master = await getClassMasterData().catch(() => getFallbackClassMaster())
   if (!className || !master.classes.some((item) => item.active && item.code === className)) {
@@ -252,10 +269,21 @@ export async function saveClass(input: { name: string; studentCount: number | nu
 export async function deleteDeposit(id: string) {
   const user = await getWriter()
   if (!/^\d{4}-\d{2}-\d{2}_(?:(?:X|XI|XII)-[A-Z]|Kantin|Halaman|Lab|Perpustakaan|Taman)$/.test(id)) throw new Error('Setoran tidak ditemukan.')
-  const result = user.role === 'admin'
-    ? await pool.query(`DELETE FROM public.adiwiyata_deposits WHERE id = $1`, [id])
-    : await pool.query(`DELETE FROM public.adiwiyata_deposits WHERE id = $1 AND user_id = $2 AND (class_name = $3 OR class_name IN ('Kantin', 'Halaman', 'Lab', 'Perpustakaan', 'Taman'))`, [id, user.id, normalizeClassCode(user.className) || user.className])
-  if (!result.rowCount) throw new Error('Setoran tidak ditemukan atau tidak dapat dihapus oleh akun ini.')
+  // M-07: batas laju penghapusan setoran (30/jam per akun).
+  if (!(await allowRequest(`setoran-hapus:${user.id}`, 30, 3600))) throw new Error('Terlalu banyak penghapusan setoran. Coba lagi nanti.')
+  const target = await pool.query<{ class_name: string; user_id: string }>(`SELECT class_name, user_id FROM public.adiwiyata_deposits WHERE id = $1`, [id])
+  if (!target.rowCount) throw new Error('Setoran tidak ditemukan.')
+  const row = target.rows[0]
+  const isGeneralLocation = GENERAL_LOCATIONS.includes(row.class_name as (typeof GENERAL_LOCATIONS)[number])
+  // L-07: lokasi umum boleh dihapus petugas mana pun; setoran kelas hanya
+  // pemiliknya (atau admin).
+  if (user.role !== 'admin' && !isGeneralLocation) {
+    if (row.user_id !== user.id || (normalizeClassCode(user.className) || user.className) !== row.class_name) {
+      throw new Error('Setoran tidak ditemukan atau tidak dapat dihapus oleh akun ini.')
+    }
+  }
+  await pool.query(`DELETE FROM public.adiwiyata_deposits WHERE id = $1`, [id])
+  await pool.query(`INSERT INTO public.log_aktivitas (actor_id, aksi, detail) VALUES ($1, 'setoran_hapus', $2::jsonb)`, [user.id, JSON.stringify({ id })]).catch(() => undefined)
   revalidatePath('/')
   return { success: true }
 }

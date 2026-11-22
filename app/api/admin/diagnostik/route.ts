@@ -45,7 +45,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  if (request.headers.get('origin') && request.headers.get('origin') !== new URL(request.url).origin) return respond('Permintaan tidak valid.', 403)
+  if (request.headers.get('origin') !== new URL(request.url).origin) return respond('Permintaan tidak valid.', 403)
   try {
     const user = await requirePortalRole(['admin'])
     const body = await request.json().catch(() => null) as { aksi?: unknown } | null

@@ -22,7 +22,7 @@ export async function requireStaff(
   }
   if (opts?.mutating) {
     const origin = request.headers.get('origin')
-    if (origin && origin !== new URL(request.url).origin) {
+    if (origin !== new URL(request.url).origin) {
       return { response: NextResponse.json({ error: 'Permintaan tidak valid.' }, { status: 403 }) }
     }
   }

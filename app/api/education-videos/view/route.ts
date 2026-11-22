@@ -1,29 +1,22 @@
 import { NextResponse } from 'next/server'
 import { readJsonResponse } from '@/lib/api-client'
 import { getAppsScriptConfig } from '@/lib/sheets-config'
+import { allowRequest, getClientIp } from '@/lib/rate-limit'
 
 export const dynamic = 'force-dynamic'
-
-const viewWindows = new Map<string, { count: number; resetAt: number }>()
 
 function normalizeText(value: unknown, max: number) {
   return typeof value === 'string' ? value.trim().replace(/[\u0000-\u001f\u007f]/g, '').slice(0, max) : ''
 }
 
 export async function POST(request: Request) {
-  const address = (request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown').slice(0, 100)
-  const now = Date.now()
-  if (viewWindows.size > 2000) {
-    for (const [key, value] of viewWindows) {
-      if (value.resetAt <= now) viewWindows.delete(key)
-      if (viewWindows.size <= 1500) break
-    }
-  }
-  if (viewWindows.size >= 2000 && !viewWindows.has(address)) return NextResponse.json({ success: false }, { status: 429 })
-  const window = viewWindows.get(address)
-  if (window && window.resetAt > now && window.count >= 60) return NextResponse.json({ success: false }, { status: 429 })
-  if (!window || window.resetAt <= now) viewWindows.set(address, { count: 1, resetAt: now + 60_000 })
-  else window.count += 1
+  const origin = request.headers.get('origin')
+  if (origin !== new URL(request.url).origin) return NextResponse.json({ success: false }, { status: 403 })
+  // M-06: batas laju berbasis Postgres (bukan Map in-memory yang tidak
+  // berlaku antar instance serverless) dan IP tepercaya — entri TERAKHIR
+  // X-Forwarded-For yang ditambahkan Vercel, bukan entri pertama yang
+  // bisa diputar pengirim.
+  if (!(await allowRequest(`video-view:${getClientIp(request)}`, 60, 60))) return NextResponse.json({ success: false }, { status: 429 })
 
   try {
     const body = await request.json() as { videoId?: unknown; title?: unknown }

@@ -1,8 +1,10 @@
-// Pemeriksaan kesehatan publik (tanpa login): hanya menyatakan apakah
-// database produksi dapat dihubungi dan tabel apa saja yang sudah ada.
+// Pemeriksaan kesehatan: hanya menyatakan apakah database produksi
+// dapat dihubungi. Daftar tabel HANYA untuk admin (I-01) — sebelumnya
+// publik dan memetakan inventaris skema ke siapa saja.
 // Tidak mengembalikan isi data, pesan error, atau nilai environment.
 import { NextResponse } from 'next/server'
 import { pool } from '@/lib/db'
+import { getPortalUser } from '@/lib/auth/access'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -20,6 +22,13 @@ const requiredTables: Record<string, string> = {
 export async function GET() {
   try {
     await pool.query('SELECT 1')
+    const user = await getPortalUser().catch(() => null)
+    if (user?.role !== 'admin') {
+      return NextResponse.json(
+        { status: 'ok', db: 'connected' },
+        { headers: { 'Cache-Control': 'no-store' } },
+      )
+    }
     const tables = await pool.query<{ table_schema: string; table_name: string }>(
       `SELECT table_schema, table_name FROM information_schema.tables WHERE table_schema IN ('public', 'neon_auth') AND table_type = 'BASE TABLE'`,
     )

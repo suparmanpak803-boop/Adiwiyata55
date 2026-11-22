@@ -31,14 +31,14 @@ function parseLog(value: unknown): GameAction[] | null {
 
 export async function POST(request: Request) {
   const origin = request.headers.get('origin')
-  if (origin && origin !== new URL(request.url).origin) return NextResponse.json({ error: 'Permintaan tidak valid.' }, { status: 403 })
+  if (origin !== new URL(request.url).origin) return NextResponse.json({ error: 'Permintaan tidak valid.' }, { status: 403 })
   if (Number(request.headers.get('content-length') ?? 0) > 60_000) return NextResponse.json({ error: 'Data terlalu besar.' }, { status: 413 })
   let user: NonNullable<Awaited<ReturnType<typeof getPortalUser>>>
   try {
     const authenticatedUser = await getPortalUser()
     if (!authenticatedUser) return NextResponse.json({ error: 'Silakan masuk terlebih dahulu.' }, { status: 401 })
     user = authenticatedUser
-    if (!(await allowRequest(`skor:${user.id}`, 10, 60))) return NextResponse.json({ error: 'Terlalu banyak pengiriman skor. Coba lagi sebentar.' }, { status: 429 })
+    if (!(await allowRequest(`skor:${user.id}`, 10, 60, { failClosed: true }))) return NextResponse.json({ error: 'Terlalu banyak pengiriman skor. Coba lagi sebentar.' }, { status: 429 })
   } catch (cause) {
     console.error('[api/game/score auth]', cause)
     return NextResponse.json({ error: 'Layanan autentikasi belum dapat dihubungi.' }, { status: 503 })
@@ -87,10 +87,29 @@ export async function POST(request: Request) {
       await client.query('ROLLBACK')
       return NextResponse.json({ error: 'Skor ditolak karena melebihi batas wajar.' }, { status: 422 })
     }
+    // H-03: log mencurigakan DITOLAK (bukan sekadar ditandai lalu tetap
+    // disimpan). Audit dicatat lewat pool terpisah agar tidak ikut
+    // ter-rollback bersama transaksi sesi.
+    if (result.mencurigakan) {
+      await pool.query(`INSERT INTO public.log_aktivitas (actor_id, aksi, detail) VALUES ($1, 'skor_mencurigakan', $2::jsonb)`, [user.id, JSON.stringify({ gameKey, skor: result.skor })]).catch(() => undefined)
+      await client.query('ROLLBACK')
+      return NextResponse.json({ error: 'Skor ditolak karena pola permainan tidak wajar.' }, { status: 422 })
+    }
     const points = pointsFromScore(result.skor, rule.maxPoints)
     const period = await client.query<{ period_id: string }>(`SELECT period_id FROM public.leaderboard_settings WHERE id = true`)
     const periodId = period.rows[0]?.period_id
     if (!periodId) { await client.query('ROLLBACK'); return NextResponse.json({ error: 'Periode leaderboard belum siap.' }, { status: 503 }) }
+
+    // H-03: batas poin harian per pengguna (maks 300/hari) agar farming
+    // tetap terbatas meski penyerang lolos heuristik.
+    const todayPoints = await client.query<{ total: string }>(
+      `SELECT COALESCE(SUM(poin_didapat), 0)::text AS total FROM public.game_scores WHERE user_id = $1 AND dibuat_pada >= now() - interval '1 day'`,
+      [user.id],
+    )
+    if (Number(todayPoints.rows[0]?.total ?? 0) + points > 300) {
+      await client.query('ROLLBACK')
+      return NextResponse.json({ error: 'Batas poin harian tercapai. Coba lagi besok.' }, { status: 429 })
+    }
 
     const previousBest = await client.query<{ best: number | null }>(
       `SELECT MAX(skor) AS best FROM public.game_scores WHERE user_id = $1 AND game_key = $2 AND mencurigakan = false`, [user.id, gameKey],
@@ -98,13 +117,9 @@ export async function POST(request: Request) {
     await client.query(
       `INSERT INTO public.game_scores (user_id, game_key, skor, poin_didapat, durasi_detik, level, period_id, mencurigakan)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
-      [user.id, gameKey, result.skor, points, row.durasi, result.level, periodId, result.mencurigakan],
+      [user.id, gameKey, result.skor, points, row.durasi, result.level, periodId, false],
     )
-    if (!result.mencurigakan) {
-      await client.query(`UPDATE public.adiwiyata_user_roles SET total_poin = total_poin + $2, updated_at = now() WHERE user_id = $1`, [user.id, points])
-    } else {
-      await client.query(`INSERT INTO public.log_aktivitas (actor_id, aksi, detail) VALUES ($1, 'skor_mencurigakan', $2::jsonb)`, [user.id, JSON.stringify({ gameKey, skor: result.skor })])
-    }
+    await client.query(`UPDATE public.adiwiyata_user_roles SET total_poin = total_poin + $2, updated_at = now() WHERE user_id = $1`, [user.id, points])
     const rank = await client.query<{ peringkat: number | null }>(
       `WITH best AS (
          SELECT user_id, game_key, MAX(skor) AS skor FROM public.game_scores
@@ -115,10 +130,10 @@ export async function POST(request: Request) {
     )
     await client.query('COMMIT')
     return NextResponse.json({
-      skor: result.skor, poin: result.mencurigakan ? 0 : points, level: result.level,
-      rekorBaru: !result.mencurigakan && result.skor > (previousBest.rows[0]?.best ?? 0),
+      skor: result.skor, poin: points, level: result.level,
+      rekorBaru: result.skor > (previousBest.rows[0]?.best ?? 0),
       rekorPribadi: Math.max(result.skor, previousBest.rows[0]?.best ?? 0),
-      peringkat: rank.rows[0]?.peringkat ?? null, ditinjau: result.mencurigakan,
+      peringkat: rank.rows[0]?.peringkat ?? null, ditinjau: false,
     }, { headers: { 'Cache-Control': 'no-store' } })
   } catch {
     await client.query('ROLLBACK').catch(() => undefined)

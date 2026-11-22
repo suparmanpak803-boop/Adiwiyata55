@@ -20,7 +20,8 @@ export async function GET() {
       headers: { 'Cache-Control': 'private, no-store, max-age=0' },
     })
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Master_Kelas belum dapat dimuat.'
-    return NextResponse.json({ success: false, error: message }, { status: 503 })
+    // L-01: pesan error mentah hanya masuk log server.
+    console.error('[api/classes]', error)
+    return NextResponse.json({ success: false, error: 'Master_Kelas belum dapat dimuat.' }, { status: 503 })
   }
 }

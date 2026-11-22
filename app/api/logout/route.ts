@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic'
  */
 export async function POST(request: Request) {
   const origin = request.headers.get('origin')
-  if (origin && origin !== new URL(request.url).origin) return NextResponse.json({ error: 'Permintaan tidak valid.' }, { status: 403 })
+  if (origin !== new URL(request.url).origin) return NextResponse.json({ error: 'Permintaan tidak valid.' }, { status: 403 })
 
   const store = await cookies()
   const response = NextResponse.json({ success: true }, { headers: { 'Cache-Control': 'no-store' } })

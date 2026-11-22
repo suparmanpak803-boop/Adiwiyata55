@@ -77,9 +77,11 @@ function kuisScore(log: GameAction[]): { skor: number; level: number; mencurigak
 // lama_terurai) tidak punya UI/log di repo: skor generik dihitung
 // dari entri ok (10 poin per aksi benar) agar route tidak 501 bila
 // game itu diaktifkan admin. Bila UI-nya dibuat, sesuaikan di sini.
+// H-03: log tanpa satu pun kesalahan (100% benar, >= 20 aksi) ditandai
+// mencurigakan — pemain sungguhan hampir selalu membuat kesalahan.
 function genericScore(log: GameAction[]): { skor: number; level: number; mencurigakan: boolean } {
-  const skor = log.filter((action) => action.ok).length * 10
-  return { skor, level: levelFromScore(skor), mencurigakan: false }
+  const ok = log.filter((action) => action.ok).length
+  return { skor: ok * 10, level: levelFromScore(ok * 10), mencurigakan: log.length >= 20 && ok === log.length }
 }
 
 export const GAME_RULES: Record<GameKey, GameRule> = {
