@@ -197,8 +197,7 @@ function GuideDialog({ onClose, role }: { onClose: () => void; role: 'admin' | '
     </ul>
     <p>Akses petugas bisa diberi tanggal berakhir oleh admin. Bila tanggalnya lewat, akunmu kembali jadi pengunjung.</p></>}
     {role === 'pengunjung' && <><h3>Khusus pengunjung</h3>
-    <p>Kamu bisa memakai semua menu di atas. Menu <strong>Input Laporan</strong> dan menu admin hanya untuk petugas dan admin.</p>
-    <p>Untuk menjadi petugas, minta admin menetapkan peran dan kelasmu di menu <strong>Akses Pengguna</strong>.</p></>}
+    <p>Kamu bisa memakai semua menu di atas. Menu <strong>Input Laporan</strong> dan menu admin hanya untuk petugas dan admin.</p></>}
     {role === 'admin' && <><h3>Khusus admin</h3>
     <ul>
       <li><strong>Input Laporan</strong> dan <strong>Kelola Laporan</strong> — sama seperti petugas.</li>
