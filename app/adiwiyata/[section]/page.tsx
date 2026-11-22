@@ -3,8 +3,6 @@ import { notFound } from 'next/navigation'
 import { AdiwiyataPublicHub } from '@/components/adiwiyata/public-hub'
 import { getAdiwiyataDocuments } from '@/lib/documents'
 import { getAdiwiyataSiteContent } from '@/lib/adiwiyata-site-content.server'
-import { getPortalUser } from '@/lib/auth/access'
-import { STRUKTUR_KADER } from '@/lib/adiwiyata-structure'
 import '../adiwiyata.css'
 
 export const dynamic = 'force-dynamic'
@@ -30,9 +28,6 @@ export async function generateMetadata({ params }: { params: Promise<{ section: 
 export default async function AdiwiyataSectionPage({ params }: { params: Promise<{ section: string }> }) {
   const { section } = await params
   if (!sections.some((item) => item === section)) notFound()
-  const [documents, content, user] = await Promise.all([getAdiwiyataDocuments(), getAdiwiyataSiteContent(), getPortalUser().catch(() => null)])
-  // Struktur organisasi hanya diteruskan bila pengguna sudah login; bila
-  // gagal dibaca (mis. DB bermasalah), halaman publik tetap tampil dan
-  // pengunjung hanya melihat ajakan masuk.
-  return <AdiwiyataPublicHub section={section as (typeof sections)[number]} documents={documents} content={content} structure={user ? STRUKTUR_KADER : null} />
+  const [documents, content] = await Promise.all([getAdiwiyataDocuments(), getAdiwiyataSiteContent()])
+  return <AdiwiyataPublicHub section={section as (typeof sections)[number]} documents={documents} content={content} />
 }

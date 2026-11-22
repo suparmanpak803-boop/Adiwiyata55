@@ -2,10 +2,9 @@
 // Nomor 027 Tahun 2026 tentang Tim Kader Adiwiyata, Lampiran I
 // (DAFTAR KADER ADIWIYATA SMA NEGERI 55 JAKARTA, 581 nama).
 //
-// PENTING: modul ini HANYA dibaca komponen server. Data diteruskan ke
-// komponen klien hanya bila pengguna sudah login — lihat
-// app/adiwiyata/[section]/page.tsx. Jangan impor modul ini dari komponen
-// klien, supaya nama-nama pengurus tidak masuk ke bundle publik.
+// Data ini tampil langsung di halaman publik /adiwiyata/struktur tanpa
+// login (keputusan user 2026-11-22: sempat wajib login, lalu diubah jadi
+// tampil langsung). Karena itu modul ini boleh diimpor komponen klien.
 //
 // Catatan: SK memuat 15 seksi kader — satu lebih banyak dari 14 kader di
 // halaman situs, karena SK juga mencantumkan "Edu-Lingkungan" (Rudy Saleh)
