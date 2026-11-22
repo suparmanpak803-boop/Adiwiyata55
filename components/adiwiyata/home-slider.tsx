@@ -119,7 +119,7 @@ export function HomeSlider({ slides, settings, preview = false }: SliderPageData
           />
           <div className="home-slider-overlay" />
           <div className="home-slider-copy">
-            <span className="home-slider-kicker">GERAKAN SEKOLAH LESTARI</span>
+            <span className="home-slider-kicker">SEKOLAH ADIWIYATA</span>
             {current.judul && <h2>{current.judul}</h2>}
             {current.deskripsi && <p>{current.deskripsi}</p>}
             {current.ctaTeks && current.ctaUrl && <CtaLink slide={current} />}
