@@ -36,3 +36,118 @@
 .adi-division-toggle:focus-visible{outline:3px solid var(--adi-green);outline-offset:3px}
 .adi-division-toggle svg{width:18px;height:18px;flex:none;margin-top:4px;transition:transform .2s ease}
 .adi-division-toggle[aria-expanded="true"] svg{transform:rotate(180deg)}
+
+/* Pohon Adiwiyata — halaman Struktur Petugas */
+.pohon{margin-top:6px}
+.pohon-anim{animation:pohon-muncul .45s ease both}
+@keyframes pohon-muncul{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.pohon-banner{position:relative;overflow:hidden;display:flex;flex-wrap:wrap;align-items:center;gap:18px;padding:22px;border:1px solid var(--adi-line);border-radius:22px;background:linear-gradient(135deg,#fdf8e7 0%,#eef4e2 55%,#dcebd9 100%)}
+.pohon-banner-teks{flex:1 1 220px;min-width:0}
+.pohon-eyebrow{display:block;font-size:13px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--adi-green)}
+.pohon-tagline{margin:8px 0 12px;font-family:Georgia,'Times New Roman',serif;font-size:24px;font-weight:700;line-height:1.3;color:var(--adi-ink)}
+.pohon-badge-contoh{display:inline-block;padding:6px 12px;border-radius:999px;background:#f2b705;color:#3d2f00;font-size:13px;font-weight:700;line-height:1.4}
+.pohon-banner-pohon{flex:0 0 110px;width:110px;height:110px}
+.pohon-stat{flex:1 1 100%;display:flex;gap:12px;margin:0}
+.pohon-stat div{flex:1;min-width:0;padding:12px 14px;border-radius:14px;background:#fffefa99;border:1px solid var(--adi-line)}
+.pohon-stat dt{font-size:13px;color:var(--adi-muted)}
+.pohon-stat dd{margin:2px 0 0;font-family:Georgia,'Times New Roman',serif;font-size:26px;font-weight:700;line-height:1.1;color:var(--adi-green)}
+.pohon-cari{margin-top:22px}
+.pohon-cari label{display:block;margin-bottom:8px;font-size:16px;font-weight:700;color:var(--adi-ink)}
+.pohon-cari-kotak{display:flex;align-items:center;gap:10px;min-height:48px;padding:0 14px;border:1.5px solid var(--adi-line);border-radius:14px;background:var(--adi-white)}
+.pohon-cari-kotak:focus-within{border-color:var(--adi-green);outline:3px solid var(--adi-green);outline-offset:2px}
+.pohon-cari-kotak svg{width:22px;height:22px;flex:none;color:var(--adi-muted)}
+.pohon-cari-kotak input{flex:1;min-width:0;border:0;background:none;padding:12px 0;font-size:16px;line-height:1.5;color:var(--adi-ink)}
+.pohon-cari-kotak input:focus{outline:none}
+.pohon-chip-row{display:flex;gap:8px;margin-top:14px;padding-bottom:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin}
+.pohon-chip{flex:none;min-height:44px;padding:0 18px;border-radius:999px;border:1.5px solid var(--adi-line);background:var(--adi-white);color:var(--adi-ink);font-size:16px;line-height:1.4;cursor:pointer;transition:transform .15s ease,background .15s ease,color .15s ease}
+.pohon-chip:active{transform:scale(.97)}
+.pohon-chip.is-active{background:var(--adi-green);border-color:var(--adi-green);color:#fff}
+.pohon-chip:focus-visible{outline:3px solid var(--adi-green);outline-offset:2px}
+.pohon-judul-seksi{display:flex;align-items:center;gap:10px;margin:30px 0 6px;font-family:Georgia,'Times New Roman',serif;font-size:23px;font-weight:700;line-height:1.3;color:var(--adi-ink)}
+.pohon-judul-seksi svg{width:26px;height:26px;flex:none;color:var(--adi-green)}
+.pohon-intro-seksi{margin:0 0 16px;font-size:16px;line-height:1.6;color:var(--adi-muted)}
+.pohon-grid-inti,.pohon-grid-tim{display:grid;gap:14px}
+.pohon-orang-card{width:100%;display:flex;flex-direction:column;align-items:flex-start;gap:5px;padding:18px;border:1px solid var(--adi-line);border-radius:18px;background:var(--adi-white);color:var(--adi-ink);text-align:left;cursor:pointer;box-shadow:0 2px 10px #153f3014;transition:transform .15s ease,box-shadow .15s ease}
+.pohon-orang-card:hover{box-shadow:0 6px 18px #153f3026}
+.pohon-orang-card:active{transform:scale(.98)}
+.pohon-orang-card:focus-visible,.pohon-koordinator:focus-visible,.pohon-anggota:focus-visible,.pohon-tim-kepala:focus-visible,.pohon-dialog-tutup:focus-visible,.pohon-wa:focus-visible{outline:3px solid var(--adi-green);outline-offset:2px}
+.pohon-orang-card--pembina{background:linear-gradient(135deg,#eef4e2,#dcebd9);border-color:#9dc3a4}
+.pohon-avatar{display:grid;place-items:center;flex:none;border-radius:50%;font-weight:800;color:var(--adi-dark);background:#dcebd9}
+.pohon-avatar--sm{width:40px;height:40px;font-size:16px}
+.pohon-avatar--md{width:56px;height:56px;font-size:20px}
+.pohon-avatar--lg{width:84px;height:84px;font-size:30px}
+.pohon-avatar--warna-0{background:#dcebd9}
+.pohon-avatar--warna-1{background:#d8e8ea}
+.pohon-avatar--warna-2{background:#f7eecb}
+.pohon-avatar--warna-3{background:#f0ddd0}
+.pohon-avatar--warna-4{background:#e2ddf0}
+.pohon-avatar--foto{object-fit:cover}
+.pohon-orang-nama{font-size:18px;font-weight:800;line-height:1.35;color:var(--adi-ink)}
+.pohon-orang-kelas{font-size:16px;line-height:1.5;color:var(--adi-muted)}
+.pohon-tag-jabatan{display:inline-block;margin-top:4px;padding:4px 10px;border-radius:999px;background:var(--adi-paper);color:var(--adi-green);font-size:14px;font-weight:700;line-height:1.4}
+.pohon-orang-tugas{margin-top:6px;font-size:16px;line-height:1.6;color:var(--adi-ink)}
+.pohon-tim{overflow:hidden;border:1px solid var(--adi-line);border-radius:20px;background:var(--tim-bg,#eef4e2);box-shadow:0 2px 10px #153f3014}
+.pohon-tim--hijau{--tim-aksen:#236b4d;--tim-bg:#e7f2ea;--tim-ink:#153f30}
+.pohon-tim--daun{--tim-aksen:#4d7c3a;--tim-bg:#eef4e2;--tim-ink:#2c4a1e}
+.pohon-tim--air{--tim-aksen:#2e7d8c;--tim-bg:#e2f0f2;--tim-ink:#14424c}
+.pohon-tim--matahari{--tim-aksen:#8a6d1a;--tim-bg:#fdf3d7;--tim-ink:#4d3d00}
+.pohon-tim--tanah{--tim-aksen:#8a5a3b;--tim-bg:#f3e8df;--tim-ink:#4d2f1d}
+.pohon-tim-kepala{width:100%;min-height:44px;display:flex;align-items:flex-start;gap:12px;padding:18px;border:0;background:none;text-align:left;cursor:pointer;color:var(--tim-ink)}
+.pohon-tim-kepala:active{transform:scale(.99)}
+.pohon-tim-ikon{flex:none;width:48px;height:48px;display:grid;place-items:center;border-radius:50%;background:var(--adi-white);color:var(--tim-aksen);box-shadow:0 2px 8px #153f3022}
+.pohon-tim-ikon svg{width:26px;height:26px}
+.pohon-tim-judul{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.pohon-tim-nama{font-size:18px;font-weight:800;line-height:1.35;color:var(--tim-ink)}
+.pohon-tim-deskripsi{font-size:16px;line-height:1.55;color:var(--adi-ink)}
+.pohon-tim-jumlah{display:inline-flex;align-items:center;gap:6px;margin-top:2px;font-size:14px;font-weight:700;color:var(--tim-aksen)}
+.pohon-tim-jumlah svg{width:16px;height:16px}
+.pohon-chevron{flex:none;width:24px;height:24px;margin-top:10px;color:var(--tim-aksen);transition:transform .2s ease}
+.pohon-chevron.is-terbuka{transform:rotate(180deg)}
+.pohon-tim-panel{padding:0 18px 18px;border-top:1px solid var(--adi-line)}
+.pohon-koordinator{width:100%;display:flex;align-items:flex-start;gap:12px;margin-top:14px;padding:14px;border:1px solid var(--adi-line);border-radius:14px;background:var(--adi-white);text-align:left;cursor:pointer;transition:transform .15s ease}
+.pohon-koordinator:active{transform:scale(.99)}
+.pohon-koordinator-teks{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.pohon-label-koordinator{font-size:13px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--tim-aksen)}
+.pohon-anggota-list{margin:12px 0 0;padding:0;list-style:none;display:grid;gap:8px}
+.pohon-anggota{width:100%;min-height:48px;display:flex;align-items:center;gap:12px;padding:8px 12px;border:1px solid var(--adi-line);border-radius:12px;background:var(--adi-white);text-align:left;cursor:pointer;transition:transform .15s ease}
+.pohon-anggota:active{transform:scale(.98)}
+.pohon-anggota-nama{flex:1;min-width:0;font-size:16px;font-weight:700;line-height:1.4;color:var(--adi-ink)}
+.pohon-anggota-jabatan{font-size:14px;color:var(--adi-muted)}
+.pohon-kosong{padding:36px 16px;text-align:center;color:var(--adi-muted)}
+.pohon-kosong svg{width:40px;height:40px;color:var(--adi-green)}
+.pohon-kosong p{margin:8px 0 0;font-size:16px;line-height:1.6}
+.pohon-dialog-lapisan{position:fixed;inset:0;z-index:60;display:grid;place-items:center;padding:20px;background:#153f308c}
+.pohon-dialog{position:relative;width:100%;max-width:380px;padding:30px 22px 22px;border-radius:22px;background:var(--adi-white);color:var(--adi-ink);text-align:center;box-shadow:0 18px 44px #00000040}
+.pohon-dialog-tutup{position:absolute;top:12px;right:12px;width:44px;height:44px;display:grid;place-items:center;border:1px solid var(--adi-line);border-radius:50%;background:var(--adi-paper);color:var(--adi-ink);cursor:pointer}
+.pohon-dialog-tutup svg{width:22px;height:22px}
+.pohon-dialog .pohon-avatar{margin:0 auto 12px}
+.pohon-dialog h3{margin:0;font-family:Georgia,'Times New Roman',serif;font-size:22px;font-weight:700;line-height:1.3;color:var(--adi-ink)}
+.pohon-dialog-kelas{margin:6px 0 0;font-size:16px;color:var(--adi-muted)}
+.pohon-dialog .pohon-tag-jabatan{margin-top:10px}
+.pohon-dialog-tugas{margin:14px 0 0;font-size:16px;line-height:1.6}
+.pohon-wa{display:inline-flex;align-items:center;gap:8px;min-height:48px;margin-top:18px;padding:0 20px;border-radius:999px;background:#1faa55;color:#fff;font-size:16px;font-weight:700;line-height:1.4;text-decoration:none}
+.pohon-wa svg{width:22px;height:22px}
+.pohon-catatan-kaki{display:flex;align-items:flex-start;gap:8px;margin:28px 0 0;font-size:16px;line-height:1.6;color:var(--adi-muted)}
+.pohon-catatan-kaki svg{flex:none;width:20px;height:20px;margin-top:2px;color:var(--adi-green)}
+@media(min-width:700px){
+  .pohon-grid-inti,.pohon-grid-tim{grid-template-columns:1fr 1fr}
+  .pohon-orang-card--pembina{grid-column:1/-1}
+  .pohon-banner-pohon{flex-basis:130px;width:130px;height:130px}
+  .pohon-tagline{font-size:27px}
+}
+:root[data-theme='dark'] .pohon-banner{background:linear-gradient(135deg,#2a2f14 0%,#16281d 55%,#122b20 100%)}
+:root[data-theme='dark'] .pohon-stat div{background:#1a2921cc}
+:root[data-theme='dark'] .pohon-badge-contoh{color:#2b2100}
+:root[data-theme='dark'] .pohon-tim--hijau{--tim-aksen:#9fd2ae;--tim-bg:#16281d;--tim-ink:#d9ead9}
+:root[data-theme='dark'] .pohon-tim--daun{--tim-aksen:#a9d6ac;--tim-bg:#1b2a16;--tim-ink:#dcebd9}
+:root[data-theme='dark'] .pohon-tim--air{--tim-aksen:#8fd0dc;--tim-bg:#14282c;--tim-ink:#d6ecef}
+:root[data-theme='dark'] .pohon-tim--matahari{--tim-aksen:#f2c94c;--tim-bg:#2c260f;--tim-ink:#f7eecb}
+:root[data-theme='dark'] .pohon-tim--tanah{--tim-aksen:#d9a583;--tim-bg:#2a1e16;--tim-ink:#f0ddd0}
+:root[data-theme='dark'] .pohon-avatar{color:#122b20}
+:root[data-theme='dark'] .pohon-orang-card--pembina{background:linear-gradient(135deg,#1b2a16,#122b20);border-color:#3a5a42}
+:root[data-theme='dark'] .pohon-wa{background:#1faa55}
+@media(prefers-reduced-motion:reduce){
+  .pohon-anim{animation:none!important}
+  .pohon-chevron{transition:none!important}
+  .pohon-chip,.pohon-orang-card,.pohon-koordinator,.pohon-anggota,.pohon-tim-kepala{transition:none!important}
+}

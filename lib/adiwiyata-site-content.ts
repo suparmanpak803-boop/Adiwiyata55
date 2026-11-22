@@ -99,8 +99,8 @@ export const DEFAULT_ADIWIYATA_SITE_CONTENT: AdiwiyataSiteContent = {
       intro: 'Daftar 15 kader Adiwiyata SMAN 55 Jakarta beserta uraian tugas masing-masing (2026).',
     },
     struktur: {
-      title: 'Struktur Adiwiyata',
-      intro: 'Susunan pengurus dan koordinator Tim Kader Adiwiyata SMAN 55 Jakarta.',
+      title: 'Struktur Petugas Adiwiyata',
+      intro: 'Batang, cabang, dan daun — kenali pembina, pengurus inti, dan tim yang merawat SMAN 55 Jakarta.',
     },
     publikasi: {
       title: 'Artikel & berita',
