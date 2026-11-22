@@ -18,6 +18,22 @@ export function SystemDiagnostics() {
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState('')
 
+  async function repairTables() {
+    setBusy(true); setNotice('')
+    try {
+      const result = await fetchJson<Envelope<{ statementsOk: number; statementsFailed: number; failures: { statement: string; error: string }[]; missingTables: string[] }>>('/api/admin/diagnostik', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ aksi: 'perbaiki_tabel' }),
+      })
+      const summary = result.data
+      setNotice(summary.statementsFailed === 0
+        ? `Tabel diperbaiki: ${summary.statementsOk} pernyataan berhasil. ${summary.missingTables.length === 0 ? 'Semua tabel wajib kini tersedia — silakan coba game lagi.' : `Masih hilang: ${summary.missingTables.join(', ')}.`}`
+        : `Perbaikan sebagian: ${summary.statementsOk} berhasil, ${summary.statementsFailed} gagal. ${summary.failures[0]?.error ?? ''}`)
+      await mutate()
+    } catch (cause) {
+      setNotice(cause instanceof Error ? cause.message : 'Tabel belum dapat diperbaiki.')
+    } finally { setBusy(false) }
+  }
+
   async function createDefaults() {
     setBusy(true); setNotice('')
     try {
@@ -50,6 +66,7 @@ export function SystemDiagnostics() {
         {!data.data.activePeriod && <p className="admin-content-warning is-warning" role="status">Periode leaderboard belum tersedia. Tombol data awal akan menyiapkannya dengan aman.</p>}
       </>}
       {notice && <p className="admin-content-notice" role="status">{notice}</p>}
+      <section className="admin-setting-card diagnostics-seed"><div><span className="eyebrow">PERBAIKAN SKEMA</span><h2>Perbaiki tabel yang hilang</h2><p>Menjalankan ulang seluruh migrasi pada database yang dipakai aplikasi ini. Tabel dan data yang sudah ada tidak diubah; tabel yang hilang dibuat beserta data awalnya.</p></div><button className="admin-save-button" type="button" disabled={busy} onClick={() => void repairTables()}>{busy ? 'Memperbaiki…' : 'Perbaiki Tabel'}</button></section>
       <section className="admin-setting-card diagnostics-seed"><div><span className="eyebrow">INISIALISASI AMAN</span><h2>Buat data awal</h2><p>Menambahkan nilai pengaturan bawaan dan contoh soal, item sampah, serta misi yang belum ada. Data yang sudah tersedia tidak ditimpa.</p><p>Video edukasi sengaja tidak diisi dengan tautan yang belum diverifikasi; tambahkan sumber resmi melalui Kelola Konten.</p></div><button className="admin-save-button" type="button" disabled={busy} onClick={() => void createDefaults()}>{busy ? 'Menyiapkan…' : 'Buat Data Awal'}</button></section>
     </main>
   )

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { requirePortalRole } from '@/lib/auth/access'
 import { pool } from '@/lib/db'
+import { repairDatabase } from '@/lib/db-repair'
 import { seedGameDefaults } from '@/lib/game-content-seed'
 
 export const dynamic = 'force-dynamic'
@@ -47,6 +48,10 @@ export async function POST(request: Request) {
   try {
     const user = await requirePortalRole(['admin'])
     const body = await request.json().catch(() => null) as { aksi?: unknown } | null
+    if (body?.aksi === 'perbaiki_tabel') {
+      const result = await repairDatabase()
+      return respond(result)
+    }
     if (body?.aksi !== 'buat_data_awal') return respond('Tindakan diagnostik tidak dikenal.', 400)
     const seed = await seedGameDefaults(user.id)
     return respond(seed)
