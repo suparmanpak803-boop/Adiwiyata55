@@ -44,6 +44,7 @@ export function SystemDiagnostics() {
   const [jalankanSiap, setJalankanSiap] = useState(false)
   const [paksaSiap, setPaksaSiap] = useState(false)
   const [pulihkanSiap, setPulihkanSiap] = useState(false)
+  const [bulanArsip, setBulanArsip] = useState(() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}` })
 
   async function repairTables() {
     setBusy(true); setNotice('')
@@ -140,10 +141,10 @@ export function SystemDiagnostics() {
     } finally { setBusy(false); setPulihkanSiap(false) }
   }
 
-  async function eksporArsipExcel() {
+  async function unduhArsipExcel(url: string, namaBawaan: string) {
     setBusy(true); setNotice('')
     try {
-      const response = await fetch('/api/admin/arsip-excel', { cache: 'no-store' })
+      const response = await fetch(url, { cache: 'no-store' })
       if (!response.ok) {
         const body = await response.json().catch(() => null) as { pesan?: string } | null
         throw new Error(body?.pesan ?? `Ekspor gagal (${response.status}).`)
@@ -151,19 +152,28 @@ export function SystemDiagnostics() {
       const blob = await response.blob()
       const disposition = response.headers.get('content-disposition') ?? ''
       const cocok = /filename="([^"]+)"/.exec(disposition)
-      const namaFile = cocok?.[1] ?? 'Arsip Adiwiyata55.xlsx'
-      const url = URL.createObjectURL(blob)
+      const namaFile = cocok?.[1] ?? namaBawaan
+      const urlUnduh = URL.createObjectURL(blob)
       const tautan = document.createElement('a')
-      tautan.href = url
+      tautan.href = urlUnduh
       tautan.download = namaFile
       document.body.appendChild(tautan)
       tautan.click()
       tautan.remove()
-      URL.revokeObjectURL(url)
+      URL.revokeObjectURL(urlUnduh)
       setNotice(`Arsip Excel berhasil diunduh (${namaFile}).`)
     } catch (cause) {
       setNotice(cause instanceof Error ? cause.message : 'Arsip Excel belum dapat diunduh.')
     } finally { setBusy(false) }
+  }
+
+  async function eksporArsipExcel() {
+    await unduhArsipExcel('/api/admin/arsip-excel', 'Arsip Adiwiyata55.xlsx')
+  }
+
+  async function eksporArsipBulanan() {
+    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(bulanArsip)) { setNotice('Pilih bulan yang valid (tahun-bulan).'); return }
+    await unduhArsipExcel(`/api/admin/arsip-excel?bulan=${bulanArsip}`, `Setoran Sampah ${bulanArsip}.xlsx`)
   }
 
   return (
@@ -194,6 +204,11 @@ export function SystemDiagnostics() {
         {pratinjau && pratinjau.adaCadangan && !pratinjau.sudahDipulihkan && <><p>Salinan pengaman kelas XI tersedia. Pulihkan hanya bila promosi XI ke XII ternyata salah — kelas dikembalikan ke XI dan peran di kelas XII dikembalikan ke XI berdasarkan nama kelas. Peran siswa X tidak ikut dipulihkan: tidak ada data perorangan yang disimpan, jadi peran X ditetapkan ulang admin setelah rolling.</p><button className="admin-save-button" type="button" disabled={busy} onClick={() => { if (!pulihkanSiap) { setPulihkanSiap(true); return } void pulihkanCadanganXI() }}>{busy ? 'Memulihkan…' : pulihkanSiap ? 'Ketuk lagi untuk memulihkan cadangan XI' : 'Pulihkan cadangan XI'}</button></>}
         <p>Unduh arsip tahun ajaran berjalan sebagai file Excel (daftar kelas, rekap sampah per kelas, dan peringkat akhir). File yang sama juga diambil pekerjaan terjadwal untuk diunggah ke Drive tiap pergantian tahun ajaran.</p>
         <button className="admin-save-button" type="button" disabled={busy} onClick={() => void eksporArsipExcel()}>{busy ? 'Menyiapkan…' : 'Ekspor arsip Excel'}</button>
+        <p>Unduh arsip satu bulan sebagai file Excel (rekap sampah per kelas dan data setoran mentah bulan itu, tanpa nama murid). File yang sama juga diambil pekerjaan terjadwal untuk diunggah ke Drive tiap tanggal 1.</p>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+          <input type="month" value={bulanArsip} onChange={(e) => setBulanArsip(e.target.value)} disabled={busy} aria-label="Bulan arsip" />
+          <button className="admin-save-button" type="button" disabled={busy} onClick={() => void eksporArsipBulanan()}>{busy ? 'Menyiapkan…' : 'Unduh arsip bulan'}</button>
+        </div>
       </section>
     </main>
   )
