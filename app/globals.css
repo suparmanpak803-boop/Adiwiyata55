@@ -468,6 +468,12 @@ button.bento-card { cursor: pointer; }
 .notice-dialog { position: relative; width: min(430px, 100%); padding: 37px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); box-shadow: 0 20px 70px #0003; }
 .notice-close { position: absolute; top: 14px; right: 14px; }
 .notice-icon { display: grid; width: 49px; height: 49px; margin-bottom: 20px; place-items: center; border-radius: 50%; background: var(--sage); color: var(--green); }
+.guide-body { max-height: min(62dvh, 480px); overflow-y: auto; overscroll-behavior: contain; padding-right: 6px; margin: 12px 0 18px; }
+.guide-body h3 { margin: 16px 0 6px; font-size: 13px; color: var(--green); }
+.guide-body h3:first-child { margin-top: 0; }
+.guide-body p, .guide-body li { font-size: 12px; line-height: 1.6; color: var(--ink-soft); }
+.guide-body ul { display: grid; gap: 4px; margin: 0; padding-left: 18px; }
+.guide-body strong { color: var(--green); }
 .notice-icon svg { width: 22px; height: 22px; }
 .notice-dialog h2 { margin: 9px 0 10px; font-family: Georgia, serif; font-size: 30px; font-weight: 400; letter-spacing: -.6px; line-height: 1.1; }
 .notice-dialog p { margin: 0 0 20px; color: var(--ink-soft); font-size: 12px; line-height: 1.75; }

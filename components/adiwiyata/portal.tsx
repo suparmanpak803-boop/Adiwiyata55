@@ -171,12 +171,42 @@ function OperationalNotice({ onClose }: { onClose: () => void }) {
   return <div className="notice-backdrop" role="presentation" onClick={onClose}><section className="notice-dialog" role="dialog" aria-modal="true" aria-labelledby="notice-title" onClick={(event) => event.stopPropagation()}><button className="icon-button notice-close" aria-label="Tutup pemberitahuan" onClick={onClose}><X /></button><span className="notice-icon"><ShieldCheck aria-hidden="true" /></span><span className="eyebrow">AKSES TERLINDUNGI</span><h2 id="notice-title">Fitur monitoring belum dibuka</h2><p>Halaman ini masih dalam tahap pengembangan. Informasi edukasi dan daftar kelas tetap dapat dilihat melalui portal.</p><button className="primary-button" onClick={onClose}>Mengerti <ArrowRight aria-hidden="true" /></button></section></div>
 }
 
+// PERBAIKAN: tombol "Panduan" di menu sebelumnya membuka OperationalNotice
+// ("Fitur monitoring belum dibuka") — bukan panduan. Dialog ini berisi
+// panduan penggunaan portal yang sebenarnya.
+function GuideDialog({ onClose, role }: { onClose: () => void; role: 'admin' | 'petugas' | 'pengunjung' }) {
+  return <div className="notice-backdrop" role="presentation" onClick={onClose}><section className="notice-dialog" role="dialog" aria-modal="true" aria-labelledby="guide-title" onClick={(event) => event.stopPropagation()}><button className="icon-button notice-close" aria-label="Tutup panduan" onClick={onClose}><X /></button><span className="notice-icon"><CircleHelp aria-hidden="true" /></span><span className="eyebrow">PANDUAN</span><h2 id="guide-title">Cara memakai portal</h2><div className="guide-body">
+    <h3>Masuk</h3>
+    <p>Ketuk &ldquo;Lanjutkan dengan Google&rdquo;, lalu pilih akun Gmail kamu. Menu yang tampil menyesuaikan peranmu.</p>
+    <h3>Menu utama</h3>
+    <ul>
+      <li><strong>Beranda</strong> — ringkasan gerakan dan data lingkungan sekolah.</li>
+      <li><strong>Edukasi</strong> — video dan materi tentang pilah sampah dan lingkungan.</li>
+      <li><strong>Daftar Kelas &amp; Petugas</strong> — setoran sampah tiap kelas dan daftar petugas.</li>
+      <li><strong>Dashboard Monitoring</strong> — pantauan data sampah sekolah.</li>
+      <li><strong>Input Laporan</strong> — kirim laporan kegiatan atau temuan di sekolah.</li>
+      <li><strong>Main Game</strong> — bermain game edukasi Adiwiyata; skormu masuk Leaderboard.</li>
+      <li><strong>Leaderboard</strong> — peringkat pemain dan kelas.</li>
+      <li><strong>Laporan &amp; Saran</strong> — kirim saran untuk program Adiwiyata.</li>
+    </ul>
+    {role === 'admin' && <><h3>Khusus admin</h3>
+    <ul>
+      <li><strong>Pengaturan Game</strong> — atur permainan. Bila game tidak bisa dibuka, buka <strong>Diagnostik Sistem</strong> lalu ketuk &ldquo;Perbaiki Tabel&rdquo;.</li>
+      <li><strong>Akses Pengguna</strong> — tambah admin atau petugas, dan atur masa berlaku akses petugas.</li>
+      <li><strong>Pengaturan Sheets, Atur Video Edukasi, Atur Informasi Adiwiyata, Slider Beranda, Kelola Laporan</strong> — kelola konten dan data portal.</li>
+    </ul></>}
+    <h3>Butuh bantuan?</h3>
+    <p>Hubungi kader Adiwiyata atau admin sekolah.</p>
+  </div><button className="primary-button" onClick={onClose}>Mengerti <ArrowRight aria-hidden="true" /></button></section></div>
+}
+
 export function AdiwiyataPortal({ user, depositData, sheetsConfig, educationVideoData, sliderData }: { user: { name: string; role: 'admin' | 'petugas' | 'pengunjung' }; depositData: Awaited<ReturnType<typeof getDepositPageData>>; sheetsConfig: { url: string; configured: boolean } | null; educationVideoData: EducationVideoAdminData | null; sliderData: SliderPageData }) {
   const router = useRouter()
   const [view, setView] = useState<View>('beranda')
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [dark, setDark] = useState<boolean | null>(null)
   const [noticeOpen, setNoticeOpen] = useState(false)
+  const [guideOpen, setGuideOpen] = useState(false)
   const [signingOut, setSigningOut] = useState(false)
 
   async function handleSignOut() {
@@ -199,7 +229,7 @@ export function AdiwiyataPortal({ user, depositData, sheetsConfig, educationVide
   }, [dark])
 
   useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => { if (event.key === 'Escape') { setDrawerOpen(false); setNoticeOpen(false) } }
+    const onKeyDown = (event: KeyboardEvent) => { if (event.key === 'Escape') { setDrawerOpen(false); setNoticeOpen(false); setGuideOpen(false) } }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [])
@@ -232,7 +262,7 @@ export function AdiwiyataPortal({ user, depositData, sheetsConfig, educationVide
         </div>
       </header>
 
-      {drawerOpen && <div className="drawer-scrim" onClick={() => setDrawerOpen(false)}><aside className="nav-drawer" aria-label="Menu navigasi" onClick={(event) => event.stopPropagation()}><div className="drawer-header"><span className="eyebrow">MENU UTAMA</span><button className="icon-button" aria-label="Tutup menu" onClick={() => setDrawerOpen(false)}><X /></button></div><nav><a className="drawer-link" href="/adiwiyata"><Leaf aria-hidden="true" /><span>INFORMASI ADIWIYATA</span><ArrowRight className="drawer-arrow" aria-hidden="true" /></a><a className="drawer-link" href="/adiwiyata/tentang"><BookOpen aria-hidden="true" /><span>TENTANG KAMI</span><ArrowRight className="drawer-arrow" aria-hidden="true" /></a>{visibleNavigation(user.role).map((item) => { const Icon = item.icon; return <button key={item.id} className={view === item.id ? 'drawer-link active' : 'drawer-link'} onClick={() => selectView(item.id)}><Icon aria-hidden="true" /><span>{item.label}</span></button> })}<button className="drawer-link" onClick={() => { setDrawerOpen(false); setNoticeOpen(true) }}><CircleHelp aria-hidden="true" /><span>Panduan</span><ArrowRight className="drawer-arrow" aria-hidden="true" /></button></nav><div className="drawer-footer"><span className="brand-emblem"><AdiwiyataLogoMark /></span><span>Peduli lingkungan,<br />mulai dari sekolah.</span></div></aside></div>}
+      {drawerOpen && <div className="drawer-scrim" onClick={() => setDrawerOpen(false)}><aside className="nav-drawer" aria-label="Menu navigasi" onClick={(event) => event.stopPropagation()}><div className="drawer-header"><span className="eyebrow">MENU UTAMA</span><button className="icon-button" aria-label="Tutup menu" onClick={() => setDrawerOpen(false)}><X /></button></div><nav><a className="drawer-link" href="/adiwiyata"><Leaf aria-hidden="true" /><span>INFORMASI ADIWIYATA</span><ArrowRight className="drawer-arrow" aria-hidden="true" /></a><a className="drawer-link" href="/adiwiyata/tentang"><BookOpen aria-hidden="true" /><span>TENTANG KAMI</span><ArrowRight className="drawer-arrow" aria-hidden="true" /></a>{visibleNavigation(user.role).map((item) => { const Icon = item.icon; return <button key={item.id} className={view === item.id ? 'drawer-link active' : 'drawer-link'} onClick={() => selectView(item.id)}><Icon aria-hidden="true" /><span>{item.label}</span></button> })}<button className="drawer-link" onClick={() => { setDrawerOpen(false); setGuideOpen(true) }}><CircleHelp aria-hidden="true" /><span>Panduan</span><ArrowRight className="drawer-arrow" aria-hidden="true" /></button></nav><div className="drawer-footer"><span className="brand-emblem"><AdiwiyataLogoMark /></span><span>Peduli lingkungan,<br />mulai dari sekolah.</span></div></aside></div>}
 
       {view === 'pengaturan' ? <SheetsSettingsPanel initialUrl={sheetsConfig?.url ?? ''} initiallyConfigured={sheetsConfig?.configured ?? false} /> : view === 'video' ? <EducationVideoSettingsPanel data={educationVideoData ?? { videos: [], error: null }} /> : view === 'monitoring' ? <MonitoringDashboard summary={depositData.sheetsSummary} initialError={depositData.sheetsError} classes={depositData.classes} role={user.role} /> : view === 'setoran' ? <DepositWorkspace data={depositData} /> : view === 'kelas' ? <ClassDirectory classes={depositData.classes} isAdmin={user.role === 'admin'} /> : <>
         <section className="hero-section">
@@ -247,6 +277,7 @@ export function AdiwiyataPortal({ user, depositData, sheetsConfig, educationVide
       <footer className="site-footer"><div className="footer-brand"><span className="brand-emblem"><AdiwiyataLogoMark /></span><span><strong>SMAN 55 Jakarta</strong><small>PROGRAM ADIWIYATA</small></span></div><p>Merawat lingkungan dimulai dari kebiasaan bersama.</p><span className="footer-mark">ADIWIYATA <span>·</span> JAKARTA</span></footer>
 
       {noticeOpen && <OperationalNotice onClose={() => setNoticeOpen(false)} />}
+      {guideOpen && <GuideDialog role={user.role} onClose={() => setGuideOpen(false)} />}
     </main>
   )
 }
