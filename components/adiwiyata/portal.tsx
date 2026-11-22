@@ -184,16 +184,27 @@ function GuideDialog({ onClose, role }: { onClose: () => void; role: 'admin' | '
       <li><strong>Edukasi</strong> — video dan materi tentang pilah sampah dan lingkungan.</li>
       <li><strong>Daftar Kelas &amp; Petugas</strong> — setoran sampah tiap kelas dan daftar petugas.</li>
       <li><strong>Dashboard Monitoring</strong> — pantauan data sampah sekolah.</li>
-      <li><strong>Input Laporan</strong> — kirim laporan kegiatan atau temuan di sekolah.</li>
+      <li><strong>Dokumen &amp; Arsip</strong> — dokumen dan arsip kegiatan Adiwiyata.</li>
       <li><strong>Main Game</strong> — bermain game edukasi Adiwiyata; skormu masuk Leaderboard.</li>
       <li><strong>Leaderboard</strong> — peringkat pemain dan kelas.</li>
       <li><strong>Laporan &amp; Saran</strong> — kirim saran untuk program Adiwiyata.</li>
     </ul>
+    {role === 'petugas' && <><h3>Khusus petugas</h3>
+    <ul>
+      <li><strong>Input Laporan</strong> — kirim setoran atau laporan sampah untuk kelas yang kamu ampu.</li>
+      <li><strong>Laporan Kinerja Kader</strong> — isi laporan kinerja kader.</li>
+      <li><strong>Kelola Laporan</strong> — lihat dan kelola laporan yang masuk.</li>
+    </ul>
+    <p>Akses petugas bisa diberi tanggal berakhir oleh admin. Bila tanggalnya lewat, akunmu kembali jadi pengunjung.</p></>}
+    {role === 'pengunjung' && <><h3>Khusus pengunjung</h3>
+    <p>Kamu bisa memakai semua menu di atas. Menu <strong>Input Laporan</strong> dan menu admin hanya untuk petugas dan admin.</p>
+    <p>Untuk menjadi petugas, minta admin menetapkan peran dan kelasmu di menu <strong>Akses Pengguna</strong>.</p></>}
     {role === 'admin' && <><h3>Khusus admin</h3>
     <ul>
+      <li><strong>Input Laporan</strong> dan <strong>Kelola Laporan</strong> — sama seperti petugas.</li>
       <li><strong>Pengaturan Game</strong> — atur permainan. Bila game tidak bisa dibuka, buka <strong>Diagnostik Sistem</strong> lalu ketuk &ldquo;Perbaiki Tabel&rdquo;.</li>
       <li><strong>Akses Pengguna</strong> — tambah admin atau petugas, dan atur masa berlaku akses petugas.</li>
-      <li><strong>Pengaturan Sheets, Atur Video Edukasi, Atur Informasi Adiwiyata, Slider Beranda, Kelola Laporan</strong> — kelola konten dan data portal.</li>
+      <li><strong>Pengaturan Sheets, Atur Video Edukasi, Atur Informasi Adiwiyata, Slider Beranda</strong> — kelola konten dan data portal.</li>
     </ul></>}
     <h3>Butuh bantuan?</h3>
     <p>Hubungi kader Adiwiyata atau admin sekolah.</p>
