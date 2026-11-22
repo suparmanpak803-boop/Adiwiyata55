@@ -1,1 +1,1 @@
-{"crons":[{"path":"/api/cron/tahun-ajaran","schedule":"0 17 11 7 *"}]}
+{"crons":[{"path":"/api/cron/tahun-ajaran","schedule":"0 17 11 7 *"},{"path":"/api/cron/leaderboard-reset","schedule":"0 18 * * *"}]}
