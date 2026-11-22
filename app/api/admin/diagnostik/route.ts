@@ -3,6 +3,7 @@ import { requirePortalRole } from '@/lib/auth/access'
 import { pool } from '@/lib/db'
 import { repairDatabase } from '@/lib/db-repair'
 import { seedGameDefaults } from '@/lib/game-content-seed'
+import { seedKegiatanMedia } from '@/lib/kegiatan-media-seed'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -51,6 +52,10 @@ export async function POST(request: Request) {
     if (body?.aksi === 'perbaiki_tabel') {
       const result = await repairDatabase()
       return respond(result)
+    }
+    if (body?.aksi === 'tambah_media_kegiatan') {
+      const media = await seedKegiatanMedia(user.id)
+      return respond(media)
     }
     if (body?.aksi !== 'buat_data_awal') return respond('Tindakan diagnostik tidak dikenal.', 400)
     const seed = await seedGameDefaults(user.id)

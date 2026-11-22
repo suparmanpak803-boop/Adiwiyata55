@@ -48,6 +48,22 @@ export function SystemDiagnostics() {
     } finally { setBusy(false) }
   }
 
+  async function tambahMediaKegiatan() {
+    setBusy(true); setNotice('')
+    try {
+      const result = await fetchJson<Envelope<{ slidesDitambah: number; dokumenDitambah: number }>>('/api/admin/diagnostik', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ aksi: 'tambah_media_kegiatan' }),
+      })
+      const added = result.data
+      setNotice(added.slidesDitambah === 0 && added.dokumenDitambah === 0
+        ? 'Semua media kegiatan sudah ada — tidak ada yang ditambah.'
+        : `Media kegiatan ditambahkan: ${added.slidesDitambah} slide beranda dan ${added.dokumenDitambah} dokumen & arsip baru.`)
+      await mutate()
+    } catch (cause) {
+      setNotice(cause instanceof Error ? cause.message : 'Media kegiatan belum dapat ditambahkan.')
+    } finally { setBusy(false) }
+  }
+
   return (
     <main className="admin-game-page">
       <a className="leaderboard-back" href="/">← Kembali ke portal</a>
@@ -68,6 +84,7 @@ export function SystemDiagnostics() {
       {notice && <p className="admin-content-notice" role="status">{notice}</p>}
       <section className="admin-setting-card diagnostics-seed"><div><span className="eyebrow">PERBAIKAN SKEMA</span><h2>Perbaiki tabel yang hilang</h2><p>Menjalankan ulang seluruh migrasi pada database yang dipakai aplikasi ini. Tabel dan data yang sudah ada tidak diubah; tabel yang hilang dibuat beserta data awalnya.</p></div><button className="admin-save-button" type="button" disabled={busy} onClick={() => void repairTables()}>{busy ? 'Memperbaiki…' : 'Perbaiki Tabel'}</button></section>
       <section className="admin-setting-card diagnostics-seed"><div><span className="eyebrow">INISIALISASI AMAN</span><h2>Buat data awal</h2><p>Menambahkan nilai pengaturan bawaan dan contoh soal, item sampah, serta misi yang belum ada. Data yang sudah tersedia tidak ditimpa.</p><p>Video edukasi sengaja tidak diisi dengan tautan yang belum diverifikasi; tambahkan sumber resmi melalui Kelola Konten.</p></div><button className="admin-save-button" type="button" disabled={busy} onClick={() => void createDefaults()}>{busy ? 'Menyiapkan…' : 'Buat Data Awal'}</button></section>
+      <section className="admin-setting-card diagnostics-seed"><div><span className="eyebrow">KONTEN KEGIATAN</span><h2>Tambah slide &amp; dokumen kegiatan</h2><p>Menambahkan 5 foto kegiatan sebagai slide beranda (Kerja Bakti, Botol Plastik Media Tanam, Membersihkan Depan Masjid, Sehari Tanpa Asap Kendaraan, Penghargaan Kelas Terbersih) dan 5 foto sebagai Dokumen &amp; Arsip (Rapat Koordinasi, Hemat Energi Saklar, Kolam Ikan, Kompos Padat). Foto yang sudah ada tidak ditambah lagi.</p></div><button className="admin-save-button" type="button" disabled={busy} onClick={() => void tambahMediaKegiatan()}>{busy ? 'Menambahkan…' : 'Tambah Media Kegiatan'}</button></section>
     </main>
   )
 }
