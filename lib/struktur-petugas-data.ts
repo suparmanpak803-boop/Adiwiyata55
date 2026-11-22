@@ -1,23 +1,20 @@
-// DATA CONTOH — Struktur Petugas Adiwiyata
-// ---------------------------------------------------------------
-// PERINGATAN:
-// - Semua nama, kelas, dan nomor WhatsApp di file ini adalah DATA
-//   CONTOH (fiktif) untuk keperluan tampilan halaman
-//   "Struktur Petugas Adiwiyata".
-// - Bila data contoh diganti dengan data asli, halaman ini TERBUKA
-//   UNTUK PUBLIK (tanpa login). Jangan cantumkan data pribadi
-//   sensitif: hanya nama, kelas, jabatan, dan tugas.
-// - Nomor WhatsApp di bawah ini adalah nomor CONTOH dan WAJIB
-//   diganti dengan nomor asli sebelum dipakai.
-// - Untuk mengubah data petugas, ubah objek
-//   STRUKTUR_PETUGAS_CONTOH di bawah ini. Tidak perlu menyentuh
-//   kode tampilan di components/adiwiyata/struktur-pohon.tsx.
-// - `foto` boleh dikosongkan: bila kosong, komponen menampilkan
-//   avatar inisial berwarna. Bila diisi, gunakan path lokal di
-//   folder public/ (mis. '/dokumentasi/nama-orang.jpg').
-// - `whatsapp` boleh dikosongkan: tombol "Hubungi via WhatsApp"
-//   hanya muncul bila nomor diisi (format angka internasional
-//   tanpa tanda +, mis. '6281234567890').
+// Struktur Petugas Adiwiyata — sumber: SK Kepala SMA Negeri 55 Jakarta
+// Nomor 027 Tahun 2026 tentang Tim Kader Adiwiyata, Lampiran I
+// (DAFTAR KADER ADIWIYATA SMA NEGERI 55 JAKARTA).
+//
+// PENTING: modul ini HANYA dibolehkan dibaca komponen server. Data
+// diteruskan ke komponen klien hanya bila pengguna sudah login — lihat
+// app/adiwiyata/[section]/page.tsx. Jangan impor NILAI dari modul ini
+// di komponen klien (hanya `import type` yang aman), supaya nama-nama
+// pengurus tidak masuk ke bundle atau HTML publik.
+//
+// Untuk mengubah data petugas, ubah objek STRUKTUR_PETUGAS di bawah
+// ini. Tidak perlu menyentuh kode tampilan di
+// components/adiwiyata/struktur-pohon.tsx. Jangan cantumkan data
+// pribadi sensitif: hanya nama, kelas, jabatan, dan tugas.
+// `foto` boleh dikosongkan: bila kosong, komponen menampilkan avatar
+// inisial berwarna. Bila diisi, gunakan path lokal di folder public/
+// (mis. '/dokumentasi/nama-orang.jpg').
 
 export type Petugas = {
   id: string
@@ -25,11 +22,23 @@ export type Petugas = {
   kelas: string
   jabatan: string
   tugas: string
-  whatsapp?: string
   foto?: string
 }
 
-export type IkonTim = 'daur-ulang' | 'taman' | 'air-energi' | 'kantin' | 'kompos'
+export type IkonTim =
+  | 'daur-ulang'
+  | 'taman'
+  | 'air-energi'
+  | 'kantin'
+  | 'kompos'
+  | 'pohon'
+  | 'bunga'
+  | 'tunas'
+  | 'matahari'
+  | 'petir'
+  | 'daun'
+  | 'grafik'
+  | 'pesan'
 export type WarnaTim = 'hijau' | 'daun' | 'air' | 'matahari' | 'tanah'
 
 export type TimPetugas = {
@@ -47,161 +56,283 @@ export type StrukturPetugas = {
   tim: TimPetugas[]
 }
 
-export const STRUKTUR_PETUGAS_CONTOH: StrukturPetugas = {
+export const STRUKTUR_PETUGAS: StrukturPetugas = {
   pengurusInti: [
     {
-      id: 'pembina',
-      nama: 'Ratna Wijaya, S.Pd',
-      kelas: 'Guru Pembina',
-      jabatan: 'Pembina',
-      tugas: 'Membina dan mengarahkan seluruh kegiatan Adiwiyata sekolah.',
-      whatsapp: '6281234567890',
+      id: 'pengarah',
+      nama: 'Wahyu Kresnadi, S.Pd., MM',
+      kelas: 'Kepala Sekolah',
+      jabatan: 'Pengarah',
+      tugas: 'Mengarahkan dan membina seluruh gerakan Adiwiyata sekolah.',
+    },
+    {
+      id: 'pj-tu',
+      nama: 'Misa Mahfud',
+      kelas: 'Kepala Bagian TU',
+      jabatan: 'Penanggung jawab',
+      tugas: 'Mengelola administrasi dan tata usaha program Adiwiyata.',
+    },
+    {
+      id: 'pj-akademik',
+      nama: 'Sri Petnowanti, M.Pd',
+      kelas: 'Wakasek Bidang Akademik',
+      jabatan: 'Penanggung jawab',
+      tugas: 'Mengintegrasikan pendidikan lingkungan ke dalam pembelajaran.',
+    },
+    {
+      id: 'pj-kesiswaan',
+      nama: 'Rochmad Supriyono, M.Pd',
+      kelas: 'Wakasek Bidang Kesiswaan dan Humas',
+      jabatan: 'Penanggung jawab',
+      tugas: 'Membina kader siswa dan kegiatan kesiswaan lingkungan.',
+    },
+    {
+      id: 'pj-sarpras',
+      nama: 'Elvira Nurwahyuni, M.Pd',
+      kelas: 'Wakasek Bidang Sarana dan Prasarana',
+      jabatan: 'Penanggung jawab',
+      tugas: 'Menyediakan sarana dan prasarana pendukung program Adiwiyata.',
     },
     {
       id: 'ketua',
-      nama: 'Aisyah Putri',
-      kelas: 'XII IPA 1',
+      nama: 'Lisa Febrianti, S.Pd',
+      kelas: 'Guru',
       jabatan: 'Ketua',
-      tugas: 'Memimpin rapat kader dan mengoordinasikan seluruh tim.',
+      tugas: 'Memimpin Tim Kader Adiwiyata dan mengoordinasikan seluruh seksi kader.',
     },
     {
       id: 'wakil-ketua',
-      nama: 'Budi Santoso',
-      kelas: 'XI IPS 2',
+      nama: 'Inne Sintiya Rahmah, S.Pd',
+      kelas: 'Guru',
       jabatan: 'Wakil Ketua',
       tugas: 'Membantu ketua dan menggantikan bila berhalangan.',
-    },
-    {
-      id: 'sekretaris',
-      nama: 'Citra Lestari',
-      kelas: 'X-3',
-      jabatan: 'Sekretaris',
-      tugas: 'Mencatat notulen, menyusun surat, dan mengelola arsip kegiatan.',
-    },
-    {
-      id: 'bendahara',
-      nama: 'Dimas Pratama',
-      kelas: 'XI IPA 3',
-      jabatan: 'Bendahara',
-      tugas: 'Mengelola kas kader dan mencatat pemasukan bank sampah.',
     },
   ],
   tim: [
     {
-      id: 'bank-sampah',
-      nama: 'Bank Sampah dan Daur Ulang',
+      id: 'pilah',
+      nama: 'Kader Pilah',
       ikon: 'daur-ulang',
       warna: 'hijau',
-      deskripsi: 'Mengumpulkan, menimbang, dan mendaur ulang sampah sekolah.',
+      deskripsi: 'Memilah sampah berdasarkan jenisnya di setiap kelas.',
       koordinator: {
-        id: 'eko-bank-sampah',
-        nama: 'Eka Saputra',
-        kelas: 'XII IPA 2',
+        id: 'koordinator-pilah',
+        nama: 'Shofwan Iskandar, S.Pd',
+        kelas: 'Guru',
         jabatan: 'Koordinator',
-        tugas: 'Mengatur jadwal penimbangan sampah dan pencatatan tabungan.',
-        whatsapp: '6281234567891',
+        tugas: 'Mengkoordinasikan Kader Pilah.',
       },
-      anggota: [
-        {
-          id: 'fitri-bank-sampah',
-          nama: 'Fitri Handayani',
-          kelas: 'X-1',
-          jabatan: 'Anggota',
-          tugas: 'Memilah botol plastik dan kertas untuk didaur ulang.',
-        },
-      ],
+      anggota: [],
     },
     {
-      id: 'taman',
-      nama: 'Taman dan Penghijauan',
-      ikon: 'taman',
+      id: 'olah-organik',
+      nama: 'Kader Olah Organik',
+      ikon: 'kompos',
       warna: 'daun',
-      deskripsi: 'Merawat taman dan menghijaukan sudut-sudut sekolah.',
+      deskripsi: 'Mengolah sampah organik menjadi kompos dan pupuk.',
       koordinator: {
-        id: 'gilang-taman',
-        nama: 'Gilang Ramadhan',
-        kelas: 'XI IPA 1',
+        id: 'koordinator-olah-organik',
+        nama: 'Abdul Latif, S.Pd',
+        kelas: 'Guru',
         jabatan: 'Koordinator',
-        tugas: 'Merawat taman sekolah dan mengatur jadwal penyiraman tanaman.',
+        tugas: 'Mengkoordinasikan Kader Olah Organik.',
       },
-      anggota: [
-        {
-          id: 'hana-taman',
-          nama: 'Hana Marlina',
-          kelas: 'X-2',
-          jabatan: 'Anggota',
-          tugas: 'Menanam dan merawat tanaman hias di taman.',
-        },
-      ],
+      anggota: [],
     },
     {
-      id: 'air-energi',
-      nama: 'Air dan Energi',
+      id: 'maggot',
+      nama: 'Kader Maggot',
+      ikon: 'kompos',
+      warna: 'air',
+      deskripsi: 'Membudidayakan maggot untuk mengurai sampah organik.',
+      koordinator: {
+        id: 'koordinator-maggot',
+        nama: 'Yanuar Agung Budhi P., S.Pd',
+        kelas: 'Guru',
+        jabatan: 'Koordinator',
+        tugas: 'Mengkoordinasikan Kader Maggot.',
+      },
+      anggota: [],
+    },
+    {
+      id: 'bank-sampah',
+      nama: 'Kader Bank Sampah dan Daur Ulang',
+      ikon: 'daur-ulang',
+      warna: 'matahari',
+      deskripsi: 'Menimbang, mencatat, dan mendaur ulang sampah sekolah.',
+      koordinator: {
+        id: 'koordinator-bank-sampah',
+        nama: 'Dwi Susianti, M.Pd',
+        kelas: 'Guru',
+        jabatan: 'Koordinator',
+        tugas: 'Mengkoordinasikan Kader Bank Sampah dan Daur Ulang.',
+      },
+      anggota: [],
+    },
+    {
+      id: 'lingkungan-sehat',
+      nama: 'Kader Lingkungan Sehat',
+      ikon: 'tunas',
+      warna: 'tanah',
+      deskripsi: 'Menjaga kebersihan dan kesehatan lingkungan sekolah.',
+      koordinator: {
+        id: 'koordinator-lingkungan-sehat',
+        nama: 'Parman Abdullah, S.Pd',
+        kelas: 'Guru',
+        jabatan: 'Koordinator',
+        tugas: 'Mengkoordinasikan Kader Lingkungan Sehat.',
+      },
+      anggota: [],
+    },
+    {
+      id: 'hijau-biodiversitas',
+      nama: 'Kader Hijau dan Biodiversitas',
+      ikon: 'pohon',
+      warna: 'hijau',
+      deskripsi: 'Merawat tanaman dan keanekaragaman hayati sekolah.',
+      koordinator: {
+        id: 'koordinator-hijau-biodiversitas',
+        nama: 'Melynda J. Br Meliala, S.Pd',
+        kelas: 'Guru',
+        jabatan: 'Koordinator',
+        tugas: 'Mengkoordinasikan Kader Hijau dan Biodiversitas.',
+      },
+      anggota: [],
+    },
+    {
+      id: 'energi-lestari',
+      nama: 'Kader Energi Lestari',
+      ikon: 'petir',
+      warna: 'daun',
+      deskripsi: 'Menghemat dan mengelola energi di sekolah.',
+      koordinator: {
+        id: 'koordinator-energi-lestari',
+        nama: 'Candra Dwi Irawan, S.Pd',
+        kelas: 'Guru',
+        jabatan: 'Koordinator',
+        tugas: 'Mengkoordinasikan Kader Energi Lestari.',
+      },
+      anggota: [],
+    },
+    {
+      id: 'air-lestari',
+      nama: 'Kader Air Lestari',
       ikon: 'air-energi',
       warna: 'air',
-      deskripsi: 'Menjaga hemat air dan hemat listrik di sekolah.',
+      deskripsi: 'Menjaga hemat air dan kualitas air sekolah.',
       koordinator: {
-        id: 'irfan-air-energi',
-        nama: 'Irfan Maulana',
-        kelas: 'XII IPS 1',
+        id: 'koordinator-air-lestari',
+        nama: 'Ruruh Sujatmiko, S.Pd',
+        kelas: 'Guru',
         jabatan: 'Koordinator',
-        tugas: 'Memantau penggunaan air dan listrik sekolah.',
+        tugas: 'Mengkoordinasikan Kader Air Lestari.',
       },
-      anggota: [
-        {
-          id: 'jasmine-air-energi',
-          nama: 'Jasmine Nur',
-          kelas: 'XI IPS 3',
-          jabatan: 'Anggota',
-          tugas: 'Mengingatkan hemat air dan mematikan lampu yang tidak dipakai.',
-        },
-      ],
+      anggota: [],
     },
     {
-      id: 'kantin',
-      nama: 'Kantin Sehat',
-      ikon: 'kantin',
+      id: 'edu-lingkungan',
+      nama: 'Kader Edu-Lingkungan',
+      ikon: 'bunga',
       warna: 'matahari',
-      deskripsi: 'Kantin sehat, bebas plastik sekali pakai.',
+      deskripsi: 'Mengedukasi warga sekolah tentang lingkungan hidup.',
       koordinator: {
-        id: 'kania-kantin',
-        nama: 'Kania Dewi',
-        kelas: 'XII IPA 3',
+        id: 'koordinator-edu-lingkungan',
+        nama: 'Rusdy Saleh, S.Pd',
+        kelas: 'Guru',
         jabatan: 'Koordinator',
-        tugas: 'Memastikan kantin menjual makanan sehat dan bebas plastik sekali pakai.',
+        tugas: 'Mengkoordinasikan Kader Edu-Lingkungan.',
       },
-      anggota: [
-        {
-          id: 'lukman-kantin',
-          nama: 'Lukman Hakim',
-          kelas: 'X-4',
-          jabatan: 'Anggota',
-          tugas: 'Mengajak teman membawa tumbler dan tempat makan sendiri.',
-        },
-      ],
+      anggota: [],
     },
     {
-      id: 'kompos',
-      nama: 'Kompos dan Biopori',
-      ikon: 'kompos',
+      id: 'budaya-lingkungan',
+      nama: 'Kader Budaya Lingkungan',
+      ikon: 'daun',
       warna: 'tanah',
-      deskripsi: 'Mengolah sampah organik menjadi kompos.',
+      deskripsi: 'Membangun budaya peduli lingkungan di sekolah.',
       koordinator: {
-        id: 'maya-kompos',
-        nama: 'Maya Kusuma',
-        kelas: 'XI IPA 2',
+        id: 'koordinator-budaya-lingkungan',
+        nama: 'Ermelia Purba, S.Pd',
+        kelas: 'Guru',
         jabatan: 'Koordinator',
-        tugas: 'Mengelola kompos dari sampah organik kantin dan taman.',
+        tugas: 'Mengkoordinasikan Kader Budaya Lingkungan.',
       },
-      anggota: [
-        {
-          id: 'nadia-kompos',
-          nama: 'Nadia Safitri',
-          kelas: 'X-5',
-          jabatan: 'Anggota',
-          tugas: 'Merawat lubang biopori dan mengolah daun kering menjadi kompos.',
-        },
-      ],
+      anggota: [],
+    },
+    {
+      id: 'inovasi-hijau',
+      nama: 'Kader Inovasi Hijau',
+      ikon: 'matahari',
+      warna: 'hijau',
+      deskripsi: 'Menciptakan inovasi ramah lingkungan untuk sekolah.',
+      koordinator: {
+        id: 'koordinator-inovasi-hijau',
+        nama: 'Reisti Hudatul Khairiyah, S.Pd',
+        kelas: 'Guru',
+        jabatan: 'Koordinator',
+        tugas: 'Mengkoordinasikan Kader Inovasi Hijau.',
+      },
+      anggota: [],
+    },
+    {
+      id: 'kantin-hijau',
+      nama: 'Kader Kantin Hijau',
+      ikon: 'kantin',
+      warna: 'daun',
+      deskripsi: 'Kantin sehat, bersih, dan bebas plastik sekali pakai.',
+      koordinator: {
+        id: 'koordinator-kantin-hijau',
+        nama: 'Susanto, S.Pd',
+        kelas: 'Guru',
+        jabatan: 'Koordinator',
+        tugas: 'Mengkoordinasikan Kader Kantin Hijau.',
+      },
+      anggota: [],
+    },
+    {
+      id: 'data-hijau',
+      nama: 'Kader Data Hijau',
+      ikon: 'grafik',
+      warna: 'air',
+      deskripsi: 'Mencatat dan merekap data kegiatan lingkungan sekolah.',
+      koordinator: {
+        id: 'koordinator-data-hijau',
+        nama: 'Melati Yundiana, S.Pd',
+        kelas: 'Guru',
+        jabatan: 'Koordinator',
+        tugas: 'Mengkoordinasikan Kader Data Hijau.',
+      },
+      anggota: [],
+    },
+    {
+      id: 'eco-communication',
+      nama: 'Kader Eco-Communication',
+      ikon: 'pesan',
+      warna: 'matahari',
+      deskripsi: 'Menyebarluaskan kabar dan ajakan peduli lingkungan.',
+      koordinator: {
+        id: 'koordinator-eco-communication',
+        nama: 'Buske Adam, S.Pd',
+        kelas: 'Guru',
+        jabatan: 'Koordinator',
+        tugas: 'Mengkoordinasikan Kader Eco-Communication.',
+      },
+      anggota: [],
+    },
+    {
+      id: 'jejaring-hijau',
+      nama: 'Kader Jejaring Hijau',
+      ikon: 'pohon',
+      warna: 'tanah',
+      deskripsi: 'Menjalin kerja sama dengan pihak luar untuk lingkungan.',
+      koordinator: {
+        id: 'koordinator-jejaring-hijau',
+        nama: 'Mila Kurniawati, S.Pd',
+        kelas: 'Guru',
+        jabatan: 'Koordinator',
+        tugas: 'Mengkoordinasikan Kader Jejaring Hijau.',
+      },
+      anggota: [],
     },
   ],
 }

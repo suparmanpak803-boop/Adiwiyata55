@@ -1,21 +1,17 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { STRUKTUR_PETUGAS_CONTOH, type Petugas } from '@/lib/struktur-petugas-data'
+import type { Petugas, StrukturPetugas } from '@/lib/struktur-petugas-data'
 import {
   CariIcon,
   ChevronBawahIcon,
   DaunIcon,
-  MatahariIcon,
   OrangIcon,
   PohonIcon,
   TunasIcon,
   TutupIcon,
-  WhatsAppIcon,
   ikonTim,
 } from './pohon-icons'
-
-const TEKS_WA = 'Halo, saya mau bertanya tentang Adiwiyata SMAN 55 Jakarta.'
 
 // Huruf awal dari dua kata pertama nama (mis. "Ratna Wijaya, S.Pd" -> "RW").
 function inisial(nama: string) {
@@ -61,8 +57,7 @@ function cocok(p: Petugas, kata: string) {
     .every((bagian) => hay.includes(bagian))
 }
 
-export function StrukturPohon() {
-  const data = STRUKTUR_PETUGAS_CONTOH
+export function StrukturPohon({ data }: { data: StrukturPetugas }) {
   const [kataKunci, setKataKunci] = useState('')
   const [filterTim, setFilterTim] = useState('Semua')
   const [timTerbuka, setTimTerbuka] = useState<string | null>(null)
@@ -104,7 +99,6 @@ export function StrukturPohon() {
         <div className="pohon-banner-teks">
           <span className="pohon-eyebrow">Pohon Adiwiyata</span>
           <p className="pohon-tagline">Batang yang kokoh, cabang yang rindang, daun yang tumbuh bersama.</p>
-          <span className="pohon-badge-contoh">Data contoh — nama di halaman ini bersifat contoh</span>
         </div>
         <svg className="pohon-banner-pohon" viewBox="0 0 120 120" aria-hidden="true" focusable="false">
           <circle cx="90" cy="24" r="13" fill="#f2b705" />
@@ -290,23 +284,9 @@ export function StrukturPohon() {
             <p className="pohon-dialog-kelas">{dialogOrang.kelas}</p>
             <span className="pohon-tag-jabatan">{dialogOrang.jabatan}</span>
             <p className="pohon-dialog-tugas">{dialogOrang.tugas}</p>
-            {dialogOrang.whatsapp && (
-              <a
-                className="pohon-wa"
-                href={`https://wa.me/${dialogOrang.whatsapp}?text=${encodeURIComponent(TEKS_WA)}`}
-                target="_blank"
-                rel="noreferrer"
-              >
-                <WhatsAppIcon /> Hubungi via WhatsApp
-              </a>
-            )}
           </div>
         </div>
       )}
-
-      <p className="pohon-catatan-kaki">
-        <MatahariIcon /> Halaman ini memakai data contoh. Pengelola web dapat mengganti nama dan jabatan di file data tanpa mengubah tampilan.
-      </p>
     </div>
   )
 }

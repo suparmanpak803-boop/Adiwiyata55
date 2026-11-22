@@ -146,15 +146,6 @@ export function TutupIcon({ className }: IkonProps) {
   )
 }
 
-export function WhatsAppIcon({ className }: IkonProps) {
-  return (
-    <Garis className={className}>
-      <path d="M21 11.5a8.5 8.5 0 0 1-12.4 7.5L3 21l2-5.4A8.5 8.5 0 1 1 21 11.5z" />
-      <path d="M8.8 9.6c.5 3.2 2.9 5.6 6.1 6.1l1.3-1.6 2.1 1.1c-.4 1.3-1.5 2-2.8 1.6-3.2-.8-5.8-3.4-6.6-6.6-.4-1.3.3-2.4 1.6-2.8l1.1 2.1-1.3 1.6z" />
-    </Garis>
-  )
-}
-
 export function OrangIcon({ className }: IkonProps) {
   return (
     <Garis className={className}>
@@ -164,11 +155,40 @@ export function OrangIcon({ className }: IkonProps) {
   )
 }
 
+export function GrafikIcon({ className }: IkonProps) {
+  return (
+    <Garis className={className}>
+      <path d="M4 20h16" />
+      <path d="M8 20v-6" />
+      <path d="M12 20V9" />
+      <path d="M16 20v-9" />
+    </Garis>
+  )
+}
+
+export function PesanIcon({ className }: IkonProps) {
+  return (
+    <Garis className={className}>
+      <path d="M21 11.5a8.5 8.5 0 0 1-12.4 7.5L3 21l2-5.4A8.5 8.5 0 1 1 21 11.5z" />
+      <path d="M8 9.5h8" />
+      <path d="M8 13.5h5" />
+    </Garis>
+  )
+}
+
 // Pemeta ikon tiap tim — dipakai komponen StrukturPohon.
 export const ikonTim: Record<IkonTim, ComponentType<IkonProps>> = {
   'daur-ulang': DaurUlangIcon,
-  taman: BungaIcon,
+  taman: TunasIcon,
   'air-energi': TetesanIcon,
   kantin: MangkukIcon,
   kompos: DaunIcon,
+  pohon: PohonIcon,
+  bunga: BungaIcon,
+  tunas: TunasIcon,
+  matahari: MatahariIcon,
+  petir: PetirIcon,
+  daun: DaunIcon,
+  grafik: GrafikIcon,
+  pesan: PesanIcon,
 }
