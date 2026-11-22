@@ -104,14 +104,14 @@ export function KaderReportForm({ staffName, className }: KaderReportFormProps) 
   return (
     <main className="kader-report-shell">
       <header className="kader-report-topbar">
-        <Link className="kader-report-back" href="/"><ArrowLeft aria-hidden="true" /> Kembali ke EcoTrack 55</Link>
+        <Link className="kader-report-back" href="/"><ArrowLeft aria-hidden="true" /> Kembali ke Adiwiyata 55</Link>
         <button className="kader-report-theme" type="button" aria-label={dark ? 'Aktifkan mode terang' : 'Aktifkan mode gelap'} onClick={() => setDark((current) => !current)}>{dark ? <Sun aria-hidden="true" /> : <Moon aria-hidden="true" />}</button>
       </header>
 
       <div className="kader-report-page">
         <section className="kader-report-heading">
-          <div className="kader-report-heading-copy"><span className="kader-report-eyebrow"><Leaf aria-hidden="true" /> ECOTRACK 55 <span>/</span> KINERJA KADER</span><h1>Laporan Kinerja<br /><em>Kader Adiwiyata.</em></h1><p>Catat aksi nyata kader hari ini. Pilih kelompok untuk melihat uraian tugas yang perlu dilaporkan.</p></div>
-          <div className="kader-report-number" aria-hidden="true"><strong>14</strong><span>JENIS KADER<br />ADIWIYATA 2026</span></div>
+          <div className="kader-report-heading-copy"><span className="kader-report-eyebrow"><Leaf aria-hidden="true" /> ADIWIYATA 55 <span>/</span> KINERJA KADER</span><h1>Laporan Kinerja<br /><em>Kader Adiwiyata.</em></h1><p>Catat aksi nyata kader hari ini. Pilih kelompok untuk melihat uraian tugas yang perlu dilaporkan.</p></div>
+          <div className="kader-report-number" aria-hidden="true"><strong>{KADER_REPORT_TASKS.length}</strong><span>JENIS KADER<br />ADIWIYATA 2026</span></div>
         </section>
 
         {!formConfigured && <aside className="kader-report-config-note" role="status"><strong>Google Form belum dikonfigurasi.</strong><span>Isi formId dan seluruh ID entry pada <code>lib/kader-report-gform.ts</code> agar pengiriman dan tautan pre-filled aktif.</span></aside>}
@@ -131,7 +131,7 @@ export function KaderReportForm({ staffName, className }: KaderReportFormProps) 
           <section className="kader-report-card kader-report-checklist" aria-labelledby="checklist-title">
             <div className="kader-report-card-head"><span className="kader-report-step">02 / PELAKSANAAN</span><span className="kader-report-progress">{values.tasks.length} dipilih</span></div>
             <div className="kader-report-checklist-heading"><div><h2 id="checklist-title">Checklist uraian tugas</h2><p>{selectedKader ? `Pilih kegiatan ${selectedKader.name} yang terlaksana.` : 'Pilih kategori kader untuk memuat uraian tugas.'}</p></div>{selectedKader && <span className="kader-report-task-count">{selectedKader.tasks.length} tugas</span>}</div>
-            {selectedKader ? <fieldset className="kader-report-task-list"><legend className="sr-only">Uraian tugas untuk {selectedKader.name}</legend>{selectedKader.tasks.map((task, index) => <label className={`kader-report-task${values.tasks.includes(task) ? ' is-checked' : ''}`} key={task}><input type="checkbox" checked={values.tasks.includes(task)} onChange={() => toggleTask(task)} /><span className="kader-report-checkbox"><Check aria-hidden="true" /></span><span className="kader-report-task-number">{String(index + 1).padStart(2, '0')}</span><span>{task}</span></label>)}</fieldset> : <div className="kader-report-empty"><span><ClipboardCheck aria-hidden="true" /></span><strong>Checklist akan muncul di sini</strong><p>Pilih satu dari 14 kategori kader pada bagian detail laporan.</p></div>}
+            {selectedKader ? <fieldset className="kader-report-task-list"><legend className="sr-only">Uraian tugas untuk {selectedKader.name}</legend>{selectedKader.tasks.map((task, index) => <label className={`kader-report-task${values.tasks.includes(task) ? ' is-checked' : ''}`} key={task}><input type="checkbox" checked={values.tasks.includes(task)} onChange={() => toggleTask(task)} /><span className="kader-report-checkbox"><Check aria-hidden="true" /></span><span className="kader-report-task-number">{String(index + 1).padStart(2, '0')}</span><span>{task}</span></label>)}</fieldset> : <div className="kader-report-empty"><span><ClipboardCheck aria-hidden="true" /></span><strong>Checklist akan muncul di sini</strong><p>Pilih satu dari {KADER_REPORT_TASKS.length} kategori kader pada bagian detail laporan.</p></div>}
           </section>
 
           <section className="kader-report-card kader-report-notes" aria-labelledby="notes-title">

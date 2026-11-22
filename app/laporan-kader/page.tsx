@@ -3,7 +3,7 @@ import { KaderReportForm } from '@/components/adiwiyata/kader-report-form'
 import { getPortalUser } from '@/lib/auth/access'
 
 export const dynamic = 'force-dynamic'
-export const metadata = { title: 'Laporan Kinerja Kader Adiwiyata | EcoTrack 55' }
+export const metadata = { title: 'Laporan Kinerja Kader Adiwiyata | Adiwiyata 55' }
 
 export default async function Page() {
   const user = await getPortalUser()
