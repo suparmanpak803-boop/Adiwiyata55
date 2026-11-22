@@ -5,6 +5,7 @@ import { Activity, ArrowDownUp, BarChart3, BookOpenCheck, Database, GraduationCa
 const wasteCategories = ['Organik', 'Anorganik', 'Residu', 'B3', 'Kertas']
 
 const team = [
+  { name: 'Deni Aryadi', detail: 'XII-E', initials: 'DA' },
   { name: 'Ica Trisnawati', detail: 'XII-E', initials: 'IT' },
   { name: 'Nadiya Ayu Artanti', detail: 'XII-E', initials: 'NA' },
 ]
