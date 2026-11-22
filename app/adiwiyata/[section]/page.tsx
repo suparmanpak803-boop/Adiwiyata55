@@ -9,7 +9,7 @@ import '../adiwiyata.css'
 
 export const dynamic = 'force-dynamic'
 
-const sections = ['tentang', 'profil', 'program', 'dokumentasi', 'publikasi', 'dokumen'] as const
+const sections = ['tentang', 'profil', 'program', 'dokumentasi', 'struktur', 'publikasi', 'dokumen'] as const
 
 export function generateStaticParams() {
   return sections.map((section) => ({ section }))

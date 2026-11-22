@@ -44,6 +44,7 @@ export type AdiwiyataSiteContent = {
     }
     program: { title: string; intro: string }
     dokumentasi: { title: string; intro: string }
+    struktur: { title: string; intro: string }
     publikasi: { title: string; intro: string }
     dokumen: { title: string; intro: string; noteTitle: string; noteBody: string }
   }
@@ -96,6 +97,10 @@ export const DEFAULT_ADIWIYATA_SITE_CONTENT: AdiwiyataSiteContent = {
     dokumentasi: {
       title: 'Kader Adiwiyata',
       intro: 'Daftar 14 kader Adiwiyata SMAN 55 Jakarta beserta uraian tugas masing-masing (2026).',
+    },
+    struktur: {
+      title: 'Struktur Adiwiyata',
+      intro: 'Susunan pengurus dan koordinator Tim Kader Adiwiyata SMAN 55 Jakarta berdasarkan SK Kepala SMA Negeri 55 Jakarta Nomor 027 Tahun 2026.',
     },
     publikasi: {
       title: 'Artikel & berita',
@@ -477,6 +482,9 @@ export function parseAdiwiyataSiteContent(input: unknown): AdiwiyataSiteContent 
     : null
   const program = isStringRecord(pages.program) ? parseStringFields(pages.program, ['title', 'intro']) : null
   const dokumentasi = isStringRecord(pages.dokumentasi) ? parseStringFields(pages.dokumentasi, ['title', 'intro']) : null
+  // 'struktur' halaman baru: bila konten lama (disimpan admin sebelum halaman
+  // ini ada) belum memilikinya, pakai nilai bawaan supaya parse tidak gagal.
+  const struktur = isStringRecord(pages.struktur) ? parseStringFields(pages.struktur, ['title', 'intro']) : null
   const publikasi = isStringRecord(pages.publikasi) ? parseStringFields(pages.publikasi, ['title', 'intro']) : null
   const dokumen = isStringRecord(pages.dokumen) ? parseStringFields(pages.dokumen, ['title', 'intro', 'noteTitle', 'noteBody']) : null
   if (!profil || !program || !dokumentasi || !publikasi || !dokumen) return null
@@ -506,6 +514,7 @@ export function parseAdiwiyataSiteContent(input: unknown): AdiwiyataSiteContent 
       profil: profil as AdiwiyataSiteContent['pages']['profil'],
       program: program as AdiwiyataSiteContent['pages']['program'],
       dokumentasi: dokumentasi as AdiwiyataSiteContent['pages']['dokumentasi'],
+      struktur: (struktur ?? DEFAULT_ADIWIYATA_SITE_CONTENT.pages.struktur) as AdiwiyataSiteContent['pages']['struktur'],
       publikasi: publikasi as AdiwiyataSiteContent['pages']['publikasi'],
       dokumen: dokumen as AdiwiyataSiteContent['pages']['dokumen'],
     },
