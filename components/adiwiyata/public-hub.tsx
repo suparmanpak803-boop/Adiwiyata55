@@ -7,7 +7,7 @@ import { AdiwiyataLogoMark } from '@/components/adiwiyata/logo-mark'
 import { GreenActionQuiz } from '@/components/adiwiyata/green-action-quiz'
 import { AboutSection } from '@/components/adiwiyata/about-section'
 import { HomeSlider } from '@/components/adiwiyata/home-slider'
-import { DEFAULT_SLIDER_SETTINGS, type SliderPageData } from '@/lib/slider/data'
+import type { SliderPageData } from '@/lib/slider/data'
 import type { AdiwiyataDocument } from '@/lib/documents'
 import { DEFAULT_ADIWIYATA_SITE_CONTENT, type AdiwiyataSiteContent } from '@/lib/adiwiyata-site-content'
 
@@ -20,7 +20,7 @@ const navigation: { id: Section; label: string }[] = [
 ]
 
 
-export function AdiwiyataPublicHub({ section = 'beranda', documents = [], content = DEFAULT_ADIWIYATA_SITE_CONTENT, sliderData = { slides: [], settings: DEFAULT_SLIDER_SETTINGS } }: { section?: Section; documents?: PublicDocument[]; content?: AdiwiyataSiteContent; sliderData?: SliderPageData }) {
+export function AdiwiyataPublicHub({ section = 'beranda', documents = [], content = DEFAULT_ADIWIYATA_SITE_CONTENT, sliderData = { slides: [], settings: { intervalDetik: 5, transisi: 'fade', autoplay: true, tampilPanah: true, tampilDots: true } } }: { section?: Section; documents?: PublicDocument[]; content?: AdiwiyataSiteContent; sliderData?: SliderPageData }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [darkMode, setDarkMode] = useState<boolean | null>(null)
   const [filter, setFilter] = useState('Semua')
