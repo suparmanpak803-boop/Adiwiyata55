@@ -4,7 +4,6 @@ import { useEffect, useState, useTransition, type FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import { deleteDeposit, saveDeposit, type DepositInput } from '@/app/actions/deposits'
 import { ClassLocationPicker } from '@/components/adiwiyata/class-location-picker'
-import { normalizeClassCode } from '@/lib/class-codes'
 import { fetchJson } from '@/lib/api-client'
 
 type DepositPageData = Awaited<ReturnType<typeof import('@/app/actions/deposits').getDepositPageData>>
@@ -188,8 +187,9 @@ export function DepositWorkspace({ data }: { data: DepositPageData }) {
     })
   }
 
-  const assignedClass = normalizeClassCode(data.className) || data.className
-  const classes = data.role === 'petugas' ? data.classes.filter((item) => item.name === assignedClass) : data.classes
+  // Petugas boleh menginput untuk semua kelas — daftar tidak lagi
+  // disaring ke kelas penugasan.
+  const classes = data.classes
 
   return (
     <section className="directory-page" aria-labelledby="deposit-title">

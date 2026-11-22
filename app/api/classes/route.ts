@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getPortalUser } from '@/lib/auth/access'
 import { getClassMasterData } from '@/lib/class-master'
-import { normalizeClassCode } from '@/lib/class-codes'
 
 export const dynamic = 'force-dynamic'
 
@@ -14,8 +13,9 @@ export async function GET() {
 
   try {
     const master = await getClassMasterData()
-    const assignedClass = normalizeClassCode(user.className)
-    const classes = user.role === 'petugas' ? master.classes.filter((item) => item.code === assignedClass) : master.classes
+    // Daftar kelas untuk pemilih input: semua kelas aktif untuk admin
+    // maupun petugas — petugas boleh menginput untuk kelas mana pun.
+    const classes = master.classes
     return NextResponse.json({ success: true, classes, locations: master.locations }, {
       headers: { 'Cache-Control': 'private, no-store, max-age=0' },
     })

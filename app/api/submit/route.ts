@@ -57,9 +57,8 @@ export async function POST(request: Request) {
     const submittedDate = String((body.records[0] as SheetRecord)?.date || '')
     if (!className) return NextResponse.json({ error: 'Pilih kode kelas atau lokasi umum yang valid.' }, { status: 400 })
     if (normalizeClassCode(className) && !(await isActiveClassCode(className))) return NextResponse.json({ error: 'Kode kelas tidak terdaftar atau tidak aktif di Master_Kelas.' }, { status: 400 })
-    const isGeneralLocation = GENERAL_LOCATIONS.includes(className as (typeof GENERAL_LOCATIONS)[number])
-    if (user.role === 'petugas' && !isGeneralLocation && (normalizeClassCode(user.className) || user.className) !== className) return NextResponse.json({ error: 'Petugas hanya dapat mengirim data untuk kelas yang ditugaskan atau lokasi umum.' }, { status: 403 })
-
+    // Petugas boleh mengirim data untuk kelas mana pun, bukan hanya
+    // kelas penugasannya (sinkron dengan saveDeposit).
     const records = body.records.map((record): SheetRecord | null => {
       if (!record || typeof record !== 'object') return null
       const item = record as SheetRecord

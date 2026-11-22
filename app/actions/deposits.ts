@@ -92,9 +92,9 @@ async function validateInput(input: DepositInput) {
 }
 
 async function getWriter() {
-  const user = await requirePortalRole(['admin', 'petugas'])
-  if (user.role === 'petugas' && !user.className) throw new Error('Akun petugas belum ditautkan ke kelas oleh Admin.')
-  return user
+  // Petugas boleh menginput untuk kelas mana pun, jadi penugasan kelas
+  // bukan lagi syarat untuk menulis setoran.
+  return requirePortalRole(['admin', 'petugas'])
 }
 
 async function fetchSheetSummary(user: NonNullable<Awaited<ReturnType<typeof getPortalUser>>>, filters: { from?: string; to?: string; className?: string } = {}) {
@@ -133,8 +133,8 @@ export async function getDepositPageData() {
     ),
     user.role === 'admin'
       ? pool.query<DepositRow>(`SELECT id, date::text, class_name, student_count, organic::text, inorganic::text, residual::text, hazardous::text, paper::text, tumbler, lunchbox, submitter_name, user_id FROM public.adiwiyata_deposits ORDER BY date DESC, class_name LIMIT 100`)
-      : user.role === 'petugas' && user.className
-        ? pool.query<DepositRow>(`SELECT id, date::text, class_name, student_count, organic::text, inorganic::text, residual::text, hazardous::text, paper::text, tumbler, lunchbox, submitter_name, user_id FROM public.adiwiyata_deposits WHERE class_name = $1 OR (class_name IN ('Kantin', 'Halaman', 'Lab', 'Perpustakaan', 'Taman') AND user_id = $2) ORDER BY date DESC LIMIT 100`, [classFilter, user.id])
+      : user.role === 'petugas'
+        ? pool.query<DepositRow>(`SELECT id, date::text, class_name, student_count, organic::text, inorganic::text, residual::text, hazardous::text, paper::text, tumbler, lunchbox, submitter_name, user_id FROM public.adiwiyata_deposits WHERE class_name = $1 OR user_id = $2 ORDER BY date DESC LIMIT 100`, [classFilter, user.id])
         : Promise.resolve({ rows: [] as DepositRow[] }),
     user.role === 'pengunjung'
       ? Promise.resolve({ rows: [] as ClassReportRow[] })
@@ -194,9 +194,9 @@ export async function saveDeposit(input: DepositInput) {
       throw new Error('Tanggal setoran maksimal 30 hari ke belakang. Untuk tanggal yang lebih lama, minta admin.')
     }
   }
-  const isGeneralLocation = GENERAL_LOCATIONS.includes(input.className as (typeof GENERAL_LOCATIONS)[number])
-  if (user.role === 'petugas' && !isGeneralLocation && (normalizeClassCode(user.className) || user.className) !== input.className) throw new Error('Petugas hanya dapat mengelola setoran kelasnya atau lokasi umum.')
-
+  // Petugas boleh menginput setoran untuk kelas mana pun (bukan hanya
+  // kelas penugasannya) maupun lokasi umum. Kelas yang dipilih tetap
+  // divalidasi di validateInput (harus terdaftar dan aktif).
   const isClass = Boolean(normalizeClassCode(input.className))
   const classResult = isClass ? await pool.query<{ student_count: number | null }>(
     `SELECT student_count FROM public.adiwiyata_classes WHERE name = $1 AND school_id = 'SMAN55' LIMIT 1`,
@@ -209,11 +209,9 @@ export async function saveDeposit(input: DepositInput) {
   const id = `${input.date}_${input.className}`
   const existing = await pool.query<{ user_id: string }>(`SELECT user_id FROM public.adiwiyata_deposits WHERE id = $1`, [id])
   if (existing.rowCount && !input.overwrite) return { needsConfirmation: true as const }
-  // L-07: lokasi umum boleh ditimpa petugas mana pun (kepemilikan jatuh
-  // ke penulis terakhir); setoran kelas tetap hanya pemilik/admin.
-  if (existing.rowCount && !isGeneralLocation && user.role !== 'admin' && existing.rows[0]?.user_id !== user.id) {
-    throw new Error('Setoran ini dibuat oleh akun lain. Hubungi Admin untuk menggantinya.')
-  }
+  // Setoran boleh ditimpa petugas/admin mana pun (kepemilikan jatuh ke
+  // penulis terakhir; jejak audit di log_aktivitas mencatat siapa yang
+  // menulis). UI sudah meminta konfirmasi sebelum menimpa.
 
   const saved = await pool.query(
     `INSERT INTO public.adiwiyata_deposits
@@ -224,9 +222,8 @@ export async function saveDeposit(input: DepositInput) {
        residual = EXCLUDED.residual, hazardous = EXCLUDED.hazardous, paper = EXCLUDED.paper,
        tumbler = EXCLUDED.tumbler, lunchbox = EXCLUDED.lunchbox, user_id = EXCLUDED.user_id,
        submitter_name = EXCLUDED.submitter_name, sync_status = 'pending', updated_at = NOW()
-     WHERE $14::boolean OR public.adiwiyata_deposits.user_id = EXCLUDED.user_id
      RETURNING id`,
-    [id, input.date, input.className, studentCount, input.organic, input.inorganic, input.residual, input.hazardous, input.paper, input.tumbler, input.lunchbox, user.id, user.name, user.role === 'admin' || isGeneralLocation],
+    [id, input.date, input.className, studentCount, input.organic, input.inorganic, input.residual, input.hazardous, input.paper, input.tumbler, input.lunchbox, user.id, user.name],
   )
   if (!saved.rowCount) throw new Error('Setoran ini dibuat oleh akun lain. Hubungi Admin untuk menggantinya.')
   // M-05: jejak audit penulisan setoran.
@@ -275,12 +272,12 @@ export async function deleteDeposit(id: string) {
   if (!target.rowCount) throw new Error('Setoran tidak ditemukan.')
   const row = target.rows[0]
   const isGeneralLocation = GENERAL_LOCATIONS.includes(row.class_name as (typeof GENERAL_LOCATIONS)[number])
-  // L-07: lokasi umum boleh dihapus petugas mana pun; setoran kelas hanya
-  // pemiliknya (atau admin).
-  if (user.role !== 'admin' && !isGeneralLocation) {
-    if (row.user_id !== user.id || (normalizeClassCode(user.className) || user.className) !== row.class_name) {
-      throw new Error('Setoran tidak ditemukan atau tidak dapat dihapus oleh akun ini.')
-    }
+  // Lokasi umum boleh dihapus petugas mana pun; setoran kelas hanya
+  // pemiliknya (atau admin). Pemilik dinilai dari user_id, bukan kelas
+  // penugasan — petugas kini bisa menginput untuk kelas mana pun, jadi
+  // setoran miliknya bisa untuk kelas lain.
+  if (user.role !== 'admin' && !isGeneralLocation && row.user_id !== user.id) {
+    throw new Error('Setoran tidak ditemukan atau tidak dapat dihapus oleh akun ini.')
   }
   await pool.query(`DELETE FROM public.adiwiyata_deposits WHERE id = $1`, [id])
   await pool.query(`INSERT INTO public.log_aktivitas (actor_id, aksi, detail) VALUES ($1, 'setoran_hapus', $2::jsonb)`, [user.id, JSON.stringify({ id })]).catch(() => undefined)
