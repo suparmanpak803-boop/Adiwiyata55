@@ -167,10 +167,6 @@ function EducationSections() {
   )
 }
 
-function OperationalNotice({ onClose }: { onClose: () => void }) {
-  return <div className="notice-backdrop" role="presentation" onClick={onClose}><section className="notice-dialog" role="dialog" aria-modal="true" aria-labelledby="notice-title" onClick={(event) => event.stopPropagation()}><button className="icon-button notice-close" aria-label="Tutup pemberitahuan" onClick={onClose}><X /></button><span className="notice-icon"><ShieldCheck aria-hidden="true" /></span><span className="eyebrow">AKSES TERLINDUNGI</span><h2 id="notice-title">Fitur monitoring belum dibuka</h2><p>Halaman ini masih dalam tahap pengembangan. Informasi edukasi dan daftar kelas tetap dapat dilihat melalui portal.</p><button className="primary-button" onClick={onClose}>Mengerti <ArrowRight aria-hidden="true" /></button></section></div>
-}
-
 // PERBAIKAN: tombol "Panduan" di menu sebelumnya membuka OperationalNotice
 // ("Fitur monitoring belum dibuka") — bukan panduan. Dialog ini berisi
 // panduan penggunaan portal yang sebenarnya.
@@ -215,7 +211,6 @@ export function AdiwiyataPortal({ user, depositData, sheetsConfig, educationVide
   const [view, setView] = useState<View>('beranda')
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [dark, setDark] = useState<boolean | null>(null)
-  const [noticeOpen, setNoticeOpen] = useState(false)
   const [guideOpen, setGuideOpen] = useState(false)
   const [signingOut, setSigningOut] = useState(false)
 
@@ -239,7 +234,7 @@ export function AdiwiyataPortal({ user, depositData, sheetsConfig, educationVide
   }, [dark])
 
   useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => { if (event.key === 'Escape') { setDrawerOpen(false); setNoticeOpen(false); setGuideOpen(false) } }
+    const onKeyDown = (event: KeyboardEvent) => { if (event.key === 'Escape') { setDrawerOpen(false); setGuideOpen(false) } }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [])
@@ -261,6 +256,15 @@ export function AdiwiyataPortal({ user, depositData, sheetsConfig, educationVide
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
+  // Alur cerita A (Masalah → Aksi → Bukti): angka nyata di hero dan kartu
+  // bukti, dihitung dari total setoran seluruh sekolah.
+  const totals = depositData.totals ?? null
+  const totalKg = totals ? Number(totals.total_kg || 0) : 0
+  const pilahKg = totals ? Number(totals.organic || 0) + Number(totals.inorganic || 0) + Number(totals.paper || 0) : 0
+  const residualKg = totals ? Number(totals.residual || 0) : 0
+  const pilahPct = totalKg > 0 ? Math.round((pilahKg / totalKg) * 100) : 0
+  const formatKg = (value: number) => new Intl.NumberFormat('id-ID').format(Math.round(value))
+
   return (
     <main className="portal-shell">
       <header className="topbar">
@@ -276,17 +280,17 @@ export function AdiwiyataPortal({ user, depositData, sheetsConfig, educationVide
 
       {view === 'pengaturan' ? <SheetsSettingsPanel initialUrl={sheetsConfig?.url ?? ''} initiallyConfigured={sheetsConfig?.configured ?? false} /> : view === 'video' ? <EducationVideoSettingsPanel data={educationVideoData ?? { videos: [], error: null }} /> : view === 'monitoring' ? <MonitoringDashboard summary={depositData.sheetsSummary} initialError={depositData.sheetsError} classes={depositData.classes} role={user.role} /> : view === 'setoran' ? <DepositWorkspace data={depositData} /> : view === 'kelas' ? <ClassDirectory classes={depositData.classes} isAdmin={user.role === 'admin'} /> : <>
         <section className="hero-section">
-          <div className="hero-copy"><span className="hero-kicker"><span className="pulse-dot" /> GERAKAN SEKOLAH LESTARI</span><h1>Mulai dari<br /><em>kebiasaan baik.</em></h1><p>Langkah sederhana di sekolah, dampak berarti untuk bumi. Bersama warga SMAN 55 Jakarta, rawat lingkungan mulai hari ini.</p><div className="hero-actions"><button className="primary-button" onClick={() => document.getElementById('edukasi')?.scrollIntoView({ behavior: 'smooth' })}>Jelajahi Adiwiyata <ArrowDownRight aria-hidden="true" /></button><button className="text-button" onClick={() => selectView('edukasi')}>Video edukasi <ArrowRight aria-hidden="true" /></button></div><div className="hero-caption"><span className="hero-caption-line" /> <span>EDUKASI · AKSI · KEBERLANJUTAN</span></div></div>
+          <div className="hero-copy"><span className="hero-kicker"><span className="pulse-dot" /> MASALAH DI SEKOLAH KITA</span><h1>Sampah menumpuk.<br /><em>Saatnya memilah.</em></h1><p>{totalKg > 0 ? <>Sekolah kita sudah memilah <strong>{formatKg(pilahKg)} kg</strong> sampah — tapi <strong>{formatKg(residualKg)} kg</strong> masih berakhir sebagai residu. Bersama warga SMAN 55 Jakarta, rawat lingkungan mulai hari ini. Bumi ini kita pinjam dari generasi mendatang.</> : <>Sekolah kita memilah sampah setiap hari — tapi sebagian masih berakhir sebagai residu. Bersama warga SMAN 55 Jakarta, rawat lingkungan mulai hari ini. Bumi ini kita pinjam dari generasi mendatang.</>}</p><div className="hero-actions"><button className="primary-button" onClick={() => document.getElementById('edukasi')?.scrollIntoView({ behavior: 'smooth' })}>Jelajahi Adiwiyata <ArrowDownRight aria-hidden="true" /></button><button className="text-button" onClick={() => selectView('edukasi')}>Video edukasi <ArrowRight aria-hidden="true" /></button></div><div className="hero-caption"><span className="hero-caption-line" /> <span>MASALAH · AKSI · BUKTI</span></div></div>
           <div className="hero-art"><HomeSlider slides={sliderData.slides} settings={sliderData.settings} /></div>
-          <div className="hero-bottom"><span>01 — PENGENALAN</span><span>GULIR UNTUK MENJELAJAHI <ChevronDown aria-hidden="true" /></span></div>
+          <div className="hero-bottom"><span>01 — MASALAH</span><span>GULIR UNTUK MENJELAJAHI <ChevronDown aria-hidden="true" /></span></div>
         </section>
         <EducationSections />
-        <section className="portal-bento" aria-labelledby="portal-title"><div className="bento-heading"><div><span className="eyebrow">PORTAL SEKOLAH</span><h2 id="portal-title">Gerakan yang bisa kita mulai</h2></div><p>Informasi program dan aktivitas Adiwiyata SMAN 55 Jakarta.</p></div><div className="bento-grid"><button className="bento-card bento-class" onClick={() => selectView('kelas')}><span className="bento-icon"><Users aria-hidden="true" /></span><span className="eyebrow">WARGA SEKOLAH</span><strong>Kenali kelas<br />dan kadernya.</strong><span className="bento-link">Buka daftar kelas <ArrowRight aria-hidden="true" /></span><span className="bento-decoration">{depositData.classes.length}</span></button><button className="bento-card bento-monitor" onClick={() => setNoticeOpen(true)}><span className="bento-icon"><BarChart3 aria-hidden="true" /></span><span className="eyebrow">DATA LINGKUNGAN</span><strong>Pantau aksi<br />bersama.</strong><span className="bento-link">Segera hadir <ArrowRight aria-hidden="true" /></span><span className="monitor-bars"><i /><i /><i /><i /><i /><i /><i /></span></button><article className="bento-card bento-note"><span className="eyebrow">KOMITMEN KITA</span><strong>Lebih bijak<br />memilah.</strong><p>Kenali jenis sampah, kurangi yang sekali pakai, dan bawa wadah makan dari rumah.</p><Leaf className="bento-leaf" aria-hidden="true" /></article></div></section>
+        <section className="portal-bento" aria-labelledby="portal-title"><div className="bento-heading"><div><span className="eyebrow">JAWABAN KAMI</span><h2 id="portal-title">Gerakan yang bisa kita mulai</h2></div><p>Jawaban kami atas masalah sampah: gerakan yang bisa diikuti, bukti yang bisa dilihat, dan orang-orang di baliknya.</p></div><div className="bento-grid"><button className="bento-card bento-class" onClick={() => selectView('kelas')}><span className="bento-icon"><Users aria-hidden="true" /></span><span className="eyebrow">ORANG-ORANGNYA</span><strong>Kenali kelas<br />dan kadernya.</strong><span className="bento-link">Buka daftar kelas <ArrowRight aria-hidden="true" /></span><span className="bento-decoration">{depositData.classes.length}</span></button><button className="bento-card bento-monitor" onClick={() => selectView('monitoring')}><span className="bento-icon"><BarChart3 aria-hidden="true" /></span><span className="eyebrow">BUKTI NYATA</span><strong>{totalKg > 0 ? <>{pilahPct}% sampah<br />sudah terpilah.</> : <>Pantau aksi<br />bersama.</>}</strong><span className="bento-link">Lihat dashboard <ArrowRight aria-hidden="true" /></span><span className="monitor-bars"><i /><i /><i /><i /><i /><i /><i /></span></button><article className="bento-card bento-note"><span className="eyebrow">KOMITMEN KITA</span><strong>Lebih bijak<br />memilah.</strong><p>Kenali jenis sampah, kurangi yang sekali pakai, dan bawa wadah makan dari rumah.</p><Leaf className="bento-leaf" aria-hidden="true" /></article></div></section>
+        <section className="story-cta" aria-labelledby="story-cta-title"><span className="eyebrow">AJAKAN</span><h2 id="story-cta-title">Bumi ini kita pinjam dari generasi mendatang.</h2><p>Gerakan ini butuh kamu. Mainkan gamenya, kirim laporanmu, dan ajak kelasmu memilah lebih baik minggu ini.</p><div className="hero-actions"><button className="primary-button" onClick={() => selectView('main')}>Main Game <ArrowRight aria-hidden="true" /></button><button className="text-button" onClick={() => selectView('laporan')}>Kirim Laporan <ArrowRight aria-hidden="true" /></button></div></section>
       </>}
 
       <footer className="site-footer"><div className="footer-brand"><span className="brand-emblem"><AdiwiyataLogoMark /></span><span><strong>SMAN 55 Jakarta</strong><small>PROGRAM ADIWIYATA</small></span></div><p>Merawat lingkungan dimulai dari kebiasaan bersama.</p><span className="footer-mark">ADIWIYATA <span>·</span> JAKARTA</span></footer>
 
-      {noticeOpen && <OperationalNotice onClose={() => setNoticeOpen(false)} />}
       {guideOpen && <GuideDialog role={user.role} onClose={() => setGuideOpen(false)} />}
     </main>
   )

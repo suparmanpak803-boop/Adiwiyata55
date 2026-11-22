@@ -130,7 +130,7 @@ export async function getDepositPageData() {
 
   const assignedClass = user.className ? normalizeClassCode(user.className) || user.className : null
   const classFilter = user.role === 'petugas' ? assignedClass : null
-  const [masterData, savedClassRows, deposits, report, sheets] = await Promise.all([
+  const [masterData, savedClassRows, deposits, report, sheets, totals] = await Promise.all([
     getClassMasterData().catch(() => getFallbackClassMaster()),
     pool.query<{ name: string; student_count: number | null; homeroom_teacher: string; officer_name: string }>(
       `SELECT name, student_count, homeroom_teacher, officer_name FROM public.adiwiyata_classes WHERE school_id = 'SMAN55' ORDER BY name`,
@@ -155,6 +155,16 @@ export async function getDepositPageData() {
         [classFilter],
       ),
     fetchSheetSummary(user),
+    // Total sekolah (semua peran, tanpa rincian per kelas) untuk angka
+    // di hero beranda — alur cerita A: Masalah → Aksi → Bukti.
+    pool.query<{ total_kg: string; organic: string; inorganic: string; paper: string; residual: string; hazardous: string; tumbler: number; lunchbox: number }>(
+      `SELECT COALESCE(SUM(organic + inorganic + residual + hazardous + paper), 0)::text AS total_kg,
+         COALESCE(SUM(organic), 0)::text AS organic, COALESCE(SUM(inorganic), 0)::text AS inorganic,
+         COALESCE(SUM(paper), 0)::text AS paper, COALESCE(SUM(residual), 0)::text AS residual,
+         COALESCE(SUM(hazardous), 0)::text AS hazardous,
+         COALESCE(SUM(tumbler), 0)::int AS tumbler, COALESCE(SUM(lunchbox), 0)::int AS lunchbox
+       FROM public.adiwiyata_deposits`,
+    ).catch(() => ({ rows: [] as { total_kg: string; organic: string; inorganic: string; paper: string; residual: string; hazardous: string; tumbler: number; lunchbox: number }[] })),
   ])
 
   const savedClassData = new Map(savedClassRows.rows.map((item) => [item.name, item]))
@@ -169,7 +179,7 @@ export async function getDepositPageData() {
       officer_name: saved?.officer_name || '',
     }
   })
-  return { classes, deposits: deposits.rows, report: report.rows, sheetsSummary: sheets.summary, sheetsError: sheets.error, role: user.role, className: assignedClass, userId: user.id }
+  return { classes, deposits: deposits.rows, report: report.rows, sheetsSummary: sheets.summary, sheetsError: sheets.error, totals: totals.rows[0] ?? null, role: user.role, className: assignedClass, userId: user.id }
 }
 
 export async function saveDeposit(input: DepositInput) {
