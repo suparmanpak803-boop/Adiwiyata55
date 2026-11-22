@@ -482,3 +482,15 @@ CREATE TABLE IF NOT EXISTS public.struktur_petugas (
   data jsonb NOT NULL,
   diperbarui_pada timestamptz NOT NULL DEFAULT now()
 );
+
+-- ---------- migrations/0005_hari_libur.sql ----------
+-- Daftar hari libur (tanggal merah nasional + libur sekolah) untuk
+-- hitungan hari sekolah efektif pada rata-rata pengumpulan sampah
+-- per hari sekolah di leaderboard sampah. Diisi admin lewat
+-- /admin/game; daftar mulai kosong — bila kosong, hitungan memakai
+-- Senin–Jumat saja.
+CREATE TABLE IF NOT EXISTS public.hari_libur (
+  tanggal date PRIMARY KEY,
+  keterangan text NOT NULL DEFAULT '',
+  dibuat_pada timestamptz NOT NULL DEFAULT now()
+);

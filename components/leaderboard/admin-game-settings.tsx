@@ -3,6 +3,7 @@
 import { FormEvent, useState } from 'react'
 import { AlertTriangle, Save, Settings2, ShieldCheck } from 'lucide-react'
 import { fetchJson } from '@/lib/api-client'
+import { hapusHariLibur, tambahHariLibur } from '@/app/actions/hari-libur'
 import './leaderboard.css'
 
 type AdminData = {
@@ -10,6 +11,11 @@ type AdminData = {
   games: Record<string, unknown>[]
   waste: Record<string, unknown> | null
   classes: Record<string, unknown>[]
+  libur: { tanggal: string; keterangan: string }[]
+}
+
+function formatTanggalLibur(value: string) {
+  return new Intl.DateTimeFormat('id-ID', { dateStyle: 'long', timeZone: 'UTC' }).format(new Date(`${value}T00:00:00Z`))
 }
 const gameLabels: Record<string, string> = {
   tangkap_sampah: 'Tangkap Sampah',
@@ -42,6 +48,11 @@ export function AdminGameSettings({ initialData }: { initialData: AdminData }) {
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState('')
   const [confirmation, setConfirmation] = useState('')
+  const [libur, setLibur] = useState(() => initialData.libur ?? [])
+  const [newTanggal, setNewTanggal] = useState('')
+  const [newKeterangan, setNewKeterangan] = useState('')
+  const [liburBusy, setLiburBusy] = useState(false)
+  const [liburMessage, setLiburMessage] = useState('')
 
   async function save(event: FormEvent) {
     event.preventDefault(); setBusy(true); setMessage('')
@@ -66,6 +77,28 @@ export function AdminGameSettings({ initialData }: { initialData: AdminData }) {
     finally { setBusy(false) }
   }
 
+  async function tambahLibur() {
+    if (!newTanggal) return
+    setLiburBusy(true); setLiburMessage('')
+    const result = await tambahHariLibur(newTanggal, newKeterangan)
+    if (result.ok) {
+      setLibur((current) => [...current.filter((item) => item.tanggal !== newTanggal), { tanggal: newTanggal, keterangan: newKeterangan.trim() }].sort((a, b) => a.tanggal.localeCompare(b.tanggal)))
+      setNewTanggal(''); setNewKeterangan('')
+      setLiburMessage('Hari libur ditambahkan.')
+    } else setLiburMessage(result.error)
+    setLiburBusy(false)
+  }
+
+  async function hapusLibur(tanggal: string) {
+    setLiburBusy(true); setLiburMessage('')
+    const result = await hapusHariLibur(tanggal)
+    if (result.ok) {
+      setLibur((current) => current.filter((item) => item.tanggal !== tanggal))
+      setLiburMessage('Hari libur dihapus.')
+    } else setLiburMessage(result.error)
+    setLiburBusy(false)
+  }
+
   return (
     <main className="admin-game-page">
       <a className="leaderboard-back" href="/">← Kembali ke portal</a>
@@ -87,6 +120,12 @@ export function AdminGameSettings({ initialData }: { initialData: AdminData }) {
           <div className="game-settings-grid">{gameKeys.map((key) => <article className="game-setting-row" key={key}><div className="game-setting-title"><strong>{gameLabels[key]}</strong><label><input type="checkbox" checked={games[key].aktif} onChange={(event) => setGames((current) => ({ ...current, [key]: { ...current[key], aktif: event.target.checked } }))} /> Aktif</label></div><label>Durasi (detik)<input type="number" min={15} max={600} value={games[key].durasi_detik} onChange={(event) => setGames((current) => ({ ...current, [key]: { ...current[key], durasi_detik: Number(event.target.value) } }))} /></label><label>Kesulitan<select value={games[key].tingkat_kesulitan} onChange={(event) => setGames((current) => ({ ...current, [key]: { ...current[key], tingkat_kesulitan: Number(event.target.value) } }))}><option value={1}>Mudah</option><option value={2}>Menengah</option><option value={3}>Standar</option><option value={4}>Sulit</option><option value={5}>Tantangan</option></select></label>{key === 'kuis_adiwiyata' && <div className="admin-quiz-config"><label>Jumlah soal<input type="number" min={5} max={20} value={quizCount} onChange={(event) => setQuizCount(Number(event.target.value))} /></label><label>Waktu per soal (detik)<input type="number" min={5} max={20} value={quizSeconds} onChange={(event) => setQuizSeconds(Number(event.target.value))} /></label></div>}</article>)}</div>
         </section>
         <section className="admin-setting-card"><div className="admin-setting-heading"><div><span className="eyebrow">03 / DATA SAMPAH</span><h2>Persyaratan leaderboard sampah</h2></div></div><div className="admin-form-grid"><label>Metrik awal<select value={wasteMetric} onChange={(event) => setWasteMetric(event.target.value)}><option value="total">Total kg</option><option value="per_siswa">Kg per siswa</option></select></label><label>Minimal hari input untuk masuk peringkat<input type="number" min={1} max={31} value={minimumDays} onChange={(event) => setMinimumDays(Number(event.target.value))} /></label></div><p className="admin-setting-note"><ShieldCheck aria-hidden="true" /> Peringkat sampah menggunakan data laporan tersimpan, terpisah dari reset leaderboard game.</p></section>
+        <section className="admin-setting-card"><div className="admin-setting-heading"><div><span className="eyebrow">04 / HARI LIBUR</span><h2>Hari libur sekolah</h2></div></div>
+          <p className="admin-setting-note">Tanggal merah dan libur sekolah mengurangi hitungan hari sekolah efektif untuk rata-rata pengumpulan sampah per hari sekolah. Daftar mulai kosong — bila kosong, hitungan memakai Senin–Jumat saja.</p>
+          <div className="admin-form-grid"><label>Tanggal libur<input type="date" value={newTanggal} onChange={(event) => setNewTanggal(event.target.value)} /></label><label>Keterangan<input value={newKeterangan} onChange={(event) => setNewKeterangan(event.target.value)} maxLength={100} placeholder="Mis. Hari Raya Idulfitri" /></label><button type="button" className="admin-save-button" onClick={() => void tambahLibur()} disabled={liburBusy || !newTanggal}>Tambah hari libur</button></div>
+          {libur.length === 0 ? <p className="admin-setting-note">Belum ada hari libur yang tercatat.</p> : <ul className="libur-list">{libur.map((item) => <li key={item.tanggal}><span><strong>{formatTanggalLibur(item.tanggal)}</strong>{item.keterangan ? ` — ${item.keterangan}` : ''}</span><button type="button" onClick={() => void hapusLibur(item.tanggal)} disabled={liburBusy}>Hapus</button></li>)}</ul>}
+          <p role="status">{liburMessage}</p>
+        </section>
         <div className="admin-save-row"><p role="status">{message}</p><button className="admin-save-button" type="submit" disabled={busy}><Save aria-hidden="true" /> {busy ? 'Menyimpan…' : 'Simpan pengaturan'}</button></div>
       </form>
       <section className="admin-setting-card admin-reset-card"><div><span className="eyebrow">TINDAKAN MANUAL</span><h2>Mulai periode baru sekarang</h2><p>Leaderboard aktif akan diarsipkan untuk pengguna, kelas, dan game. Data pada periode baru dimulai dari nol.</p></div><div className="admin-reset-controls"><label>Ketik RESET untuk mengonfirmasi<input value={confirmation} onChange={(event) => setConfirmation(event.target.value)} autoComplete="off" /></label><button type="button" onClick={() => void resetNow()} disabled={busy || confirmation !== 'RESET'}>Reset leaderboard</button></div></section>

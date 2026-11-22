@@ -9,6 +9,7 @@
 // Lihat PERBAIKAN.md.
 import { pool } from '@/lib/db'
 import { getPortalUser, type PortalUser } from '@/lib/auth/access'
+import { getHariLibur, hitungHariSekolah, listHariLibur, type HariLibur } from '@/lib/hari-sekolah'
 
 export const GAME_KEYS = [
   'pilah_sampah',
@@ -28,6 +29,7 @@ export type LeaderboardPayload = {
   insufficient?: Record<string, unknown>[]
   summary?: { total_kg: number | string; jumlah_kelas: number }
   minimumDays?: number
+  hariSekolah?: number
   currentUserId: string
   currentClass: string | null
   currentRank?: number | null
@@ -41,6 +43,7 @@ export type AdminLeaderboardData = {
   games: Record<string, unknown>[]
   waste: Record<string, unknown> | null
   classes: Record<string, unknown>[]
+  libur: HariLibur[]
 }
 
 const GRADE_ORDER: Record<string, number> = { X: 0, XI: 1, XII: 2 }
@@ -265,7 +268,13 @@ export async function getLeaderboardPayload(searchParams: URLSearchParams): Prom
       [range.previousFrom, range.previousTo],
     )
     const previousMap = new Map(previous.rows.map((row) => [row.class_name, Number(row.total_kg ?? 0)]))
-    const metricKey = metric === 'per_siswa' ? 'kg_per_siswa' : 'total_kg'
+    // Rata-rata per hari sekolah: total kg (kolom jenis sampah yang
+    // dipilih) dibagi hari sekolah efektif periode ini (Senin–Jumat
+    // dikurangi hari libur yang tercatat). Bila 0 hari sekolah,
+    // rata-rata null (tampil "-").
+    const liburRows = await getHariLibur(range.from, range.to)
+    const hariSekolah = hitungHariSekolah(range.from, range.to, new Set(liburRows.map((row) => row.tanggal)))
+    const metricKey = metric === 'per_siswa' ? 'kg_per_siswa' : metric === 'rata-rata' ? 'rata_per_hari_sekolah' : 'total_kg'
     const mapped = rows.rows.map((row) => {
       const total = Number(row.total_kg ?? 0)
       const prev = previousMap.get(row.class_name) ?? 0
@@ -276,6 +285,8 @@ export async function getLeaderboardPayload(searchParams: URLSearchParams): Prom
         kode_kelas: row.class_name,
         total_kg: total,
         kg_per_siswa: Number(row.kg_per_siswa ?? 0),
+        hari_sekolah: hariSekolah,
+        rata_per_hari_sekolah: hariSekolah > 0 ? total / hariSekolah : null,
         organic: Number(row.organic ?? 0),
         inorganic: Number(row.inorganic ?? 0),
         paper: Number(row.paper ?? 0),
@@ -307,6 +318,7 @@ export async function getLeaderboardPayload(searchParams: URLSearchParams): Prom
       jumlah_kelas: qualified.length,
     }
     base.minimumDays = minimumDays
+    base.hariSekolah = hariSekolah
     base.period = period
     base.metric = metric
     base.settings = waste
@@ -398,17 +410,19 @@ export async function getLeaderboardPayload(searchParams: URLSearchParams): Prom
 }
 
 export async function getAdminLeaderboardSettings(): Promise<AdminLeaderboardData> {
-  const [settings, games, waste, classes] = await Promise.all([
+  const [settings, games, waste, classes, libur] = await Promise.all([
     pool.query(`SELECT * FROM public.leaderboard_settings WHERE id = true`),
     pool.query(`SELECT game_key, aktif, durasi_detik, tingkat_kesulitan, konfigurasi FROM public.game_settings ORDER BY game_key`),
     pool.query(`SELECT * FROM public.leaderboard_sampah_settings WHERE id = true`),
     pool.query(`SELECT name, student_count FROM public.adiwiyata_classes WHERE school_id = 'SMAN55' ORDER BY name`),
+    listHariLibur(),
   ])
   return {
     settings: (settings.rows[0] as Record<string, unknown> | undefined) ?? null,
     games: games.rows as Record<string, unknown>[],
     waste: (waste.rows[0] as Record<string, unknown> | undefined) ?? null,
     classes: classes.rows as Record<string, unknown>[],
+    libur,
   }
 }
 
