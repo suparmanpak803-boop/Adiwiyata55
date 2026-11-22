@@ -112,6 +112,32 @@ export function SystemDiagnostics() {
     } finally { setBusy(false); setJalankanSiap(false); setPaksaSiap(false) }
   }
 
+  async function eksporArsipExcel() {
+    setBusy(true); setNotice('')
+    try {
+      const response = await fetch('/api/admin/arsip-excel', { cache: 'no-store' })
+      if (!response.ok) {
+        const body = await response.json().catch(() => null) as { pesan?: string } | null
+        throw new Error(body?.pesan ?? `Ekspor gagal (${response.status}).`)
+      }
+      const blob = await response.blob()
+      const disposition = response.headers.get('content-disposition') ?? ''
+      const cocok = /filename="([^"]+)"/.exec(disposition)
+      const namaFile = cocok?.[1] ?? 'Arsip Adiwiyata55.xlsx'
+      const url = URL.createObjectURL(blob)
+      const tautan = document.createElement('a')
+      tautan.href = url
+      tautan.download = namaFile
+      document.body.appendChild(tautan)
+      tautan.click()
+      tautan.remove()
+      URL.revokeObjectURL(url)
+      setNotice(`Arsip Excel berhasil diunduh (${namaFile}).`)
+    } catch (cause) {
+      setNotice(cause instanceof Error ? cause.message : 'Arsip Excel belum dapat diunduh.')
+    } finally { setBusy(false) }
+  }
+
   return (
     <main className="admin-game-page">
       <a className="leaderboard-back" href="/">← Kembali ke portal</a>
@@ -137,6 +163,8 @@ export function SystemDiagnostics() {
       </div><button className="admin-save-button" type="button" disabled={busy} onClick={() => void lihatPratinjauTahunAjaran()}>{busy ? 'Memuat…' : 'Lihat Pratinjau'}</button>
         {pratinjau && !pratinjau.sudahDijalankan && <button className="admin-save-button" type="button" disabled={busy} onClick={() => { if (!jalankanSiap) { setJalankanSiap(true); return } void jalankanTahunAjaran(false) }}>{busy ? 'Menjalankan…' : jalankanSiap ? 'Ketuk lagi untuk menjalankan' : 'Jalankan Pergantian Tahun Ajaran'}</button>}
         {pratinjau && pratinjau.sudahDijalankan && <><p>Jalankan ulang hanya bila rollover sebelumnya gagal di tengah jalan — kelas akan dipromosikan lagi dari kondisi saat ini.</p><button className="admin-save-button" type="button" disabled={busy} onClick={() => { if (!paksaSiap) { setPaksaSiap(true); return } void jalankanTahunAjaran(true) }}>{busy ? 'Menjalankan…' : paksaSiap ? 'Ketuk lagi untuk menjalankan ulang (paksa)' : 'Jalankan Ulang (Paksa)'}</button></>}
+        <p>Unduh arsip tahun ajaran berjalan sebagai file Excel (daftar kelas, rekap sampah per kelas, dan peringkat akhir). File yang sama juga diambil pekerjaan terjadwal untuk diunggah ke Drive tiap pergantian tahun ajaran.</p>
+        <button className="admin-save-button" type="button" disabled={busy} onClick={() => void eksporArsipExcel()}>{busy ? 'Menyiapkan…' : 'Ekspor arsip Excel'}</button>
       </section>
     </main>
   )
