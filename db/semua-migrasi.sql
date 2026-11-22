@@ -494,3 +494,17 @@ CREATE TABLE IF NOT EXISTS public.hari_libur (
   keterangan text NOT NULL DEFAULT '',
   dibuat_pada timestamptz NOT NULL DEFAULT now()
 );
+
+-- ---------- migrations/0006_tahun_ajaran.sql ----------
+-- Pergantian tahun ajaran otomatis dengan pengarsipan (12 Juli 2027
+-- → tahun ajaran 2027/2028, lalu tiap awal tahun ajaran). Kolom
+-- diarsipkan pada kelas + tabel pencatat rollover. Kelas XII yang
+-- lulus ditandai diarsipkan (nama tidak diubah, tidak dihapus);
+-- setoran sampah tidak disentuh. Dijalankan cron tahunan
+-- /api/cron/tahun-ajaran atau pemicu manual di /admin/diagnostik.
+ALTER TABLE public.adiwiyata_classes ADD COLUMN IF NOT EXISTS diarsipkan boolean NOT NULL DEFAULT false;
+CREATE TABLE IF NOT EXISTS public.arsip_tahun_ajaran (
+  tahun_ajaran text PRIMARY KEY,
+  dijalankan_pada timestamptz NOT NULL DEFAULT now(),
+  ringkasan jsonb NOT NULL DEFAULT '{}'::jsonb
+);

@@ -13,10 +13,27 @@ type DiagnosticData = {
 }
 type Envelope<T> = { galat: false; data: T }
 
+type PratinjauRollover = {
+  tahunAjaran: string
+  sudahDijalankan: boolean
+  renames: { dari: string; ke: string }[]
+  archives: string[]
+  arsipDipindah: { dari: string; ke: string }[]
+  dilewati: string[]
+  peranDiperbarui: number
+  lulusanDiputus: number
+}
+type HasilRollover =
+  | { ok: true; tahunAjaran: string; ringkasan: { dipromosikan: { dari: string; ke: string }[]; diarsipkan: string[]; arsipDipindah: { dari: string; ke: string }[]; dilewati: string[]; peranDiperbarui: number; lulusanDiputus: number; dipaksa: boolean } }
+  | { ok: false; tahunAjaran: string; sudahDijalankan: boolean; error: string }
+
 export function SystemDiagnostics() {
   const { data, error, isLoading, mutate } = useSWR<Envelope<DiagnosticData>>('/api/admin/diagnostik', (url: string) => fetchJson<Envelope<DiagnosticData>>(url, { cache: 'no-store' }))
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState('')
+  const [pratinjau, setPratinjau] = useState<PratinjauRollover | null>(null)
+  const [jalankanSiap, setJalankanSiap] = useState(false)
+  const [paksaSiap, setPaksaSiap] = useState(false)
 
   async function repairTables() {
     setBusy(true); setNotice('')
@@ -64,6 +81,37 @@ export function SystemDiagnostics() {
     } finally { setBusy(false) }
   }
 
+  async function lihatPratinjauTahunAjaran() {
+    setBusy(true); setNotice(''); setJalankanSiap(false); setPaksaSiap(false)
+    try {
+      const result = await fetchJson<Envelope<PratinjauRollover>>('/api/admin/diagnostik', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ aksi: 'pratinjau_tahun_ajaran' }),
+      })
+      setPratinjau(result.data)
+    } catch (cause) {
+      setNotice(cause instanceof Error ? cause.message : 'Pratinjau belum dapat dimuat.')
+    } finally { setBusy(false) }
+  }
+
+  async function jalankanTahunAjaran(paksa: boolean) {
+    setBusy(true); setNotice('')
+    try {
+      const result = await fetchJson<Envelope<HasilRollover>>('/api/admin/diagnostik', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ aksi: 'jalankan_tahun_ajaran', paksa }),
+      })
+      const hasil = result.data
+      if (!hasil.ok) {
+        setNotice(hasil.sudahDijalankan ? `Pergantian tahun ajaran ${hasil.tahunAjaran} sudah pernah dijalankan. Gunakan jalankan ulang (paksa) bila memang perlu.` : hasil.error)
+      } else {
+        const ringkasan = hasil.ringkasan
+        setNotice(`Pergantian tahun ajaran ${hasil.tahunAjaran} selesai${ringkasan.dipaksa ? ' (paksa)' : ''}: ${ringkasan.dipromosikan.length} kelas dipromosikan, ${ringkasan.diarsipkan.length} kelas diarsipkan, ${ringkasan.lulusanDiputus} akun lulusan diputus dari kelas, ${ringkasan.peranDiperbarui} peran diperbarui.`)
+        setPratinjau(null)
+      }
+    } catch (cause) {
+      setNotice(cause instanceof Error ? cause.message : 'Pergantian tahun ajaran belum dapat dijalankan.')
+    } finally { setBusy(false); setJalankanSiap(false); setPaksaSiap(false) }
+  }
+
   return (
     <main className="admin-game-page">
       <a className="leaderboard-back" href="/">← Kembali ke portal</a>
@@ -84,7 +132,12 @@ export function SystemDiagnostics() {
       {notice && <p className="admin-content-notice" role="status">{notice}</p>}
       <section className="admin-setting-card diagnostics-seed"><div><span className="eyebrow">PERBAIKAN SKEMA</span><h2>Perbaiki tabel yang hilang</h2><p>Menjalankan ulang seluruh migrasi pada database yang dipakai aplikasi ini. Tabel dan data yang sudah ada tidak diubah; tabel yang hilang dibuat beserta data awalnya.</p></div><button className="admin-save-button" type="button" disabled={busy} onClick={() => void repairTables()}>{busy ? 'Memperbaiki…' : 'Perbaiki Tabel'}</button></section>
       <section className="admin-setting-card diagnostics-seed"><div><span className="eyebrow">INISIALISASI AMAN</span><h2>Buat data awal</h2><p>Menambahkan nilai pengaturan bawaan dan contoh soal, item sampah, serta misi yang belum ada. Data yang sudah tersedia tidak ditimpa.</p><p>Video edukasi sengaja tidak diisi dengan tautan yang belum diverifikasi; tambahkan sumber resmi melalui Kelola Konten.</p></div><button className="admin-save-button" type="button" disabled={busy} onClick={() => void createDefaults()}>{busy ? 'Menyiapkan…' : 'Buat Data Awal'}</button></section>
-      <section className="admin-setting-card diagnostics-seed"><div><span className="eyebrow">KONTEN KEGIATAN</span><h2>Tambah slide &amp; dokumen kegiatan</h2><p>Menambahkan 6 foto kegiatan sebagai slide beranda (Kerja Bakti, Botol Plastik Media Tanam, Membersihkan Depan Masjid, Sehari Tanpa Asap Kendaraan, Penghargaan Kelas Terbersih, Pemilahan Sampah) dan 8 foto sebagai Dokumen &amp; Arsip (Rapat Koordinasi, Hemat Energi Saklar, Kolam Ikan, Kompos Padat, Kompos Cair, Perawatan Peralatan Listrik). Foto yang sudah ada tidak ditambah lagi.</p></div><button className="admin-save-button" type="button" disabled={busy} onClick={() => void tambahMediaKegiatan()}>{busy ? 'Menambahkan…' : 'Tambah Media Kegiatan'}</button></section>
+      <section className="admin-setting-card diagnostics-seed"><div><span className="eyebrow">TAHUN AJARAN</span><h2>Pergantian tahun ajaran</h2><p>Setiap awal tahun ajaran: kelas X naik ke XI, XI naik ke XII, dan kelas XII yang lulus diarsipkan (data dan riwayatnya tetap tersimpan, tidak dihapus). Akun lulusan tetap ada, hanya keterikatan kelasnya berakhir. Setoran sampah tidak disentuh. Otomatis berjalan tiap 12 Juli 00:00 WIB; tombol di bawah hanya untuk menjalankan manual.</p><p>Pembaruan sheet Master_Kelas tetap manual: tambah kelas X baru dan nonaktifkan kelas XII di sheet, lalu isi jumlah siswa kelas baru lewat pengelolaan kelas.</p>
+        {pratinjau && <div className="diagnostics-preview"><p><strong>Tahun ajaran {pratinjau.tahunAjaran}</strong>{pratinjau.sudahDijalankan ? ' — sudah pernah dijalankan.' : ''}</p><p>Dipromosikan: {pratinjau.renames.length} kelas ({pratinjau.renames.map((item) => `${item.dari} → ${item.ke}`).join(', ') || '—'})</p><p>Diarsipkan: {pratinjau.archives.length} kelas ({pratinjau.archives.join(', ') || '—'})</p>{pratinjau.arsipDipindah.length > 0 && <p>Arsip lama dipindah namanya: {pratinjau.arsipDipindah.map((item) => `${item.dari} → ${item.ke}`).join(', ')}</p>}{pratinjau.dilewati.length > 0 && <p>Dilewati: {pratinjau.dilewati.join(', ')}</p>}<p>Peran diperbarui: {pratinjau.peranDiperbarui} · Akun lulusan diputus dari kelas: {pratinjau.lulusanDiputus}</p></div>}
+      </div><button className="admin-save-button" type="button" disabled={busy} onClick={() => void lihatPratinjauTahunAjaran()}>{busy ? 'Memuat…' : 'Lihat Pratinjau'}</button>
+        {pratinjau && !pratinjau.sudahDijalankan && <button className="admin-save-button" type="button" disabled={busy} onClick={() => { if (!jalankanSiap) { setJalankanSiap(true); return } void jalankanTahunAjaran(false) }}>{busy ? 'Menjalankan…' : jalankanSiap ? 'Ketuk lagi untuk menjalankan' : 'Jalankan Pergantian Tahun Ajaran'}</button>}
+        {pratinjau && pratinjau.sudahDijalankan && <><p>Jalankan ulang hanya bila rollover sebelumnya gagal di tengah jalan — kelas akan dipromosikan lagi dari kondisi saat ini.</p><button className="admin-save-button" type="button" disabled={busy} onClick={() => { if (!paksaSiap) { setPaksaSiap(true); return } void jalankanTahunAjaran(true) }}>{busy ? 'Menjalankan…' : paksaSiap ? 'Ketuk lagi untuk menjalankan ulang (paksa)' : 'Jalankan Ulang (Paksa)'}</button></>}
+      </section>
     </main>
   )
 }

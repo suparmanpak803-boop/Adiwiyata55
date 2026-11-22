@@ -5,6 +5,7 @@ import { allowRequest } from '@/lib/rate-limit'
 import { repairDatabase } from '@/lib/db-repair'
 import { seedGameDefaults } from '@/lib/game-content-seed'
 import { seedKegiatanMedia } from '@/lib/kegiatan-media-seed'
+import { jalankanPergantianTahunAjaran, pratinjauPergantianTahunAjaran } from '@/lib/tahun-ajaran'
 import { readJsonBody } from '@/lib/request-body'
 
 export const dynamic = 'force-dynamic'
@@ -15,7 +16,7 @@ const requiredTables: Record<string, string> = {
   kuis_soal: 'kuis_soal', item_sampah: 'item_sampah', misi_mingguan: 'misi_mingguan', video_edukasi: 'video_edukasi',
   game_settings: 'game_settings', app_settings: 'app_settings', game_sessions: 'game_sessions', game_scores: 'game_scores',
   leaderboard_periods: 'leaderboard_periods', leaderboard_settings: 'leaderboard_settings', laporan: 'laporan', slider_slides: 'slider_slides',
-  struktur_petugas: 'struktur_petugas', hari_libur: 'hari_libur',
+  struktur_petugas: 'struktur_petugas', hari_libur: 'hari_libur', arsip_tahun_ajaran: 'arsip_tahun_ajaran',
 }
 
 function respond(data: unknown, status = 200) {
@@ -53,9 +54,17 @@ export async function POST(request: Request) {
     const user = await requirePortalRole(['admin'])
     // B-04: batas laju aksi diagnostik berat (10/menit per admin).
     if (!(await allowRequest(`admin-diagnostik:${user.id}`, 10, 60))) return respond('Terlalu banyak permintaan. Coba lagi sebentar.', 429)
-    const parsed = await readJsonBody<{ aksi?: unknown }>(request)
+    const parsed = await readJsonBody<{ aksi?: unknown; paksa?: unknown }>(request)
     if (!parsed.ok) return respond(parsed.reason === 'too_large' ? 'Data terlalu besar.' : 'Data tidak valid.', parsed.reason === 'too_large' ? 413 : 400)
     const body = parsed.data
+    if (body?.aksi === 'pratinjau_tahun_ajaran') {
+      const pratinjau = await pratinjauPergantianTahunAjaran()
+      return respond(pratinjau)
+    }
+    if (body?.aksi === 'jalankan_tahun_ajaran') {
+      const hasil = await jalankanPergantianTahunAjaran({ paksa: body?.paksa === true })
+      return respond(hasil)
+    }
     if (body?.aksi === 'perbaiki_tabel') {
       const result = await repairDatabase()
       return respond(result)
