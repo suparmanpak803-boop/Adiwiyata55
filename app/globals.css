@@ -368,7 +368,8 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .story-cta h2 { max-width: 560px; margin: 12px auto; font-size: clamp(24px, 6vw, 34px); line-height: 1.2; }
 .story-cta p { max-width: 520px; margin: 0 auto 8px; color: var(--ink-soft); font-size: 13px; line-height: 1.7; }
 
-/* Dokumen Petugas — barisan kartu mengikuti kartu kader
+/* Kartu dokumen SK (dipakai di poin 9 halaman Syarat dan Ketentuan
+   Petugas) — barisan kartu mengikuti kartu kader
    (.adi-division-card di halaman publik): nomor + judul yang langsung
    membuka dokumen, tanpa label dan tanpa langkah buka-tutup. */
 .petugas-doc-list { display: grid; gap: 12px; }
@@ -378,6 +379,24 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .petugas-doc-title { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; color: inherit; text-decoration: none; }
 .petugas-doc-title svg { width: 18px; height: 18px; flex: none; margin-top: 4px; }
 .petugas-doc-card p { margin: 9px 0 0; color: var(--ink-soft); font-size: 11px; line-height: 1.75; }
+
+/* Syarat dan Ketentuan Petugas — daftar bernomor dengan kartu yang
+   mengikuti gaya .petugas-doc-card; teks isi min 16px agar nyaman
+   dibaca di HP. Kartu dokumen SK di poin 9 memakai ulang
+   .petugas-doc-* tanpa bingkai ganda. */
+.syarat-list { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
+.syarat-card { position: relative; padding: 20px 22px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); }
+.syarat-index { position: absolute; top: 20px; right: 20px; color: var(--ink-soft); font: italic 14px Georgia, serif; }
+.syarat-card h3 { margin: 0; padding-right: 44px; font: 400 21px/1.3 Georgia, serif; }
+.syarat-card p { margin: 9px 0 0; color: var(--ink-soft); font-size: 16px; line-height: 1.75; }
+.syarat-card a { color: var(--green); }
+.syarat-kader-list { display: grid; gap: 8px; margin: 14px 0 0; padding: 0; list-style: none; }
+.syarat-kader-list li { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; font-size: 16px; line-height: 1.6; }
+.syarat-kader-list li > span:first-child { flex: none; color: var(--green); font-weight: 700; }
+.syarat-card .petugas-doc-list { margin-top: 14px; }
+.syarat-card .petugas-doc-card { padding: 0; border: 0; background: transparent; }
+.syarat-card .petugas-doc-card p { font-size: 16px; }
+.syarat-note { margin: 24px 0 0; color: var(--ink-soft); font-size: 16px; line-height: 1.75; }
 .story-cta .hero-actions { justify-content: center; margin-top: 20px; }
 .bento-grid { display: grid; grid-template-columns: 1fr 1fr .8fr; gap: 13px; }
 .bento-card { position: relative; display: flex; min-height: 248px; overflow: hidden; flex-direction: column; align-items: flex-start; padding: 22px; border: 1px solid var(--line); border-radius: 8px; text-align: left; }

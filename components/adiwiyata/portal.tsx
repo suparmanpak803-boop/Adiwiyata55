@@ -18,6 +18,7 @@ import {
   LogOut,
   Menu,
   Moon,
+  ScrollText,
   Settings,
   ShieldCheck,
   Sun,
@@ -26,6 +27,7 @@ import {
   X,
 } from 'lucide-react'
 import { EDU_DEFAULTS, KADER_LIST } from '@/lib/edu-defaults'
+import { DEFAULT_ADIWIYATA_SITE_CONTENT } from '@/lib/adiwiyata-site-content'
 import { DepositWorkspace } from '@/components/adiwiyata/deposit-workspace'
 import { MonitoringDashboard } from '@/components/adiwiyata/monitoring-dashboard'
 import { SheetsSettingsPanel } from '@/components/adiwiyata/sheets-settings-panel'
@@ -37,7 +39,7 @@ import { HomeSlider } from '@/components/adiwiyata/home-slider'
 import { AdiwiyataLogoMark } from '@/components/adiwiyata/logo-mark'
 import type { SliderPageData } from '@/lib/slider/data'
 
-type View = 'beranda' | 'edukasi' | 'kelas' | 'monitoring' | 'setoran' | 'pengaturan' | 'video' | 'slider' | 'struktur' | 'leaderboard' | 'main' | 'laporan' | 'adminlaporan' | 'game' | 'dokumen' | 'dokumenpetugas' | 'informasi' | 'laporankader' | 'adminusers'
+type View = 'beranda' | 'edukasi' | 'kelas' | 'monitoring' | 'setoran' | 'pengaturan' | 'video' | 'slider' | 'struktur' | 'leaderboard' | 'main' | 'laporan' | 'adminlaporan' | 'game' | 'dokumen' | 'syaratpetugas' | 'informasi' | 'laporankader' | 'adminusers'
 
 import type { EducationVideo } from '@/lib/education-videos'
 
@@ -55,7 +57,7 @@ const navigation: { id: View; label: string; icon: typeof Leaf; enabled: boolean
   { id: 'pengaturan', label: 'Pengaturan Sheets', icon: Settings, enabled: true },
   { id: 'video', label: 'Atur Video Edukasi', icon: Film, enabled: true },
   { id: 'dokumen', label: 'Dokumen & Arsip', icon: FileText, enabled: true },
-  { id: 'dokumenpetugas', label: 'Dokumen Petugas', icon: FileText, enabled: true },
+  { id: 'syaratpetugas', label: 'Syarat dan Ketentuan Petugas', icon: ScrollText, enabled: true },
   { id: 'informasi', label: 'Atur Informasi Adiwiyata', icon: FileText, enabled: true },
   { id: 'adminusers', label: 'Akses Pengguna', icon: ShieldCheck, enabled: true },
   { id: 'slider', label: 'Slider Beranda', icon: ImagePlus, enabled: true },
@@ -72,7 +74,7 @@ const navigation: { id: View; label: string; icon: typeof Leaf; enabled: boolean
 // Sebelumnya desktop menyaring item.enabled sedangkan drawer tidak,
 // sehingga item yang belum aktif tampil berbeda di keduanya.
 function visibleNavigation(role: 'admin' | 'petugas' | 'pengunjung') {
-  return navigation.filter((item) => item.enabled && (item.id !== 'setoran' || role !== 'pengunjung') && (item.id !== 'dokumenpetugas' || role !== 'pengunjung') && (item.id !== 'pengaturan' || role === 'admin') && (item.id !== 'video' || role === 'admin') && (item.id !== 'slider' || role === 'admin') && (item.id !== 'struktur' || role === 'admin') && (item.id !== 'game' || role === 'admin') && (item.id !== 'adminlaporan' || role !== 'pengunjung') && (item.id !== 'laporankader' || role === 'petugas') && (item.id !== 'adminusers' || role === 'admin') && (item.id !== 'informasi' || role === 'admin'))
+  return navigation.filter((item) => item.enabled && (item.id !== 'setoran' || role !== 'pengunjung') && (item.id !== 'syaratpetugas' || role !== 'pengunjung') && (item.id !== 'pengaturan' || role === 'admin') && (item.id !== 'video' || role === 'admin') && (item.id !== 'slider' || role === 'admin') && (item.id !== 'struktur' || role === 'admin') && (item.id !== 'game' || role === 'admin') && (item.id !== 'adminlaporan' || role !== 'pengunjung') && (item.id !== 'laporankader' || role === 'petugas') && (item.id !== 'adminusers' || role === 'admin') && (item.id !== 'informasi' || role === 'admin'))
 }
 
 function SectionContent({ section }: { section: (typeof EDU_DEFAULTS.sections)[number] }) {
@@ -192,7 +194,7 @@ function GuideDialog({ onClose, role }: { onClose: () => void; role: 'admin' | '
       <li><strong>Input Laporan</strong> — kirim setoran atau laporan sampah untuk kelas yang kamu ampu.</li>
       <li><strong>Laporan Kinerja Kader</strong> — isi laporan kinerja kader.</li>
       <li><strong>Kelola Laporan</strong> — lihat dan kelola laporan yang masuk.</li>
-      <li><strong>Dokumen Petugas</strong> — buka SK Kader Adiwiyata 2026–2027 (hanya petugas dan admin).</li>
+      <li><strong>Syarat dan Ketentuan Petugas</strong> — syarat, tugas, dan ketentuan untuk petugas, termasuk tautan SK Kader Adiwiyata 2026–2027.</li>
     </ul>
     <p>Akses petugas bisa diberi tanggal berakhir oleh admin. Bila tanggalnya lewat, akunmu kembali jadi pengunjung.</p></>}
     {role === 'pengunjung' && <><h3>Khusus pengunjung</h3>
@@ -209,22 +211,44 @@ function GuideDialog({ onClose, role }: { onClose: () => void; role: 'admin' | '
   </div><button className="primary-button" onClick={onClose}>Mengerti <ArrowRight aria-hidden="true" /></button></section></div>
 }
 
-// Dokumen khusus petugas (dan admin): SK Kader Adiwiyata. File PDF
-// disajikan lewat /api/petugas/dokumen/sk-kader yang memeriksa peran,
-// jadi pengunjung tidak pernah melihat tautan ini maupun isi filenya.
-// Barisan bernomor mengikuti kartu kader, tapi tanpa label dan tanpa
-// langkah buka-tutup: judulnya langsung tautan ke dokumen SK.
-function PetugasDokumenView() {
+// Syarat dan Ketentuan Petugas — halaman statis berpoin untuk petugas
+// (dan admin). Daftar tugas tiap kader diambil dari
+// DEFAULT_ADIWIYATA_SITE_CONTENT (sumber yang sama dengan halaman
+// Kader Adiwiyata): satu baris fokus + ringkasan per kader, tanpa
+// menyalin seluruh uraian tugas. Tautan SK tetap lewat
+// /api/petugas/dokumen/sk-kader yang memeriksa peran, jadi pengunjung
+// tidak pernah melihat tautan ini maupun isi filenya.
+function SyaratPetugasView() {
+  const kader = DEFAULT_ADIWIYATA_SITE_CONTENT.divisions
   return (
-    <section className="portal-bento" aria-labelledby="dokumen-petugas-title">
-      <div className="bento-heading"><div><span className="eyebrow">KHUSUS PETUGAS</span><h2 id="dokumen-petugas-title">Dokumen Petugas</h2></div><p>Dokumen resmi yang hanya bisa dibuka petugas dan admin. Ketuk judul dokumen untuk membukanya.</p></div>
-      <div className="petugas-doc-list">
-        <article className="petugas-doc-card">
-          <span className="petugas-doc-index">01</span>
-          <h3><a className="petugas-doc-title" href="/api/petugas/dokumen/sk-kader" target="_blank" rel="noreferrer"><span>SK Kader Adiwiyata 2026–2027</span><ArrowRight aria-hidden="true" /></a></h3>
-          <p>Keputusan Kepala SMA Negeri 55 Jakarta Nomor 027 Tahun 2026 tentang Tim Kader Adiwiyata, ditetapkan 12 November 2026 — beserta daftar nama kader.</p>
-        </article>
-      </div>
+    <section className="portal-bento" aria-labelledby="syarat-petugas-title">
+      <div className="bento-heading"><div><span className="eyebrow">KHUSUS PETUGAS</span><h2 id="syarat-petugas-title">Syarat dan Ketentuan Petugas</h2></div><p>Ketentuan bagi petugas Adiwiyata SMAN 55 Jakarta. Baca dan pahami sebelum menjalankan tugas.</p></div>
+      <ol className="syarat-list">
+        <li><article className="syarat-card"><span className="syarat-index" aria-hidden="true">01</span><h3>Siapa petugas</h3><p>Petugas adalah warga sekolah yang ditetapkan admin sebagai petugas, beserta kelas yang diampu dan masa berlaku aksesnya. Pengunjung tidak memiliki akses petugas dan hanya bisa memakai menu umum.</p></article></li>
+        <li><article className="syarat-card"><span className="syarat-index" aria-hidden="true">02</span><h3>Susunan tim</h3><p>Tim Kader Adiwiyata dipimpin Pengarah (Kepala Sekolah), didampingi 4 Penanggung jawab, Ketua, dan Wakil Ketua, serta 15 koordinator kader — satu koordinator untuk tiap kader. Nama lengkap pengurus dan koordinator ada di <a href="/adiwiyata/struktur">halaman Struktur Adiwiyata</a>.</p></article></li>
+        <li><article className="syarat-card"><span className="syarat-index" aria-hidden="true">03</span><h3>Tugas umum kader</h3><p>Kader adalah motor gerakan di kelas dan di sekolah: mencatat setoran sampah, mengingatkan teman, dan memimpin aksi harian.</p></article></li>
+        <li><article className="syarat-card"><span className="syarat-index" aria-hidden="true">04</span><h3>Tugas tiap kader</h3><p>Setiap kader memiliki fokus dan ringkasan tugas sebagai berikut. Uraian tugas bernomor lengkap ada di <a href="/adiwiyata/dokumentasi">halaman Kader Adiwiyata</a>.</p>
+          <ol className="syarat-kader-list">
+            {kader.map((division, index) => (
+              <li key={division.name}><span aria-hidden="true">{String(index + 1).padStart(2, '0')}</span><span><strong>{division.name}</strong>{' — '}{division.focus}: {division.duties}</span></li>
+            ))}
+          </ol>
+        </article></li>
+        <li><article className="syarat-card"><span className="syarat-index" aria-hidden="true">05</span><h3>Laporan kinerja</h3><p>Petugas mencatat aksi nyata yang dilakukan lewat formulir Laporan Kinerja Kader: pilih kader, lalu pilih tugas yang dikerjakan, dan kirim laporan untuk dicatat sekolah sebagai bukti kegiatan kader.</p></article></li>
+        <li><article className="syarat-card"><span className="syarat-index" aria-hidden="true">06</span><h3>Poin dan leaderboard</h3><p>Poin diperoleh dari game dan aksi, dengan batas 300 poin per hari. Leaderboard menampilkan peringkat sesuai pengaturan tampil yang dipilih, yaitu nama atau inisial.</p></article></li>
+        <li><article className="syarat-card"><span className="syarat-index" aria-hidden="true">07</span><h3>Masa berlaku dan perubahan peran</h3><p>Akses petugas berlaku sampai tanggal yang ditetapkan admin. Bila tanggalnya lewat, akun kembali menjadi pengunjung dan menu petugas tidak lagi tampil. Admin berhak meninjau dan mengubah peran serta masa berlaku kapan saja.</p></article></li>
+        <li><article className="syarat-card"><span className="syarat-index" aria-hidden="true">08</span><h3>Kerahasiaan data</h3><p>Nama pengurus dan koordinator kader serta dokumen SK hanya untuk petugas dan admin. Jangan menyebarkan data pribadi warga sekolah ke luar sekolah.</p></article></li>
+        <li><article className="syarat-card"><span className="syarat-index" aria-hidden="true">09</span><h3>Dokumen pendukung</h3><p>Dokumen dasar penugasan kader adalah SK berikut. Ketuk judul dokumen untuk membukanya (hanya petugas dan admin).</p>
+          <div className="petugas-doc-list">
+            <article className="petugas-doc-card">
+              <span className="petugas-doc-index">01</span>
+              <h3><a className="petugas-doc-title" href="/api/petugas/dokumen/sk-kader" target="_blank" rel="noreferrer"><span>SK Kader Adiwiyata 2026–2027</span><ArrowRight aria-hidden="true" /></a></h3>
+              <p>Keputusan Kepala SMA Negeri 55 Jakarta Nomor 027 Tahun 2026 tentang Tim Kader Adiwiyata, ditetapkan 12 November 2026 — beserta daftar nama kader.</p>
+            </article>
+          </div>
+        </article></li>
+      </ol>
+      <p className="syarat-note">Syarat dan ketentuan ini mengikuti SK Kepala SMA Negeri 55 Jakarta Nomor 027 Tahun 2026.</p>
     </section>
   )
 }
@@ -312,7 +336,7 @@ export function AdiwiyataPortal({ user, depositData, sheetsConfig, educationVide
 
       {drawerOpen && <div className="drawer-scrim" onClick={() => setDrawerOpen(false)}><aside className="nav-drawer" aria-label="Menu navigasi" onClick={(event) => event.stopPropagation()}><div className="drawer-header"><span className="eyebrow">MENU UTAMA</span><button className="icon-button" aria-label="Tutup menu" onClick={() => setDrawerOpen(false)}><X /></button></div><nav><a className="drawer-link" href="/adiwiyata"><Leaf aria-hidden="true" /><span>INFORMASI ADIWIYATA</span><ArrowRight className="drawer-arrow" aria-hidden="true" /></a><a className="drawer-link" href="/adiwiyata/tentang"><BookOpen aria-hidden="true" /><span>TENTANG KAMI</span><ArrowRight className="drawer-arrow" aria-hidden="true" /></a>{visibleNavigation(user.role).map((item) => { const Icon = item.icon; return <button key={item.id} className={view === item.id ? 'drawer-link active' : 'drawer-link'} onClick={() => selectView(item.id)}><Icon aria-hidden="true" /><span>{item.label}</span></button> })}<button className="drawer-link" onClick={() => { setDrawerOpen(false); setGuideOpen(true) }}><CircleHelp aria-hidden="true" /><span>Panduan</span><ArrowRight className="drawer-arrow" aria-hidden="true" /></button></nav><div className="drawer-footer"><span className="brand-emblem"><AdiwiyataLogoMark /></span><span>Peduli lingkungan,<br />mulai dari sekolah.</span></div></aside></div>}
 
-      {view === 'pengaturan' ? <SheetsSettingsPanel initialUrl={sheetsConfig?.url ?? ''} initiallyConfigured={sheetsConfig?.configured ?? false} /> : view === 'video' ? <EducationVideoSettingsPanel data={educationVideoData ?? { videos: [], error: null }} /> : view === 'monitoring' ? <MonitoringDashboard summary={depositData.sheetsSummary} initialError={depositData.sheetsError} classes={depositData.classes} role={user.role} /> : view === 'setoran' ? <DepositWorkspace data={depositData} /> : view === 'kelas' ? <ClassDirectory classes={depositData.classes} isAdmin={user.role === 'admin'} /> : view === 'dokumenpetugas' ? <PetugasDokumenView /> : <>
+      {view === 'pengaturan' ? <SheetsSettingsPanel initialUrl={sheetsConfig?.url ?? ''} initiallyConfigured={sheetsConfig?.configured ?? false} /> : view === 'video' ? <EducationVideoSettingsPanel data={educationVideoData ?? { videos: [], error: null }} /> : view === 'monitoring' ? <MonitoringDashboard summary={depositData.sheetsSummary} initialError={depositData.sheetsError} classes={depositData.classes} role={user.role} /> : view === 'setoran' ? <DepositWorkspace data={depositData} /> : view === 'kelas' ? <ClassDirectory classes={depositData.classes} isAdmin={user.role === 'admin'} /> : view === 'syaratpetugas' ? <SyaratPetugasView /> : <>
         <section className="hero-section">
           <div className="hero-copy"><span className="hero-kicker"><span className="pulse-dot" /> MASALAH DI SEKOLAH KITA</span><h1>Sampah menumpuk.<br /><em>Saatnya memilah.</em></h1><p>{totalKg > 0 ? <>Sekolah kita sudah memilah <strong>{formatKg(pilahKg)} kg</strong> sampah — tapi <strong>{formatKg(residualKg)} kg</strong> masih berakhir sebagai residu. Bersama warga SMAN 55 Jakarta, rawat lingkungan mulai hari ini. Bumi ini kita pinjam dari generasi mendatang.</> : <>Sekolah kita memilah sampah setiap hari — tapi sebagian masih berakhir sebagai residu. Bersama warga SMAN 55 Jakarta, rawat lingkungan mulai hari ini. Bumi ini kita pinjam dari generasi mendatang.</>}</p><div className="hero-actions"><button className="primary-button" onClick={() => document.getElementById('edukasi')?.scrollIntoView({ behavior: 'smooth' })}>Jelajahi Adiwiyata <ArrowDownRight aria-hidden="true" /></button><button className="text-button" onClick={() => selectView('edukasi')}>Video edukasi <ArrowRight aria-hidden="true" /></button></div><div className="hero-caption"><span className="hero-caption-line" /> <span>MASALAH · AKSI · BUKTI</span></div></div>
           <div className="hero-art"><HomeSlider slides={sliderData.slides} settings={sliderData.settings} /></div>
