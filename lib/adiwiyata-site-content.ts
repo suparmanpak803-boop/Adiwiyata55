@@ -96,7 +96,7 @@ export const DEFAULT_ADIWIYATA_SITE_CONTENT: AdiwiyataSiteContent = {
     },
     dokumentasi: {
       title: 'Kader Adiwiyata',
-      intro: 'Daftar 14 kader Adiwiyata SMAN 55 Jakarta beserta uraian tugas masing-masing (2026).',
+      intro: 'Daftar 15 kader Adiwiyata SMAN 55 Jakarta beserta uraian tugas masing-masing (2026).',
     },
     struktur: {
       title: 'Struktur Adiwiyata',
@@ -315,6 +315,11 @@ export const DEFAULT_ADIWIYATA_SITE_CONTENT: AdiwiyataSiteContent = {
         'Mengajak warga sekolah berpartisipasi dalam kampanye perilaku hemat air dalam operasional sehari-hari.',
         'Mendokumentasikan serta membuat kolase dokumentasi seluruh kegiatan terkait Kader Air Lestari.',
       ],
+    },
+    {
+      name: 'Kader Edu-Lingkungan',
+      focus: 'Edukasi lingkungan',
+      duties: 'Mengedukasi warga sekolah tentang lingkungan hidup dan perilaku ramah lingkungan.',
     },
     {
       name: 'Kader Budaya Lingkungan',

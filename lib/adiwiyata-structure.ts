@@ -8,7 +8,7 @@
 // klien, supaya nama-nama pengurus tidak masuk ke bundle publik.
 //
 // Catatan: SK memuat 15 seksi kader — satu lebih banyak dari 14 kader di
-// halaman situs, karena SK juga mencantumkan "Edu-Lingkungan" (Rudy Saleh)
+// halaman situs, karena SK juga mencantumkan "Edu-Lingkungan" (Rusdy Saleh)
 // yang tidak ada di daftar uraian tugas.
 
 export type StrukturKader = {
@@ -35,7 +35,7 @@ export const STRUKTUR_KADER: StrukturKader = {
     { kader: 'Hijau dan Biodiversitas', nama: 'Melynda J. Br Meliala, S.Pd' },
     { kader: 'Energi Lestari', nama: 'Candra Dwi Irawan, M.Pd' },
     { kader: 'Air Lestari', nama: 'Ruruh Sujatmiko, S.Pd' },
-    { kader: 'Edu-Lingkungan', nama: 'Rudy Saleh, S.Pd' },
+    { kader: 'Edu-Lingkungan', nama: 'Rusdy Saleh, S.Pd' },
     { kader: 'Budaya Lingkungan', nama: 'Ermelia Purba, S.Pd' },
     { kader: 'Inovasi Hijau', nama: 'Reisti Hudatul Khairiyah, S.Pd' },
     { kader: 'Kantin Hijau', nama: 'Susanto, S.Pd' },
