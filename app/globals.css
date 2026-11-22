@@ -1370,3 +1370,31 @@ button.bento-card { cursor: pointer; }
   .user-admin-controls { grid-template-columns: 1fr; gap: 10px; }
   .user-admin-save-wrap { grid-column: 1; }
 }
+
+/* Editor Struktur Adiwiyata — memakai ulang tata letak panel Informasi. */
+.struktur-admin-page .information-field { font-size: 12px; }
+.struktur-admin-page .information-field input,
+.struktur-admin-page .information-field textarea,
+.struktur-admin-page .information-field select { font-size: 16px; }
+.struktur-admin-page .information-field select { width: 100%; min-height: 44px; padding: 9px 10px; border: 1px solid var(--line); border-radius: 7px; background: var(--background); color: var(--foreground); font: inherit; font-size: 16px; font-weight: 400; }
+.struktur-admin-page .information-field select:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
+.struktur-admin-page .information-reset-button,
+.struktur-admin-page .primary-button { min-height: 44px; font-size: 12px; }
+.struktur-admin-page .information-entry-heading > button { width: 44px; height: 44px; }
+.struktur-admin-tim-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.struktur-admin-tim-panel { margin-top: 12px; }
+.struktur-admin-tim-toggle { min-width: 0; flex: 1; min-height: 44px; padding: 0; display: flex; align-items: center; gap: 10px; border: 0; background: transparent; color: var(--foreground); font: inherit; cursor: pointer; text-align: left; }
+.struktur-admin-tim-toggle strong { min-width: 0; overflow-wrap: anywhere; font-size: 16px; }
+.struktur-admin-tim-toggle > span { color: var(--ink-soft); font-size: 12px; white-space: nowrap; }
+.struktur-admin-tim-toggle svg { width: 18px; height: 18px; flex: 0 0 auto; color: var(--ink-soft); transition: transform .2s ease; }
+.struktur-admin-tim-toggle svg.is-terbuka { transform: rotate(180deg); }
+.struktur-admin-card-actions { display: inline-flex; gap: 8px; }
+.struktur-admin-card-actions button { width: 44px; height: 44px; flex: 0 0 auto; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 7px; background: var(--card); color: var(--ink-soft); cursor: pointer; }
+.struktur-admin-card-actions button:hover { border-color: var(--green); color: var(--green); }
+.struktur-admin-card-actions button.struktur-admin-hapus:hover { border-color: #d65c4d; color: #a7473d; }
+.struktur-admin-card-actions button:disabled { opacity: .4; cursor: default; }
+.struktur-admin-card-actions button svg { width: 18px; height: 18px; }
+.struktur-admin-subjudul { margin: 18px 0 10px; color: var(--foreground); font-size: 16px; font-weight: 700; }
+.struktur-admin-note { margin: 14px 0 0; color: var(--ink-soft); font-size: 12px; line-height: 1.6; }
+.struktur-admin-empty { margin: 0 0 4px; color: var(--ink-soft); font-size: 12px; }
+.struktur-admin-anggota { margin-top: 10px; }

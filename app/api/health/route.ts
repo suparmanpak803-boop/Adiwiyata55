@@ -17,7 +17,7 @@ const requiredTables: Record<string, string> = {
   kuis_soal: 'kuis_soal', item_sampah: 'item_sampah', misi_mingguan: 'misi_mingguan', video_edukasi: 'video_edukasi',
   game_settings: 'game_settings', app_settings: 'app_settings', game_sessions: 'game_sessions', game_scores: 'game_scores',
   leaderboard_periods: 'leaderboard_periods', leaderboard_settings: 'leaderboard_settings', laporan: 'laporan', slider_slides: 'slider_slides',
-  dokumen: 'adiwiyata_documents', peran_pengguna: 'adiwiyata_user_roles',
+  dokumen: 'adiwiyata_documents', peran_pengguna: 'adiwiyata_user_roles', struktur_petugas: 'struktur_petugas',
 }
 
 export async function GET(request: Request) {

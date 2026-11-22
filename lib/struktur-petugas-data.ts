@@ -8,13 +8,21 @@
 // di komponen klien (hanya `import type` yang aman), supaya nama-nama
 // pengurus tidak masuk ke bundle atau HTML publik.
 //
-// Untuk mengubah data petugas, ubah objek STRUKTUR_PETUGAS di bawah
-// ini. Tidak perlu menyentuh kode tampilan di
-// components/adiwiyata/struktur-pohon.tsx. Jangan cantumkan data
-// pribadi sensitif: hanya nama, kelas, jabatan, dan tugas.
-// `foto` boleh dikosongkan: bila kosong, komponen menampilkan avatar
-// inisial berwarna. Bila diisi, gunakan path lokal di folder public/
-// (mis. '/dokumentasi/nama-orang.jpg').
+// Untuk mengubah data petugas, pakai editor admin di
+// /admin/struktur (menyimpan ke tabel public.struktur_petugas).
+// Objek STRUKTUR_PETUGAS di bawah ini adalah data DEFAULT yang
+// dipakai bila tabel/baris belum ada atau datanya tidak valid.
+// Jangan cantumkan data pribadi sensitif: hanya nama, kelas,
+// jabatan, dan tugas. `foto` boleh dikosongkan: bila kosong,
+// komponen menampilkan avatar inisial berwarna. Bila diisi,
+// gunakan path lokal di folder public/ (mis.
+// '/dokumentasi/nama-orang.jpg').
+
+import { pool } from '@/lib/db'
+import { IKON_TIM, WARNA_TIM } from '@/lib/struktur-petugas-label'
+
+// Label Indonesia untuk dropdown editor admin ada di
+// lib/struktur-petugas-label.ts (modul client-safe).
 
 export type Petugas = {
   id: string
@@ -335,4 +343,147 @@ export const STRUKTUR_PETUGAS: StrukturPetugas = {
       anggota: [],
     },
   ],
+}
+
+const BATAS = {
+  pengurus: 30,
+  tim: 30,
+  anggota: 100,
+  nama: 100,
+  kelas: 100,
+  jabatan: 100,
+  tugas: 500,
+  namaTim: 100,
+  deskripsiTim: 300,
+} as const
+
+// Membuat tabel bila belum ada (idempotent). Dipanggil di awal
+// pembacaan dan penyimpanan, seperti ensureSliderSchema().
+export async function ensureStrukturSchema(): Promise<void> {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS public.struktur_petugas (
+      id text PRIMARY KEY DEFAULT 'utama',
+      data jsonb NOT NULL,
+      diperbarui_pada timestamptz NOT NULL DEFAULT now()
+    );
+  `)
+}
+
+// Membaca struktur dari DB (baris 'utama'). Bila tabel/baris tidak
+// ada, JSON rusak, atau validasi gagal, kembalikan data default SK.
+// Fungsi ini tidak pernah throw, supaya halaman publik tidak mati
+// hanya karena struktur gagal dibaca.
+export async function getStrukturPetugas(): Promise<StrukturPetugas> {
+  try {
+    await ensureStrukturSchema()
+    const result = await pool.query<{ data: unknown }>(`SELECT data FROM public.struktur_petugas WHERE id = 'utama' LIMIT 1`)
+    const row = result.rows[0]
+    if (!row) return STRUKTUR_PETUGAS
+    const validated = validateStrukturPetugas(row.data)
+    if (!validated.ok) {
+      console.error('[struktur] data tersimpan tidak valid, memakai data SK:', validated.error)
+      return STRUKTUR_PETUGAS
+    }
+    return validated.data
+  } catch (error) {
+    console.error('[struktur] gagal membaca, memakai data SK:', error)
+    return STRUKTUR_PETUGAS
+  }
+}
+
+function slugDariNama(nama: string): string {
+  const slug = nama
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 40)
+  return slug || 'item'
+}
+
+function idBaru(nama: string, dipakai: Set<string>): string {
+  const dasar = slugDariNama(nama)
+  if (!dipakai.has(dasar)) return dasar
+  let id = `${dasar}-${Math.random().toString(36).slice(2, 6)}`
+  while (dipakai.has(id)) id = `${dasar}-${Math.random().toString(36).slice(2, 6)}`
+  return id
+}
+
+function teks(value: unknown): string {
+  return typeof value === 'string' ? value.trim() : ''
+}
+
+type HasilValidasi<T> = { ok: true; data: T } | { ok: false; error: string }
+
+function bersihkanPetugas(value: unknown, dipakai: Set<string>): HasilValidasi<Petugas> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return { ok: false, error: 'Data petugas tidak valid.' }
+  const item = value as Record<string, unknown>
+  const nama = teks(item.nama)
+  if (nama.length < 1) return { ok: false, error: 'Nama petugas wajib diisi.' }
+  if (nama.length > BATAS.nama) return { ok: false, error: `Nama petugas maksimal ${BATAS.nama} karakter.` }
+  const kelas = teks(item.kelas)
+  if (kelas.length > BATAS.kelas) return { ok: false, error: `Keterangan petugas maksimal ${BATAS.kelas} karakter.` }
+  const jabatan = teks(item.jabatan)
+  if (jabatan.length > BATAS.jabatan) return { ok: false, error: `Jabatan petugas maksimal ${BATAS.jabatan} karakter.` }
+  const tugas = teks(item.tugas)
+  if (tugas.length > BATAS.tugas) return { ok: false, error: `Tugas petugas maksimal ${BATAS.tugas} karakter.` }
+  // Field tak dikenal (termasuk `foto` dan `whatsapp`) dibuang.
+  const idMentah = teks(item.id)
+  const id = idMentah && !dipakai.has(idMentah) && /^[a-z0-9][a-z0-9-]*$/.test(idMentah) ? idMentah : idBaru(nama, dipakai)
+  dipakai.add(id)
+  return { ok: true, data: { id, nama, kelas, jabatan, tugas } }
+}
+
+function bersihkanTim(value: unknown, dipakai: Set<string>): HasilValidasi<TimPetugas> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return { ok: false, error: 'Data tim tidak valid.' }
+  const item = value as Record<string, unknown>
+  const nama = teks(item.nama)
+  if (nama.length < 1) return { ok: false, error: 'Nama tim wajib diisi.' }
+  if (nama.length > BATAS.namaTim) return { ok: false, error: `Nama tim maksimal ${BATAS.namaTim} karakter.` }
+  const deskripsi = teks(item.deskripsi)
+  if (deskripsi.length > BATAS.deskripsiTim) return { ok: false, error: `Deskripsi tim maksimal ${BATAS.deskripsiTim} karakter.` }
+  const ikon = item.ikon
+  if (typeof ikon !== 'string' || !(IKON_TIM as string[]).includes(ikon)) return { ok: false, error: `Ikon tim "${nama}" tidak dikenal.` }
+  const warna = item.warna
+  if (typeof warna !== 'string' || !(WARNA_TIM as string[]).includes(warna)) return { ok: false, error: `Warna tim "${nama}" tidak dikenal.` }
+  const koordinator = bersihkanPetugas(item.koordinator, dipakai)
+  if (!koordinator.ok) return { ok: false, error: `Koordinator tim "${nama}": ${koordinator.error}` }
+  if (!Array.isArray(item.anggota)) return { ok: false, error: `Daftar anggota tim "${nama}" tidak valid.` }
+  if (item.anggota.length > BATAS.anggota) return { ok: false, error: `Anggota tim "${nama}" maksimal ${BATAS.anggota} orang.` }
+  const anggota: Petugas[] = []
+  for (const raw of item.anggota) {
+    const hasil = bersihkanPetugas(raw, dipakai)
+    if (!hasil.ok) return { ok: false, error: `Anggota tim "${nama}": ${hasil.error}` }
+    anggota.push(hasil.data)
+  }
+  const idMentah = teks(item.id)
+  const id = idMentah && !dipakai.has(idMentah) && /^[a-z0-9][a-z0-9-]*$/.test(idMentah) ? idMentah : idBaru(nama, dipakai)
+  dipakai.add(id)
+  return { ok: true, data: { id, nama, ikon: ikon as IkonTim, warna: warna as WarnaTim, deskripsi, koordinator: koordinator.data, anggota } }
+}
+
+// Validasi ketat data struktur (dari editor admin atau DB). Field
+// tak dikenal dibuang; id yang kosong atau duplikat dibuat ulang
+// dari nama. Mengembalikan data bersih yang siap disimpan.
+export function validateStrukturPetugas(value: unknown): HasilValidasi<StrukturPetugas> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return { ok: false, error: 'Data struktur tidak valid.' }
+  const item = value as Record<string, unknown>
+  if (!Array.isArray(item.pengurusInti)) return { ok: false, error: 'Daftar pengurus inti tidak valid.' }
+  if (item.pengurusInti.length > BATAS.pengurus) return { ok: false, error: `Pengurus inti maksimal ${BATAS.pengurus} orang.` }
+  if (!Array.isArray(item.tim)) return { ok: false, error: 'Daftar tim tidak valid.' }
+  if (item.tim.length > BATAS.tim) return { ok: false, error: `Tim maksimal ${BATAS.tim} tim.` }
+  const dipakai = new Set<string>()
+  const pengurusInti: Petugas[] = []
+  for (const raw of item.pengurusInti) {
+    const hasil = bersihkanPetugas(raw, dipakai)
+    if (!hasil.ok) return { ok: false, error: `Pengurus inti: ${hasil.error}` }
+    pengurusInti.push(hasil.data)
+  }
+  const tim: TimPetugas[] = []
+  for (const raw of item.tim) {
+    const hasil = bersihkanTim(raw, dipakai)
+    if (!hasil.ok) return hasil
+    tim.push(hasil.data)
+  }
+  return { ok: true, data: { pengurusInti, tim } }
 }

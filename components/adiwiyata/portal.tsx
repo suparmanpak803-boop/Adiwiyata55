@@ -37,7 +37,7 @@ import { HomeSlider } from '@/components/adiwiyata/home-slider'
 import { AdiwiyataLogoMark } from '@/components/adiwiyata/logo-mark'
 import type { SliderPageData } from '@/lib/slider/data'
 
-type View = 'beranda' | 'edukasi' | 'kelas' | 'monitoring' | 'setoran' | 'pengaturan' | 'video' | 'slider' | 'leaderboard' | 'main' | 'laporan' | 'adminlaporan' | 'game' | 'dokumen' | 'dokumenpetugas' | 'informasi' | 'laporankader' | 'adminusers'
+type View = 'beranda' | 'edukasi' | 'kelas' | 'monitoring' | 'setoran' | 'pengaturan' | 'video' | 'slider' | 'struktur' | 'leaderboard' | 'main' | 'laporan' | 'adminlaporan' | 'game' | 'dokumen' | 'dokumenpetugas' | 'informasi' | 'laporankader' | 'adminusers'
 
 import type { EducationVideo } from '@/lib/education-videos'
 
@@ -59,6 +59,7 @@ const navigation: { id: View; label: string; icon: typeof Leaf; enabled: boolean
   { id: 'informasi', label: 'Atur Informasi Adiwiyata', icon: FileText, enabled: true },
   { id: 'adminusers', label: 'Akses Pengguna', icon: ShieldCheck, enabled: true },
   { id: 'slider', label: 'Slider Beranda', icon: ImagePlus, enabled: true },
+  { id: 'struktur', label: 'Struktur Adiwiyata', icon: Users, enabled: true },
   { id: 'leaderboard', label: 'Leaderboard', icon: Trophy, enabled: true },
   { id: 'main', label: 'Main Game', icon: Gamepad2, enabled: true },
   { id: 'laporan', label: 'Laporan & Saran', icon: MessageSquarePlus, enabled: true },
@@ -71,7 +72,7 @@ const navigation: { id: View; label: string; icon: typeof Leaf; enabled: boolean
 // Sebelumnya desktop menyaring item.enabled sedangkan drawer tidak,
 // sehingga item yang belum aktif tampil berbeda di keduanya.
 function visibleNavigation(role: 'admin' | 'petugas' | 'pengunjung') {
-  return navigation.filter((item) => item.enabled && (item.id !== 'setoran' || role !== 'pengunjung') && (item.id !== 'dokumenpetugas' || role !== 'pengunjung') && (item.id !== 'pengaturan' || role === 'admin') && (item.id !== 'video' || role === 'admin') && (item.id !== 'slider' || role === 'admin') && (item.id !== 'game' || role === 'admin') && (item.id !== 'adminlaporan' || role !== 'pengunjung') && (item.id !== 'laporankader' || role === 'petugas') && (item.id !== 'adminusers' || role === 'admin') && (item.id !== 'informasi' || role === 'admin'))
+  return navigation.filter((item) => item.enabled && (item.id !== 'setoran' || role !== 'pengunjung') && (item.id !== 'dokumenpetugas' || role !== 'pengunjung') && (item.id !== 'pengaturan' || role === 'admin') && (item.id !== 'video' || role === 'admin') && (item.id !== 'slider' || role === 'admin') && (item.id !== 'struktur' || role === 'admin') && (item.id !== 'game' || role === 'admin') && (item.id !== 'adminlaporan' || role !== 'pengunjung') && (item.id !== 'laporankader' || role === 'petugas') && (item.id !== 'adminusers' || role === 'admin') && (item.id !== 'informasi' || role === 'admin'))
 }
 
 function SectionContent({ section }: { section: (typeof EDU_DEFAULTS.sections)[number] }) {
@@ -201,7 +202,7 @@ function GuideDialog({ onClose, role }: { onClose: () => void; role: 'admin' | '
       <li><strong>Input Laporan</strong> dan <strong>Kelola Laporan</strong> — sama seperti petugas.</li>
       <li><strong>Pengaturan Game</strong> — atur permainan. Bila game tidak bisa dibuka, buka <strong>Diagnostik Sistem</strong> lalu ketuk &ldquo;Perbaiki Tabel&rdquo;.</li>
       <li><strong>Akses Pengguna</strong> — tambah admin atau petugas, dan atur masa berlaku akses petugas.</li>
-      <li><strong>Pengaturan Sheets, Atur Video Edukasi, Atur Informasi Adiwiyata, Slider Beranda</strong> — kelola konten dan data portal.</li>
+      <li><strong>Pengaturan Sheets, Atur Video Edukasi, Atur Informasi Adiwiyata, Slider Beranda, Struktur Adiwiyata</strong> — kelola konten dan data portal.</li>
     </ul></>}
     <h3>Butuh bantuan?</h3>
     <p>Hubungi kader Adiwiyata atau admin sekolah.</p>
@@ -275,6 +276,7 @@ export function AdiwiyataPortal({ user, depositData, sheetsConfig, educationVide
     setDrawerOpen(false)
     if (next === 'edukasi') { router.push('/edukasi'); return }
     if (next === 'slider') { router.push('/admin/slider'); return }
+    if (next === 'struktur') { router.push('/admin/struktur'); return }
     if (next === 'dokumen') { router.push(user.role === 'admin' ? '/admin/dokumen' : '/adiwiyata/dokumen'); return }
     if (next === 'informasi') { router.push('/admin/adiwiyata/informasi'); return }
     if (next === 'leaderboard') { router.push('/leaderboard'); return }

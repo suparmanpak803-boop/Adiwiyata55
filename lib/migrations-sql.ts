@@ -474,4 +474,16 @@ CREATE INDEX IF NOT EXISTS laporan_sinkron_idx ON public.laporan (status_sinkron
 ALTER TABLE public.adiwiyata_settings ADD COLUMN IF NOT EXISTS laporan_spreadsheet_url TEXT;
 ALTER TABLE public.adiwiyata_settings ADD COLUMN IF NOT EXISTS laporan_wa_aktif BOOLEAN NOT NULL DEFAULT false;
 ALTER TABLE public.adiwiyata_settings ADD COLUMN IF NOT EXISTS laporan_wa_nomor TEXT;
+
+-- ---------- migrations/0004_struktur_petugas.sql ----------
+-- Tabel struktur petugas Adiwiyata (satu baris, id = 'utama').
+-- Halaman publik /adiwiyata/struktur memakai data ini bila ada;
+-- bila baris belum ada, halaman memakai data default dari SK
+-- (STRUKTUR_PETUGAS di lib/struktur-petugas-data.ts). Editor admin
+-- ada di /admin/struktur.
+CREATE TABLE IF NOT EXISTS public.struktur_petugas (
+  id text PRIMARY KEY DEFAULT 'utama',
+  data jsonb NOT NULL,
+  diperbarui_pada timestamptz NOT NULL DEFAULT now()
+);
 `
