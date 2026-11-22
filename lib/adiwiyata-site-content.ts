@@ -100,7 +100,7 @@ export const DEFAULT_ADIWIYATA_SITE_CONTENT: AdiwiyataSiteContent = {
     },
     struktur: {
       title: 'Struktur Adiwiyata',
-      intro: 'Susunan pengurus dan koordinator Tim Kader Adiwiyata SMAN 55 Jakarta berdasarkan SK Kepala SMA Negeri 55 Jakarta Nomor 027 Tahun 2026.',
+      intro: 'Susunan pengurus dan koordinator Tim Kader Adiwiyata SMAN 55 Jakarta.',
     },
     publikasi: {
       title: 'Artikel & berita',
