@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { ArrowRight, Check, RotateCcw, Sparkles } from 'lucide-react'
+import { ArrowRight, Check, Leaf, RotateCcw } from 'lucide-react'
 import { ProgressFill } from '@/components/animations'
 
 const questions = [
@@ -52,7 +52,7 @@ export function GreenActionQuiz() {
   return (
     <section className="adi-quiz-section" aria-labelledby="adi-quiz-title">
       <div className="adi-quiz-intro">
-        <span className="adi-eyebrow"><Sparkles aria-hidden="true" /> TES PENGETAHUAN ADIWIYATA</span>
+        <span className="adi-eyebrow"><Leaf aria-hidden="true" /> TES PENGETAHUAN ADIWIYATA</span>
         <h2 id="adi-quiz-title">Tes pengetahuan Adiwiyata kamu</h2>
         <p>Uji pengetahuanmu tentang kebiasaan ramah lingkungan di sekolah. Tidak ada data yang disimpan.</p>
       </div>

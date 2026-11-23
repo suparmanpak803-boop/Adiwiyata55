@@ -11,8 +11,8 @@ const fieldGroups: { title: string; description: string; fields: { path: string;
     description: 'Atur banner, ajakan, ringkasan kegiatan, dan teks profil pada halaman utama Informasi Adiwiyata.',
     fields: [
       { path: 'home.eyebrow', label: 'Label program' },
-      { path: 'home.title', label: 'Judul utama — baris pertama' },
-      { path: 'home.emphasis', label: 'Judul utama — baris penekanan' },
+      { path: 'home.title', label: 'Judul utama: baris pertama' },
+      { path: 'home.emphasis', label: 'Judul utama: baris penekanan' },
       { path: 'home.description', label: 'Pengantar beranda', multiline: true },
       { path: 'home.primaryAction', label: 'Tombol kegiatan' },
       { path: 'home.secondaryAction', label: 'Tombol arsip' },

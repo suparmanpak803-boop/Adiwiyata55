@@ -59,7 +59,7 @@ export const DEFAULT_ADIWIYATA_SITE_CONTENT: AdiwiyataSiteContent = {
     title: 'Sekolah Peduli',
     emphasis: 'dan Berbudaya Lingkungan',
     description:
-      'SMAN 55 Jakarta mengajak seluruh warga sekolah memilah sampah, menghemat energi, dan merawat lingkungan — setiap hari, bukan hanya saat lomba.',
+      'SMAN 55 Jakarta mengajak seluruh warga sekolah memilah sampah, menghemat energi, dan merawat lingkungan, setiap hari, bukan hanya saat lomba.',
     primaryAction: 'Lihat program & kegiatan',
     secondaryAction: 'Unduh dokumen',
     caption: 'Aksi nyata, tercatat bersama.',
@@ -73,7 +73,7 @@ export const DEFAULT_ADIWIYATA_SITE_CONTENT: AdiwiyataSiteContent = {
     profileTitle: 'Sekolah yang belajar dari alam',
     profileDescription:
       'Adiwiyata SMAN 55 Jakarta adalah gerakan warga sekolah untuk hidup bersih, memilah sampah, dan menjaga lingkungan sekolah tetap hijau.',
-    footerText: 'Adiwiyata SMAN 55 Jakarta — Sekolah Peduli dan Berbudaya Lingkungan.',
+    footerText: 'Adiwiyata SMAN 55 Jakarta: Sekolah Peduli dan Berbudaya Lingkungan.',
   },
   pages: {
     profil: {
@@ -100,7 +100,7 @@ export const DEFAULT_ADIWIYATA_SITE_CONTENT: AdiwiyataSiteContent = {
     },
     struktur: {
       title: 'Struktur Petugas Adiwiyata',
-      intro: 'Batang, cabang, dan daun — kenali pembina, pengurus inti, dan tim yang merawat SMAN 55 Jakarta.',
+      intro: 'Batang, cabang, dan daun: kenali pembina, pengurus inti, dan tim yang merawat SMAN 55 Jakarta.',
     },
     publikasi: {
       title: 'Artikel & berita',

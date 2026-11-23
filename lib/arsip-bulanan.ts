@@ -236,19 +236,19 @@ export function bangunWorkbookBulanan(data: DataArsipBulanan): XLSX.WorkBook {
   const namaBulan = `${namaBulanIndonesia(data.bulan)} ${data.tahun}`
 
   const lembarRekap = buatLembar(
-    `Arsip Setoran Sampah — ${namaBulan} — Rekap per kelas`,
+    `Arsip Setoran Sampah ${namaBulan}: Rekap per kelas`,
     `Total setoran ${data.dari} s.d. ${data.sampai}. Hari sekolah efektif: ${data.hariSekolah} hari (Senin–Jumat dikurangi hari libur tercatat).`,
     ['Kelas', 'Organik (kg)', 'Anorganik (kg)', 'Kertas (kg)', 'Residu (kg)', 'B3 (kg)', 'Total (kg)', 'Hari sekolah', 'Rata-rata kg / hari sekolah', 'Hari input'],
     data.rekap.map((row) => [
       row.kelas, row.organik, row.anorganik, row.kertas, row.residu, row.b3,
-      row.totalKg, row.hariSekolah, row.rataPerHari ?? '—', row.hariInput,
+      row.totalKg, row.hariSekolah, row.rataPerHari ?? '-', row.hariInput,
     ]),
     [14, 14, 15, 12, 12, 10, 12, 12, 24, 11],
   )
   XLSX.utils.book_append_sheet(buku, lembarRekap, 'Rekap per kelas')
 
   const lembarSetoran = buatLembar(
-    `Arsip Setoran Sampah — ${namaBulan} — Data setoran`,
+    `Arsip Setoran Sampah ${namaBulan}: Data setoran`,
     `Baris mentah tiap setoran yang tercatat pada ${namaBulan} (${data.setoran.length} baris).`,
     ['Tanggal', 'Kelas', 'Organik (kg)', 'Anorganik (kg)', 'Kertas (kg)', 'Residu (kg)', 'B3 (kg)', 'Total (kg)'],
     data.setoran.map((row) => [

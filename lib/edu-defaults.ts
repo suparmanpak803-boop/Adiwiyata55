@@ -32,7 +32,7 @@ export const EDU_DEFAULTS = {
     {
       id: 'pengenalan',
       title: 'Pengenalan Adiwiyata',
-      icon: '🌱',
+      icon: 'sprout',
       paragraphs: [
         'Adiwiyata adalah program sekolah yang peduli dan berbudaya lingkungan. Di SMAN 55 Jakarta, program ini mengajak seluruh warga sekolah untuk menjaga kebersihan, memilah sampah, dan merawat lingkungan sekolah setiap hari.',
         'Program ini bukan sekadar lomba kebersihan, melainkan kebiasaan: membuang sampah pada tempatnya, membawa tumbler dan wadah makan guna ulang, serta mengolah sampah menjadi sesuatu yang bermanfaat.',
@@ -47,7 +47,7 @@ export const EDU_DEFAULTS = {
     {
       id: 'pilar',
       title: 'Pilar Adiwiyata',
-      icon: '🏛️',
+      icon: 'landmark',
       introduction:
         'Gerakan Adiwiyata SMAN 55 Jakarta berdiri di atas empat pilar yang saling menguatkan: kebijakan sekolah, kurikulum, kegiatan partisipatif, dan pengelolaan sarana.',
       pillars: [
@@ -60,15 +60,15 @@ export const EDU_DEFAULTS = {
     {
       id: 'gerakan',
       title: 'Gerakan Kader Lingkungan',
-      icon: '🤝',
+      icon: 'handshake',
       introduction:
         'Kader lingkungan adalah siswa yang menjadi motor gerakan di kelas dan di sekolah. Mereka mencatat setoran sampah, mengingatkan teman, dan memimpin aksi harian.',
     },
     {
       id: 'aksi',
       title: 'Jaga & Olah Sampah Sekolah',
-      icon: '♻️',
-      joss: 'JOSS — Jaga & Olah Sampah Sekolah — adalah kebiasaan harian warga SMAN 55 Jakarta: pilah sampahmu, catat setoranmu, dan olah yang masih bisa dimanfaatkan.',
+      icon: 'recycle',
+      joss: 'JOSS (Jaga & Olah Sampah Sekolah) adalah kebiasaan harian warga SMAN 55 Jakarta: pilah sampahmu, catat setoranmu, dan olah yang masih bisa dimanfaatkan.',
       impact: [
         { value: '24', unit: 'kelas', description: 'Kelas X, XI, dan XII yang aktif memilah sampah setiap hari.' },
         { value: '15', unit: 'kader', description: 'Kader siswa yang menjalankan tugas lingkungan.' },

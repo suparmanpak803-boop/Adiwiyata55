@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { Star } from 'lucide-react'
 import useSWR from 'swr'
 import { readJsonResponse } from '@/lib/api-client'
 import { KATEGORI, STATUS_LABEL, URGENSI } from '@/lib/laporan'
@@ -56,7 +57,7 @@ export function LaporanDetail({ id }: { id: string }) {
         {laporan.status === 'selesai' && (
           <section><h2>Beri Rating</h2>
             <div className="lap-stars" role="group" aria-label="Rating 1 sampai 5">
-              {[1, 2, 3, 4, 5].map((n) => <button key={n} type="button" className={laporan.rating && n <= laporan.rating ? 'on' : ''} aria-label={`${n} bintang`} aria-pressed={laporan.rating === n} onClick={() => void act({ aksi: 'rating', rating: n })}>★</button>)}
+              {[1, 2, 3, 4, 5].map((n) => <button key={n} type="button" className={laporan.rating && n <= laporan.rating ? 'on' : ''} aria-label={`${n} bintang`} aria-pressed={laporan.rating === n} onClick={() => void act({ aksi: 'rating', rating: n })}><Star size={28} fill="currentColor" aria-hidden="true" /></button>)}
             </div>
           </section>
         )}

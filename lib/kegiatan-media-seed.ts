@@ -35,7 +35,7 @@ const SLIDES: SlideSeed[] = [
     file: 'botol-plastik-media-tanam.jpg',
     alt: 'Botol plastik bekas dipakai sebagai media tanam',
     judul: 'Botol Plastik Bekas jadi Media Tanam',
-    deskripsi: 'Botol plastik bekas dimanfaatkan sebagai media tanam — dari proses penanaman sampai hasilnya.',
+    deskripsi: 'Botol plastik bekas dimanfaatkan sebagai media tanam, dari proses penanaman sampai hasilnya.',
   },
   {
     file: 'membersihkan-depan-masjid.jpg',
@@ -49,7 +49,7 @@ const SLIDES: SlideSeed[] = [
     alt: 'Sehari Tanpa Asap Kendaraan di SMAN 55 Jakarta',
     judul: 'Sehari Tanpa Asap Kendaraan',
     deskripsi:
-      'Kamis, 10 Oktober 2024 — peserta didik dan pendamping menjaga 3 titik: 2 pertigaan dan parkiran.',
+      'Kamis, 10 Oktober 2024: peserta didik dan pendamping menjaga 3 titik: 2 pertigaan dan parkiran.',
   },
   {
     file: 'penghargaan-kelas-terbersih.jpg',
@@ -63,7 +63,7 @@ const SLIDES: SlideSeed[] = [
     alt: 'Pemilahan sampah di SMAN 55 Jakarta',
     judul: 'Pemilahan Sampah',
     deskripsi:
-      '13 Februari 2024 — sampah yang telah dikolektif oleh masing-masing kelas dipilah kembali sebelum akhirnya dibuang atau dijual. Pihak yang terlibat: siswa, guru, dan PPSU.',
+      '13 Februari 2024: sampah yang telah dikolektif oleh masing-masing kelas dipilah kembali sebelum akhirnya dibuang atau dijual. Pihak yang terlibat: siswa, guru, dan PPSU.',
   },
 ]
 
@@ -76,7 +76,7 @@ const DOKUMEN: (DokumenSeed & { fileSize: number })[] = [
   },
   {
     file: 'rapat-koordinasi-2.jpg',
-    title: 'Rapat Koordinasi — Suasana Ruang Rapat',
+    title: 'Rapat Koordinasi: Suasana Ruang Rapat',
     description: 'Suasana ruang rapat koordinasi guru dan warga sekolah.',
     fileSize: 91801,
   },
@@ -114,7 +114,7 @@ const DOKUMEN: (DokumenSeed & { fileSize: number })[] = [
   },
   {
     file: 'rapat-koordinasi-3.jpg',
-    title: 'Rapat Koordinasi — Guru dan Warga Sekolah',
+    title: 'Rapat Koordinasi: Guru dan Warga Sekolah',
     description: 'Guru dan warga sekolah mengikuti rapat koordinasi program Adiwiyata.',
     fileSize: 113656,
   },

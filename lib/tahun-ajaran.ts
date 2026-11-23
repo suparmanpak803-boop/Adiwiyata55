@@ -544,7 +544,7 @@ export async function pulihkanCadanganXI(
     }
     if (targetXI.length === 0) {
       await koneksi.query('ROLLBACK')
-      return { ok: false, tahunAjaran, error: `Cadangan XI tahun ajaran ${tahunAjaran} kosong — tidak ada kelas untuk dipulihkan.` }
+      return { ok: false, tahunAjaran, error: `Cadangan XI tahun ajaran ${tahunAjaran} kosong, tidak ada kelas untuk dipulihkan.` }
     }
     // Tolak bila ada nama tujuan XI yang sudah dipakai baris lain.
     const bentrok = await koneksi.query<{ name: string }>(
@@ -582,7 +582,7 @@ export async function pulihkanCadanganXI(
     )
     if ((hasilKelas.rowCount ?? 0) !== sumberXII.length) {
       await koneksi.query('ROLLBACK')
-      return { ok: false, tahunAjaran, error: 'Pemulihan kelas gagal — tidak ada perubahan yang disimpan.' }
+      return { ok: false, tahunAjaran, error: 'Pemulihan kelas gagal, tidak ada perubahan yang disimpan.' }
     }
     // Kembalikan peran siswa XI lewat transformasi nama kelas: semua
     // peran yang kini di XII-* kembali ke XI-*. Tidak memakai daftar

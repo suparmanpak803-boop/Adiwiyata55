@@ -96,9 +96,9 @@ function adalahRingkasan(nilai: unknown): nilai is RingkasanRollover {
 // Keterangan baris arsip berdasarkan tingkat kelas: XII = lulus,
 // X = diarsipkan karena rolling jurusan (siswa diacak ulang ke XI).
 function keteranganArsip(nama: string): string {
-  if (/^XII-/.test(nama)) return 'Lulus — data dan riwayat tetap tersimpan'
-  if (/^X-/.test(nama)) return 'Diarsipkan — siswa diacak ulang ke kelas XI (jurusan/rolling)'
-  return 'Diarsipkan — data dan riwayat tetap tersimpan'
+  if (/^XII-/.test(nama)) return 'Lulus: data dan riwayat tetap tersimpan'
+  if (/^X-/.test(nama)) return 'Diarsipkan: siswa diacak ulang ke kelas XI (jurusan/rolling)'
+  return 'Diarsipkan: data dan riwayat tetap tersimpan'
 }
 
 function barisDariRingkasan(ringkasan: RingkasanRollover): BarisDaftarKelas[] {
@@ -175,7 +175,7 @@ async function susunDaftarKelas(tahunAjaran: string): Promise<{ baris: BarisDaft
   for (const nama of rencana.dilewati) baris.push({ kelas: nama, status: 'Dilewati', keterangan: 'Tidak cocok pola tingkat kelas' })
   return {
     baris,
-    sumber: 'Rencana pergantian tahun ajaran (rollover belum dijalankan) — dihitung dari daftar kelas saat ini.',
+    sumber: 'Rencana pergantian tahun ajaran (rollover belum dijalankan), dihitung dari daftar kelas saat ini.',
   }
 }
 
@@ -253,8 +253,8 @@ async function susunPeringkat(tahunAjaran: string): Promise<{ baris: BarisPering
         return {
           baris: arsip.rows.map((row) => ({
             peringkat: Number(row.peringkat ?? 0),
-            nama: row.nama ?? '—',
-            kelas: row.kelas ?? '—',
+            nama: row.nama ?? '-',
+            kelas: row.kelas ?? '-',
             skor: Number(row.skor ?? 0),
           })),
           sumber: `Peringkat akhir dari arsip periode yang berakhir ${String(periode.rows[0]?.selesai ?? '').slice(0, 10)}.`,
@@ -281,8 +281,8 @@ async function susunPeringkat(tahunAjaran: string): Promise<{ baris: BarisPering
     return {
       baris: saatIni.rows.map((row) => ({
         peringkat: Number(row.peringkat ?? 0),
-        nama: row.nama ?? '—',
-        kelas: row.kelas ?? '—',
+        nama: row.nama ?? '-',
+        kelas: row.kelas ?? '-',
         skor: Number(row.skor ?? 0),
       })),
       sumber: 'Peringkat saat ini (periode berjalan, belum diarsipkan).',
@@ -331,7 +331,7 @@ export function bangunWorkbookArsip(data: DataArsipExcel): XLSX.WorkBook {
   const buku = XLSX.utils.book_new()
 
   const lembarKelas = buatLembar(
-    `Arsip Adiwiyata55 — Tahun Ajaran ${data.tahunAjaran} — Daftar kelas`,
+    `Arsip Adiwiyata55: Tahun Ajaran ${data.tahunAjaran}, Daftar kelas`,
     data.sumberDaftarKelas,
     ['Kelas', 'Status', 'Keterangan'],
     data.daftarKelas.map((row) => [row.kelas, row.status, row.keterangan]),
@@ -340,19 +340,19 @@ export function bangunWorkbookArsip(data: DataArsipExcel): XLSX.WorkBook {
   XLSX.utils.book_append_sheet(buku, lembarKelas, 'Daftar kelas')
 
   const lembarRekap = buatLembar(
-    `Arsip Adiwiyata55 — Tahun Ajaran ${data.tahunAjaran} — Rekap sampah per kelas`,
+    `Arsip Adiwiyata55: Tahun Ajaran ${data.tahunAjaran}, Rekap sampah per kelas`,
     `Total setoran 1 Juli – 30 Juni tahun ajaran. Hari sekolah efektif: ${data.hariSekolah} hari (Senin–Jumat dikurangi hari libur tercatat).`,
     ['Kelas', 'Organik (kg)', 'Anorganik (kg)', 'Kertas (kg)', 'Residu (kg)', 'B3 (kg)', 'Total (kg)', 'Hari sekolah', 'Rata-rata kg / hari sekolah', 'Hari input'],
     data.rekapSampah.map((row) => [
       row.kelas, row.organik, row.anorganik, row.kertas, row.residu, row.b3,
-      row.totalKg, row.hariSekolah, row.rataPerHari ?? '—', row.hariInput,
+      row.totalKg, row.hariSekolah, row.rataPerHari ?? '-', row.hariInput,
     ]),
     [14, 14, 15, 12, 12, 10, 12, 12, 24, 11],
   )
   XLSX.utils.book_append_sheet(buku, lembarRekap, 'Rekap sampah per kelas')
 
   const lembarPeringkat = buatLembar(
-    `Arsip Adiwiyata55 — Tahun Ajaran ${data.tahunAjaran} — Peringkat akhir`,
+    `Arsip Adiwiyata55: Tahun Ajaran ${data.tahunAjaran}, Peringkat akhir`,
     data.sumberPeringkat,
     ['Peringkat', 'Nama', 'Kelas', 'Skor (poin)'],
     data.peringkat.map((row) => [row.peringkat, row.nama, row.kelas, row.skor]),

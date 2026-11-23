@@ -15,7 +15,7 @@
 // entry Form (lib/kader-report-gform.ts) — bukan berdasarkan indeks
 // atau nama lama — jadi perubahan daftar ini tidak merusak pemetaan
 // apa pun. formId + entry Form sendiri masih kosong.
-export const KADER_REPORT_TASKS: { name: string; tasks: string[] }[] = [
+export const KADER_REPORT_TASKS: { name: string; tasks: string[]; sementara?: boolean }[] = [
   {
     name: 'Kader Pilah',
     tasks: [
@@ -128,7 +128,7 @@ export const KADER_REPORT_TASKS: { name: string; tasks: string[] }[] = [
     // ini hanya parafrasa ringkasan resminya ("Mengedukasi warga
     // sekolah tentang lingkungan hidup dan perilaku ramah lingkungan").
     // Ganti dengan daftar tugas resmi bila sudah ada dari pengguna.
-    name: 'Kader Edu-Lingkungan',
+    name: 'Kader Edu-Lingkungan', sementara: true,
     tasks: [
       'Mengedukasi warga sekolah tentang lingkungan hidup',
       'Mengajak warga sekolah berperilaku ramah lingkungan',

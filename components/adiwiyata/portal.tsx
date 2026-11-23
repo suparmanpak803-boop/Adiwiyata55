@@ -14,21 +14,23 @@ import {
   Film,
   FileText,
   Gamepad2, MessageSquarePlus, ClipboardList,
-  GraduationCap,
+  GraduationCap, Handshake, Landmark,
   ImagePlus,
   Leaf,
   LogOut,
   Menu,
-  Moon,
+  Moon, Recycle,
   ScrollText,
   Settings,
-  ShieldCheck,
+  ShieldCheck, Sprout,
   Sun,
   Trophy,
   Users,
   X,
 } from 'lucide-react'
 import { EDU_DEFAULTS, KADER_LIST } from '@/lib/edu-defaults'
+
+const EDU_SECTION_ICONS: Record<string, typeof Leaf> = { sprout: Sprout, landmark: Landmark, handshake: Handshake, recycle: Recycle }
 import { DEFAULT_ADIWIYATA_SITE_CONTENT } from '@/lib/adiwiyata-site-content'
 import { DepositWorkspace } from '@/components/adiwiyata/deposit-workspace'
 import { MonitoringDashboard } from '@/components/adiwiyata/monitoring-dashboard'
@@ -156,11 +158,11 @@ function EducationSections() {
       </div>
       <motion.div className="education-list" variants={staggerParent} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-40px' }}>
         {EDU_DEFAULTS.sections.map((section, index) => {
-          const isOpen = openSections.includes(section.id)
+          const isOpen = openSections.includes(section.id); const Icon = EDU_SECTION_ICONS[section.icon] ?? Leaf
           return (
             <motion.article className={`education-card education-card-${index + 1}${isOpen ? ' is-open' : ''}`} key={section.id} variants={fadeUpChild}>
               <button className="education-trigger" type="button" aria-expanded={isOpen} aria-controls={`education-content-${section.id}`} onClick={() => toggle(section.id)}>
-                <span className="education-icon" aria-hidden="true">{section.icon}</span>
+                <span className="education-icon" aria-hidden="true"><Icon size={20} /></span>
                 <span className="education-heading"><small>0{index + 1} / 04</small><strong>{section.title}</strong></span>
                 <ChevronDown className="accordion-chevron" aria-hidden="true" />
               </button>
@@ -182,31 +184,31 @@ function GuideDialog({ onClose, role }: { onClose: () => void; role: 'admin' | '
     <p>Ketuk &ldquo;Lanjutkan dengan Google&rdquo;, lalu pilih akun Gmail kamu. Menu yang tampil menyesuaikan peranmu.</p>
     <h3>Menu utama</h3>
     <ul>
-      <li><strong>Beranda</strong> — ringkasan gerakan dan data lingkungan sekolah.</li>
-      <li><strong>Edukasi</strong> — video dan materi tentang pilah sampah dan lingkungan.</li>
-      <li><strong>Daftar Kelas &amp; Petugas</strong> — setoran sampah tiap kelas dan daftar petugas.</li>
-      <li><strong>Dashboard Monitoring</strong> — pantauan data sampah sekolah.</li>
-      <li><strong>Dokumen &amp; Arsip</strong> — dokumen dan arsip kegiatan Adiwiyata.</li>
-      <li><strong>Main Game</strong> — bermain game edukasi Adiwiyata; skormu masuk Leaderboard.</li>
-      <li><strong>Leaderboard</strong> — peringkat pemain dan kelas.</li>
-      <li><strong>Laporan &amp; Saran</strong> — kirim saran untuk program Adiwiyata.</li>
+      <li><strong>Beranda</strong>: ringkasan gerakan dan data lingkungan sekolah.</li>
+      <li><strong>Edukasi</strong>: video dan materi tentang pilah sampah dan lingkungan.</li>
+      <li><strong>Daftar Kelas &amp; Petugas</strong>: setoran sampah tiap kelas dan daftar petugas.</li>
+      <li><strong>Dashboard Monitoring</strong>: pantauan data sampah sekolah.</li>
+      <li><strong>Dokumen &amp; Arsip</strong>: dokumen dan arsip kegiatan Adiwiyata.</li>
+      <li><strong>Main Game</strong>: bermain game edukasi Adiwiyata; skormu masuk Leaderboard.</li>
+      <li><strong>Leaderboard</strong>: peringkat pemain dan kelas.</li>
+      <li><strong>Laporan &amp; Saran</strong>: kirim saran untuk program Adiwiyata.</li>
     </ul>
     {role === 'petugas' && <><h3>Khusus petugas</h3>
     <ul>
-      <li><strong>Input Laporan</strong> — kirim setoran atau laporan sampah untuk kelas yang kamu ampu.</li>
-      <li><strong>Laporan Kinerja Kader</strong> — isi laporan kinerja kader.</li>
-      <li><strong>Kelola Laporan</strong> — lihat dan kelola laporan yang masuk.</li>
-      <li><strong>Syarat dan Ketentuan Petugas</strong> — syarat, tugas, dan ketentuan untuk petugas, termasuk tautan SK Kader Adiwiyata 2026–2027.</li>
+      <li><strong>Input Laporan</strong>: kirim setoran atau laporan sampah untuk kelas yang kamu ampu.</li>
+      <li><strong>Laporan Kinerja Kader</strong>: isi laporan kinerja kader.</li>
+      <li><strong>Kelola Laporan</strong>: lihat dan kelola laporan yang masuk.</li>
+      <li><strong>Syarat dan Ketentuan Petugas</strong>: syarat, tugas, dan ketentuan untuk petugas, termasuk tautan SK Kader Adiwiyata 2026–2027.</li>
     </ul>
     <p>Akses petugas bisa diberi tanggal berakhir oleh admin. Bila tanggalnya lewat, akunmu kembali jadi pengunjung.</p></>}
     {role === 'pengunjung' && <><h3>Khusus pengunjung</h3>
     <p>Kamu bisa memakai semua menu di atas. Menu <strong>Input Laporan</strong> dan menu admin hanya untuk petugas dan admin.</p></>}
     {role === 'admin' && <><h3>Khusus admin</h3>
     <ul>
-      <li><strong>Input Laporan</strong> dan <strong>Kelola Laporan</strong> — sama seperti petugas.</li>
-      <li><strong>Pengaturan Game</strong> — atur permainan. Bila game tidak bisa dibuka, buka <strong>Diagnostik Sistem</strong> lalu ketuk &ldquo;Perbaiki Tabel&rdquo;.</li>
-      <li><strong>Akses Pengguna</strong> — tambah admin atau petugas, dan atur masa berlaku akses petugas.</li>
-      <li><strong>Pengaturan Sheets, Atur Video Edukasi, Atur Informasi Adiwiyata, Slider Beranda, Struktur Adiwiyata</strong> — kelola konten dan data portal.</li>
+      <li><strong>Input Laporan</strong> dan <strong>Kelola Laporan</strong>, sama seperti petugas.</li>
+      <li><strong>Pengaturan Game</strong>: atur permainan. Bila game tidak bisa dibuka, buka <strong>Diagnostik Sistem</strong> lalu ketuk &ldquo;Perbaiki Tabel&rdquo;.</li>
+      <li><strong>Akses Pengguna</strong>: tambah admin atau petugas, dan atur masa berlaku akses petugas.</li>
+      <li><strong>Pengaturan Sheets, Atur Video Edukasi, Atur Informasi Adiwiyata, Slider Beranda, Struktur Adiwiyata</strong>: kelola konten dan data portal.</li>
     </ul></>}
     <h3>Butuh bantuan?</h3>
     <p>Hubungi kader Adiwiyata atau admin sekolah.</p>
@@ -227,12 +229,12 @@ function SyaratPetugasView() {
       <div className="bento-heading"><div><span className="eyebrow">KHUSUS PETUGAS</span><h2 id="syarat-petugas-title">Syarat dan Ketentuan Petugas</h2></div><p>Ketentuan bagi petugas Adiwiyata SMAN 55 Jakarta. Baca dan pahami sebelum menjalankan tugas.</p></div>
       <ol className="syarat-list">
         <li><article className="syarat-card"><span className="syarat-index" aria-hidden="true">01</span><h3>Siapa petugas</h3><p>Petugas adalah warga sekolah yang ditetapkan admin sebagai petugas, beserta kelas yang diampu dan masa berlaku aksesnya. Pengunjung tidak memiliki akses petugas dan hanya bisa memakai menu umum.</p></article></li>
-        <li><article className="syarat-card"><span className="syarat-index" aria-hidden="true">02</span><h3>Susunan tim</h3><p>Tim Kader Adiwiyata dipimpin Pengarah (Kepala Sekolah), didampingi 4 Penanggung jawab, Ketua, dan Wakil Ketua, serta 15 koordinator kader — satu koordinator untuk tiap kader. Nama lengkap pengurus dan koordinator ada di <a href="/adiwiyata/struktur">halaman Struktur Adiwiyata</a>.</p></article></li>
+        <li><article className="syarat-card"><span className="syarat-index" aria-hidden="true">02</span><h3>Susunan tim</h3><p>Tim Kader Adiwiyata dipimpin Pengarah (Kepala Sekolah), didampingi 4 Penanggung jawab, Ketua, dan Wakil Ketua, serta 15 koordinator kader, satu koordinator untuk tiap kader. Nama lengkap pengurus dan koordinator ada di <a href="/adiwiyata/struktur">halaman Struktur Adiwiyata</a>.</p></article></li>
         <li><article className="syarat-card"><span className="syarat-index" aria-hidden="true">03</span><h3>Tugas umum kader</h3><p>Kader adalah motor gerakan di kelas dan di sekolah: mencatat setoran sampah, mengingatkan teman, dan memimpin aksi harian.</p></article></li>
         <li><article className="syarat-card"><span className="syarat-index" aria-hidden="true">04</span><h3>Tugas tiap kader</h3><p>Setiap kader memiliki fokus dan ringkasan tugas sebagai berikut. Uraian tugas bernomor lengkap ada di <a href="/adiwiyata/dokumentasi">halaman Kader Adiwiyata</a>.</p>
           <ol className="syarat-kader-list">
             {kader.map((division, index) => (
-              <li key={division.name}><span aria-hidden="true">{String(index + 1).padStart(2, '0')}</span><span><strong>{division.name}</strong>{' — '}{division.focus}: {division.duties}</span></li>
+              <li key={division.name}><span aria-hidden="true">{String(index + 1).padStart(2, '0')}</span><span><strong>{division.name}</strong>{', '}{division.focus}: {division.duties}</span></li>
             ))}
           </ol>
         </article></li>
@@ -245,7 +247,7 @@ function SyaratPetugasView() {
             <article className="petugas-doc-card">
               <span className="petugas-doc-index">01</span>
               <h3><a className="petugas-doc-title" href="/api/petugas/dokumen/sk-kader" target="_blank" rel="noreferrer"><span>SK Kader Adiwiyata 2026–2027</span><ArrowRight aria-hidden="true" /></a></h3>
-              <p>Keputusan Kepala SMA Negeri 55 Jakarta Nomor 027 Tahun 2026 tentang Tim Kader Adiwiyata, ditetapkan 12 November 2026 — beserta daftar nama kader.</p>
+              <p>Keputusan Kepala SMA Negeri 55 Jakarta Nomor 027 Tahun 2026 tentang Tim Kader Adiwiyata, ditetapkan 12 November 2026, beserta daftar nama kader.</p>
             </article>
           </div>
         </article></li>
@@ -340,12 +342,12 @@ export function AdiwiyataPortal({ user, depositData, sheetsConfig, educationVide
 
       {view === 'pengaturan' ? <SheetsSettingsPanel initialUrl={sheetsConfig?.url ?? ''} initiallyConfigured={sheetsConfig?.configured ?? false} /> : view === 'video' ? <EducationVideoSettingsPanel data={educationVideoData ?? { videos: [], error: null }} /> : view === 'monitoring' ? <MonitoringDashboard summary={depositData.sheetsSummary} initialError={depositData.sheetsError} classes={depositData.classes} role={user.role} /> : view === 'setoran' ? <DepositWorkspace data={depositData} /> : view === 'kelas' ? <ClassDirectory classes={depositData.classes} isAdmin={user.role === 'admin'} /> : view === 'syaratpetugas' ? <SyaratPetugasView /> : <>
         <section className="hero-section">
-          <div className="hero-copy"><span className="hero-kicker"><span className="pulse-dot" /> MASALAH DI SEKOLAH KITA</span><h1 aria-label="Sampah menumpuk. Saatnya memilah."><WordReveal text="Sampah menumpuk." /><br /><em><WordReveal text="Saatnya memilah." /></em></h1><p>{totalKg > 0 ? <>Sekolah kita sudah memilah <strong>{formatKg(pilahKg)} kg</strong> sampah — tapi <strong>{formatKg(residualKg)} kg</strong> masih berakhir sebagai residu. Bersama warga SMAN 55 Jakarta, rawat lingkungan mulai hari ini. Bumi ini kita pinjam dari generasi mendatang.</> : <>Sekolah kita memilah sampah setiap hari — tapi sebagian masih berakhir sebagai residu. Bersama warga SMAN 55 Jakarta, rawat lingkungan mulai hari ini. Bumi ini kita pinjam dari generasi mendatang.</>}</p><div className="hero-actions"><button className="primary-button" onClick={() => document.getElementById('edukasi')?.scrollIntoView({ behavior: 'smooth' })}>Jelajahi Adiwiyata <ArrowDownRight aria-hidden="true" /></button><button className="text-button" onClick={() => selectView('edukasi')}>Video edukasi <ArrowRight aria-hidden="true" /></button></div><div className="hero-caption"><span className="hero-caption-line" /> <span>MASALAH · AKSI · BUKTI</span></div></div>
+          <div className="hero-copy"><span className="hero-kicker">MASALAH DI SEKOLAH KITA</span><h1 aria-label="Sampah menumpuk. Saatnya memilah."><WordReveal text="Sampah menumpuk." /><br /><em><WordReveal text="Saatnya memilah." /></em></h1><p>{totalKg > 0 ? <>Sekolah kita sudah memilah <strong>{formatKg(pilahKg)} kg</strong> sampah, tapi <strong>{formatKg(residualKg)} kg</strong> masih berakhir sebagai residu. Bersama warga SMAN 55 Jakarta, rawat lingkungan mulai hari ini. Bumi ini kita pinjam dari generasi mendatang.</> : <>Sekolah kita memilah sampah setiap hari, tapi sebagian masih berakhir sebagai residu. Bersama warga SMAN 55 Jakarta, rawat lingkungan mulai hari ini. Bumi ini kita pinjam dari generasi mendatang.</>}</p><div className="hero-actions"><button className="primary-button" onClick={() => document.getElementById('edukasi')?.scrollIntoView({ behavior: 'smooth' })}>Jelajahi Adiwiyata <ArrowDownRight aria-hidden="true" /></button><button className="text-button" onClick={() => selectView('edukasi')}>Video edukasi <ArrowRight aria-hidden="true" /></button></div><div className="hero-caption"><span className="hero-caption-line" /> <span>MASALAH · AKSI · BUKTI</span></div></div>
           <div className="hero-art"><HomeSlider slides={sliderData.slides} settings={sliderData.settings} /></div>
-          <div className="hero-bottom"><span>01 — MASALAH</span><span>GULIR UNTUK MENJELAJAHI <ChevronDown aria-hidden="true" /></span></div>
+          <div className="hero-bottom"><span>01 · MASALAH</span><span>GULIR UNTUK MENJELAJAHI <ChevronDown aria-hidden="true" /></span></div>
         </section>
         <EducationSections />
-        <section className="portal-bento" aria-labelledby="portal-title"><div className="bento-heading"><div><span className="eyebrow">JAWABAN KAMI</span><h2 id="portal-title" aria-label="Gerakan yang bisa kita mulai"><WordReveal text="Gerakan yang bisa kita mulai" /></h2></div><p>Jawaban kami atas masalah sampah: gerakan yang bisa diikuti, bukti yang bisa dilihat, dan orang-orang di baliknya.</p></div><motion.div className="bento-grid" variants={staggerParent} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-40px' }}><motion.button className="bento-card bento-class" variants={fadeUpChild} whileHover={{ y: -4 }} whileTap={{ scale: 0.98 }} onClick={() => selectView('kelas')}><span className="bento-icon"><Users aria-hidden="true" /></span><span className="eyebrow">ORANG-ORANGNYA</span><strong>Kenali kelas<br />dan kadernya.</strong><span className="bento-link">Buka daftar kelas <ArrowRight aria-hidden="true" /></span><span className="bento-decoration"><CountUp value={depositData.classes.length} /></span></motion.button><motion.button className="bento-card bento-monitor" variants={fadeUpChild} whileHover={{ y: -4 }} whileTap={{ scale: 0.98 }} onClick={() => selectView('monitoring')}><span className="bento-icon"><BarChart3 aria-hidden="true" /></span><span className="eyebrow">BUKTI NYATA</span><strong>{totalKg > 0 ? <>{pilahPct}% sampah<br />sudah terpilah.</> : <>Pantau aksi<br />bersama.</>}</strong><span className="bento-link">Lihat dashboard <ArrowRight aria-hidden="true" /></span><span className="monitor-bars"><i /><i /><i /><i /><i /><i /><i /></span></motion.button><motion.article className="bento-card bento-note" variants={fadeUpChild} whileHover={{ y: -4 }}><span className="eyebrow">KOMITMEN KITA</span><strong>Lebih bijak<br />memilah.</strong><p>Kenali jenis sampah, kurangi yang sekali pakai, dan bawa wadah makan dari rumah.</p><Leaf className="bento-leaf" aria-hidden="true" /></motion.article></motion.div></section>
+        <section className="portal-bento" aria-labelledby="portal-title"><div className="bento-heading"><div><span className="eyebrow">JAWABAN KAMI</span><h2 id="portal-title" aria-label="Gerakan yang bisa kita mulai"><WordReveal text="Gerakan yang bisa kita mulai" /></h2></div><p>Jawaban kami atas masalah sampah: gerakan yang bisa diikuti, bukti yang bisa dilihat, dan orang-orang di baliknya.</p></div><motion.div className="bento-grid" variants={staggerParent} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-40px' }}><motion.button className="bento-card bento-class" variants={fadeUpChild} whileHover={{ y: -4 }} whileTap={{ scale: 0.98 }} onClick={() => selectView('kelas')}><span className="bento-icon"><Users aria-hidden="true" /></span><span className="eyebrow">ORANG-ORANGNYA</span><strong>Kenali kelas<br />dan kadernya.</strong><span className="bento-link">Buka daftar kelas <ArrowRight aria-hidden="true" /></span><span className="bento-decoration"><CountUp value={depositData.classes.length} /></span></motion.button><motion.button className="bento-card bento-monitor" variants={fadeUpChild} whileHover={{ y: -4 }} whileTap={{ scale: 0.98 }} onClick={() => selectView('monitoring')}><span className="bento-icon"><BarChart3 aria-hidden="true" /></span><span className="eyebrow">BUKTI NYATA</span><strong>{totalKg > 0 ? <>{pilahPct}% sampah<br />sudah terpilah.</> : <>Pantau aksi<br />bersama.</>}</strong><span className="bento-link">Lihat dashboard <ArrowRight aria-hidden="true" /></span></motion.button><motion.article className="bento-card bento-note" variants={fadeUpChild} whileHover={{ y: -4 }}><span className="eyebrow">KOMITMEN KITA</span><strong>Lebih bijak<br />memilah.</strong><p>Kenali jenis sampah, kurangi yang sekali pakai, dan bawa wadah makan dari rumah.</p><Leaf className="bento-leaf" aria-hidden="true" /></motion.article></motion.div></section>
         <section className="story-cta" aria-labelledby="story-cta-title"><span className="eyebrow">AJAKAN</span><h2 id="story-cta-title" aria-label="Bumi ini kita pinjam dari generasi mendatang."><WordReveal text="Bumi ini kita pinjam dari generasi mendatang." /></h2><p>Gerakan ini butuh kamu. Mainkan gamenya, kirim laporanmu, dan ajak kelasmu memilah lebih baik minggu ini.</p><div className="hero-actions"><button className="primary-button" onClick={() => selectView('main')}>Main Game <ArrowRight aria-hidden="true" /></button><button className="text-button" onClick={() => selectView('laporan')}>Kirim Laporan <ArrowRight aria-hidden="true" /></button></div></section>
       </>}
 

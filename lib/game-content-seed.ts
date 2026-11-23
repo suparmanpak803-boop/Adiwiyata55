@@ -99,12 +99,12 @@ const SEED_QUESTIONS: {
   },
 ]
 
-const ITEM_EMOJI: Record<string, string> = {
-  organik: '🍃',
-  anorganik: '🧴',
-  kertas: '📄',
-  residu: '🗑️',
-  b3: '☠️',
+const ITEM_ICON: Record<string, string> = {
+  organik: 'leaf',
+  anorganik: 'milk',
+  kertas: 'file',
+  residu: 'trash',
+  b3: 'biohazard',
 }
 
 const SEED_MISSIONS: { judul: string; deskripsi: string; poin: number }[] = [
@@ -143,7 +143,7 @@ export async function seedGameDefaults(
     const result = await pool.query(
       `INSERT INTO public.item_sampah (nama, emoji, jenis, penjelasan, tingkat_kesulitan, aktif)
          VALUES ($1,$2,$3,'', 'mudah', true) ON CONFLICT DO NOTHING`,
-      [item.name, ITEM_EMOJI[item.bin] ?? '♻️', item.bin],
+      [item.name, ITEM_ICON[item.bin] ?? 'recycle', item.bin],
     )
     itemsAdded += result.rowCount ?? 0
   }

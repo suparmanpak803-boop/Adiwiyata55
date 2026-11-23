@@ -165,7 +165,7 @@ export function StrukturPohon({ data }: { data: StrukturPetugas }) {
       {pengurusTerlihat.length > 0 && (
         <section aria-labelledby="pohon-judul-inti">
           <h2 id="pohon-judul-inti" className="pohon-judul-seksi">
-            <TunasIcon /> Batang — Pengurus Inti
+            <TunasIcon /> Batang: Pengurus Inti
           </h2>
           <p className="pohon-intro-seksi">Pembina dan pengurus yang menopang seluruh gerakan Adiwiyata.</p>
           <div className="pohon-grid-inti">
@@ -192,7 +192,7 @@ export function StrukturPohon({ data }: { data: StrukturPetugas }) {
       {timTerlihat.length > 0 && (
         <section aria-labelledby="pohon-judul-tim">
           <h2 id="pohon-judul-tim" className="pohon-judul-seksi">
-            <PohonIcon /> Cabang — Tim Adiwiyata
+            <PohonIcon /> Cabang: Tim Adiwiyata
           </h2>
           <p className="pohon-intro-seksi">Ketuk kartu tim untuk melihat koordinator dan anggotanya.</p>
           <div className="pohon-grid-tim">
