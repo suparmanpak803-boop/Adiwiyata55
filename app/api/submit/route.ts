@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { readJsonResponse } from '@/lib/api-client'
 import { callAppsScriptRead } from '@/lib/apps-script-client'
 import { getPortalUser } from '@/lib/auth/access'
+import { pool } from '@/lib/db'
 import { getAppsScriptConfig } from '@/lib/sheets-config'
 import { isActiveClassCode } from '@/lib/class-master'
 import { normalizeClassCode } from '@/lib/class-codes'
@@ -73,6 +74,47 @@ export async function POST(request: Request) {
     })
     if (records.some((record) => !record)) return NextResponse.json({ error: 'Lengkapi semua data. Berat harus lebih dari 0 dengan maksimal dua angka desimal.' }, { status: 400 })
 
+    // Sinkronisasi Sheet hanya untuk setoran yang sudah tersimpan dan
+    // tervalidasi lewat saveDeposit: cocokkan berat per jenis dan
+    // string kepatuhan dengan baris deposit di database. Tanpa ini,
+    // /api/submit bisa dipanggil sendiri untuk menulis/menghapus baris
+    // Sheet dengan tanggal lama, angka kepatuhan karangan, dan
+    // replace:true — melewati batas 30 hari, cek jumlah siswa, dan
+    // jejak audit saveDeposit.
+    const deposit = await pool.query<{
+      organic: string; inorganic: string; residual: string; hazardous: string; paper: string
+      tumbler: number; lunchbox: number; student_count: number | null
+    }>(
+      `SELECT organic::text, inorganic::text, residual::text, hazardous::text, paper::text, tumbler, lunchbox, student_count
+         FROM public.adiwiyata_deposits WHERE id = $1`,
+      [`${submittedDate}_${className}`],
+    )
+    const savedRow = deposit.rows[0]
+    if (!savedRow) return NextResponse.json({ error: 'Setoran belum tersimpan di database. Simpan dulu lewat formulir Input Laporan.' }, { status: 409 })
+    const sheetRecords = records as SheetRecord[]
+    const weightsByType: Record<string, number> = {
+      Organik: Number(savedRow.organic), Anorganik: Number(savedRow.inorganic), Residu: Number(savedRow.residual), B3: Number(savedRow.hazardous), Kertas: Number(savedRow.paper),
+    }
+    const submittedTypes = new Set<string>()
+    for (const record of sheetRecords) {
+      if (Math.round((weightsByType[record.wasteType] ?? -1) * 100) !== Math.round(record.weight * 100)) {
+        return NextResponse.json({ error: 'Data tidak cocok dengan setoran yang tersimpan di database.' }, { status: 409 })
+      }
+      submittedTypes.add(record.wasteType)
+    }
+    for (const [type, weight] of Object.entries(weightsByType)) {
+      if (weight > 0 && !submittedTypes.has(type)) {
+        return NextResponse.json({ error: 'Data tidak cocok dengan setoran yang tersimpan di database.' }, { status: 409 })
+      }
+    }
+    const complianceStatus = savedRow.tumbler > 0 || savedRow.lunchbox > 0 ? 'Patuh' : 'Tidak patuh'
+    const expectedCompliance = savedRow.student_count
+      ? `${complianceStatus} | Tumbler ${savedRow.tumbler}/${savedRow.student_count} | Lunch box ${savedRow.lunchbox}/${savedRow.student_count}`
+      : `${complianceStatus} | Tumbler ${savedRow.tumbler} | Lunch box ${savedRow.lunchbox}`
+    if (sheetRecords.some((record) => record.compliance !== expectedCompliance)) {
+      return NextResponse.json({ error: 'Data tidak cocok dengan setoran yang tersimpan di database.' }, { status: 409 })
+    }
+
     const { url, token } = await getAppsScriptConfig()
     const response = await fetch(url, {
       method: 'POST',
@@ -87,6 +129,9 @@ export async function POST(request: Request) {
       console.error('[api/submit] Apps Script menolak kiriman:', result.error)
       return NextResponse.json({ error: 'Spreadsheet belum dapat menerima data. Silakan coba lagi.' }, { status: 502 })
     }
+    // Jejak audit pengiriman ke Sheet (saveDeposit hanya mencatat
+    // penyimpanan di database).
+    await pool.query(`INSERT INTO public.log_aktivitas (actor_id, aksi, detail) VALUES ($1, 'setoran_kirim_sheet', $2::jsonb)`, [user.id, JSON.stringify({ date: submittedDate, className })]).catch(() => undefined)
     return NextResponse.json({ success: true, message: 'Data berhasil tersimpan ke Spreadsheet.' })
   } catch (error) {
     // L-01: pesan error mentah (driver/Apps Script) hanya masuk log server.

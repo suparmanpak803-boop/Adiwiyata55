@@ -60,6 +60,12 @@ export async function POST(request: Request) {
   if (!client) return NextResponse.json({ error: 'Database belum dapat dihubungi. Coba lagi sebentar.' }, { status: 503 })
   try {
     await client.query('BEGIN')
+    // Batas poin harian dibaca lalu ditulis dalam satu transaksi tanpa
+    // kunci (check-then-act): pengiriman bersamaan membaca jumlah yang
+    // sama dan semuanya lolos. Kunci advisory per pengguna menyeragamkan
+    // pengiriman skor satu pengguna, agar cek batas melihat tulisan yang
+    // sudah commit. Dilepas otomatis saat COMMIT/ROLLBACK.
+    await client.query(`SELECT pg_advisory_xact_lock(hashtext($1))`, [`skor:${user.id}`])
     const session = await client.query<{ id: string; game_key: string; dimulai_pada: string; durasi: number; log_aksi: unknown }>(
       `UPDATE public.game_sessions s SET dipakai = true,
          log_aksi = CASE WHEN s.game_key = 'kuis_adiwiyata' THEN s.log_aksi ELSE $3::jsonb END

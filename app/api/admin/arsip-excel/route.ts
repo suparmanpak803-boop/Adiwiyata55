@@ -7,6 +7,7 @@ import {
 } from '@/lib/arsip-excel'
 import { buatArsipBulanan, namaFileArsipBulanan, uraikanBulan } from '@/lib/arsip-bulanan'
 import { labelTahunAjaranValid } from '@/lib/tahun-ajaran'
+import { allowRequest } from '@/lib/rate-limit'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -16,14 +17,23 @@ export const runtime = 'nodejs'
 // tanpa itu, query `?tahun=2026/2027` → arsip tahunan (opsional;
 // default tahun ajaran berjalan).
 export async function GET(request: Request) {
+  let user: { id: string }
   try {
-    await requirePortalRole(['admin'])
+    user = await requirePortalRole(['admin'])
   } catch (error) {
     const message = error instanceof Error ? error.message : ''
     const belumLogin = message === 'UNAUTHORIZED'
     return NextResponse.json(
       { galat: true, kode: belumLogin ? 'BELUM_LOGIN' : 'AKSES_DITOLAK', pesan: belumLogin ? 'Silakan login kembali.' : 'Halaman ini hanya untuk Admin.' },
       { status: belumLogin ? 401 : 403 },
+    )
+  }
+  // B-04: ekspor arsip memindai seluruh tabel dan membangun workbook
+  // di memori per permintaan — batasi 10/menit per admin.
+  if (!(await allowRequest(`admin-arsip-excel:${user.id}`, 10, 60))) {
+    return NextResponse.json(
+      { galat: true, kode: 'TERLALU_BANYAK_PERMINTAAN', pesan: 'Terlalu banyak permintaan. Coba lagi sebentar.' },
+      { status: 429 },
     )
   }
   const params = new URL(request.url).searchParams
