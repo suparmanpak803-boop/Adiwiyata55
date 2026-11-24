@@ -4,6 +4,7 @@ import { useEffect, useState, type ComponentType } from 'react'
 import { ArrowLeft, Check, Flag, RotateCcw } from 'lucide-react'
 import { CHAPTERS, CHAPTER_ORDER } from '@/lib/apa-itu-adiwiyata/chapters'
 import { TUGAS } from '@/lib/apa-itu-adiwiyata/tugas'
+import { kunciCerita, PILIHAN_CERITA, pilihEpilog } from '@/lib/apa-itu-adiwiyata/content/cerita'
 import { INTERAKSI_MISI } from '@/lib/apa-itu-adiwiyata/content/interaksi'
 import { useCampaign } from '@/lib/apa-itu-adiwiyata/context'
 import { KARTU_ENSIKLOPEDIA } from '@/lib/apa-itu-adiwiyata/content/ensiklopedia'
@@ -12,6 +13,7 @@ import { SPESIES } from '@/lib/apa-itu-adiwiyata/content/spesies'
 import { BAB_BADGE, LENCANA, TUGAS_BADGE } from '@/lib/apa-itu-adiwiyata/lencana'
 import { TUGAS_ORDER, type ChapterId, type Report, type TugasKaderId } from '@/lib/apa-itu-adiwiyata/types'
 import { JanjiHarian } from './janji-harian'
+import { PilihanCerita } from './pilihan-cerita'
 import { RaporSekolah } from './rapor-sekolah'
 import { KejadianAcak } from './minigames/kejadian-acak'
 import { AirEnergi } from './minigames/air-energi'
@@ -137,6 +139,17 @@ export function MisiShell({
   const semuaSelesai = tahapSelesai === 3
   const tahapBerjalan = replayStage ?? progress.stages.findIndex((s) => s.status !== 'done')
   const tampilkanGame = tahapBerjalan >= 0
+  // Misi ini pertama kali diselesaikan bila progress.done masih false
+  // (dipakai render epilog + pemberian bonus sekali di selesaikanMisi).
+  const pertamaKali = !progress.done
+  // Titik pilihan 2 (Cerita Bercabang, hanya bab utama): tampil sebelum
+  // tahap ke-3, menggantikan slot mini-game sampai pemain memilih.
+  const titikPilihan2 = kind === 'bab' && chapterId ? PILIHAN_CERITA[chapterId][1] : null
+  const kunciPilihan2 = titikPilihan2 && chapterId ? kunciCerita(chapterId, titikPilihan2.id) : null
+  const sudahPilih2 = kunciPilihan2 ? save.cerita?.[kunciPilihan2] !== undefined : false
+  const tampilkanPilihan2 = kind === 'bab' && !!titikPilihan2 && tahapBerjalan === 2 && !sudahPilih2
+  // Epilog Pos Hijau (hanya bab utama; misi tugas tidak punya pilihan).
+  const epilog = kind === 'bab' && chapterId ? pilihEpilog(chapterId, save.cerita ?? {}) : null
   const tahapTerakhirSelesai = Math.max(
     -1,
     ...progress.stages.map((s, i) => (s.status === 'done' ? i : -1)),
@@ -197,7 +210,6 @@ export function MisiShell({
   const selesaikanMisi = () => {
     playMenang()
     if (kind === 'bab' && chapterId) {
-      const pertamaKali = !progress.done
       dispatch({ type: 'COMPLETE_CHAPTER', chapterId })
       dispatch({ type: 'EARN_BADGE', badgeId: BAB_BADGE[chapterId] })
       // Bab 5 punya dua tema (air + energi) sehingga memberi dua lencana.
@@ -210,6 +222,11 @@ export function MisiShell({
       })
       if (pertamaKali) {
         dispatch({ type: 'SET_REPORT', patch: tambahRapor(save.report, BONUS_RAPOR[chapterId]) })
+        // Bonus epilog Cerita Bercabang, SATU KALI saat pertama selesai.
+        // (pilihEpilog dihitung dari pilihan yang tersimpan; bila belum
+        // memilih di titik kuncinya, bonusnya 15 koin — lihat cerita.ts.)
+        const hasilEpilog = pilihEpilog(chapterId, save.cerita ?? {})
+        dispatch({ type: 'EARN_COINS', amount: hasilEpilog.bonus })
         // Koleksi spesies terbuka saat Bab 6 selesai.
         if (chapterId === 'biodiversitas') {
           SPESIES.forEach((s) => dispatch({ type: 'ADD_SPECIES', id: s.id }))
@@ -344,21 +361,37 @@ export function MisiShell({
 
       {tampilkanGame && !showEvent && (
         <section className="aia-slot" aria-label="Permainan misi">
-          {kind === 'bab' && chapterId && MiniGameBab && (
-            <MiniGameBab
-              chapterId={chapterId}
-              stageIndex={tahapBerjalan}
-              onStageComplete={(score) => selesaikanTahap(tahapBerjalan, score)}
-              modeSatuKetukan={modeSatuKetukan}
+          {tampilkanPilihan2 && titikPilihan2 && kunciPilihan2 ? (
+            <PilihanCerita
+              titik={titikPilihan2}
+              onSelesai={(opsi) => {
+                dispatch({
+                  type: 'PILIH_CERITA',
+                  kunci: kunciPilihan2,
+                  opsi: opsi.id,
+                  pakPlastik: opsi.pakPlastik,
+                })
+              }}
             />
-          )}
-          {kind === 'tugas' && tugasId && MiniGameTugas && (
-            <MiniGameTugas
-              tugasId={tugasId}
-              stageIndex={tahapBerjalan}
-              onStageComplete={(score) => selesaikanTahap(tahapBerjalan, score)}
-              modeSatuKetukan={modeSatuKetukan}
-            />
+          ) : (
+            <>
+              {kind === 'bab' && chapterId && MiniGameBab && (
+                <MiniGameBab
+                  chapterId={chapterId}
+                  stageIndex={tahapBerjalan}
+                  onStageComplete={(score) => selesaikanTahap(tahapBerjalan, score)}
+                  modeSatuKetukan={modeSatuKetukan}
+                />
+              )}
+              {kind === 'tugas' && tugasId && MiniGameTugas && (
+                <MiniGameTugas
+                  tugasId={tugasId}
+                  stageIndex={tahapBerjalan}
+                  onStageComplete={(score) => selesaikanTahap(tahapBerjalan, score)}
+                  modeSatuKetukan={modeSatuKetukan}
+                />
+              )}
+            </>
           )}
         </section>
       )}
@@ -378,6 +411,18 @@ export function MisiShell({
               <p>
                 <strong>Refleksi:</strong> {REFLEKSI[chapterId]}
               </p>
+              {epilog && (
+                <>
+                  <p>
+                    <strong>Epilog:</strong> {epilog.teks}
+                  </p>
+                  <p className="aia-muted">
+                    {pertamaKali
+                      ? `+${epilog.bonus} Koin Hijau dari epilog ini.`
+                      : `Bonus epilog (+${epilog.bonus} Koin Hijau) sudah kamu terima saat pertama menyelesaikan misi ini.`}
+                  </p>
+                </>
+              )}
               <JanjiHarian />
             </>
           ) : (

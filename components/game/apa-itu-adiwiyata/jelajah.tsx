@@ -13,10 +13,24 @@ import { CHAPTERS, CHAPTER_ORDER } from '@/lib/apa-itu-adiwiyata/chapters'
 import { TUGAS } from '@/lib/apa-itu-adiwiyata/tugas'
 import { jumlahTugasSelesai, LOKASI_PEMBERI, misiSaatIni, pemberiMisi } from '@/lib/apa-itu-adiwiyata/misi'
 import { selectChapterUnlocked, useCampaign } from '@/lib/apa-itu-adiwiyata/context'
-import { DIALOG_NPC } from '@/lib/apa-itu-adiwiyata/content/npc'
+import { kunciCerita, PILIHAN_CERITA } from '@/lib/apa-itu-adiwiyata/content/cerita'
+import { dialogDenganIngatan } from '@/lib/apa-itu-adiwiyata/content/npc'
 import { DUNIA, NPCS, type NpcDunia } from '@/lib/apa-itu-adiwiyata/dunia'
+import {
+  beriMakanMaggot,
+  bersihkanSampah,
+  NAMA_TANAMAN,
+  panenKasgot,
+  panenTanaman,
+  POSISI_KOTAK_MAGGOT,
+  POSISI_PETAK,
+  siramTanaman,
+  type Maggot,
+  type PetakKebun,
+} from '@/lib/apa-itu-adiwiyata/dunia-hidup'
 import type { ChapterId, TugasKaderId } from '@/lib/apa-itu-adiwiyata/types'
-import { klik, koin, pindah, playMumble, setSuaraMuted } from './suara'
+import { PilihanCerita } from './pilihan-cerita'
+import { klik, koin, maggot as sfxMaggot, panen, pindah, playMumble, setSuaraMuted, siram } from './suara'
 
 const KECEPATAN = 160 // unit dunia per detik
 const JARAK_BICARA = 56
@@ -214,6 +228,163 @@ function gambarSampah(g: CanvasRenderingContext2D, x: number, y: number, i: numb
   g.restore()
 }
 
+// ------------------------------------------------------- Dunia Hidup ----
+
+/** Satu petak kebun: bedeng tanah + tanaman sesuai tahap + label nama. */
+function gambarPetak(g: CanvasRenderingContext2D, petak: PetakKebun, pos: { x: number; y: number }) {
+  const cx = pos.x
+  const cy = pos.y - 2
+  // Bedeng tanah.
+  g.fillStyle = '#8b5a2b'
+  rr(g, pos.x - 20, pos.y - 10, 40, 22, 6)
+  g.fill()
+  g.strokeStyle = '#6d4c41'
+  g.lineWidth = 2
+  rr(g, pos.x - 20, pos.y - 10, 40, 22, 6)
+  g.stroke()
+  // Tanaman: hijau bila segar, cokelat bila layu.
+  const daun = petak.layu ? '#a1887f' : '#4e9a3d'
+  const daunTerang = petak.layu ? '#8d6e63' : '#66bb6a'
+  if (petak.tahap === 0) {
+    // Benih: titik-titik di tanah.
+    g.fillStyle = petak.layu ? '#8d6e63' : '#5d4037'
+    for (const dx of [-8, 0, 8]) {
+      g.beginPath()
+      g.arc(cx + dx, cy + 4, 2.5, 0, Math.PI * 2)
+      g.fill()
+    }
+  } else if (petak.tahap === 1) {
+    // Tunas: 2 daun kecil.
+    g.fillStyle = daunTerang
+    g.beginPath()
+    g.ellipse(cx - 4, cy, 4, 6, -0.5, 0, Math.PI * 2)
+    g.fill()
+    g.beginPath()
+    g.ellipse(cx + 4, cy, 4, 6, 0.5, 0, Math.PI * 2)
+    g.fill()
+  } else if (petak.tahap === 2) {
+    // Semak hijau.
+    g.fillStyle = daun
+    g.beginPath()
+    g.arc(cx - 6, cy, 6, 0, Math.PI * 2)
+    g.fill()
+    g.beginPath()
+    g.arc(cx + 6, cy, 6, 0, Math.PI * 2)
+    g.fill()
+    g.fillStyle = daunTerang
+    g.beginPath()
+    g.arc(cx, cy - 5, 7, 0, Math.PI * 2)
+    g.fill()
+  } else {
+    // Berbunga: batang + bunga kuning.
+    g.strokeStyle = daun
+    g.lineWidth = 2.5
+    g.beginPath()
+    g.moveTo(cx, cy + 6)
+    g.lineTo(cx, cy - 8)
+    g.stroke()
+    g.fillStyle = daunTerang
+    g.beginPath()
+    g.ellipse(cx - 5, cy + 2, 4, 3, -0.6, 0, Math.PI * 2)
+    g.fill()
+    g.beginPath()
+    g.ellipse(cx + 5, cy + 2, 4, 3, 0.6, 0, Math.PI * 2)
+    g.fill()
+    g.fillStyle = '#ffd54a'
+    for (const [fx, fy] of [
+      [-6, -8],
+      [6, -8],
+      [0, -13],
+    ] as const) {
+      g.beginPath()
+      g.arc(cx + fx, cy + fy, 3.5, 0, Math.PI * 2)
+      g.fill()
+    }
+  }
+  // Tanda layu: tetes air di atas tanaman (tanda butuh disiram).
+  if (petak.layu) {
+    g.fillStyle = '#29b6f6'
+    g.beginPath()
+    g.moveTo(cx, cy - 22)
+    g.quadraticCurveTo(cx + 5, cy - 14, cx, cy - 11)
+    g.quadraticCurveTo(cx - 5, cy - 14, cx, cy - 22)
+    g.fill()
+  }
+  // Label nama tanaman di bawah petak.
+  const nama = NAMA_TANAMAN[petak.jenis]
+  g.font = 'bold 11px system-ui, sans-serif'
+  const lebarTeks = g.measureText(nama).width
+  g.fillStyle = 'rgba(0,0,0,0.55)'
+  rr(g, cx - lebarTeks / 2 - 7, pos.y + 16, lebarTeks + 14, 18, 9)
+  g.fill()
+  g.fillStyle = '#ffffff'
+  g.textAlign = 'center'
+  g.textBaseline = 'middle'
+  g.fillText(nama, cx, pos.y + 25)
+}
+
+/** Kotak maggot: kotak cokelat + larva + bar lapar + "!" bila sangat lapar. */
+function gambarKotakMaggot(g: CanvasRenderingContext2D, maggot: Maggot, pos: { x: number; y: number }) {
+  // Kotak.
+  g.fillStyle = '#8d6e63'
+  rr(g, pos.x - 20, pos.y - 12, 40, 26, 5)
+  g.fill()
+  g.strokeStyle = '#6d4c41'
+  g.lineWidth = 2
+  rr(g, pos.x - 20, pos.y - 12, 40, 26, 5)
+  g.stroke()
+  g.fillStyle = '#a1887f'
+  g.fillRect(pos.x - 16, pos.y - 9, 32, 4)
+  // Larva hijau sebanyak tahap+1.
+  const jumlah = maggot.tahap + 1
+  for (let i = 0; i < jumlah; i += 1) {
+    const lx = pos.x - 10 + i * 10
+    g.fillStyle = '#8bc34a'
+    g.beginPath()
+    g.ellipse(lx, pos.y + 5, 5, 3.5, 0, 0, Math.PI * 2)
+    g.fill()
+    g.fillStyle = '#212121'
+    g.beginPath()
+    g.arc(lx + 2, pos.y + 4, 1, 0, Math.PI * 2)
+    g.fill()
+  }
+  // Bar lapar di atas kotak: hijau -> kuning -> merah.
+  const warnaBar = maggot.lapar < 50 ? '#66bb6a' : maggot.lapar < 75 ? '#ffb300' : '#e53935'
+  g.fillStyle = 'rgba(0,0,0,0.55)'
+  rr(g, pos.x - 18, pos.y - 22, 36, 6, 3)
+  g.fill()
+  g.fillStyle = warnaBar
+  const lebarIsi = Math.max(0, Math.min(1, maggot.lapar / 100)) * 32
+  if (lebarIsi > 0) {
+    rr(g, pos.x - 16, pos.y - 20, lebarIsi, 2, 1)
+    g.fill()
+  }
+  // Ikon "!" bila sangat lapar.
+  if (maggot.lapar >= 75) {
+    g.fillStyle = '#ffd54a'
+    g.beginPath()
+    g.arc(pos.x + 22, pos.y - 24, 8, 0, Math.PI * 2)
+    g.fill()
+    g.strokeStyle = '#8d6e00'
+    g.lineWidth = 1.5
+    g.stroke()
+    g.fillStyle = '#4e342e'
+    g.font = 'bold 11px system-ui, sans-serif'
+    g.textAlign = 'center'
+    g.textBaseline = 'middle'
+    g.fillText('!', pos.x + 22, pos.y - 24)
+  }
+}
+
+/** Warna tint waktu nyata: pagi hangat, siang netral, sore jingga, malam biru gelap. */
+function warnaTintWaktu(): string {
+  const jam = new Date().getHours()
+  if (jam >= 5 && jam < 10) return 'rgba(255,214,120,0.10)'
+  if (jam >= 10 && jam < 15) return 'rgba(255,255,255,0.02)'
+  if (jam >= 15 && jam < 18) return 'rgba(255,140,60,0.12)'
+  return 'rgba(20,40,90,0.18)'
+}
+
 function gambarPemain(g: CanvasRenderingContext2D, p: PemainState, reduced: boolean) {
   const bob = p.bergerak && !reduced ? Math.sin(p.fase) * 2 : 0
   g.fillStyle = 'rgba(0,0,0,0.25)'
@@ -407,7 +578,6 @@ export function Jelajah({
   const misiAktif = misiSaatIni(save)
   const pemberiAktif = misiAktif ? pemberiMisi(misiAktif) : undefined
   const kaderSelesai = jumlahTugasSelesai(save)
-  const [terkumpul, setTerkumpul] = useState(0)
   const [toast, setToast] = useState<string | null>(null)
   const [dialogNpc, setDialogNpc] = useState<NpcDunia | null>(null)
   const [dialogIdx, setDialogIdx] = useState(0)
@@ -479,7 +649,9 @@ export function Jelajah({
   const lanjutDialog = () => {
     const npc = dialogRef.current
     if (!npc) return
-    const konten = DIALOG_NPC[npc.id]
+    // Pakai dialog dengan ingatan supaya jumlah baris cocok dengan yang
+    // dirender (Magi / Pak Plastik bisa punya baris tambahan).
+    const konten = dialogDenganIngatan(npc.id, saveRef.current.pakPlastik)
     const total = 1 + (konten?.baris.length ?? 0)
     const next = Math.min(dialogIdxRef.current + 1, total - 1)
     dialogIdxRef.current = next
@@ -589,17 +761,22 @@ export function Jelajah({
         n.fase += dt * 6
       }
 
-      // Pungut sampah (dijeda saat dialog terbuka).
+      // Pungut sampah liar dengan berjalan mendekat (dijeda saat dialog
+      // terbuka). Hanya titik yang tampil (indeks < sampahLiar, belum
+      // dipungut sesi ini) yang bisa dipungut; koin +5 datang dari
+      // PERAWATAN_DUNIA 'bersihkan', bukan EARN_COINS, supaya tidak dobel.
       if (!dialogTerbuka) {
+        const dunia = saveRef.current.dunia
         for (let i = 0; i < DUNIA.sampah.length; i++) {
-          if (trashRef.current[i]) continue
+          if (i >= dunia.sampahLiar || trashRef.current[i]) continue
           const s = DUNIA.sampah[i]
           if (Math.hypot(s.x - p.x, s.y - p.y) < 26) {
+            const hasil = bersihkanSampah(dunia)
+            if (hasil.koin === 0) continue
             trashRef.current[i] = true
             popsRef.current.push({ x: s.x, y: s.y, t: 0 })
-            dispatch({ type: 'EARN_COINS', amount: 5 })
+            dispatch({ type: 'PERAWATAN_DUNIA', aksi: 'bersihkan', sekarang: Date.now() })
             koin()
-            setTerkumpul((n) => n + 1)
           }
         }
       }
@@ -664,10 +841,12 @@ export function Jelajah({
           ctx.fillText('Terkunci', z.x + z.w / 2, z.y + z.h / 2)
         }
       }
-      // Sampah berkilau.
+      // Sampah liar berkilau: hanya N titik pertama yang tampil, N =
+      // save.dunia.sampahLiar, dan yang sudah dipungut sesi ini disembunyikan.
+      const dunia = saveRef.current.dunia
       const detik = t / 1000
       DUNIA.sampah.forEach((s, i) => {
-        if (trashRef.current[i]) return
+        if (i >= dunia.sampahLiar || trashRef.current[i]) return
         const denyut = reducedRef.current ? 0.7 : 0.55 + 0.35 * Math.sin(detik * 3 + i * 1.3)
         ctx.globalAlpha = denyut
         ctx.fillStyle = '#ffd54a'
@@ -693,6 +872,15 @@ export function Jelajah({
         ctx.fillText('+5', pp.x, pp.y - 16 - k * 16)
         ctx.globalAlpha = 1
       }
+      // Dunia Hidup: 3 petak kebun + kotak maggot (digambar sebelum tint).
+      for (const petak of dunia.petak) {
+        gambarPetak(ctx, petak, POSISI_PETAK[petak.id])
+      }
+      gambarKotakMaggot(ctx, dunia.maggot, POSISI_KOTAK_MAGGOT)
+      // Tint waktu nyata: satu fillRect transparan setelah dunia digambar,
+      // sebelum aktor digambar. Statis, jadi aman untuk reduced motion.
+      ctx.fillStyle = warnaTintWaktu()
+      ctx.fillRect(camX, camY, view.w, view.h)
       // NPC + pemain diurutkan sumbu Y supaya yang di depan menutupi yang di belakang.
       const dekatId = nearbyRef.current
       const reduced = reducedRef.current
@@ -883,14 +1071,103 @@ export function Jelajah({
     const wx = pos.x + camX
     const wy = pos.y + camY
     const npc = npcsRef.current.find((n) => Math.hypot(n.x - wx, n.y - wy) < 46)
-    if (!npc) return
-    if (Math.hypot(npc.x - p.x, npc.y - p.y) <= JARAK_BICARA) bukaDialog(npc)
-    else showToast(`Dekati ${npc.nama} dulu untuk bicara`)
+    if (npc) {
+      if (Math.hypot(npc.x - p.x, npc.y - p.y) <= JARAK_BICARA) bukaDialog(npc)
+      else showToast(`Dekati ${npc.nama} dulu untuk bicara`)
+      return
+    }
+
+    // --- Perawatan Dunia Hidup (ketuk sederhana, bukan gestur) ---
+    // Ketuk hanya berlaku bila pemain dalam jarak 70 unit dunia dari objek.
+    const dunia = save.dunia
+    const sekarang = Date.now()
+    const dekatObjek = (x: number, y: number) => Math.hypot(x - p.x, y - p.y) <= 70
+
+    // Petak kebun: tahap 3 dipanen, selain itu disiram.
+    for (const petak of dunia.petak) {
+      const posPetak = POSISI_PETAK[petak.id]
+      if (Math.hypot(posPetak.x - wx, posPetak.y - wy) >= 30) continue
+      if (!dekatObjek(posPetak.x, posPetak.y)) {
+        showToast(`Dekati petak ${NAMA_TANAMAN[petak.jenis]} dulu untuk merawatnya`)
+        return
+      }
+      if (petak.tahap === 3) {
+        const hasil = panenTanaman(dunia, petak.id, sekarang)
+        if (hasil.koin === 0) {
+          showToast(hasil.pesan)
+          return
+        }
+        showToast(hasil.pesan)
+        panen()
+        koin()
+        dispatch({ type: 'PERAWATAN_DUNIA', aksi: 'panen', petakId: petak.id, sekarang })
+      } else {
+        const hasil = siramTanaman(dunia, petak.id, sekarang)
+        showToast(hasil.pesan)
+        siram()
+        dispatch({ type: 'PERAWATAN_DUNIA', aksi: 'siram', petakId: petak.id, sekarang })
+      }
+      return
+    }
+
+    // Kotak maggot: tahap 2 panen kasgot, selain itu beri makan.
+    if (Math.hypot(POSISI_KOTAK_MAGGOT.x - wx, POSISI_KOTAK_MAGGOT.y - wy) < 30) {
+      if (!dekatObjek(POSISI_KOTAK_MAGGOT.x, POSISI_KOTAK_MAGGOT.y)) {
+        showToast('Dekati kotak maggot dulu untuk merawat Magi')
+        return
+      }
+      if (dunia.maggot.tahap === 2) {
+        // Target otomatis: petak tahap terendah yang tidak layu dan belum tahap 3.
+        const target = [...dunia.petak]
+          .filter((pp) => !pp.layu && pp.tahap < 3)
+          .sort((a, b) => a.tahap - b.tahap)[0]
+        if (!target) {
+          showToast('Semua petak sudah berbunga atau sedang layu, kasgot belum bisa dipakai.')
+          return
+        }
+        const hasil = panenKasgot(dunia, target.id, sekarang)
+        if (hasil.koin === 0) {
+          showToast(hasil.pesan)
+          return
+        }
+        showToast(hasil.pesan)
+        panen()
+        dispatch({ type: 'PERAWATAN_DUNIA', aksi: 'panenKasgot', petakId: target.id, sekarang })
+      } else {
+        const hasil = beriMakanMaggot(dunia, sekarang)
+        showToast(hasil.pesan)
+        sfxMaggot()
+        dispatch({ type: 'PERAWATAN_DUNIA', aksi: 'beriMakan', sekarang })
+      }
+      return
+    }
+
+    // Sampah liar: ketuk untuk membersihkan (sama seperti berjalan mendekat).
+    for (let i = 0; i < DUNIA.sampah.length; i++) {
+      if (i >= dunia.sampahLiar || trashRef.current[i]) continue
+      const s = DUNIA.sampah[i]
+      if (Math.hypot(s.x - wx, s.y - wy) >= 30) continue
+      if (!dekatObjek(s.x, s.y)) {
+        showToast('Dekati sampahnya dulu untuk membersihkannya')
+        return
+      }
+      const hasil = bersihkanSampah(dunia)
+      if (hasil.koin === 0) {
+        showToast(hasil.pesan)
+        return
+      }
+      trashRef.current[i] = true
+      popsRef.current.push({ x: s.x, y: s.y, t: 0 })
+      showToast(hasil.pesan)
+      koin()
+      dispatch({ type: 'PERAWATAN_DUNIA', aksi: 'bersihkan', sekarang })
+      return
+    }
   }
 
   // ------------------------------------------------------------ render ----
 
-  const kontenDialog = dialogNpc ? DIALOG_NPC[dialogNpc.id] : undefined
+  const kontenDialog = dialogNpc ? dialogDenganIngatan(dialogNpc.id, save.pakPlastik) : undefined
   const barisDialog = dialogNpc
     ? [kontenDialog?.sapaan ?? 'Halo!', ...(kontenDialog?.baris ?? ['Senang bertemu denganmu!'])]
     : []
@@ -900,6 +1177,14 @@ export function Jelajah({
   const tugasNpc: TugasKaderId | null = dialogNpc?.tugasId ?? null
   const tugasNpcSelesai = tugasNpc ? save.tugas[tugasNpc].done : false
   const diAkhir = dialogIdx >= barisDialog.length - 1
+  // Titik pilihan 1 (Cerita Bercabang): hanya untuk NPC pemberi misi UTAMA
+  // yang misinya terbuka, dan hanya bila pilihan titik-1 belum pernah dibuat.
+  // Pilihan tersimpan di save.cerita, jadi menutup / membuka dialog lain
+  // otomatis mereset tampilannya tanpa state lokal.
+  const titikPilihan1 = babNpc && !tugasNpc ? PILIHAN_CERITA[babNpc][0] : null
+  const kunciPilihan1 = titikPilihan1 && babNpc ? kunciCerita(babNpc, titikPilihan1.id) : null
+  const sudahPilih1 = kunciPilihan1 ? save.cerita?.[kunciPilihan1] !== undefined : false
+  const tampilkanPilihan1 = diAkhir && !!titikPilihan1 && babTerbuka && !sudahPilih1
 
   return (
     <div className="aia-stack">
@@ -908,7 +1193,7 @@ export function Jelajah({
           <Coins aria-hidden="true" /> {save.coins} Koin Hijau
         </span>
         <span>
-          Sampah dipungut {terkumpul}/{DUNIA.sampah.length}
+          Sampah liar: {save.dunia.sampahLiar}
         </span>
         <button
           type="button"
@@ -1013,6 +1298,19 @@ export function Jelajah({
               {diAkhir ? (
                 <>
                   {kontenDialog?.tips && <p className="aia-muted">{kontenDialog.tips}</p>}
+                  {tampilkanPilihan1 && titikPilihan1 && kunciPilihan1 && (
+                    <PilihanCerita
+                      titik={titikPilihan1}
+                      onSelesai={(opsi) => {
+                        dispatch({
+                          type: 'PILIH_CERITA',
+                          kunci: kunciPilihan1,
+                          opsi: opsi.id,
+                          pakPlastik: opsi.pakPlastik,
+                        })
+                      }}
+                    />
+                  )}
                   <div className="aia-actions">
                     {tugasNpc ? (
                       <button
@@ -1025,7 +1323,7 @@ export function Jelajah({
                       >
                         {tugasNpcSelesai ? 'Main lagi' : 'Mulai misi'}: {TUGAS[tugasNpc].judul}
                       </button>
-                    ) : babNpc && babTerbuka ? (
+                    ) : babNpc && babTerbuka && !tampilkanPilihan1 ? (
                       <button
                         type="button"
                         className="aia-btn aia-btn-primary"
@@ -1060,8 +1358,9 @@ export function Jelajah({
       </div>
 
       <p className="aia-muted">
-        Gerakkan tokoh dengan joystick kiri bawah atau tombol WASD/panah. Dekati NPC lalu ketuk "Bicara" atau tekan E.
-        NPC dengan tanda ! punya misi untukmu. Pungut sampah yang berserakan untuk Koin Hijau.
+        Gerakkan tokoh dengan joystick kiri bawah atau tombol WASD/panah. Dekati NPC lalu ketuk &quot;Bicara&quot; atau tekan E.
+        NPC dengan tanda ! punya misi untukmu. Ketuk petak kebun untuk menyiram atau memanen, ketuk kotak maggot untuk
+        memberi makan Magi, dan pungut sampah liar yang berserakan untuk Koin Hijau.
       </p>
     </div>
   )

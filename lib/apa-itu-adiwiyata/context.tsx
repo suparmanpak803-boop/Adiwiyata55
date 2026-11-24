@@ -8,8 +8,19 @@
 import { createContext, useContext, useEffect, useReducer, useRef, useState, type ReactNode } from 'react'
 import { syncSettings } from '@/components/game/apa-itu-adiwiyata/suara'
 import { CHAPTER_ORDER } from './chapters'
+import {
+  beriMakanMaggot,
+  bersihkanSampah,
+  freshDunia,
+  majukanDunia,
+  panenKasgot,
+  panenTanaman,
+  siramTanaman,
+  type DuniaHidup,
+  type PetakId,
+} from './dunia-hidup'
 import { freshSave, loadSave, saveSave } from './storage'
-import type { CampaignSave, Carryover, ChapterId, Checkpoint, PromiseItem, Report, StageProgress, TugasKaderId } from './types'
+import type { CampaignSave, Carryover, ChapterId, Checkpoint, PakPlastikStatus, PromiseItem, Report, StageProgress, TugasKaderId } from './types'
 
 export type CampaignAction =
   | { type: 'LOAD'; save: CampaignSave }
@@ -36,6 +47,14 @@ export type CampaignAction =
   | { type: 'SET_HIDE_NAME'; hideName: boolean }
   | { type: 'DAILY_CHECKIN' }
   | { type: 'FINISH_CAMPAIGN' }
+  | { type: 'MAJUKAN_DUNIA'; sekarang: number; adaMisiBelumSelesai: boolean }
+  | {
+      type: 'PERAWATAN_DUNIA'
+      aksi: 'siram' | 'beriMakan' | 'bersihkan' | 'panen' | 'panenKasgot'
+      petakId?: PetakId
+      sekarang: number
+    }
+  | { type: 'PILIH_CERITA'; kunci: string; opsi: string; pakPlastik?: PakPlastikStatus }
 
 function touch(save: CampaignSave, patch: Partial<CampaignSave> = {}): CampaignSave {
   return { ...save, ...patch, updatedAt: new Date().toISOString() }
@@ -202,6 +221,60 @@ function reducer(save: CampaignSave, action: CampaignAction): CampaignSave {
     }
     case 'FINISH_CAMPAIGN':
       return touch(save, { completedAt: new Date().toISOString() })
+    case 'MAJUKAN_DUNIA': {
+      // majukanDunia murni: 0 hari berlalu mengembalikan referensi dunia
+      // yang sama, dan reducer tidak menulis save dalam kasus itu.
+      // Daftar peristiwa TIDAK disimpan di save — UI yang butuh teks
+      // peristiwa memanggil majukanDunia() langsung dari save.dunia
+      // sebelum dispatch (hasilnya identik, lihat dunia-hidup.ts).
+      const duniaLama = save.dunia ?? freshDunia()
+      const hasil = majukanDunia(duniaLama, action.sekarang, action.adaMisiBelumSelesai)
+      if (hasil.dunia === duniaLama) return save
+      return touch(save, { dunia: hasil.dunia })
+    }
+    case 'PERAWATAN_DUNIA': {
+      // Satu dispatch: fungsi murni + koin hasilnya ditambahkan di sini.
+      // Pesan toast TIDAK dikembalikan reducer — UI memanggil fungsi murni
+      // yang sama dari save.dunia sebelum dispatch (lihat dunia-hidup.ts).
+      const duniaLama = save.dunia ?? freshDunia()
+      let hasil: { dunia: DuniaHidup; koin: number; pesan: string }
+      switch (action.aksi) {
+        case 'siram':
+          hasil = action.petakId
+            ? siramTanaman(duniaLama, action.petakId, action.sekarang)
+            : { dunia: duniaLama, koin: 0, pesan: '' }
+          break
+        case 'beriMakan':
+          hasil = beriMakanMaggot(duniaLama, action.sekarang)
+          break
+        case 'bersihkan':
+          hasil = bersihkanSampah(duniaLama)
+          break
+        case 'panen':
+          hasil = action.petakId
+            ? panenTanaman(duniaLama, action.petakId, action.sekarang)
+            : { dunia: duniaLama, koin: 0, pesan: '' }
+          break
+        case 'panenKasgot':
+          hasil = action.petakId
+            ? panenKasgot(duniaLama, action.petakId, action.sekarang)
+            : { dunia: duniaLama, koin: 0, pesan: '' }
+          break
+      }
+      // Aksi yang tidak mengubah apa pun (koin 0 + referensi sama) tidak
+      // menulis save — mis. panen tanaman yang belum siap.
+      if (hasil.dunia === duniaLama && hasil.koin === 0) return save
+      return touch(save, { dunia: hasil.dunia, coins: save.coins + hasil.koin })
+    }
+    case 'PILIH_CERITA': {
+      // Pilihan terakhir menimpa pilihan sebelumnya di kunci yang sama;
+      // status Pak Plastik hanya berubah bila opsi membawa fieldnya.
+      const cerita = { ...(save.cerita ?? {}), [action.kunci]: action.opsi }
+      return touch(save, {
+        cerita,
+        ...(action.pakPlastik ? { pakPlastik: action.pakPlastik } : {}),
+      })
+    }
     default:
       return save
   }

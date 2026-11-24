@@ -4,6 +4,7 @@
 // (render server), storage penuh, atau data rusak.
 
 import { CHAPTER_ORDER } from './chapters'
+import { freshDunia, type DuniaHidup } from './dunia-hidup'
 import { TUGAS_ORDER } from './types'
 import type { CampaignSave, ChapterId, ChapterProgress, StageProgress, TugasKaderId, TugasProgress } from './types'
 
@@ -64,6 +65,9 @@ export function freshSave(nickname = ''): CampaignSave {
     volumeMusik: 0.7,
     volumeEfek: 0.9,
     modeSatuKetukan: false,
+    dunia: freshDunia(),
+    cerita: {},
+    pakPlastik: 'netral',
     completedAt: null,
     updatedAt: new Date().toISOString(),
   }
@@ -100,11 +104,44 @@ export function loadSave(): CampaignSave {
     if (!isSaveValid(parsed)) return freshSave()
     // Gabung dengan default baru: save lama (tanpa field volume) tetap
     // bisa dimuat; field yang belum ada memakai nilai default.
-    return { ...freshSave(), ...parsed }
+    const merged = { ...freshSave(), ...parsed }
+    // Pengaman sempit untuk field baru: bila `dunia` tersimpan tapi bentuknya
+    // rusak (mis. diedit manual), ganti bagian itu saja dengan default baru
+    // supaya UI Dunia Hidup tidak crash — sisa progres tetap dipertahankan.
+    // isSaveValid sengaja TIDAK diubah: save lama tanpa `dunia` tetap valid
+    // dan mendapat default dari gabungan di atas.
+    if (!isDuniaValid(merged.dunia)) merged.dunia = freshDunia()
+    if (typeof merged.cerita !== 'object' || merged.cerita === null) merged.cerita = {}
+    if (
+      merged.pakPlastik !== 'netral' &&
+      merged.pakPlastik !== 'dibujuk' &&
+      merged.pakPlastik !== 'dilawan' &&
+      merged.pakPlastik !== 'dijebak'
+    ) {
+      merged.pakPlastik = 'netral'
+    }
+    return merged
   } catch {
     // JSON rusak, storage tidak bisa dibaca, atau mode privat yang menolak akses.
     return freshSave()
   }
+}
+
+/** Cek bentuk `dunia` secara longgar; dipakai loadSave sebagai pengaman. */
+function isDuniaValid(value: unknown): value is DuniaHidup {
+  if (typeof value !== 'object' || value === null) return false
+  const d = value as Partial<DuniaHidup>
+  if (!Array.isArray(d.petak) || d.petak.length !== 3) return false
+  for (const p of d.petak) {
+    if (!p || typeof p.id !== 'string' || typeof p.jenis !== 'string') return false
+    if (typeof p.tahap !== 'number' || typeof p.layu !== 'boolean') return false
+    if (typeof p.terakhirDisiram !== 'number' || typeof p.ditanam !== 'number') return false
+  }
+  if (typeof d.maggot !== 'object' || d.maggot === null) return false
+  const m = d.maggot as Partial<DuniaHidup['maggot']>
+  if (typeof m.lapar !== 'number' || typeof m.tahap !== 'number' || typeof m.kaliDiberiMakan !== 'number') return false
+  if (typeof d.sampahLiar !== 'number' || typeof d.hariTerakhirKunjung !== 'string') return false
+  return true
 }
 
 export function saveSave(save: CampaignSave): void {

@@ -1,9 +1,10 @@
 // Dialog NPC mode "Jelajah". Nada santai seperti dialog bab: Magi ramah,
 // Pak Plastik lucu dan sedang berubah, yang lain hangat dan membantu.
 // Tidak menggurui, tidak mengarang angka pasti atas nama sekolah.
+import { DIALOG_MAGI_PAK_PLASTIK, DIALOG_PAK_PLASTIK } from './cerita'
 import { DIALOG_TUGAS } from './tugas'
 import { TUGAS } from '../tugas'
-import type { TugasKaderId } from '../types'
+import type { PakPlastikStatus, TugasKaderId } from '../types'
 
 export interface DialogNpc {
   sapaan: string
@@ -94,4 +95,26 @@ export const DIALOG_NPC: Record<string, DialogNpc> = {
   },
   // Pemberi Misi Kader (dialog dari DIALOG_TUGAS, lihat atas).
   ...DIALOG_TUGAS_NPC,
+}
+
+/**
+ * Dialog NPC dengan ingatan alur Pak Plastik (Cerita Bercabang).
+ * - id 'pak-plastik' + status bukan 'netral': sapaan + baris dari
+ *   DIALOG_PAK_PLASTIK[status] (tips asli tetap dipakai).
+ * - id 'magi' + status bukan 'netral': dialog Magi yang sudah ada ditambah
+ *   baris DIALOG_MAGI_PAK_PLASTIK[status] (tips tetap).
+ * - id lain, atau status 'netral': DIALOG_NPC[id] apa adanya.
+ * Bila id tidak dikenal, kembalikan sapaan generik seperti fallback di jelajah.
+ */
+export function dialogDenganIngatan(id: string, pakPlastik: PakPlastikStatus): DialogNpc {
+  const dasar = DIALOG_NPC[id]
+  if (!dasar) return { sapaan: 'Halo!', baris: ['Senang bertemu denganmu!'] }
+  if (pakPlastik === 'netral') return dasar
+  if (id === 'pak-plastik') {
+    return { ...DIALOG_PAK_PLASTIK[pakPlastik], tips: dasar.tips }
+  }
+  if (id === 'magi') {
+    return { ...dasar, baris: [...dasar.baris, ...DIALOG_MAGI_PAK_PLASTIK[pakPlastik]] }
+  }
+  return dasar
 }

@@ -1,8 +1,13 @@
 // Tipe data model kampanye "Apa itu Adiwiyata".
 // Nama field TIDAK BOLEH diubah: dipakai agen mini-game dan sistem pendukung.
 
+import type { DuniaHidup } from './dunia-hidup'
+
 export type ChapterId = 'gerbang' | 'kantin' | 'maggot' | 'kompos' | 'air-energi' | 'biodiversitas'
 export type TongSampah = 'organik' | 'anorganik' | 'residu' | 'b3'
+
+/** Status Pak Plastik dalam alur Cerita Bercabang (lihat content/cerita.ts). */
+export type PakPlastikStatus = 'netral' | 'dibujuk' | 'dilawan' | 'dijebak'
 
 // Trek paralel "Misi Kader": 8 misi penuh (masing-masing 3 tahap) untuk
 // 8 tim kader yang belum tercakup kampanye 6 bab. Trek ini independen dari
@@ -98,6 +103,12 @@ export interface CampaignSave {
   volumeEfek: number
   /** Mode satu-ketukan: mini-game memakai versi tombol (tanpa gestur seret/putar/tahan). */
   modeSatuKetukan: boolean
+  /** Simulasi Dunia Hidup: kebun, maggot, sampah liar (lihat dunia-hidup.ts). */
+  dunia: DuniaHidup
+  /** Pilihan Cerita Bercabang: kunci `${misi}:${titikId}` -> id opsi (lihat content/cerita.ts). */
+  cerita: Record<string, string>
+  /** Status Pak Plastik dalam alur Cerita Bercabang. */
+  pakPlastik: PakPlastikStatus
   completedAt: string | null
   updatedAt: string
 }
