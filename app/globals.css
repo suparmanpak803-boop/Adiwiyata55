@@ -251,26 +251,33 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .topbar { position: sticky; z-index: 20; top: 0; height: 78px; border-bottom: 1px solid var(--line); background: color-mix(in srgb, var(--background) 94%, transparent); backdrop-filter: blur(14px); }
 .topbar-inner { display: flex; align-items: center; width: min(1240px, calc(100% - 64px)); height: 100%; margin: 0 auto; gap: 32px; }
 .brand-lockup, .footer-brand { display: inline-flex; align-items: center; gap: 10px; padding: 0; border: 0; background: none; color: var(--foreground); text-align: left; }
-.brand-lockup { cursor: pointer; min-width: 172px; }
-.brand-lockup > span:last-child, .footer-brand > span:last-child { display: flex; flex-direction: column; gap: 2px; }
-.brand-lockup strong { font-family: Georgia, serif; font-size: 22px; letter-spacing: -1.5px; line-height: 1; }
+.brand-lockup { min-width: 172px; }
+.brand-lockup .brand-text { padding: 0; border: 0; background: none; color: inherit; text-align: left; cursor: pointer; }
+.brand-lockup .brand-text > span, .footer-brand > span:last-child { display: flex; flex-direction: column; gap: 2px; }
+.brand-lockup strong { font-family: Georgia, serif; font-size: 22px; letter-spacing: -1.5px; line-height: 1; white-space: nowrap; }
 .brand-lockup strong span { color: var(--green); }
-.brand-lockup small, .footer-brand small { color: var(--ink-soft); font-size: 8px; font-weight: 700; letter-spacing: 1.35px; }
-.brand-emblem { display: grid; width: 38px; height: 38px; flex: 0 0 auto; place-items: center; border-radius: 50%; background: var(--sage); color: var(--green); }
+.brand-lockup small, .footer-brand small { color: var(--ink-soft); font-size: 8px; font-weight: 700; letter-spacing: 1.35px; white-space: nowrap; }
+/* Latar terang di belakang logo (logonya kini transparan): teks ADIWIYATA
+   yang hijau gelap tetap terbaca di tema terang maupun gelap. */
+.brand-emblem { display: grid; width: 38px; height: 38px; flex: 0 0 auto; place-items: center; border-radius: 50%; background: #f7f8f3; color: var(--green); }
 .brand-emblem svg { width: 19px; height: 19px; }
 .adiwiyata-logo-image { display: block; width: 100%; height: 100%; border-radius: 0; object-fit: contain; }
 .brand-emblem .adiwiyata-logo-image { border: 0; }
-.desktop-nav { display: flex; align-items: center; height: 100%; gap: 27px; margin: 0 auto; }
+/* Navigasi desktop inline tidak pernah muat: admin punya 19 item menu
+   (±2.700px) di wadah 1.240px, sehingga item terakhir (Pengaturan Game,
+   Laporan) terpotong di luar layar laptop. Navigasi portal kini selalu
+   memakai drawer (daftar menu yang bisa di-scroll), di semua lebar. */
+.desktop-nav { display: none; }
 .nav-link { position: relative; height: 100%; padding: 0; border: 0; background: none; color: var(--ink-soft); font-size: 12px; font-weight: 600; cursor: pointer; }
 .nav-link::after { position: absolute; right: 0; bottom: 0; left: 0; height: 2px; background: var(--green); content: ''; transform: scaleX(0); transform-origin: left; transition: transform .2s ease; }
 .nav-link:hover, .nav-link.active { color: var(--foreground); }
 .nav-link.active::after { transform: scaleX(1); }
-.topbar-actions { display: flex; align-items: center; gap: 18px; }
+.topbar-actions { display: flex; align-items: center; gap: 18px; margin-left: auto; }
 .school-label, .eyebrow { color: var(--ink-soft); font-size: 9px; font-weight: 700; letter-spacing: 1.55px; }
 .icon-button { display: inline-grid; width: 44px; height: 44px; flex: 0 0 auto; place-items: center; border: 1px solid var(--line); border-radius: 50%; background: var(--card); color: var(--foreground); cursor: pointer; transition: background .18s ease, border-color .18s ease; }
 .icon-button:hover { border-color: var(--green); background: var(--sage); }
 .icon-button svg { width: 17px; height: 17px; }
-.menu-trigger { display: none; }
+.menu-trigger { display: inline-grid; width: 36px; height: 36px; }
 
 .hero-section { position: relative; display: grid; grid-template-columns: 1fr .93fr; align-items: center; width: min(1240px, calc(100% - 64px)); min-height: 572px; margin: 0 auto; padding: 63px 0 77px; border-bottom: 1px solid var(--line); }
 .hero-copy { position: relative; z-index: 2; max-width: 560px; padding: 4px 0 18px 6.5%; }
@@ -915,8 +922,13 @@ button.bento-card { cursor: pointer; }
 .home-slider-overlay { position: absolute; z-index: -1; inset: 0; background: linear-gradient(0deg, #071a11e8 0%, #091c126e 38%, #071a1100 76%), linear-gradient(90deg, #081a1233 0%, transparent 68%); }
 .home-slider-copy { position: absolute; left: clamp(20px, 7vw, 94px); bottom: clamp(38px, 6vw, 76px); width: min(620px, calc(100% - 190px)); }
 .home-slider-kicker { display: inline-flex; color: #d5e8c8; font-size: 10px; font-weight: 700; letter-spacing: .15em; }
-.home-slider-copy h2 { margin: 12px 0 8px; color: #fff; font-family: Georgia, 'Times New Roman', serif; font-size: clamp(30px, 5vw, 60px); font-weight: 400; letter-spacing: -.045em; line-height: 1.05; text-wrap: balance; }
+.home-slider-copy h2 { margin: 12px 0 8px; color: #fff; font-family: Georgia, 'Times New Roman', serif; font-size: clamp(26px, 3.4vw, 44px); font-weight: 400; letter-spacing: -.045em; line-height: 1.05; text-wrap: balance; }
 .home-slider-copy p { max-width: 540px; margin: 0; color: #f2f6ef; font-size: clamp(12px, 1.25vw, 15px); line-height: 1.65; }
+/* Slider di dalam hero portal jauh lebih sempit daripada lebar layar:
+   bingkai dibuat lebih tinggi (4/3) supaya foto tampil besar, dan judul
+   diperkecil supaya tidak mendominasi foto. */
+.hero-art .home-slider-frame { aspect-ratio: 4 / 3; }
+.hero-art .home-slider-copy h2 { font-size: clamp(24px, 2.4vw, 32px); }
 .home-slider-cta { width: fit-content; min-height: 44px; margin-top: 18px; padding: 0 14px; display: inline-flex; align-items: center; gap: 10px; border: 1px solid #ffffffa8; border-radius: 7px; background: #10271d; color: #fff; font-size: 11px; font-weight: 700; text-decoration: none; transition: background .2s ease, transform .2s ease; }
 .home-slider-cta:hover { transform: translateY(-1px); background: #ffffff30; }
 .home-slider-cta svg { width: 14px; height: 14px; }

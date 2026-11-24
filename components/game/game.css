@@ -24,6 +24,16 @@
 .game-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 20px; }
 
 .game-canvas { display: block; width: 100%; max-width: 360px; margin: 8px auto 0; border-radius: 12px; border: 1px solid var(--line); touch-action: none; }
+.game-controls { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 14px 0 4px; }
+.game-controls .game-play, .game-controls .game-ghost { padding: 8px 14px; font-size: 12px; }
+.game-controls svg { width: 14px; height: 14px; }
+.game-tutorial { margin: 18px 0 8px; padding-left: 20px; text-align: left; font-size: 13px; line-height: 1.7; color: var(--ink-soft); }
+.game-tutorial li { margin-bottom: 8px; }
+.game-canvas-wrap { position: relative; max-width: 360px; margin: 8px auto 0; }
+.game-canvas-wrap .game-canvas { margin: 0; }
+.game-paused-overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; border-radius: 12px; background: #07140ecc; color: #fff; }
+.game-paused-overlay strong { font-size: 22px; }
+.game-paused-overlay span { font-size: 13px; }
 .game-memory { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 10px; }
 .game-card-flip { min-height: 64px; padding: 6px; border: 1px solid var(--line); border-radius: 10px; background: color-mix(in srgb, var(--sage) 70%, var(--card)); color: var(--foreground); font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
 .game-card-flip.shown { background: var(--card); }
