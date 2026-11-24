@@ -1,8 +1,10 @@
 'use client'
 
-// Runner kampanye "Apa itu Adiwiyata" — dunia + misi.
-// Tidak ada lagi menu "Pilih Bab": permainan dimulai dan berlanjut di dunia
-// (Jelajah); misi diberikan NPC dan dikerjakan dengan menjelajah sekolah.
+// Runner kampanye "Apa itu Adiwiyata" — Layar Awal, dunia + misi.
+// Setiap kali /game dimuat (setelah gerbang nama), tampil dulu Layar Awal:
+// "Lanjutkan" bila ada progres, "Mulai dari Awal" (dengan konfirmasi bila
+// sudah ada progres), atau "Cara Bermain". Setelah memilih, dunia terbuka.
+// Tombol "Keluar" di bar atas selalu kembali ke portal (/).
 // Tab: Jelajah (dunia), Misi, Ensiklopedia, Peringkat, Profil.
 // Musik latar: dunia dan layar sistem memakai mode 'menu', bab memakai
 // musik babnya, tamat memakai 'tamat'.
@@ -16,6 +18,8 @@ import { freshDunia, majukanDunia, type PeristiwaDunia } from '@/lib/apa-itu-adi
 import { TUGAS } from '@/lib/apa-itu-adiwiyata/tugas'
 import type { ChapterId, TugasKaderId } from '@/lib/apa-itu-adiwiyata/types'
 import { GerbangNama } from './gerbang-nama'
+import { LayarAwal } from './layar-awal'
+import { CaraBermain } from './cara-bermain'
 import { LaporanPagi } from './laporan-pagi'
 import { Misi } from './misi'
 import { Jelajah } from './jelajah'
@@ -30,7 +34,7 @@ import './apa-itu-adiwiyata.css'
 
 const MODE_BAB: MusicMode[] = ['bab1', 'bab2', 'bab3', 'bab4', 'bab5', 'bab6']
 
-type Screen = 'peta' | 'misi' | 'ensiklopedia' | 'peringkat' | 'profil' | 'bab' | 'tugas' | 'tamat'
+type Screen = 'awal' | 'peta' | 'misi' | 'ensiklopedia' | 'peringkat' | 'profil' | 'bab' | 'tugas' | 'tamat'
 
 export function ApaItuAdiwiyata() {
   return (
@@ -43,12 +47,13 @@ export function ApaItuAdiwiyata() {
 function Shell() {
   const { save, dispatch, hydrated } = useCampaign()
   const router = useRouter()
-  const [screen, setScreen] = useState<Screen>('peta')
+  const [screen, setScreen] = useState<Screen>('awal')
   const [activeChapter, setActiveChapter] = useState<ChapterId>('gerbang')
   const [activeTugas, setActiveTugas] = useState<TugasKaderId>('bank-sampah')
   const [pesanMisi, setPesanMisi] = useState<string | null>(null)
   const [laporan, setLaporan] = useState<PeristiwaDunia[] | null>(null)
   const [tanyaKeluar, setTanyaKeluar] = useState(false)
+  const [panduanTerbuka, setPanduanTerbuka] = useState(false)
   const laporanRef = useRef(false)
 
   // Laporan Pagi: majukan Dunia Hidup sekali per sesi, di runner (bukan di
@@ -101,6 +106,28 @@ function Shell() {
     setActiveTugas(tugasId)
     setPesanMisi(null)
     setScreen('tugas')
+  }
+
+  // Dari Layar Awal: masuk dunia dengan progres yang ada (atau permainan
+  // baru yang masih kosong — tidak ada yang dihapus).
+  const masukDunia = () => {
+    klik()
+    setScreen('peta')
+  }
+
+  // Dari Layar Awal: hapus progres tersimpan (START_NEW) lalu masuk dunia
+  // dari nol. Laporan Pagi dari save lama dibersihkan supaya tidak tampil
+  // untuk dunia yang baru.
+  const mulaiBaru = () => {
+    dispatch({ type: 'START_NEW' })
+    setLaporan(null)
+    klik()
+    setScreen('peta')
+  }
+
+  const bukaPanduan = () => {
+    klik()
+    setPanduanTerbuka(true)
   }
 
   // Keluar dari bab: kembali ke dunia, kecuali tamat (ke layar tamat).
@@ -207,6 +234,10 @@ function Shell() {
           </section>
         </div>
       )}
+      {panduanTerbuka && <CaraBermain onTutup={() => setPanduanTerbuka(false)} />}
+      {screen === 'awal' && (
+        <LayarAwal onLanjutkan={masukDunia} onMulaiBaru={mulaiBaru} onBukaPanduan={bukaPanduan} />
+      )}
       {screen === 'peta' && laporan && laporan.length > 0 && (
         <LaporanPagi peristiwa={laporan} onTutup={() => setLaporan(null)} />
       )}
@@ -224,13 +255,18 @@ function Shell() {
               </button>
             </div>
           )}
-          <Jelajah onPlayChapter={mainBab} onPlayTugas={mainTugas} onOpenMisi={() => gantiTab('misi')} />
+          <Jelajah
+            onPlayChapter={mainBab}
+            onPlayTugas={mainTugas}
+            onOpenMisi={() => gantiTab('misi')}
+            onOpenPanduan={bukaPanduan}
+          />
         </>
       )}
       {screen === 'misi' && <Misi />}
       {screen === 'ensiklopedia' && <Ensiklopedia />}
       {screen === 'peringkat' && <Leaderboard />}
-      {screen === 'profil' && <Profil />}
+      {screen === 'profil' && <Profil onOpenPanduan={bukaPanduan} />}
       {screen === 'bab' && (
         <MisiShell
           kind="bab"
@@ -238,6 +274,7 @@ function Shell() {
           modeSatuKetukan={save.modeSatuKetukan}
           onExit={() => keluarBab(false, false)}
           onMissionComplete={(tamat) => keluarBab(tamat, !save.chapters[activeChapter].done)}
+          onOpenPanduan={bukaPanduan}
         />
       )}
       {screen === 'tugas' && (
@@ -247,10 +284,15 @@ function Shell() {
           modeSatuKetukan={save.modeSatuKetukan}
           onExit={() => keluarTugas(false)}
           onMissionComplete={() => keluarTugas(!save.tugas[activeTugas].done)}
+          onOpenPanduan={bukaPanduan}
         />
       )}
       {screen === 'tamat' && <Tamat onExit={() => setScreen('peta')} />}
-      {screen !== 'bab' && screen !== 'tugas' && screen !== 'tamat' && <BottomNav tab={screen} onChange={gantiTab} />}
+      {screen !== 'bab' &&
+        screen !== 'tugas' &&
+        screen !== 'tamat' &&
+        screen !== 'awal' &&
+        <BottomNav tab={screen} onChange={gantiTab} />}
     </div>
   )
 }

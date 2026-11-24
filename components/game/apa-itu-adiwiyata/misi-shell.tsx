@@ -117,6 +117,7 @@ export function MisiShell({
   onExit,
   onMissionComplete,
   modeSatuKetukan = false,
+  onOpenPanduan,
 }: {
   kind: 'bab' | 'tugas'
   id: ChapterId | TugasKaderId
@@ -124,6 +125,8 @@ export function MisiShell({
   onMissionComplete: (tamat: boolean) => void
   /** Bila true, mini-game memakai versi tombol (tanpa gestur). */
   modeSatuKetukan?: boolean
+  /** Buka panduan Cara Bermain (overlay dari runner); bila tidak diisi, tombol "?" tidak tampil. */
+  onOpenPanduan?: () => void
 }) {
   const { save, dispatch } = useCampaign()
   const [replayStage, setReplayStage] = useState<number | null>(null)
@@ -296,6 +299,17 @@ export function MisiShell({
             ))}
           </span>
           <span>{tahapSelesai}/3 tahap</span>
+          {onOpenPanduan && (
+            <button
+              type="button"
+              className="aia-icon-btn"
+              onClick={onOpenPanduan}
+              aria-label="Cara bermain"
+              style={{ fontWeight: 800, fontSize: 18, lineHeight: 1 }}
+            >
+              <span aria-hidden="true">?</span>
+            </button>
+          )}
         </div>
         {tahapTerakhirSelesai >= 0 && replayStage === null && (
           <div style={{ marginTop: 10 }}>

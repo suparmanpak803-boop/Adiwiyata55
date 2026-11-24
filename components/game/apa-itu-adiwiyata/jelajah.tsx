@@ -569,10 +569,13 @@ export function Jelajah({
   onPlayChapter,
   onPlayTugas,
   onOpenMisi,
+  onOpenPanduan,
 }: {
   onPlayChapter: (chapterId: ChapterId) => void
   onPlayTugas: (tugasId: TugasKaderId) => void
   onOpenMisi: () => void
+  /** Buka panduan Cara Bermain (overlay dari runner). */
+  onOpenPanduan: () => void
 }) {
   const { save, dispatch } = useCampaign()
   const misiAktif = misiSaatIni(save)
@@ -1195,6 +1198,15 @@ export function Jelajah({
         <span>
           Sampah liar: {save.dunia.sampahLiar}
         </span>
+        <button
+          type="button"
+          className="aia-icon-btn"
+          onClick={onOpenPanduan}
+          aria-label="Cara bermain"
+          style={{ fontWeight: 800, fontSize: 18, lineHeight: 1 }}
+        >
+          <span aria-hidden="true">?</span>
+        </button>
         <button
           type="button"
           className="aia-icon-btn"

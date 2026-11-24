@@ -5,11 +5,11 @@
 // Pengaturan suara tersimpan di save kampanye; provider sudah memanggil
 // syncSettings otomatis setiap pengaturan berubah.
 import { useState } from 'react'
-import { CalendarCheck, Coins, Flame, Volume2, VolumeX } from 'lucide-react'
+import { BookOpen, CalendarCheck, Coins, Flame, Volume2, VolumeX } from 'lucide-react'
 import { useCampaign } from '@/lib/apa-itu-adiwiyata/context'
 import { klik } from './suara'
 
-export function Profil() {
+export function Profil({ onOpenPanduan }: { /** Buka panduan Cara Bermain (overlay dari runner). */ onOpenPanduan: () => void }) {
   const { save, dispatch } = useCampaign()
   const [nama, setNama] = useState(save.nickname)
   const [pesan, setPesan] = useState<string | null>(null)
@@ -130,6 +130,29 @@ export function Profil() {
         <p className="aia-muted" style={{ marginTop: 8 }}>
           Musik dijeda otomatis saat tab tidak aktif dan lanjut saat kamu kembali.
         </p>
+      </section>
+
+      <section className="aia-card">
+        <h3 className="aia-section-title" style={{ marginTop: 0 }}>
+          Cara Bermain
+        </h3>
+        <p className="aia-muted" style={{ marginTop: 0 }}>
+          Bingung cara mainnya? Panduan ini menjelaskan cara bergerak, bicara dengan NPC, tiap misi, dunia hidup,
+          dan cerita bercabang.
+        </p>
+        <div className="aia-actions">
+          <button
+            type="button"
+            className="aia-btn"
+            style={{ minHeight: 44 }}
+            onClick={() => {
+              klik()
+              onOpenPanduan()
+            }}
+          >
+            <BookOpen aria-hidden="true" /> Buka panduan Cara Bermain
+          </button>
+        </div>
       </section>
 
       <section className="aia-card">

@@ -73,6 +73,43 @@ export function freshSave(nickname = ''): CampaignSave {
   }
 }
 
+/**
+ * Apakah save ini punya progres yang layak dilanjutkan (bukan permainan
+ * baru)? Dipakai Layar Awal: ada progres -> tampil "Lanjutkan" +
+ * "Mulai dari Awal" (dengan konfirmasi); belum ada -> tombol utama "Mulai".
+ * Nama panggilan saja belum dihitung progres — pemain yang baru mengisi nama
+ * tetap mendapat "Mulai". Nilai awal dunia (maggot lapar 20, sampah liar 3,
+ * petak tahap 0) bukan progres; perubahan dari nilai itulah yang dihitung.
+ */
+export function hasProgress(save: CampaignSave): boolean {
+  for (const id of CHAPTER_ORDER) {
+    if (save.chapters[id].stages.some((s) => s.status === 'done')) return true
+  }
+  for (const id of TUGAS_ORDER) {
+    if (save.tugas[id].stages.some((s) => s.status === 'done')) return true
+  }
+  if (save.coins > 0) return true
+  if (
+    save.badges.length > 0 ||
+    save.unlockedCards.length > 0 ||
+    save.promises.length > 0 ||
+    save.species.length > 0
+  ) {
+    return true
+  }
+  if (save.streak.count > 0) return true
+  if (save.completedAt !== null) return true
+  if (save.checkpoint !== null) return true
+  if (Object.keys(save.cerita ?? {}).length > 0 || save.pakPlastik !== 'netral') return true
+  const dunia = save.dunia
+  if (dunia) {
+    if (dunia.petak.some((p) => p.tahap > 0 || p.layu)) return true
+    if (dunia.maggot.tahap > 0 || dunia.maggot.kaliDiberiMakan > 0 || dunia.maggot.lapar !== 20) return true
+    if (dunia.sampahLiar !== 3) return true
+  }
+  return false
+}
+
 /** Cek bentuk save secara longgar; data yang gagal cek dianggap rusak. */
 export function isSaveValid(value: unknown): value is CampaignSave {
   if (typeof value !== 'object' || value === null) return false
