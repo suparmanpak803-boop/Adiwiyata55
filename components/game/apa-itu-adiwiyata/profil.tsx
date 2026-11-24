@@ -131,6 +131,30 @@ export function Profil() {
           Musik dijeda otomatis saat tab tidak aktif dan lanjut saat kamu kembali.
         </p>
       </section>
+
+      <section className="aia-card">
+        <h3 className="aia-section-title" style={{ marginTop: 0 }}>
+          Aksesibilitas
+        </h3>
+        <p className="aia-muted" style={{ marginTop: 0 }}>
+          Mode satu-ketukan mengganti gestur seret, putar, dan tahan di semua misi dengan ketukan tombol —
+          untuk yang lebih nyaman bermain tanpa menyeret.
+        </p>
+        <div className="aia-actions">
+          <button
+            type="button"
+            className="aia-btn"
+            style={{ minHeight: 44 }}
+            aria-pressed={save.modeSatuKetukan}
+            onClick={() => {
+              klik()
+              dispatch({ type: 'SET_MODE_SATU_KETUKAN', value: !save.modeSatuKetukan })
+            }}
+          >
+            {save.modeSatuKetukan ? 'Mode satu-ketukan aktif — ketuk untuk memakai gestur' : 'Aktifkan mode satu-ketukan'}
+          </button>
+        </div>
+      </section>
     </div>
   )
 }

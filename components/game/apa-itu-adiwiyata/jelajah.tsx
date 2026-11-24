@@ -10,11 +10,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { Coins, Flag, MessageCircle, Volume2, VolumeX, X } from 'lucide-react'
 import { CHAPTERS, CHAPTER_ORDER } from '@/lib/apa-itu-adiwiyata/chapters'
-import { LOKASI_PEMBERI, misiSaatIni, pemberiMisi } from '@/lib/apa-itu-adiwiyata/misi'
+import { TUGAS } from '@/lib/apa-itu-adiwiyata/tugas'
+import { jumlahTugasSelesai, LOKASI_PEMBERI, misiSaatIni, pemberiMisi } from '@/lib/apa-itu-adiwiyata/misi'
 import { selectChapterUnlocked, useCampaign } from '@/lib/apa-itu-adiwiyata/context'
 import { DIALOG_NPC } from '@/lib/apa-itu-adiwiyata/content/npc'
 import { DUNIA, NPCS, type NpcDunia } from '@/lib/apa-itu-adiwiyata/dunia'
-import type { ChapterId } from '@/lib/apa-itu-adiwiyata/types'
+import type { ChapterId, TugasKaderId } from '@/lib/apa-itu-adiwiyata/types'
 import { klik, koin, pindah, playMumble, setSuaraMuted } from './suara'
 
 const KECEPATAN = 160 // unit dunia per detik
@@ -393,10 +394,19 @@ function gambarNpc(g: CanvasRenderingContext2D, n: NpcJalan, disorot: boolean, r
 
 // ---------------------------------------------------------------- komponen ----
 
-export function Jelajah({ onPlayChapter, onOpenMisi }: { onPlayChapter: (chapterId: ChapterId) => void; onOpenMisi: () => void }) {
+export function Jelajah({
+  onPlayChapter,
+  onPlayTugas,
+  onOpenMisi,
+}: {
+  onPlayChapter: (chapterId: ChapterId) => void
+  onPlayTugas: (tugasId: TugasKaderId) => void
+  onOpenMisi: () => void
+}) {
   const { save, dispatch } = useCampaign()
   const misiAktif = misiSaatIni(save)
   const pemberiAktif = misiAktif ? pemberiMisi(misiAktif) : undefined
+  const kaderSelesai = jumlahTugasSelesai(save)
   const [terkumpul, setTerkumpul] = useState(0)
   const [toast, setToast] = useState<string | null>(null)
   const [dialogNpc, setDialogNpc] = useState<NpcDunia | null>(null)
@@ -688,10 +698,14 @@ export function Jelajah({ onPlayChapter, onOpenMisi }: { onPlayChapter: (chapter
       const reduced = reducedRef.current
       const aktor: { y: number; gambar: () => void }[] = []
       for (const n of npcsRef.current) {
-        const adaMisi =
+        // Tanda "!" untuk NPC yang punya misi tersedia: bab utama (terbuka
+        // dan belum selesai) atau Misi Kader (selalu tersedia, belum selesai).
+        const adaMisiBab =
           n.chapterId !== null &&
           selectChapterUnlocked(saveSekarang, n.chapterId) &&
           !saveSekarang.chapters[n.chapterId].done
+        const adaMisiTugas = n.tugasId !== undefined && !saveSekarang.tugas[n.tugasId].done
+        const adaMisi = adaMisiBab || adaMisiTugas
         aktor.push({ y: n.y, gambar: () => gambarNpc(ctx, n, n.id === dekatId, reduced, adaMisi) })
       }
       aktor.push({ y: p.y, gambar: () => gambarPemain(ctx, p, reduced) })
@@ -883,6 +897,8 @@ export function Jelajah({ onPlayChapter, onOpenMisi }: { onPlayChapter: (chapter
   const babNpc: ChapterId | null = dialogNpc?.chapterId ?? null
   const babTerbuka = babNpc ? selectChapterUnlocked(save, babNpc) : false
   const babSelesai = babNpc ? save.chapters[babNpc].done : false
+  const tugasNpc: TugasKaderId | null = dialogNpc?.tugasId ?? null
+  const tugasNpcSelesai = tugasNpc ? save.tugas[tugasNpc].done : false
   const diAkhir = dialogIdx >= barisDialog.length - 1
 
   return (
@@ -910,6 +926,15 @@ export function Jelajah({ onPlayChapter, onOpenMisi }: { onPlayChapter: (chapter
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
             <Flag aria-hidden="true" /> Misi {CHAPTER_ORDER.indexOf(misiAktif) + 1}/6: {CHAPTERS[misiAktif].judul} — temui{' '}
             {pemberiAktif.nama} di {LOKASI_PEMBERI[pemberiAktif.id] ?? 'sekolah'}
+          </span>
+          <button type="button" className="aia-btn aia-btn-ghost" onClick={onOpenMisi}>
+            Lihat semua misi
+          </button>
+        </div>
+      ) : kaderSelesai < 8 ? (
+        <div className="aia-progress-row">
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <Flag aria-hidden="true" /> Misi Kader: {kaderSelesai}/8 selesai — temui pemberi Misi Kader di dunia
           </span>
           <button type="button" className="aia-btn aia-btn-ghost" onClick={onOpenMisi}>
             Lihat semua misi
@@ -989,7 +1014,18 @@ export function Jelajah({ onPlayChapter, onOpenMisi }: { onPlayChapter: (chapter
                 <>
                   {kontenDialog?.tips && <p className="aia-muted">{kontenDialog.tips}</p>}
                   <div className="aia-actions">
-                    {babNpc && babTerbuka ? (
+                    {tugasNpc ? (
+                      <button
+                        type="button"
+                        className="aia-btn aia-btn-primary"
+                        onClick={() => {
+                          klik()
+                          onPlayTugas(tugasNpc)
+                        }}
+                      >
+                        {tugasNpcSelesai ? 'Main lagi' : 'Mulai misi'}: {TUGAS[tugasNpc].judul}
+                      </button>
+                    ) : babNpc && babTerbuka ? (
                       <button
                         type="button"
                         className="aia-btn aia-btn-primary"

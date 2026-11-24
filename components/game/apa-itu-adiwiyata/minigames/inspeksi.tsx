@@ -1,17 +1,27 @@
 'use client'
 
 // Mini-game Bab 6 "Inspeksi Tim Adiwiyata" — bos akhir kampanye.
-// Kuis aksi cepat dari SOAL_INSPEKSI (12 soal): 4 soal per tahap sesuai
-// stageIndex. Tiap soal punya bar waktu 15 detik (25 detik di mode mudah),
-// 3 nyawa per tahap. Jawaban benar +10, bonus +5 bila dijawab dalam 5 detik
-// pertama. Salah atau waktu habis: -1 nyawa + penjelasan soal. Setelah 4
-// soal, onStageComplete(score) dipanggil TEPAT SATU KALI.
+// Versi utama: gestur drag-drop — seret kartu jawaban ke kotak jawaban
+// (BUKAN tombol pilihan). 12 soal dari SOAL_INSPEKSI, 4 soal per tahap
+// sesuai stageIndex. Versi tombol lama (kuis pilihan + timer + nyawa)
+// disimpan sebagai mode alternatif satu-ketukan (prop modeSatuKetukan).
+// Tiap tahap memanggil onStageComplete(score) TEPAT SATU KALI.
 
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { Check, Clock, Heart, Lightbulb, RotateCcw, X } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Check, Clock, Heart, Inbox, Lightbulb, RotateCcw, X } from 'lucide-react'
 import { SOAL_INSPEKSI } from '@/lib/apa-itu-adiwiyata/content/pertanyaan'
-import type { MiniGameSlotProps } from '../bab-shell'
+import { INTERAKSI_MISI } from '@/lib/apa-itu-adiwiyata/content/interaksi'
+import type { MiniGameSlotProps } from '../misi-shell'
+import { EfekBenar, EfekSalah, PetunjukMagi, TanganPenunjuk } from '../interaksi'
 import { benar, getar, koin, nyawa, salah, tik } from '../suara'
+
+/** Petunjuk di data diawali 'Magi: "..."' — komponen PetunjukMagi sudah
+ *  memberi label Magi sendiri, jadi awalan dan tanda kutipnya dibuang. */
+function teksMagi(s: string): string {
+  return s.replace(/^Magi:\s*/, '').replace(/^"|"$/g, '')
+}
+
+// ------------------------------------------------- Versi tombol (lama) ----
 
 const WAKTU_NORMAL = 15
 const WAKTU_MUDAH = 25
@@ -25,7 +35,7 @@ const LABEL_MEKANIK: Record<string, string> = {
   air: 'air dan energi',
 }
 
-export function Inspeksi({ stageIndex, onStageComplete }: MiniGameSlotProps) {
+function InspeksiTombol({ stageIndex, onStageComplete }: MiniGameSlotProps) {
   const soal = useMemo(
     () => SOAL_INSPEKSI.slice(stageIndex * 4, stageIndex * 4 + 4),
     [stageIndex],
@@ -325,4 +335,332 @@ export function Inspeksi({ stageIndex, onStageComplete }: MiniGameSlotProps) {
       )}
     </div>
   )
+}
+
+// ------------------------------------------------- Versi gestur (utama) ----
+
+const POIN_PER_SOAL = 25
+
+function InspeksiGestur({
+  stageIndex,
+  onSelesai,
+}: {
+  stageIndex: number
+  onSelesai: (score: number) => void
+}) {
+  const soal = useMemo(
+    () => SOAL_INSPEKSI.slice(stageIndex * 4, stageIndex * 4 + 4),
+    [stageIndex],
+  )
+  const spec = INTERAKSI_MISI['biodiversitas'][Math.min(stageIndex, 2)]
+  const [qIndex, setQIndex] = useState(0)
+  const [skor, setSkor] = useState(0)
+  const [benarCount, setBenarCount] = useState(0)
+  const [gagal, setGagal] = useState(0)
+  const [dijawab, setDijawab] = useState(false)
+  const [dipilih, setDipilih] = useState<number | null>(null)
+  const [hasil, setHasil] = useState<{
+    benar: boolean
+    penjelasan: string
+    jawabanBenar: string
+  } | null>(null)
+  const [drag, setDrag] = useState<{ index: number; dx: number; dy: number } | null>(null)
+  const [fase, setFase] = useState<'main' | 'selesai'>('main')
+
+  const kotakRef = useRef<HTMLButtonElement | null>(null)
+  const dragRef = useRef<{ index: number; x0: number; y0: number; bergerak: boolean } | null>(null)
+  const abaikanKlikRef = useRef(false)
+
+  const pertanyaan = soal[qIndex]
+  // Kesulitan adaptif: kotak jawaban membesar setelah 2 kali gagal.
+  const perbesarTarget = gagal >= 2
+
+  const submit = (index: number) => {
+    if (dijawab || fase !== 'main' || !pertanyaan) return
+    setDrag(null)
+    setDipilih(null)
+    const isBenar = index === pertanyaan.jawabanIndex
+    if (isBenar) {
+      setSkor((s) => s + POIN_PER_SOAL)
+      setBenarCount((c) => c + 1)
+      benar()
+      koin()
+    } else {
+      salah()
+      getar([40, 40, 40])
+      setGagal((g) => g + 1)
+    }
+    setHasil({
+      benar: isBenar,
+      penjelasan: pertanyaan.penjelasan,
+      jawabanBenar: pertanyaan.pilihan[pertanyaan.jawabanIndex],
+    })
+    setDijawab(true)
+  }
+
+  const lanjut = () => {
+    if (qIndex + 1 >= soal.length) {
+      setFase('selesai')
+      return
+    }
+    setQIndex((q) => q + 1)
+    setDijawab(false)
+    setDipilih(null)
+    setHasil(null)
+    setDrag(null)
+  }
+
+  // Seret kartu (pola yang sama seperti DragDrop di pustaka interaksi):
+  // pointer capture, translate mengikuti jari/mouse, hit-test ke kotak
+  // jawaban saat dilepas. Ketuk biasa (tanpa gerak) memilih kartu — lalu
+  // ketuk kotak untuk mengirimnya (alternatif tanpa seret).
+  const mulaiSeret = (index: number) => (e: React.PointerEvent<HTMLButtonElement>) => {
+    if (dijawab || fase !== 'main') return
+    dragRef.current = { index, x0: e.clientX, y0: e.clientY, bergerak: false }
+    setDrag({ index, dx: 0, dy: 0 })
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId)
+    } catch {
+      // Abaikan: perangkat tidak mendukung pointer capture.
+    }
+  }
+
+  const gerakSeret = (e: React.PointerEvent<HTMLButtonElement>) => {
+    const d = dragRef.current
+    if (!d) return
+    const dx = e.clientX - d.x0
+    const dy = e.clientY - d.y0
+    if (Math.abs(dx) + Math.abs(dy) > 10) d.bergerak = true
+    setDrag({ index: d.index, dx, dy })
+  }
+
+  const akhiriSeret = (e: React.PointerEvent<HTMLButtonElement>) => {
+    const d = dragRef.current
+    dragRef.current = null
+    if (!d) return
+    setDrag(null)
+    if (!d.bergerak) return // Ketuk biasa — ditangani onClick.
+    abaikanKlikRef.current = true
+    const kotak = kotakRef.current
+    if (kotak) {
+      const r = kotak.getBoundingClientRect()
+      const pad = perbesarTarget ? 28 : 12
+      if (
+        e.clientX >= r.left - pad &&
+        e.clientX <= r.right + pad &&
+        e.clientY >= r.top - pad &&
+        e.clientY <= r.bottom + pad
+      ) {
+        submit(d.index)
+      }
+    }
+    // Dilepas di luar kotak — kartu kembali ke tempatnya.
+  }
+
+  const klikKartu = (index: number) => () => {
+    if (abaikanKlikRef.current) {
+      abaikanKlikRef.current = false
+      return
+    }
+    if (dijawab || fase !== 'main') return
+    setDipilih((v) => (v === index ? null : index))
+  }
+
+  const klikKotak = () => {
+    if (dipilih === null || dijawab || fase !== 'main') return
+    submit(dipilih)
+  }
+
+  if (!pertanyaan && fase === 'main') {
+    return (
+      <div className="aia-card">
+        <p className="aia-muted">Soal tahap ini belum tersedia.</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="aia-stack">
+      <div className="aia-card">
+        <span className="aia-kicker">
+          Inspeksi Tim Adiwiyata · Soal {Math.min(qIndex + 1, soal.length)} dari {soal.length}
+        </span>
+        <p style={{ margin: '8px 0 0' }}>
+          Skor: {skor} · Benar: {benarCount}/{soal.length}
+        </p>
+      </div>
+
+      {fase === 'main' && pertanyaan && (
+        <>
+          <div className="aia-card">
+            <p style={{ margin: 0, fontSize: 16, lineHeight: 1.5, fontWeight: 700 }}>
+              {pertanyaan.pertanyaan}
+            </p>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }} role="group" aria-label="Kartu jawaban — seret ke kotak jawaban">
+            {pertanyaan.pilihan.map((pilihan, i) => {
+              const sedangDrag = drag?.index === i
+              const terpilih = dipilih === i
+              return (
+                <button
+                  key={i}
+                  type="button"
+                  className="aia-btn aia-btn-block"
+                  disabled={dijawab}
+                  aria-label={`Jawaban ${String.fromCharCode(65 + i)}: ${pilihan}${terpilih ? ' — dipilih' : ''}`}
+                  style={{
+                    justifyContent: 'flex-start',
+                    textAlign: 'left',
+                    minHeight: 64,
+                    height: 'auto',
+                    padding: '12px',
+                    whiteSpace: 'normal',
+                    position: 'relative',
+                    zIndex: sedangDrag ? 10 : undefined,
+                    transform: sedangDrag ? `translate(${drag.dx}px, ${drag.dy}px)` : undefined,
+                    touchAction: 'none',
+                    userSelect: 'none',
+                    WebkitUserSelect: 'none',
+                    outline: terpilih ? '3px solid #2f7d4f' : undefined,
+                    outlineOffset: 2,
+                    cursor: dijawab ? 'default' : 'grab',
+                  }}
+                  onPointerDown={mulaiSeret(i)}
+                  onPointerMove={gerakSeret}
+                  onPointerUp={akhiriSeret}
+                  onPointerCancel={() => {
+                    dragRef.current = null
+                    setDrag(null)
+                  }}
+                  onClick={klikKartu(i)}
+                >
+                  <span aria-hidden="true" style={{ fontWeight: 800 }}>
+                    {String.fromCharCode(65 + i)}.
+                  </span>
+                  <span>{pilihan}</span>
+                </button>
+              )
+            })}
+          </div>
+
+          <div
+            style={{
+              position: 'relative',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 6,
+            }}
+          >
+            {spec.tutorial && qIndex === 0 && !dijawab && (
+              <TanganPenunjuk label="Seret jawaban ke kotak!" />
+            )}
+            <button
+              ref={kotakRef}
+              type="button"
+              onClick={klikKotak}
+              disabled={dijawab}
+              aria-label="Kotak jawaban. Seret kartu jawaban ke sini, atau ketuk kartu lalu ketuk kotak."
+              style={{
+                width: '100%',
+                minHeight: perbesarTarget ? 120 : 88,
+                border: '2px dashed #2f7d4f',
+                borderRadius: 14,
+                background: dipilih !== null ? '#dcfce7' : 'var(--card)',
+                color: 'var(--foreground)',
+                fontSize: perbesarTarget ? 16 : 14,
+                fontWeight: 700,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+                cursor: dijawab ? 'default' : 'pointer',
+              }}
+            >
+              <Inbox aria-hidden="true" />
+              Kotak jawaban
+              {dipilih !== null ? ' — ketuk untuk mengirim' : ' — seret kartu ke sini'}
+            </button>
+          </div>
+
+          {hasil && (
+            <div style={{ position: 'relative' }}>
+              <EfekBenar tampil={hasil.benar} />
+              {hasil.benar ? (
+                <div role="status" style={{ padding: 12, borderRadius: 12, background: '#dcfce7' }}>
+                  <strong>Benar! +{POIN_PER_SOAL}</strong> {hasil.penjelasan}
+                </div>
+              ) : (
+                <EfekSalah tampil petunjuk={teksMagi(spec.petunjukMagi)} />
+              )}
+              {!hasil.benar && (
+                <p className="aia-muted" style={{ margin: '8px 0 0' }}>
+                  Jawaban benar: <strong>{hasil.jawabanBenar}</strong>. {hasil.penjelasan}
+                </p>
+              )}
+            </div>
+          )}
+
+          {dijawab && (
+            <button
+              type="button"
+              className="aia-btn aia-btn-primary aia-btn-block"
+              onClick={lanjut}
+            >
+              {qIndex + 1 >= soal.length ? 'Lihat hasil' : 'Soal berikutnya'}
+            </button>
+          )}
+        </>
+      )}
+
+      {fase === 'selesai' && (
+        <div className="aia-card aia-pos-hijau">
+          <h3>
+            <Check aria-hidden="true" /> Inspeksi selesai!
+          </h3>
+          <p>
+            Kamu menjawab {benarCount} dari {soal.length} soal dengan benar. Tim Adiwiyata terkesan dengan
+            pengetahuanmu!
+          </p>
+          <p>
+            Skor tahap ini: <strong>{skor} Koin Hijau</strong>
+          </p>
+          <button type="button" className="aia-btn aia-btn-primary" onClick={() => onSelesai(skor)}>
+            Selesai · +{skor} Koin Hijau
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ------------------------------------------------------------------ Utama ----
+
+export function Inspeksi({
+  chapterId,
+  stageIndex,
+  onStageComplete,
+  modeSatuKetukan = false,
+}: MiniGameSlotProps & { modeSatuKetukan?: boolean }) {
+  const selesaiRef = useRef(false)
+  const selesai = useCallback(
+    (score: number) => {
+      if (selesaiRef.current) return
+      selesaiRef.current = true
+      onStageComplete(score)
+    },
+    [onStageComplete],
+  )
+
+  if (modeSatuKetukan) {
+    return (
+      <InspeksiTombol
+        chapterId={chapterId}
+        stageIndex={stageIndex}
+        onStageComplete={selesai}
+      />
+    )
+  }
+  return <InspeksiGestur stageIndex={stageIndex} onSelesai={selesai} />
 }

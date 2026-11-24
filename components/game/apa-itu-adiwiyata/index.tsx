@@ -10,12 +10,13 @@
 import { useEffect, useState } from 'react'
 import { CampaignProvider, useCampaign } from '@/lib/apa-itu-adiwiyata/context'
 import { CHAPTERS, CHAPTER_ORDER } from '@/lib/apa-itu-adiwiyata/chapters'
-import type { ChapterId } from '@/lib/apa-itu-adiwiyata/types'
+import { TUGAS } from '@/lib/apa-itu-adiwiyata/tugas'
+import type { ChapterId, TugasKaderId } from '@/lib/apa-itu-adiwiyata/types'
 import { GerbangNama } from './gerbang-nama'
 import { Misi } from './misi'
 import { Jelajah } from './jelajah'
 import { BottomNav, type AiaTab } from './bottom-nav'
-import { BabShell } from './bab-shell'
+import { MisiShell } from './misi-shell'
 import { Tamat } from './tamat'
 import { Ensiklopedia } from './ensiklopedia'
 import { Leaderboard } from './leaderboard'
@@ -25,7 +26,7 @@ import './apa-itu-adiwiyata.css'
 
 const MODE_BAB: MusicMode[] = ['bab1', 'bab2', 'bab3', 'bab4', 'bab5', 'bab6']
 
-type Screen = 'peta' | 'misi' | 'ensiklopedia' | 'peringkat' | 'profil' | 'bab' | 'tamat'
+type Screen = 'peta' | 'misi' | 'ensiklopedia' | 'peringkat' | 'profil' | 'bab' | 'tugas' | 'tamat'
 
 export function ApaItuAdiwiyata() {
   return (
@@ -39,6 +40,7 @@ function Shell() {
   const { save, hydrated } = useCampaign()
   const [screen, setScreen] = useState<Screen>('peta')
   const [activeChapter, setActiveChapter] = useState<ChapterId>('gerbang')
+  const [activeTugas, setActiveTugas] = useState<TugasKaderId>('bank-sampah')
   const [pesanMisi, setPesanMisi] = useState<string | null>(null)
 
   useEffect(() => {
@@ -67,6 +69,12 @@ function Shell() {
     setScreen('bab')
   }
 
+  const mainTugas = (tugasId: TugasKaderId) => {
+    setActiveTugas(tugasId)
+    setPesanMisi(null)
+    setScreen('tugas')
+  }
+
   // Keluar dari bab: kembali ke dunia, kecuali tamat (ke layar tamat).
   // onChapterComplete hanya dipanggil saat bab selesai. `save` di closure
   // ini masih keadaan sebelum penyelesaian, jadi "baru selesai" artinya
@@ -83,6 +91,14 @@ function Shell() {
           ? `Misi selesai: ${CHAPTERS[activeChapter].judul}! Misi berikutnya: ${CHAPTERS[berikut].judul}.`
           : `Misi selesai: ${CHAPTERS[activeChapter].judul}! Semua misi selesai — kamu Pahlawan Adiwiyata!`,
       )
+    }
+    setScreen('peta')
+  }
+
+  // Keluar dari Misi Kader: kembali ke dunia; kabar bila baru selesai.
+  const keluarTugas = (baruSelesai: boolean) => {
+    if (baruSelesai) {
+      setPesanMisi(`Misi Kader selesai: ${TUGAS[activeTugas].judul}!`)
     }
     setScreen('peta')
   }
@@ -115,7 +131,7 @@ function Shell() {
               </button>
             </div>
           )}
-          <Jelajah onPlayChapter={mainBab} onOpenMisi={() => gantiTab('misi')} />
+          <Jelajah onPlayChapter={mainBab} onPlayTugas={mainTugas} onOpenMisi={() => gantiTab('misi')} />
         </>
       )}
       {screen === 'misi' && <Misi />}
@@ -123,14 +139,25 @@ function Shell() {
       {screen === 'peringkat' && <Leaderboard />}
       {screen === 'profil' && <Profil />}
       {screen === 'bab' && (
-        <BabShell
-          chapterId={activeChapter}
+        <MisiShell
+          kind="bab"
+          id={activeChapter}
+          modeSatuKetukan={save.modeSatuKetukan}
           onExit={() => keluarBab(false, false)}
-          onChapterComplete={(tamat) => keluarBab(tamat, !save.chapters[activeChapter].done)}
+          onMissionComplete={(tamat) => keluarBab(tamat, !save.chapters[activeChapter].done)}
+        />
+      )}
+      {screen === 'tugas' && (
+        <MisiShell
+          kind="tugas"
+          id={activeTugas}
+          modeSatuKetukan={save.modeSatuKetukan}
+          onExit={() => keluarTugas(false)}
+          onMissionComplete={() => keluarTugas(!save.tugas[activeTugas].done)}
         />
       )}
       {screen === 'tamat' && <Tamat onExit={() => setScreen('peta')} />}
-      {screen !== 'bab' && screen !== 'tamat' && <BottomNav tab={screen} onChange={gantiTab} />}
+      {screen !== 'bab' && screen !== 'tugas' && screen !== 'tamat' && <BottomNav tab={screen} onChange={gantiTab} />}
     </div>
   )
 }

@@ -1,13 +1,15 @@
 'use client'
 
 // Mini-game Bab 5 "Air dan Energi" — tiga tahap, dipilih dari stageIndex:
-//   0 = Biopori, 1 = Tampung Hujan, 2 = Cari Boros.
-// Tiap tahap memanggil onSelesai(score) TEPAT SATU KALI (dijaga ref di
-// komponen induk) saat tahap selesai. Tidak ada nyawa di Bab 5; tahap
-// Tampung Hujan bisa gagal karena waktu habis dan punya layar coba lagi
-// + mode mudah setelah 2x gagal.
+//   0 = Biopori (putar bor), 1 = Tampung Hujan (seret tetes ke tong),
+//   2 = Cari Boros (cari perangkat boros).
+// Versi utama memakai gestur langsung dari pustaka ../interaksi
+// (RotateDial, DragDrop, HiddenObject) sesuai INTERAKSI_MISI. Versi tombol
+// lama disimpan sebagai mode alternatif satu-ketukan (prop modeSatuKetukan).
+// Tiap tahap memanggil onStageComplete(score) TEPAT SATU KALI (dijaga ref
+// di komponen utama).
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   AirVent,
   Check,
@@ -22,8 +24,23 @@ import {
   Shovel,
   X,
 } from 'lucide-react'
-import type { MiniGameSlotProps } from '../bab-shell'
+import type { MiniGameSlotProps } from '../misi-shell'
+import { INTERAKSI_MISI } from '@/lib/apa-itu-adiwiyata/content/interaksi'
+import {
+  DragDrop,
+  EfekSalah,
+  HiddenObject,
+  PetunjukMagi,
+  RotateDial,
+  TanganPenunjuk,
+} from '../interaksi'
 import { benar, getar, klik, koin, salah, siram } from '../suara'
+
+/** Petunjuk di data diawali 'Magi: "..."' — komponen PetunjukMagi sudah
+ *  memberi label Magi sendiri, jadi awalan dan tanda kutipnya dibuang. */
+function teksMagi(s: string): string {
+  return s.replace(/^Magi:\s*/, '').replace(/^"|"$/g, '')
+}
 
 // ------------------------------------------------------------- Biopori ----
 
@@ -677,9 +694,349 @@ function CariBoros({ onSelesai }: { onSelesai: (score: number) => void }) {
   )
 }
 
+// --------------------------------------------- Versi gestur (utama) --------
+
+function BioporiGestur({
+  onSelesai,
+  modeSatuKetukan,
+}: {
+  onSelesai: (score: number) => void
+  modeSatuKetukan?: boolean
+}) {
+  const [selesai, setSelesai] = useState(0)
+  const tuntas = selesai >= JUMLAH_LUBANG
+  const banjir = 100 - selesai * 20
+  const skor = selesai * 10
+  const spec = INTERAKSI_MISI['air-energi'][0]
+
+  return (
+    <div className="aia-stack">
+      <div className="aia-card">
+        <span className="aia-kicker">Biopori · putar bor untuk mengebor</span>
+        <div className="aia-progress-row" style={{ marginTop: 8 }}>
+          <div
+            className="aia-progress"
+            role="progressbar"
+            aria-valuenow={banjir}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label="Tinggi genangan air"
+          >
+            <span style={{ width: `${banjir}%`, background: '#3b7ea1' }} />
+          </div>
+          <span>Genangan {banjir}%</span>
+        </div>
+        <p className="aia-muted" style={{ margin: '8px 0 0' }}>
+          {tuntas
+            ? 'Halaman sekolah tidak lagi tergenang. Semua air hujan meresap ke tanah!'
+            : 'Halaman sekolah tergenang setiap hujan deras. Bor lubang biopori supaya air meresap!'}
+        </p>
+        <p className="aia-muted" style={{ margin: '8px 0 0' }}>
+          Lubang selesai: {selesai}/{JUMLAH_LUBANG} · Skor: {skor}
+        </p>
+        <PetunjukMagi teks={teksMagi(spec.petunjukMagi)} />
+      </div>
+
+      {!tuntas && (
+        <div
+          style={{
+            position: 'relative',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 8,
+          }}
+        >
+          {spec.tutorial && <TanganPenunjuk label="Putar bornya sampai penuh!" />}
+          <RotateDial
+            key={selesai}
+            label={`Bor lubang ${selesai + 1}`}
+            sudutTarget={360}
+            ikon={<Shovel aria-hidden="true" />}
+            modeSatuKetukan={modeSatuKetukan}
+            onSelesai={() => {
+              setSelesai((s) => s + 1)
+              siram()
+            }}
+          />
+          <p className="aia-muted" style={{ margin: 0 }}>
+            Lubang {selesai + 1} dari {JUMLAH_LUBANG}
+          </p>
+        </div>
+      )}
+
+      {tuntas && (
+        <div className="aia-card aia-pos-hijau">
+          <h3>
+            <Check aria-hidden="true" /> Banjir berkurang!
+          </h3>
+          <p>
+            {JUMLAH_LUBANG} lubang biopori selesai. Genangan turun dari 100% menjadi 0% — air hujan
+            sekarang meresap dan mengisi air tanah.
+          </p>
+          <button type="button" className="aia-btn aia-btn-primary" onClick={() => onSelesai(skor)}>
+            Selesai · +{skor} Koin Hijau
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+const TARGET_TETES = 10
+const WAKTU_TETES = 45
+
+function TampungHujanGestur({
+  onSelesai,
+  modeSatuKetukan,
+}: {
+  onSelesai: (score: number) => void
+  modeSatuKetukan?: boolean
+}) {
+  const [ronde, setRonde] = useState(0)
+  const [tertangkap, setTertangkap] = useState(0)
+  const [gagal, setGagal] = useState(0)
+  const [waktu, setWaktu] = useState(WAKTU_TETES)
+  const [fase, setFase] = useState<'main' | 'selesai'>('main')
+  const [salahTerakhir, setSalahTerakhir] = useState(false)
+  const spec = INTERAKSI_MISI['air-energi'][1]
+  const skor = tertangkap * 5
+
+  // Timer 1 detik.
+  useEffect(() => {
+    if (fase !== 'main') return
+    const id = window.setInterval(() => setWaktu((w) => Math.max(0, w - 1)), 1000)
+    return () => window.clearInterval(id)
+  }, [fase])
+
+  // Akhir tahap: target tercapai atau waktu habis (skor parsial tetap dihitung).
+  useEffect(() => {
+    if (fase === 'main' && waktu <= 0) setFase('selesai')
+  }, [waktu, fase])
+  useEffect(() => {
+    if (fase === 'main' && tertangkap >= TARGET_TETES) setFase('selesai')
+  }, [tertangkap, fase])
+
+  const benarDrop = () => {
+    setTertangkap((t) => t + 1)
+    setRonde((r) => r + 1)
+    setSalahTerakhir(false)
+  }
+  const salahDrop = () => {
+    setGagal((g) => g + 1)
+    setSalahTerakhir(true)
+  }
+
+  return (
+    <div className="aia-stack">
+      <div className="aia-card">
+        <span className="aia-kicker">Tampung hujan · seret tetes ke tong penampung</span>
+        <div className="aia-progress-row" style={{ marginTop: 8 }}>
+          <div
+            className="aia-progress"
+            role="progressbar"
+            aria-valuenow={tertangkap}
+            aria-valuemin={0}
+            aria-valuemax={TARGET_TETES}
+            aria-label="Tetes hujan tertampung"
+          >
+            <span
+              style={{ width: `${(tertangkap / TARGET_TETES) * 100}%`, background: '#3b7ea1' }}
+            />
+          </div>
+          <span>
+            {tertangkap}/{TARGET_TETES} tetes
+          </span>
+        </div>
+        <p className="aia-muted" style={{ margin: '8px 0 0', display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+          <span>
+            <Clock aria-hidden="true" style={{ verticalAlign: '-3px' }} /> {waktu} dtk
+          </span>
+          <span>Skor: {skor}</span>
+        </p>
+      </div>
+
+      {fase === 'main' && ronde < TARGET_TETES && (
+        <DragDrop
+          key={ronde}
+          benda={{
+            id: `tetes-${ronde}`,
+            label: `Tetes hujan ${ronde + 1}`,
+            konten: <Droplet aria-hidden="true" size={40} color="#2b6cb0" />,
+          }}
+          target={{ id: 'tong', label: 'Tong penampung', ikon: <Droplets aria-hidden="true" /> }}
+          targetLain={[
+            {
+              id: 'tanah',
+              label: 'Tanah',
+              ikon: (
+                <span
+                  aria-hidden="true"
+                  style={{
+                    display: 'inline-block',
+                    width: 22,
+                    height: 22,
+                    borderRadius: 6,
+                    background: '#8a6a3b',
+                  }}
+                />
+              ),
+            },
+          ]}
+          perbesarTarget={gagal >= 2}
+          modeSatuKetukan={modeSatuKetukan}
+          onBenar={benarDrop}
+          onSalah={salahDrop}
+        />
+      )}
+
+      {fase === 'main' && salahTerakhir && (
+        <EfekSalah tampil petunjuk={teksMagi(spec.petunjukMagi)} />
+      )}
+
+      {fase === 'main' && (
+        <p className="aia-muted" style={{ margin: 0 }}>
+          Seret tetes hujan ke tong penampung. Tetes yang jatuh ke tanah terbuang.
+        </p>
+      )}
+
+      {fase === 'selesai' && (
+        <div className="aia-card aia-pos-hijau">
+          <h3>
+            <Check aria-hidden="true" /> {tertangkap >= TARGET_TETES ? 'Tangki penuh!' : 'Hujan reda!'}
+          </h3>
+          <p>
+            Kamu menampung {tertangkap} tetes hujan. Air ini bisa dipakai menyiram kebun — tidak perlu lagi
+            membuka keran!
+          </p>
+          <button type="button" className="aia-btn aia-btn-primary" onClick={() => onSelesai(skor)}>
+            Selesai · +{skor} Koin Hijau
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+const BOROS_POS: Record<string, { x: number; y: number }> = {
+  'lampu-kelas': { x: 20, y: 25 },
+  'ac-kelas': { x: 50, y: 18 },
+  'kipas-kantin': { x: 78, y: 28 },
+  'komputer-lab': { x: 30, y: 66 },
+  'keran-toilet': { x: 68, y: 70 },
+}
+
+const LABEL_PENDEK: Record<string, string> = {
+  'lampu-kelas': 'Lampu',
+  'ac-kelas': 'AC',
+  'kipas-kantin': 'Kipas',
+  'komputer-lab': 'Komputer',
+  'keran-toilet': 'Keran',
+}
+
+function CariBorosGestur({ onSelesai }: { onSelesai: (score: number) => void }) {
+  const [ditemukan, setDitemukan] = useState<ReadonlySet<string>>(new Set())
+  const [pesan, setPesan] = useState<string | null>(null)
+  const [tuntas, setTuntas] = useState(false)
+  const spec = INTERAKSI_MISI['air-energi'][2]
+
+  const boros = useMemo(() => PERANGKAT.filter((p) => p.boros), [])
+  const skor = ditemukan.size * 10
+
+  // Identitas array objek harus stabil (useMemo) — HiddenObject mereset
+  // progresnya bila referensi objek berubah.
+  const objek = useMemo(
+    () =>
+      boros.map((p) => {
+        const pos = BOROS_POS[p.id] ?? { x: 50, y: 50 }
+        return {
+          id: p.id,
+          label: p.nama,
+          x: pos.x,
+          y: pos.y,
+          ikon: (
+            <span
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 1,
+                lineHeight: 1,
+              }}
+            >
+              {ikonPerangkat(p.ikon)}
+              <span style={{ fontSize: 9, fontWeight: 700 }}>{LABEL_PENDEK[p.id] ?? p.nama}</span>
+            </span>
+          ),
+        }
+      }),
+    [boros],
+  )
+
+  const temukan = (id: string) => {
+    const p = boros.find((x) => x.id === id)
+    if (!p) return
+    setDitemukan((prev) => new Set(prev).add(id))
+    setPesan(`Benar! ${p.penjelasan}`)
+  }
+
+  return (
+    <div className="aia-stack">
+      <div className="aia-card">
+        <span className="aia-kicker">
+          Cari boros · {ditemukan.size}/{JUMLAH_BOROS} ditemukan
+        </span>
+        <p className="aia-muted" style={{ margin: '8px 0 0' }}>
+          Lampu, AC, keran, komputer, kipas — ada yang menyala dan menetes sia-sia. Cari dan ketuk
+          perangkat yang boros!
+        </p>
+        <PetunjukMagi teks={teksMagi(spec.petunjukMagi)} />
+      </div>
+
+      {!tuntas && (
+        <HiddenObject
+          objek={objek}
+          onTemukan={temukan}
+          onSelesai={(semua) => {
+            if (semua) setTuntas(true)
+          }}
+        />
+      )}
+
+      {pesan && !tuntas && (
+        <p className="aia-muted" role="status" style={{ margin: 0, color: '#236b4d' }}>
+          {pesan}
+        </p>
+      )}
+      <p className="aia-muted" style={{ margin: 0 }}>
+        Skor: {skor}
+      </p>
+
+      {tuntas && (
+        <div className="aia-card aia-pos-hijau">
+          <h3>
+            <Check aria-hidden="true" /> Semua perangkat boros ditemukan!
+          </h3>
+          <p>
+            Lampu dimatikan, AC diatur, keran diperbaiki, komputer dan kipas dimatikan. Sekolah jadi lebih
+            hemat energi dan air.
+          </p>
+          <button type="button" className="aia-btn aia-btn-primary" onClick={() => onSelesai(skor)}>
+            Selesai · +{skor} Koin Hijau
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ------------------------------------------------------------------ Utama ----
 
-export function AirEnergi({ stageIndex, onStageComplete }: MiniGameSlotProps) {
+export function AirEnergi({
+  stageIndex,
+  onStageComplete,
+  modeSatuKetukan = false,
+}: MiniGameSlotProps & { modeSatuKetukan?: boolean }) {
   const selesaiRef = useRef(false)
   const selesai = useCallback(
     (score: number) => {
@@ -690,9 +1047,15 @@ export function AirEnergi({ stageIndex, onStageComplete }: MiniGameSlotProps) {
     [onStageComplete],
   )
 
-  if (stageIndex === 0) return <Biopori onSelesai={selesai} />
-  if (stageIndex === 1) return <TampungHujan onSelesai={selesai} />
-  if (stageIndex === 2) return <CariBoros onSelesai={selesai} />
+  if (modeSatuKetukan) {
+    if (stageIndex === 0) return <Biopori onSelesai={selesai} />
+    if (stageIndex === 1) return <TampungHujan onSelesai={selesai} />
+    if (stageIndex === 2) return <CariBoros onSelesai={selesai} />
+  } else {
+    if (stageIndex === 0) return <BioporiGestur onSelesai={selesai} modeSatuKetukan={modeSatuKetukan} />
+    if (stageIndex === 1) return <TampungHujanGestur onSelesai={selesai} modeSatuKetukan={modeSatuKetukan} />
+    if (stageIndex === 2) return <CariBorosGestur onSelesai={selesai} />
+  }
   return (
     <div className="aia-card">
       <p className="aia-muted">Tahap tidak dikenal.</p>

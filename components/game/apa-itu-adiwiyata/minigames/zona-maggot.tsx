@@ -2,9 +2,12 @@
 
 // Mini-game Bab 3 "Pos Maggot" — dipakai per tahap, stageIndex memilih fase:
 // 0 Beri pakan -> 1 Jaga kotak -> 2 Panen. Tiap tahap memanggil
-// onStageComplete TEPAT SATU KALI dengan skor tahap itu. Gagal di satu tahap
-// menampilkan layar "Coba lagi" internal (hanya tahap itu yang diulang,
-// bukan seluruh bab); setelah 2x gagal ditawarkan mode mudah.
+// onStageComplete TEPAT SATU KALI dengan skor tahap itu (0–100).
+// Mode gestur (default): DragDrop / SliderLever / HoldAction dari pustaka
+// interaksi. Mode satu-ketukan (prop modeSatuKetukan): versi tombol lama
+// dipakai sebagai alternatif aksesibilitas. Gagal di satu tahap menampilkan
+// layar "Coba lagi" internal (hanya tahap itu yang diulang); setelah 2x
+// salah, target membesar (kesulitan adaptif).
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
@@ -33,7 +36,17 @@ import {
 } from 'lucide-react'
 import { useCampaign } from '@/lib/apa-itu-adiwiyata/context'
 import { FAKTA_MAGGOT } from '@/lib/apa-itu-adiwiyata/content/fakta'
-import type { MiniGameSlotProps } from '../bab-shell'
+import { INTERAKSI_MISI } from '@/lib/apa-itu-adiwiyata/content/interaksi'
+import type { MiniGameSlotProps } from '../misi-shell'
+import {
+  DragDrop,
+  EfekBenar,
+  EfekSalah,
+  HoldAction,
+  PetunjukMagi,
+  SliderLever,
+  TanganPenunjuk,
+} from '../interaksi'
 import {
   benar,
   koin,
@@ -47,6 +60,22 @@ import {
 } from '../suara'
 
 const NAMA_FASE = ['Beri pakan', 'Jaga kotak', 'Panen']
+
+/** Bersihkan awalan `Magi: "..."` dari data petunjuk menjadi teks polos. */
+function bersihPetunjuk(teks: string): string {
+  return teks.replace(/^Magi:\s*"/, '').replace(/"$/, '')
+}
+
+/** Props bersama untuk fase gestur. */
+interface PropsGestur {
+  tambahSkor: (n: number) => void
+  onSelesai: () => void
+  onGagal: (alasan: string) => void
+  /** Dipanggil tiap aksi salah (untuk hitung kesulitan adaptif). */
+  onSalah: () => void
+  /** True setelah 2 kali salah — target membesar. */
+  perbesarTarget: boolean
+}
 
 function TombolBisukan() {
   const { save, dispatch } = useCampaign()
@@ -125,6 +154,8 @@ const IKON_PAKAN: Record<string, typeof Soup> = {
   minyak: Droplets,
   plastik: Trash2,
 }
+
+// ------------------------------------------- Versi tombol (mode satu-ketukan) ----
 
 function FasePakan({
   mudah,
@@ -258,6 +289,150 @@ function FasePakan({
   )
 }
 
+// ------------------------------------------------- Versi gestur: beri pakan ----
+
+function FasePakanGestur({ tambahSkor, onSelesai, onGagal, onSalah, perbesarTarget }: PropsGestur) {
+  const { save, dispatch } = useCampaign()
+  const spec = INTERAKSI_MISI.maggot[0]
+  const urutan = useMemo(() => [...PAKAN].sort(() => Math.random() - 0.5).slice(0, 5), [])
+  const [indeks, setIndeks] = useState(0)
+  const [bau, setBau] = useState(() => (save.carryover.maggotKenaMinyak ? 2 : 0))
+  const [pesan, setPesan] = useState<string | null>(
+    save.carryover.maggotKenaMinyak
+      ? 'Maggot kena minyak dari kantin! Baunya sudah tinggi. Beri pakan bersih untuk memulihkan.'
+      : null,
+  )
+  const [petunjuk, setPetunjuk] = useState<string | null>(null)
+  const [efekBenar, setEfekBenar] = useState(false)
+  const [selesai, setSelesai] = useState(false)
+  const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+
+  useEffect(
+    () => () => {
+      if (timerRef.current) clearTimeout(timerRef.current)
+    },
+    [],
+  )
+
+  const aktif = urutan[indeks]
+  const IkonAktif = aktif ? IKON_PAKAN[aktif.id] : Soup
+
+  const beriBenar = () => {
+    tambahSkor(20)
+    setEfekBenar(true)
+    setPetunjuk(null)
+    setPesan(aktif.penjelasan)
+    if (indeks + 1 >= urutan.length) {
+      setSelesai(true)
+      timerRef.current = setTimeout(() => {
+        if (save.carryover.maggotKenaMinyak) {
+          dispatch({ type: 'SET_CARRYOVER', patch: { maggotKenaMinyak: false } })
+        }
+        onSelesai()
+      }, 900)
+    } else {
+      timerRef.current = setTimeout(() => {
+        setEfekBenar(false)
+        setIndeks(indeks + 1)
+      }, 650)
+    }
+  }
+
+  const beriSalah = () => {
+    onSalah()
+    setPetunjuk(bersihPetunjuk(spec.petunjukMagi))
+    setPesan(aktif.penjelasan)
+    const bauBaru = bau + 1
+    setBau(bauBaru)
+    if (bauBaru >= 1) lalat()
+    if (bauBaru >= 3) {
+      timerRef.current = setTimeout(
+        () => onGagal('Bau kotak sudah tidak tertahankan dan lalat menyerbu. Kotak maggot perlu diulang dari awal.'),
+        1200,
+      )
+    }
+  }
+
+  return (
+    <section className="aia-card" aria-labelledby="aia-maggot-pakan" style={{ position: 'relative' }}>
+      <EfekBenar tampil={efekBenar} label="Maggot suka!" />
+      <span className="aia-kicker">Fase 1 dari 3 · Beri pakan</span>
+      <h3 id="aia-maggot-pakan" className="aia-section-title">
+        Beri maggot makan
+      </h3>
+      <p className="aia-muted">
+        Seret makanan ke tempat yang benar: makanan maggot masuk kotak, makanan yang bikin sakit jangan diberi.
+      </p>
+
+      {save.carryover.maggotKenaMinyak && (
+        <p className="aia-chip" role="alert">
+          <AlertTriangle aria-hidden="true" /> Maggot kena minyak dari kantin! Bau awal sudah tinggi.
+        </p>
+      )}
+
+      <div className="aia-progress-row">
+        <span>Diberi {Math.min(indeks, 5)}/5 pakan</span>
+        <strong>Bau: {bau}/3</strong>
+      </div>
+      <div
+        className="aia-progress"
+        role="progressbar"
+        aria-valuenow={bau}
+        aria-valuemin={0}
+        aria-valuemax={3}
+        aria-label="Tingkat bau kotak maggot"
+      >
+        <span style={{ width: `${(bau / 3) * 100}%`, background: bau >= 2 ? '#b91c1c' : '#2e7d32' }} />
+      </div>
+
+      {bau >= 1 && (
+        <p role="status" aria-live="polite">
+          <Bug aria-hidden="true" /> Lalat datang! Bau kotaknya naik. Beri pakan bersih supaya baunya turun.
+        </p>
+      )}
+
+      {spec.tutorial && indeks === 0 && !selesai && (
+        <p style={{ textAlign: 'center', margin: '4px 0' }}>
+          <TanganPenunjuk label="Seret makanan ini ke tempat yang benar" />
+        </p>
+      )}
+
+      {selesai ? (
+        <p role="status" aria-live="polite">
+          <Check aria-hidden="true" /> Maggot kenyang! Kotaknya bersih dan tidak bau.
+        </p>
+      ) : (
+        <DragDrop
+          key={aktif.id}
+          benda={{ id: aktif.id, label: aktif.nama, konten: <IkonAktif aria-hidden="true" /> }}
+          target={
+            aktif.benar
+              ? { id: 'kotak', label: 'Kotak maggot', ikon: <Bug aria-hidden="true" /> }
+              : { id: 'jangan', label: 'Jangan diberi', ikon: <X aria-hidden="true" /> }
+          }
+          targetLain={
+            aktif.benar
+              ? [{ id: 'jangan', label: 'Jangan diberi', ikon: <X aria-hidden="true" /> }]
+              : [{ id: 'kotak', label: 'Kotak maggot', ikon: <Bug aria-hidden="true" /> }]
+          }
+          perbesarTarget={perbesarTarget}
+          disabled={bau >= 3}
+          onBenar={beriBenar}
+          onSalah={beriSalah}
+        />
+      )}
+
+      {petunjuk && <EfekSalah tampil petunjuk={petunjuk} />}
+
+      {pesan && (
+        <p role="status" aria-live="polite">
+          {pesan}
+        </p>
+      )}
+    </section>
+  )
+}
+
 // ---------------------------------------------------------- Fase 1: jaga kotak ----
 
 interface AksiJaga {
@@ -377,6 +552,8 @@ function BarIndikator({
   )
 }
 
+// ------------------------------------------- Versi tombol (mode satu-ketukan) ----
+
 function FaseJaga({
   mudah,
   tambahSkor,
@@ -471,7 +648,138 @@ function FaseJaga({
   )
 }
 
+// -------------------------------------------------- Versi gestur: jaga kotak ----
+
+const SKOR_RONDE_JAGA = [34, 33, 33]
+
+function FaseJagaGestur({ tambahSkor, onSelesai, onGagal, onSalah }: PropsGestur) {
+  const spec = INTERAKSI_MISI.maggot[1]
+  const [ronde, setRonde] = useState(0)
+  const [nilai, setNilai] = useState({ kelembapan: 55, suhu: 50, bau: 45 })
+  const [pesan, setPesan] = useState<string | null>(null)
+  const [petunjuk, setPetunjuk] = useState<string | null>(null)
+  const [efekBenar, setEfekBenar] = useState(false)
+  const [salahRonde, setSalahRonde] = useState(0)
+  const [terkunci, setTerkunci] = useState(false)
+  const [selesai, setSelesai] = useState(false)
+  const aktif = RONDE_JAGA[ronde]
+  const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const terakhirRef = useRef<number | null>(null)
+
+  // Setiap ronde dimulai, indikator yang bermasalah naik ke nilai masalahnya.
+  useEffect(() => {
+    const kunci = RONDE_JAGA[ronde].indikator
+    const nilaiAwal = RONDE_JAGA[ronde].nilaiAwal
+    setNilai((lama) => ({ ...lama, [kunci]: nilaiAwal }))
+    terakhirRef.current = null
+  }, [ronde])
+
+  useEffect(
+    () => () => {
+      if (timerRef.current) clearTimeout(timerRef.current)
+    },
+    [],
+  )
+
+  const nilaiAkhir = (nilaiBaru: number) => {
+    if (terkunci || selesai) return
+    if (terakhirRef.current === nilaiBaru) return
+    terakhirRef.current = nilaiBaru
+    if (nilaiBaru >= 40 && nilaiBaru <= 70) {
+      tambahSkor(SKOR_RONDE_JAGA[ronde])
+      setNilai((lama) => ({ ...lama, [aktif.indikator]: 55 }))
+      setEfekBenar(true)
+      setPetunjuk(null)
+      setPesan('Tepat! Indikator kembali ke zona aman.')
+      setTerkunci(true)
+      if (ronde >= 2) {
+        setSelesai(true)
+        timerRef.current = setTimeout(onSelesai, 900)
+      } else {
+        timerRef.current = setTimeout(() => {
+          setEfekBenar(false)
+          setSalahRonde(0)
+          setTerkunci(false)
+          setRonde(ronde + 1)
+        }, 700)
+      }
+    } else {
+      onSalah()
+      const baru = salahRonde + 1
+      setSalahRonde(baru)
+      setPetunjuk(bersihPetunjuk(spec.petunjukMagi))
+      setPesan(aktif.penjelasanSalah)
+      if (baru >= 3) {
+        setTerkunci(true)
+        timerRef.current = setTimeout(
+          () => onGagal('Kotak maggot sudah tidak tertolong: indikatornya melewati batas aman. Ulangi penjagaan kotak dari awal ronde ini.'),
+          1200,
+        )
+      }
+    }
+  }
+
+  return (
+    <section className="aia-card" aria-labelledby="aia-maggot-jaga" style={{ position: 'relative' }}>
+      <EfekBenar tampil={efekBenar} label="Indikator aman!" />
+      <span className="aia-kicker">Fase 2 dari 3 · Jaga kotak</span>
+      <h3 id="aia-maggot-jaga" className="aia-section-title">
+        Jaga kotak maggot
+      </h3>
+      <p className="aia-muted">
+        Ronde {ronde + 1} dari 3: {aktif.label} {aktif.masalah.toLowerCase()} Geser tuas sampai jarumnya masuk zona
+        hijau 40–70%.
+      </p>
+
+      <div className="aia-stack">
+        <BarIndikator label="Kelembapan" nilai={nilai.kelembapan} masalah="Terlalu lembap!" ikon={Droplets} />
+        <BarIndikator label="Suhu" nilai={nilai.suhu} masalah="Terlalu panas!" ikon={Thermometer} />
+        <BarIndikator label="Bau" nilai={nilai.bau} masalah="Bau naik!" ikon={Wind} />
+      </div>
+
+      {selesai ? (
+        <p role="status" aria-live="polite">
+          <Check aria-hidden="true" /> Semua indikator aman. Maggot tenang dan aktif!
+        </p>
+      ) : (
+        <>
+          <SliderLever
+            key={ronde}
+            label={`Atur ${aktif.label.toLowerCase()}`}
+            min={0}
+            max={100}
+            nilaiAwal={aktif.nilaiAwal}
+            langkah={1}
+            satuan="%"
+            disabled={terkunci}
+            onUbah={(v) => setNilai((lama) => ({ ...lama, [aktif.indikator]: v }))}
+            onSelesai={nilaiAkhir}
+          />
+          <button
+            type="button"
+            className="aia-btn aia-btn-primary aia-btn-block"
+            disabled={terkunci}
+            onClick={() => nilaiAkhir(nilai[aktif.indikator])}
+          >
+            <Check aria-hidden="true" /> Periksa nilai
+          </button>
+        </>
+      )}
+
+      {petunjuk && <EfekSalah tampil petunjuk={petunjuk} />}
+
+      {pesan && (
+        <p role="status" aria-live="polite">
+          {pesan}
+        </p>
+      )}
+    </section>
+  )
+}
+
 // -------------------------------------------------------------- Fase 2: panen ----
+
+// ------------------------------------------- Versi tombol (mode satu-ketukan) ----
 
 function FasePanen({ tambahSkor, onSelesai }: { tambahSkor: (n: number) => void; onSelesai: () => void }) {
   const [sisa, setSisa] = useState(20)
@@ -557,9 +865,114 @@ function FasePanen({ tambahSkor, onSelesai }: { tambahSkor: (n: number) => void;
   )
 }
 
+// -------------------------------------------------- Versi gestur: panen ----
+
+function FasePanenGestur({ tambahSkor, onSelesai }: Pick<PropsGestur, 'tambahSkor' | 'onSelesai'>) {
+  const [sisa, setSisa] = useState(20)
+  const [siap, setSiap] = useState(false)
+  const [dipanen, setDipanen] = useState(false)
+  const [petunjuk, setPetunjuk] = useState<string | null>(null)
+  const fakta = useMemo(() => FAKTA_MAGGOT[Math.floor(Math.random() * FAKTA_MAGGOT.length)], [])
+  const spec = INTERAKSI_MISI.maggot[2]
+
+  useEffect(() => {
+    if (sisa <= 0) return
+    const t = setInterval(() => setSisa((s) => Math.max(0, s - 1)), 1000)
+    return () => clearInterval(t)
+  }, [sisa])
+
+  useEffect(() => {
+    if (sisa > 0 && sisa <= 5) tik(sisa <= 3)
+  }, [sisa])
+
+  useEffect(() => {
+    if (sisa === 0) setSiap(true)
+  }, [sisa])
+
+  const ayakSelesai = () => {
+    tambahSkor(100)
+    panen()
+    setDipanen(true)
+  }
+
+  const ayakBatal = () => {
+    setPetunjuk(bersihPetunjuk(spec.petunjukMagi))
+  }
+
+  return (
+    <section className="aia-card" aria-labelledby="aia-maggot-panen">
+      <span className="aia-kicker">Fase 3 dari 3 · Panen</span>
+      <h3 id="aia-maggot-panen" className="aia-section-title">
+        Panen maggot
+      </h3>
+
+      {!dipanen ? (
+        <>
+          <p className="aia-muted">
+            Maggot sedang makan dengan lahap. Tunggu timer selesai, lalu tahan saringan untuk mengayak maggot dari
+            kasgot.
+          </p>
+          <p style={{ fontSize: 44, fontWeight: 800, textAlign: 'center', margin: '8px 0' }} aria-live="polite">
+            0:{sisa.toString().padStart(2, '0')}
+          </p>
+          <div
+            className="aia-progress"
+            role="progressbar"
+            aria-valuenow={20 - sisa}
+            aria-valuemin={0}
+            aria-valuemax={20}
+            aria-label="Waktu menuju panen"
+          >
+            <span style={{ width: `${((20 - sisa) / 20) * 100}%` }} />
+          </div>
+          {siap ? (
+            <>
+              <HoldAction
+                label="Tahan saringan untuk mengayak"
+                durasiMs={2000}
+                ikon={<Fish aria-hidden="true" />}
+                onSelesai={ayakSelesai}
+                onBatal={ayakBatal}
+              />
+              {petunjuk && <PetunjukMagi teks={petunjuk} />}
+            </>
+          ) : (
+            <p className="aia-muted">
+              <Bug aria-hidden="true" /> Maggot bergerak-gerak di dalam kotak. Sabar, sebentar lagi panen.
+            </p>
+          )}
+        </>
+      ) : (
+        <>
+          <p role="status" aria-live="polite">
+            <Check aria-hidden="true" /> Panen berhasil! Maggot jadi pakan ikan, kasgotnya jadi pupuk kebun.
+          </p>
+          <p>
+            <Fish aria-hidden="true" /> Pakan ikan <strong>→</strong> <Sprout aria-hidden="true" /> masuk ke kebun.
+          </p>
+          <div className="aia-card" aria-label="Kartu fakta maggot">
+            <span className="aia-kicker">Kartu fakta · Maggot BSF</span>
+            <h4 className="aia-section-title">{fakta.judul}</h4>
+            <p className="aia-muted">{fakta.isi}</p>
+          </div>
+          <div className="aia-actions">
+            <button type="button" className="aia-btn aia-btn-primary aia-btn-block" onClick={onSelesai}>
+              <Check aria-hidden="true" /> Selesai
+            </button>
+          </div>
+        </>
+      )}
+    </section>
+  )
+}
+
 // ------------------------------------------------------------------ Komponen utama ----
 
-export function ZonaMaggot({ stageIndex, onStageComplete }: MiniGameSlotProps) {
+export function ZonaMaggot({
+  stageIndex,
+  onStageComplete,
+  modeSatuKetukan = false,
+}: MiniGameSlotProps & { modeSatuKetukan?: boolean }) {
   const { save, dispatch } = useCampaign()
   // Fase = tahap yang sedang dimainkan (dipilih kerangka bab).
   const fase = stageIndex
@@ -569,6 +982,7 @@ export function ZonaMaggot({ stageIndex, onStageComplete }: MiniGameSlotProps) {
   const [mudah, setMudah] = useState(false)
   const [alasanGagal, setAlasanGagal] = useState<string | null>(null)
   const [percobaan, setPercobaan] = useState(0)
+  const [salahGestur, setSalahGestur] = useState(0)
   const selesaiRef = useRef(false)
 
   const tambahSkor = (n: number) => {
@@ -593,6 +1007,12 @@ export function ZonaMaggot({ stageIndex, onStageComplete }: MiniGameSlotProps) {
     setMudah(true)
     ulangFase()
   }
+
+  const salahAksi = () => {
+    setSalahGestur((g) => g + 1)
+  }
+
+  const perbesarTarget = salahGestur >= 2 || mudah
 
   const selesaiFase = () => {
     if (selesaiRef.current) return
@@ -635,16 +1055,38 @@ export function ZonaMaggot({ stageIndex, onStageComplete }: MiniGameSlotProps) {
 
       {alasanGagal ? (
         <LayarGagal alasan={alasanGagal} gagal={gagal} onUlang={ulangFase} onMudah={modeMudah} />
+      ) : modeSatuKetukan ? (
+        fase === 0 ? (
+          <FasePakan key={`pakan-${percobaan}`} mudah={mudah} tambahSkor={tambahSkor} onSelesai={selesaiFase} onGagal={gagalFase} />
+        ) : fase === 1 ? (
+          <FaseJaga key={`jaga-${percobaan}`} mudah={mudah} tambahSkor={tambahSkor} onSelesai={selesaiFase} onGagal={gagalFase} />
+        ) : (
+          <FasePanen key={`panen-${percobaan}`} tambahSkor={tambahSkor} onSelesai={selesaiFase} />
+        )
       ) : fase === 0 ? (
-        <FasePakan key={`pakan-${percobaan}`} mudah={mudah} tambahSkor={tambahSkor} onSelesai={selesaiFase} onGagal={gagalFase} />
+        <FasePakanGestur
+          key={`pakan-g-${percobaan}`}
+          tambahSkor={tambahSkor}
+          onSelesai={selesaiFase}
+          onGagal={gagalFase}
+          onSalah={salahAksi}
+          perbesarTarget={perbesarTarget}
+        />
       ) : fase === 1 ? (
-        <FaseJaga key={`jaga-${percobaan}`} mudah={mudah} tambahSkor={tambahSkor} onSelesai={selesaiFase} onGagal={gagalFase} />
+        <FaseJagaGestur
+          key={`jaga-g-${percobaan}`}
+          tambahSkor={tambahSkor}
+          onSelesai={selesaiFase}
+          onGagal={gagalFase}
+          onSalah={salahAksi}
+          perbesarTarget={perbesarTarget}
+        />
       ) : (
-        <FasePanen key={`panen-${percobaan}`} tambahSkor={tambahSkor} onSelesai={selesaiFase} />
+        <FasePanenGestur key={`panen-g-${percobaan}`} tambahSkor={tambahSkor} onSelesai={selesaiFase} />
       )}
 
       <p className="aia-muted">
-        <Sun aria-hidden="true" /> {NAMA_FASE[fase]} · Jawaban benar +10 Koin Hijau.
+        <Sun aria-hidden="true" /> {NAMA_FASE[fase]} · Aksi benar menambah Koin Hijau.
       </p>
     </div>
   )

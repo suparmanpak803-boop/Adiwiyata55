@@ -4,7 +4,8 @@
 // (render server), storage penuh, atau data rusak.
 
 import { CHAPTER_ORDER } from './chapters'
-import type { CampaignSave, ChapterId, ChapterProgress, StageProgress } from './types'
+import { TUGAS_ORDER } from './types'
+import type { CampaignSave, ChapterId, ChapterProgress, StageProgress, TugasKaderId, TugasProgress } from './types'
 
 export const SAVE_KEY = 'aia-save-v1'
 export const SAVE_VERSION = 1 as const
@@ -25,10 +26,23 @@ function freshChapter(firstStageOpen: boolean): ChapterProgress {
   }
 }
 
+/** Cermin freshChapter: semua Misi Kader mulai dengan tahap pertama terbuka. */
+function freshTugas(): TugasProgress {
+  return {
+    stages: [freshStage('open'), freshStage('locked'), freshStage('locked')],
+    done: false,
+    badgeEarned: false,
+  }
+}
+
 export function freshSave(nickname = ''): CampaignSave {
   const chapters = {} as Record<ChapterId, ChapterProgress>
   for (const id of CHAPTER_ORDER) {
     chapters[id] = freshChapter(id === 'gerbang')
+  }
+  const tugas = {} as Record<TugasKaderId, TugasProgress>
+  for (const id of TUGAS_ORDER) {
+    tugas[id] = freshTugas()
   }
   return {
     version: SAVE_VERSION,
@@ -37,6 +51,7 @@ export function freshSave(nickname = ''): CampaignSave {
     coins: 0,
     streak: { count: 0, lastDay: null, multiplierActive: false },
     chapters,
+    tugas,
     checkpoint: null,
     bestScores: {},
     unlockedCards: [],
@@ -48,6 +63,7 @@ export function freshSave(nickname = ''): CampaignSave {
     muted: false,
     volumeMusik: 0.7,
     volumeEfek: 0.9,
+    modeSatuKetukan: false,
     completedAt: null,
     updatedAt: new Date().toISOString(),
   }

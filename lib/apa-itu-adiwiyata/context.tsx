@@ -9,7 +9,7 @@ import { createContext, useContext, useEffect, useReducer, useRef, useState, typ
 import { syncSettings } from '@/components/game/apa-itu-adiwiyata/suara'
 import { CHAPTER_ORDER } from './chapters'
 import { freshSave, loadSave, saveSave } from './storage'
-import type { CampaignSave, Carryover, ChapterId, Checkpoint, PromiseItem, Report, StageProgress } from './types'
+import type { CampaignSave, Carryover, ChapterId, Checkpoint, PromiseItem, Report, StageProgress, TugasKaderId } from './types'
 
 export type CampaignAction =
   | { type: 'LOAD'; save: CampaignSave }
@@ -17,6 +17,8 @@ export type CampaignAction =
   | { type: 'START_NEW' }
   | { type: 'COMPLETE_STAGE'; chapterId: ChapterId; stageIndex: number; score: number }
   | { type: 'COMPLETE_CHAPTER'; chapterId: ChapterId }
+  | { type: 'COMPLETE_TUGAS_STAGE'; tugasId: TugasKaderId; stageIndex: number; score: number }
+  | { type: 'COMPLETE_TUGAS'; tugasId: TugasKaderId }
   | { type: 'EARN_COINS'; amount: number }
   | { type: 'UNLOCK_CARD'; cardId: string }
   | { type: 'EARN_BADGE'; badgeId: string }
@@ -30,6 +32,7 @@ export type CampaignAction =
   | { type: 'SET_MUTED'; muted: boolean }
   | { type: 'SET_VOLUME_MUSIK'; value: number }
   | { type: 'SET_VOLUME_EFEK'; value: number }
+  | { type: 'SET_MODE_SATU_KETUKAN'; value: boolean }
   | { type: 'SET_HIDE_NAME'; hideName: boolean }
   | { type: 'DAILY_CHECKIN' }
   | { type: 'FINISH_CAMPAIGN' }
@@ -66,9 +69,10 @@ function reducer(save: CampaignSave, action: CampaignAction): CampaignSave {
     case 'SET_NICKNAME':
       return touch(save, { nickname: action.nickname.trim().slice(0, 20) })
     case 'START_NEW': {
-      // Progres baru, tapi nama panggilan dan pengaturan suara dipertahankan.
+      // Progres baru, tapi nama panggilan dan pengaturan (suara + mode
+      // satu-ketukan) dipertahankan.
       const fresh = freshSave(save.nickname)
-      return touch(fresh, { muted: save.muted })
+      return touch(fresh, { muted: save.muted, modeSatuKetukan: save.modeSatuKetukan })
     }
     case 'COMPLETE_STAGE': {
       const chapter = save.chapters[action.chapterId]
@@ -104,6 +108,32 @@ function reducer(save: CampaignSave, action: CampaignAction): CampaignSave {
       return touch(save, {
         chapters: { ...save.chapters, [action.chapterId]: { ...chapter, done: true, badgeEarned: true } },
         checkpoint: null,
+      })
+    }
+    case 'COMPLETE_TUGAS_STAGE': {
+      // Cermin COMPLETE_STAGE untuk Misi Kader, tanpa checkpoint:
+      // checkpoint Pos Hijau hanya untuk bab utama.
+      const tugas = save.tugas[action.tugasId]
+      const stages = tugas.stages.map((stage, i): StageProgress => {
+        if (i === action.stageIndex) {
+          return { status: 'done', bestScore: Math.max(stage.bestScore, action.score) }
+        }
+        if (i === action.stageIndex + 1 && stage.status === 'locked') {
+          return { ...stage, status: 'open' }
+        }
+        return stage
+      }) as [StageProgress, StageProgress, StageProgress]
+      const key = `tugas:${action.tugasId}:${action.stageIndex}`
+      return touch(save, {
+        coins: save.coins + Math.max(0, action.score) * (save.streak.multiplierActive ? 2 : 1),
+        tugas: { ...save.tugas, [action.tugasId]: { ...tugas, stages } },
+        bestScores: { ...save.bestScores, [key]: Math.max(save.bestScores[key] ?? 0, action.score) },
+      })
+    }
+    case 'COMPLETE_TUGAS': {
+      const tugas = save.tugas[action.tugasId]
+      return touch(save, {
+        tugas: { ...save.tugas, [action.tugasId]: { ...tugas, done: true, badgeEarned: true } },
       })
     }
     case 'EARN_COINS':
@@ -154,6 +184,8 @@ function reducer(save: CampaignSave, action: CampaignAction): CampaignSave {
       return touch(save, { volumeMusik: clamp01(action.value) })
     case 'SET_VOLUME_EFEK':
       return touch(save, { volumeEfek: clamp01(action.value) })
+    case 'SET_MODE_SATU_KETUKAN':
+      return touch(save, { modeSatuKetukan: action.value })
     case 'SET_HIDE_NAME':
       return touch(save, { hideName: action.hideName })
     case 'DAILY_CHECKIN': {
@@ -253,4 +285,11 @@ export function selectChapterUnlocked(save: CampaignSave, chapterId: ChapterId):
   const index = CHAPTER_ORDER.indexOf(chapterId)
   if (index <= 0) return true
   return save.chapters[CHAPTER_ORDER[index - 1]].done
+}
+
+/** Kedelapan Misi Kader tersedia sejak awal; tidak berantai seperti bab utama. */
+export function selectTugasUnlocked(save: CampaignSave, tugasId: TugasKaderId): boolean {
+  void save
+  void tugasId
+  return true
 }

@@ -2,11 +2,14 @@
 
 // Mini-game Bab 4 "Kompos dan Kebun" — dipakai per tahap, stageIndex memilih
 // fase: 0 Susun lapis kompos -> 1 Rawat tanaman -> 2 Panen sayur. Tiap tahap
-// memanggil onStageComplete TEPAT SATU KALI dengan skor tahap itu. Gagal di
-// satu tahap menampilkan layar "Coba lagi" internal (hanya tahap itu yang
-// diulang); setelah 2x gagal ditawarkan mode mudah.
+// memanggil onStageComplete TEPAT SATU KALI dengan skor tahap itu (0–100).
+// Mode gestur (default): DragDrop / TapSpam dari pustaka interaksi. Mode
+// satu-ketukan (prop modeSatuKetukan): versi tombol lama dipakai sebagai
+// alternatif aksesibilitas. Gagal di satu tahap menampilkan layar "Coba lagi"
+// internal (hanya tahap itu yang diulang); setelah 2x salah, target membesar
+// (kesulitan adaptif).
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   AlertTriangle,
   Check,
@@ -26,7 +29,16 @@ import {
   Wind,
 } from 'lucide-react'
 import { useCampaign } from '@/lib/apa-itu-adiwiyata/context'
-import type { MiniGameSlotProps } from '../bab-shell'
+import { INTERAKSI_MISI } from '@/lib/apa-itu-adiwiyata/content/interaksi'
+import type { MiniGameSlotProps } from '../misi-shell'
+import {
+  DragDrop,
+  EfekBenar,
+  EfekSalah,
+  PetunjukMagi,
+  TanganPenunjuk,
+  TapSpam,
+} from '../interaksi'
 import {
   benar,
   koin,
@@ -39,6 +51,22 @@ import {
 } from '../suara'
 
 const NAMA_FASE = ['Susun lapis kompos', 'Rawat tanaman', 'Panen sayur']
+
+/** Bersihkan awalan `Magi: "..."` dari data petunjuk menjadi teks polos. */
+function bersihPetunjuk(teks: string): string {
+  return teks.replace(/^Magi:\s*"/, '').replace(/"$/, '')
+}
+
+/** Props bersama untuk fase gestur. */
+interface PropsGestur {
+  tambahSkor: (n: number) => void
+  onSelesai: () => void
+  onGagal: (alasan: string) => void
+  /** Dipanggil tiap aksi salah (untuk hitung kesulitan adaptif). */
+  onSalah: () => void
+  /** True setelah 2 kali salah — target membesar. */
+  perbesarTarget: boolean
+}
 
 function TombolBisukan() {
   const { save, dispatch } = useCampaign()
@@ -118,6 +146,8 @@ const IKON_BAHAN: Record<string, typeof Leaf> = {
 }
 
 const TARGET_LAPIS = 8
+
+// ------------------------------------------- Versi tombol (mode satu-ketukan) ----
 
 function FaseLapis({
   mudah,
@@ -309,6 +339,247 @@ function FaseLapis({
   )
 }
 
+// ------------------------------------------------- Versi gestur: lapis kompos ----
+
+function FaseLapisGestur({ tambahSkor, onSelesai, onGagal, onSalah, perbesarTarget }: PropsGestur) {
+  const { save, dispatch } = useCampaign()
+  const spec = INTERAKSI_MISI.kompos[0]
+  const [perluPerbaikan, setPerluPerbaikan] = useState(save.carryover.komposBau)
+  const [tahapPerbaiki, setTahapPerbaiki] = useState<'cokelat' | 'aduk'>('cokelat')
+  const [lapis, setLapis] = useState<JenisBahan[]>([])
+  const [beruntunHijau, setBeruntunHijau] = useState(0)
+  const [salahLokal, setSalahLokal] = useState(0)
+  const [pesan, setPesan] = useState<string | null>(
+    save.carryover.komposBau
+      ? 'Kompos bau! Maggot kemarin memberi pakan yang salah. Perbaiki dulu sebelum menyusun lapis baru.'
+      : null,
+  )
+  const [petunjuk, setPetunjuk] = useState<string | null>(null)
+  const [efekBenar, setEfekBenar] = useState(false)
+  const [selesai, setSelesai] = useState(false)
+  // Dek bahan: 6 kali acak dari 5 bahan — cukup untuk 8 lapis plus yang ditunda.
+  const dek = useMemo(() => {
+    const hasil: Bahan[] = []
+    for (let i = 0; i < 6; i++) hasil.push(...[...BAHAN].sort(() => Math.random() - 0.5))
+    return hasil
+  }, [])
+  const [indeksDek, setIndeksDek] = useState(0)
+  const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+
+  useEffect(
+    () => () => {
+      if (timerRef.current) clearTimeout(timerRef.current)
+    },
+    [],
+  )
+
+  const jumlahCokelat = lapis.filter((l) => l === 'cokelat').length
+  const jumlahHijau = lapis.filter((l) => l === 'hijau').length
+  const bahanAktif = dek[indeksDek % dek.length]
+  const IkonAktif = IKON_BAHAN[bahanAktif.id]
+
+  /** Tujuan yang benar untuk bahan yang sedang ditampilkan. */
+  const targetBenar = (bahan: Bahan): 'bak' | 'tunda' =>
+    bahan.jenis === 'cokelat' || beruntunHijau < 2 ? 'bak' : 'tunda'
+
+  const perbaikiBenar = () => {
+    setPesan('Bahan cokelat ditambahkan. Sekarang aduk supaya udara masuk.')
+    setTahapPerbaiki('aduk')
+  }
+
+  const perbaikiSalah = () => {
+    onSalah()
+    setPetunjuk('Seret bahan cokelat ke bak kompos dulu.')
+  }
+
+  const perbaikiSelesai = () => {
+    dispatch({ type: 'SET_CARRYOVER', patch: { komposBau: false } })
+    setPerluPerbaikan(false)
+    setPesan('Kompos sudah tidak bau lagi. Sekarang susun lapisnya!')
+  }
+
+  const lapisBenar = () => {
+    const tujuan = targetBenar(bahanAktif)
+    if (tujuan === 'tunda') {
+      setPesan('Bahan ini ditunda dulu, lapis hijau sudah dua kali berturut-turut.')
+      setIndeksDek((i) => i + 1)
+      return
+    }
+    const baru = [...lapis, bahanAktif.jenis]
+    setLapis(baru)
+    setBeruntunHijau(bahanAktif.jenis === 'hijau' ? beruntunHijau + 1 : 0)
+    setEfekBenar(true)
+    setPetunjuk(null)
+    setPesan(
+      bahanAktif.jenis === 'cokelat'
+        ? `${bahanAktif.nama} ditambahkan. Bahan cokelat memberi udara dan karbon.`
+        : `${bahanAktif.nama} ditambahkan. Bahan hijau memberi nitrogen untuk pengurai.`,
+    )
+    if (baru.length >= TARGET_LAPIS) {
+      tambahSkor(12)
+      tambahSkor(4)
+      setSelesai(true)
+      timerRef.current = setTimeout(onSelesai, 900)
+    } else {
+      tambahSkor(12)
+      timerRef.current = setTimeout(() => {
+        setEfekBenar(false)
+        setIndeksDek((i) => i + 1)
+      }, 650)
+    }
+  }
+
+  const lapisSalah = (_id: string, targetId?: string) => {
+    onSalah()
+    const baru = salahLokal + 1
+    setSalahLokal(baru)
+    if (targetId === 'bak' && bahanAktif.jenis === 'hijau' && beruntunHijau >= 2) {
+      setPesan(
+        'Tiga lapis hijau berturut-turut bikin kompos becek dan bau. Selingi dengan bahan cokelat, lapis ini tidak dihitung.',
+      )
+    } else if (targetId === 'tunda') {
+      setPesan('Bahan ini masih boleh masuk bak, jangan ditunda.')
+    } else {
+      setPesan('Bukan ke sana. Perhatikan jenis bahannya.')
+    }
+    setPetunjuk(bersihPetunjuk(spec.petunjukMagi))
+    if (baru >= 3) {
+      timerRef.current = setTimeout(
+        () => onGagal('Kompos terlalu sering salah lapis dan jadi becek. Ulangi susunan dari awal, ingat selingi cokelat dan hijau.'),
+        1200,
+      )
+    }
+  }
+
+  const tujuan = targetBenar(bahanAktif)
+
+  return (
+    <section className="aia-card" aria-labelledby="aia-kompos-lapis" style={{ position: 'relative' }}>
+      <EfekBenar tampil={efekBenar} label="Lapis tersusun!" />
+      <span className="aia-kicker">Fase 1 dari 3 · Susun lapis kompos</span>
+      <h3 id="aia-kompos-lapis" className="aia-section-title">
+        Susun lapis kompos
+      </h3>
+      <p className="aia-muted">
+        Seret bahan ke bak kompos: cokelat dan hijau selang-seling, {TARGET_LAPIS} lapis. Jangan susun 3 lapis hijau
+        berturut-turut — kalau hijau sudah dua kali, tunda dulu.
+      </p>
+
+      {perluPerbaikan ? (
+        <>
+          <p className="aia-chip" role="alert">
+            <AlertTriangle aria-hidden="true" /> Kompos bau! Perbaiki dulu dengan 2 aksi ini.
+          </p>
+          {tahapPerbaiki === 'cokelat' ? (
+            <DragDrop
+              key="perbaiki-cokelat"
+              benda={{ id: 'daun', label: 'Daun kering', konten: <Leaf aria-hidden="true" /> }}
+              target={{ id: 'bak', label: 'Bak kompos', ikon: <Package aria-hidden="true" /> }}
+              targetLain={[{ id: 'buang', label: 'Buang saja', ikon: <Wind aria-hidden="true" /> }]}
+              perbesarTarget={perbesarTarget}
+              onBenar={perbaikiBenar}
+              onSalah={perbaikiSalah}
+            />
+          ) : (
+            <TapSpam
+              label="Aduk kompos"
+              jumlahKetukan={5}
+              ikon={<RefreshCw aria-hidden="true" />}
+              onSelesai={perbaikiSelesai}
+            />
+          )}
+        </>
+      ) : (
+        <>
+          <div className="aia-progress-row">
+            <span>Rasio lapis</span>
+            <strong>
+              Cokelat {jumlahCokelat} · Hijau {jumlahHijau} · Target 3 : 1
+            </strong>
+          </div>
+          <div
+            style={{ display: 'flex', height: 14, borderRadius: 999, overflow: 'hidden', background: '#e8ede6' }}
+            role="progressbar"
+            aria-valuenow={lapis.length}
+            aria-valuemin={0}
+            aria-valuemax={TARGET_LAPIS}
+            aria-label={`Lapis kompos ${lapis.length} dari ${TARGET_LAPIS}`}
+          >
+            <span style={{ width: `${(jumlahCokelat / TARGET_LAPIS) * 100}%`, background: '#8b5a2b' }} />
+            <span style={{ width: `${(jumlahHijau / TARGET_LAPIS) * 100}%`, background: '#4d8a4f' }} />
+          </div>
+
+          <div
+            style={{
+              border: '2px solid #8d6e63',
+              borderRadius: 12,
+              overflow: 'hidden',
+              background: '#f5efe6',
+              minHeight: 32,
+              display: 'flex',
+              flexDirection: 'column-reverse',
+            }}
+            aria-label="Bak kompos"
+          >
+            {lapis.length === 0 ? (
+              <p className="aia-muted" style={{ textAlign: 'center', margin: '4px 0' }}>
+                Bak masih kosong.
+              </p>
+            ) : (
+              lapis.map((jenis, i) => (
+                <div key={i} style={{ height: 16, background: jenis === 'cokelat' ? '#8b5a2b' : '#4d8a4f' }} />
+              ))
+            )}
+          </div>
+          <p className="aia-muted">
+            Lapis: {lapis.length}/{TARGET_LAPIS}
+            {beruntunHijau >= 2 ? ' · Hijau sudah dua kali — bahan hijau berikutnya ditunda dulu.' : ''}
+          </p>
+
+          {spec.tutorial && lapis.length === 0 && !selesai && (
+            <p style={{ textAlign: 'center', margin: '4px 0' }}>
+              <TanganPenunjuk label="Seret bahan ke bak kompos" />
+            </p>
+          )}
+
+          {selesai ? (
+            <p role="status" aria-live="polite">
+              <Check aria-hidden="true" /> {TARGET_LAPIS} lapis tersusun rapi! Tumpukan menghangat dan siap jadi
+              kompos.
+            </p>
+          ) : (
+            <DragDrop
+              key={`${bahanAktif.id}-${indeksDek}`}
+              benda={{ id: bahanAktif.id, label: bahanAktif.nama, konten: <IkonAktif aria-hidden="true" /> }}
+              target={
+                tujuan === 'bak'
+                  ? { id: 'bak', label: 'Bak kompos', ikon: <Package aria-hidden="true" /> }
+                  : { id: 'tunda', label: 'Tunda dulu', ikon: <Wind aria-hidden="true" /> }
+              }
+              targetLain={
+                tujuan === 'bak'
+                  ? [{ id: 'tunda', label: 'Tunda dulu', ikon: <Wind aria-hidden="true" /> }]
+                  : [{ id: 'bak', label: 'Bak kompos', ikon: <Package aria-hidden="true" /> }]
+              }
+              perbesarTarget={perbesarTarget}
+              onBenar={lapisBenar}
+              onSalah={lapisSalah}
+            />
+          )}
+        </>
+      )}
+
+      {petunjuk && <EfekSalah tampil petunjuk={petunjuk} />}
+
+      {pesan && (
+        <p role="status" aria-live="polite">
+          {pesan}
+        </p>
+      )}
+    </section>
+  )
+}
+
 // -------------------------------------------------- Fase 1: rawat tanaman ----
 
 type TanamanId = 'cabai' | 'kangkung'
@@ -381,6 +652,8 @@ function KartuTanaman({
     </div>
   )
 }
+
+// ------------------------------------------- Versi tombol (mode satu-ketukan) ----
 
 function FaseTanaman({
   mudah,
@@ -504,9 +777,182 @@ function FaseTanaman({
   )
 }
 
+// ------------------------------------------------- Versi gestur: rawat tanaman ----
+
+const SKOR_RONDE_RAWAT = [34, 33, 33]
+
+function FaseTanamanGestur({ tambahSkor, onSelesai, onGagal, onSalah, perbesarTarget }: PropsGestur) {
+  const { save, dispatch } = useCampaign()
+  const spec = INTERAKSI_MISI.kompos[1]
+  const sehatAwal = save.carryover.kebunLayu ? 2 : 3
+  const [ronde, setRonde] = useState(0)
+  const [sehat, setSehat] = useState<Record<TanamanId, number>>({ cabai: sehatAwal, kangkung: sehatAwal })
+  const [pesan, setPesan] = useState<string | null>(
+    save.carryover.kebunLayu ? 'Tanaman layu karena kompos kemarin belum matang. Pulihkan dengan perawatan yang tepat.' : null,
+  )
+  const [petunjuk, setPetunjuk] = useState<string | null>(null)
+  const [efekBenar, setEfekBenar] = useState(false)
+  const [selesai, setSelesai] = useState(false)
+  const [alatIndeks, setAlatIndeks] = useState(0)
+  const alatUrutan = useMemo(() => [...AKSI_RAWAT].sort(() => Math.random() - 0.5), [ronde])
+  const aktif = RONDE_RAWAT[ronde]
+  const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+
+  useEffect(() => {
+    setAlatIndeks(0)
+  }, [ronde])
+
+  useEffect(
+    () => () => {
+      if (timerRef.current) clearTimeout(timerRef.current)
+    },
+    [],
+  )
+
+  const alatAktif = alatUrutan[alatIndeks]
+  const IkonAlat = IKON_AKSI_RAWAT[alatAktif.id]
+  const tanamanButuh = aktif.tanaman
+  const tanamanLain: TanamanId = tanamanButuh === 'cabai' ? 'kangkung' : 'cabai'
+  const namaTanaman = (id: TanamanId) => (id === 'cabai' ? 'Cabai' : 'Kangkung')
+
+  /** Tujuan yang benar untuk alat yang sedang ditampilkan. */
+  const targetBenarAlat = (alat: AksiRawat): string => (alat === aktif.kebutuhan ? tanamanButuh : 'bukan')
+
+  const alatBenar = () => {
+    const tujuan = targetBenarAlat(alatAktif.id)
+    if (tujuan === 'bukan') {
+      // Alat yang benar disisihkan — bukan alat yang dibutuhkan ronde ini.
+      setPesan('Bukan alat ini. Coba alat lain.')
+      setPetunjuk(null)
+      setAlatIndeks((i) => i + 1)
+      return
+    }
+    // Alat yang benar sampai ke tanaman yang butuh.
+    tambahSkor(SKOR_RONDE_RAWAT[ronde])
+    if (alatAktif.id === 'siram') siram()
+    tumbuh()
+    setEfekBenar(true)
+    setPetunjuk(null)
+    setPesan(
+      aktif.kebutuhan === 'siram'
+        ? 'Cabai disiram, daunnya segar lagi.'
+        : aktif.kebutuhan === 'jemur'
+          ? 'Kangkung dijemur, daunnya menghadap matahari.'
+          : 'Pupuk kasgot diberikan. Cabai punya makanan untuk berbuah.',
+    )
+    if (ronde >= 2) {
+      setSelesai(true)
+      timerRef.current = setTimeout(() => {
+        if (save.carryover.kebunLayu) {
+          dispatch({ type: 'SET_CARRYOVER', patch: { kebunLayu: false } })
+        }
+        onSelesai()
+      }, 900)
+    } else {
+      timerRef.current = setTimeout(() => {
+        setEfekBenar(false)
+        setRonde(ronde + 1)
+      }, 700)
+    }
+  }
+
+  const alatSalah = () => {
+    onSalah()
+    const sisa = sehat[aktif.tanaman] - 1
+    setSehat((lama) => ({ ...lama, [aktif.tanaman]: Math.max(0, sisa) }))
+    setPetunjuk(bersihPetunjuk(spec.petunjukMagi))
+    setPesan(aktif.penjelasanSalah)
+    if (sisa <= 0) {
+      timerRef.current = setTimeout(
+        () => onGagal(`${aktif.tanaman === 'cabai' ? 'Cabai' : 'Kangkung'} layu total karena salah dirawat. Ulangi perawatan dari awal ronde ini.`),
+        1200,
+      )
+    }
+  }
+
+  return (
+    <section className="aia-card" aria-labelledby="aia-kompos-tanaman" style={{ position: 'relative' }}>
+      <EfekBenar tampil={efekBenar} label="Tanaman segar!" />
+      <span className="aia-kicker">Fase 2 dari 3 · Rawat tanaman</span>
+      <h3 id="aia-kompos-tanaman" className="aia-section-title">
+        Rawat tanaman
+      </h3>
+      <p className="aia-muted">
+        Ronde {ronde + 1} dari 3. Seret alat yang benar ke tanaman yang butuh dirawat.
+      </p>
+
+      {save.carryover.kebunLayu && (
+        <p className="aia-chip" role="alert">
+          <AlertTriangle aria-hidden="true" /> Kebun layu karena kompos kemarin belum matang.
+        </p>
+      )}
+
+      <div className="aia-zone-grid">
+        <KartuTanaman
+          nama="Cabai"
+          sehat={sehat.cabai}
+          layu={save.carryover.kebunLayu}
+          butuh={aktif.tanaman === 'cabai' ? aktif.teks : null}
+        />
+        <KartuTanaman
+          nama="Kangkung"
+          sehat={sehat.kangkung}
+          layu={save.carryover.kebunLayu}
+          butuh={aktif.tanaman === 'kangkung' ? aktif.teks : null}
+        />
+      </div>
+
+      <p role="status" aria-live="polite">
+        <strong>{aktif.teks}</strong>
+      </p>
+
+      {selesai ? (
+        <p role="status" aria-live="polite">
+          <Check aria-hidden="true" /> Semua tanaman segar kembali!
+        </p>
+      ) : (
+        <DragDrop
+          key={`${ronde}-${alatAktif.id}`}
+          benda={{ id: alatAktif.id, label: alatAktif.label, konten: <IkonAlat aria-hidden="true" /> }}
+          target={
+            alatAktif.id === aktif.kebutuhan
+              ? { id: tanamanButuh, label: namaTanaman(tanamanButuh), ikon: <Sprout aria-hidden="true" /> }
+              : { id: 'bukan', label: 'Bukan ini', ikon: <Wind aria-hidden="true" /> }
+          }
+          targetLain={
+            alatAktif.id === aktif.kebutuhan
+              ? [
+                  { id: tanamanLain, label: namaTanaman(tanamanLain), ikon: <Sprout aria-hidden="true" /> },
+                  { id: 'bukan', label: 'Bukan ini', ikon: <Wind aria-hidden="true" /> },
+                ]
+              : [
+                  { id: tanamanButuh, label: namaTanaman(tanamanButuh), ikon: <Sprout aria-hidden="true" /> },
+                  { id: tanamanLain, label: namaTanaman(tanamanLain), ikon: <Sprout aria-hidden="true" /> },
+                ]
+          }
+          perbesarTarget={perbesarTarget}
+          disabled={sehat[aktif.tanaman] <= 0}
+          onBenar={alatBenar}
+          onSalah={alatSalah}
+        />
+      )}
+
+      {petunjuk && <EfekSalah tampil petunjuk={petunjuk} />}
+
+      {pesan && (
+        <p role="status" aria-live="polite">
+          {pesan}
+        </p>
+      )}
+    </section>
+  )
+}
+
 // ---------------------------------------------------- Fase 2: panen sayur ----
 
 const SAYUR = ['Cabai merah', 'Kangkung', 'Tomat', 'Bayam', 'Terong', 'Sawi']
+
+// ------------------------------------------- Versi tombol (mode satu-ketukan) ----
 
 function FasePanenSayur({ tambahSkor, onSelesai }: { tambahSkor: (n: number) => void; onSelesai: () => void }) {
   const [matang, setMatang] = useState(0)
@@ -602,9 +1048,162 @@ function FasePanenSayur({ tambahSkor, onSelesai }: { tambahSkor: (n: number) => 
   )
 }
 
+// ------------------------------------------------- Versi gestur: panen sayur ----
+
+function FasePanenGestur({ tambahSkor, onSelesai, onSalah, perbesarTarget }: PropsGestur) {
+  const spec = INTERAKSI_MISI.kompos[2]
+  const [matang, setMatang] = useState(0)
+  const [dipanen, setDipanen] = useState<number[]>([])
+  const [dipilih, setDipilih] = useState<number | null>(null)
+  const [selesaiPanen, setSelesaiPanen] = useState(false)
+  const [pesan, setPesan] = useState<string | null>('Sayur sedang tumbuh. Tunggu sampai matang, lalu seret ke keranjang.')
+  const [petunjuk, setPetunjuk] = useState<string | null>(null)
+  const [efekBenar, setEfekBenar] = useState(false)
+  const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+
+  useEffect(
+    () => () => {
+      if (timerRef.current) clearTimeout(timerRef.current)
+    },
+    [],
+  )
+
+  useEffect(() => {
+    if (matang >= SAYUR.length) return
+    const t = setInterval(() => {
+      setMatang((m) => {
+        if (m >= SAYUR.length) return m
+        tumbuh()
+        return m + 1
+      })
+    }, 2500)
+    return () => clearInterval(t)
+  }, [matang])
+
+  const berikutnya = SAYUR.findIndex((_, i) => i < matang && !dipanen.includes(i))
+  const aktifIndeks =
+    dipilih !== null && dipilih < matang && !dipanen.includes(dipilih) ? dipilih : berikutnya
+
+  const panenBenar = () => {
+    if (aktifIndeks < 0) return
+    const baru = [...dipanen, aktifIndeks]
+    setDipanen(baru)
+    setDipilih(null)
+    tambahSkor(16)
+    setEfekBenar(true)
+    setPetunjuk(null)
+    setPesan(`${SAYUR[aktifIndeks]} dipanen! ${6 - baru.length} lagi.`)
+    panen()
+    koin()
+    if (baru.length === SAYUR.length) {
+      tambahSkor(4)
+      timerRef.current = setTimeout(() => setSelesaiPanen(true), 700)
+    } else {
+      timerRef.current = setTimeout(() => setEfekBenar(false), 650)
+    }
+  }
+
+  const panenSalah = () => {
+    onSalah()
+    setPetunjuk(bersihPetunjuk(spec.petunjukMagi))
+    setPesan('Sudah matang, saatnya panen! Jangan dibiarkan tumbuh terus.')
+  }
+
+  const pilihPetak = (index: number) => {
+    if (dipanen.includes(index)) return
+    if (index >= matang) {
+      setPesan('Belum matang, tunggu sebentar.')
+      return
+    }
+    setDipilih(index)
+    setPesan(`${SAYUR[index]} sudah matang. Seret ke keranjang!`)
+  }
+
+  return (
+    <section className="aia-card" aria-labelledby="aia-kompos-panen" style={{ position: 'relative' }}>
+      <EfekBenar tampil={efekBenar} label="Panen!" />
+      <span className="aia-kicker">Fase 3 dari 3 · Panen sayur</span>
+      <h3 id="aia-kompos-panen" className="aia-section-title">
+        Panen sayur
+      </h3>
+
+      {!selesaiPanen ? (
+        <>
+          <p className="aia-muted">Sayur matang bergiliran. Seret sayur yang sudah matang ke keranjang panen.</p>
+          <div className="aia-zone-grid" role="group" aria-label="Petak sayur">
+            {SAYUR.map((nama, i) => {
+              const sudahMatang = i < matang
+              const sudahDipanen = dipanen.includes(i)
+              return (
+                <button
+                  key={nama}
+                  type="button"
+                  className="aia-btn aia-btn-ghost aia-btn-block"
+                  disabled={sudahDipanen}
+                  onClick={() => pilihPetak(i)}
+                  aria-label={`${nama}: ${sudahDipanen ? 'sudah dipanen' : sudahMatang ? 'matang, ketuk untuk memilih' : 'belum matang'}`}
+                >
+                  {sudahDipanen ? <Check aria-hidden="true" /> : <Sprout aria-hidden="true" />} {nama}
+                  {sudahDipanen ? ' · Dipanen' : sudahMatang ? ' · Matang!' : ' · Tumbuh...'}
+                </button>
+              )
+            })}
+          </div>
+          <p className="aia-muted">
+            Dipanen: {dipanen.length}/6 · Matang: {matang}/6
+          </p>
+
+          {aktifIndeks >= 0 ? (
+            <DragDrop
+              key={aktifIndeks}
+              benda={{ id: SAYUR[aktifIndeks], label: SAYUR[aktifIndeks], konten: <Sprout aria-hidden="true" /> }}
+              target={{ id: 'keranjang', label: 'Keranjang panen', ikon: <Package aria-hidden="true" /> }}
+              targetLain={[{ id: 'biarkan', label: 'Biarkan tumbuh', ikon: <Wind aria-hidden="true" /> }]}
+              perbesarTarget={perbesarTarget}
+              onBenar={panenBenar}
+              onSalah={panenSalah}
+            />
+          ) : (
+            <p className="aia-muted" role="status">
+              Menunggu sayur matang…
+            </p>
+          )}
+        </>
+      ) : (
+        <>
+          <p role="status" aria-live="polite">
+            <Check aria-hidden="true" /> Semua sayur sudah dipanen!
+          </p>
+          <p>
+            <strong>Sayur ini kembali ke kantin — siklus tertutup selesai satu putaran!</strong> Sisa makanan jadi
+            maggot, maggot jadi pupuk, pupuk jadi sayur, dan sayur kembali ke piring kita.
+          </p>
+          <div className="aia-actions">
+            <button type="button" className="aia-btn aia-btn-primary aia-btn-block" onClick={onSelesai}>
+              <Check aria-hidden="true" /> Selesai
+            </button>
+          </div>
+        </>
+      )}
+
+      {petunjuk && <EfekSalah tampil petunjuk={petunjuk} />}
+
+      {pesan && !selesaiPanen && (
+        <p role="status" aria-live="polite">
+          {pesan}
+        </p>
+      )}
+    </section>
+  )
+}
+
 // ------------------------------------------------------------------ Komponen utama ----
 
-export function KomposKebun({ stageIndex, onStageComplete }: MiniGameSlotProps) {
+export function KomposKebun({
+  stageIndex,
+  onStageComplete,
+  modeSatuKetukan = false,
+}: MiniGameSlotProps & { modeSatuKetukan?: boolean }) {
   const { save, dispatch } = useCampaign()
   // Fase = tahap yang sedang dimainkan (dipilih kerangka bab).
   const fase = stageIndex
@@ -614,6 +1213,7 @@ export function KomposKebun({ stageIndex, onStageComplete }: MiniGameSlotProps) 
   const [mudah, setMudah] = useState(false)
   const [alasanGagal, setAlasanGagal] = useState<string | null>(null)
   const [percobaan, setPercobaan] = useState(0)
+  const [salahGestur, setSalahGestur] = useState(0)
   const selesaiRef = useRef(false)
 
   const tambahSkor = (n: number) => {
@@ -638,6 +1238,12 @@ export function KomposKebun({ stageIndex, onStageComplete }: MiniGameSlotProps) 
     setMudah(true)
     ulangFase()
   }
+
+  const salahAksi = () => {
+    setSalahGestur((g) => g + 1)
+  }
+
+  const perbesarTarget = salahGestur >= 2 || mudah
 
   const selesaiFase = () => {
     if (selesaiRef.current) return
@@ -673,16 +1279,45 @@ export function KomposKebun({ stageIndex, onStageComplete }: MiniGameSlotProps) 
 
       {alasanGagal ? (
         <LayarGagal alasan={alasanGagal} gagal={gagal} onUlang={ulangFase} onMudah={modeMudah} />
+      ) : modeSatuKetukan ? (
+        fase === 0 ? (
+          <FaseLapis key={`lapis-${percobaan}`} mudah={mudah} tambahSkor={tambahSkor} onSelesai={selesaiFase} onGagal={gagalFase} />
+        ) : fase === 1 ? (
+          <FaseTanaman key={`tanaman-${percobaan}`} mudah={mudah} tambahSkor={tambahSkor} onSelesai={selesaiFase} onGagal={gagalFase} />
+        ) : (
+          <FasePanenSayur key={`panen-${percobaan}`} tambahSkor={tambahSkor} onSelesai={selesaiFase} />
+        )
       ) : fase === 0 ? (
-        <FaseLapis key={`lapis-${percobaan}`} mudah={mudah} tambahSkor={tambahSkor} onSelesai={selesaiFase} onGagal={gagalFase} />
+        <FaseLapisGestur
+          key={`lapis-g-${percobaan}`}
+          tambahSkor={tambahSkor}
+          onSelesai={selesaiFase}
+          onGagal={gagalFase}
+          onSalah={salahAksi}
+          perbesarTarget={perbesarTarget}
+        />
       ) : fase === 1 ? (
-        <FaseTanaman key={`tanaman-${percobaan}`} mudah={mudah} tambahSkor={tambahSkor} onSelesai={selesaiFase} onGagal={gagalFase} />
+        <FaseTanamanGestur
+          key={`tanaman-g-${percobaan}`}
+          tambahSkor={tambahSkor}
+          onSelesai={selesaiFase}
+          onGagal={gagalFase}
+          onSalah={salahAksi}
+          perbesarTarget={perbesarTarget}
+        />
       ) : (
-        <FasePanenSayur key={`panen-${percobaan}`} tambahSkor={tambahSkor} onSelesai={selesaiFase} />
+        <FasePanenGestur
+          key={`panen-g-${percobaan}`}
+          tambahSkor={tambahSkor}
+          onSelesai={selesaiFase}
+          onGagal={gagalFase}
+          onSalah={salahAksi}
+          perbesarTarget={perbesarTarget}
+        />
       )}
 
       <p className="aia-muted">
-        <Wind aria-hidden="true" /> {NAMA_FASE[fase]} · Jawaban benar +10 Koin Hijau.
+        <Wind aria-hidden="true" /> {NAMA_FASE[fase]} · Aksi benar menambah Koin Hijau.
       </p>
     </div>
   )

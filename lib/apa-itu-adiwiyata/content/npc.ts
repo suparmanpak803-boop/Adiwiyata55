@@ -1,11 +1,23 @@
 // Dialog NPC mode "Jelajah". Nada santai seperti dialog bab: Magi ramah,
 // Pak Plastik lucu dan sedang berubah, yang lain hangat dan membantu.
 // Tidak menggurui, tidak mengarang angka pasti atas nama sekolah.
+import { DIALOG_TUGAS } from './tugas'
+import { TUGAS } from '../tugas'
+import type { TugasKaderId } from '../types'
+
 export interface DialogNpc {
   sapaan: string
   baris: string[]
   tips?: string
 }
+
+// Dialog NPC pemberi Misi Kader, dipetakan dari DIALOG_TUGAS (content/tugas.ts)
+// lewat TUGAS (npcId per misi) supaya isinya tidak disalin ke mana-mana.
+// content/tugas.ts hanya mengimpor tipe DialogNpc dari file ini, jadi tidak
+// ada siklus impor runtime.
+const DIALOG_TUGAS_NPC: Record<string, DialogNpc> = Object.fromEntries(
+  (Object.keys(TUGAS) as TugasKaderId[]).map((tugasId) => [TUGAS[tugasId].npcId, DIALOG_TUGAS[tugasId]]),
+)
 
 export const DIALOG_NPC: Record<string, DialogNpc> = {
   magi: {
@@ -80,4 +92,6 @@ export const DIALOG_NPC: Record<string, DialogNpc> = {
     ],
     tips: 'Sedotan plastik sekali pakai itu gampang banget diganti: bawa sedotan sendiri atau minum langsung.',
   },
+  // Pemberi Misi Kader (dialog dari DIALOG_TUGAS, lihat atas).
+  ...DIALOG_TUGAS_NPC,
 }
