@@ -140,6 +140,8 @@ export function HiddenObject({
       <style>{`
         .aia-gi-cari-area { position: relative; aspect-ratio: 4 / 3; border: 1px solid var(--line, #e5e7eb); border-radius: 14px; overflow: hidden; background-color: var(--card, #fff); background-image: radial-gradient(rgba(47,125,79,.14) 1.5px, transparent 1.5px); background-size: 22px 22px; touch-action: manipulation; }
         .aia-gi-cari-objek { position: absolute; transform: translate(-50%, -50%); display: flex; align-items: center; justify-content: center; border-radius: 12px; border: 1px solid transparent; background: color-mix(in srgb, var(--card, #fff) 70%, transparent); color: var(--foreground, #111); opacity: .55; cursor: pointer; transition: opacity .15s ease, transform .15s ease; }
+        @media (hover: hover) { .aia-gi-cari-objek:hover:not(:disabled) { opacity: .9; transform: translate(-50%, -50%) scale(1.12); } }
+        .aia-gi-cari-objek:focus-visible { outline: 3px solid var(--green, #2f7d4f); outline-offset: 2px; opacity: 1; }
         .aia-gi-cari-objek.ditemukan { opacity: 1; border-color: var(--green, #2f7d4f); background: color-mix(in srgb, #2f7d4f 16%, var(--card, #fff)); }
         .aia-gi-cari-objek.petunjuk { animation: aia-gi-kilau 0.6s ease-in-out infinite alternate; outline: 3px solid #b45309; }
         @keyframes aia-gi-kilau { from { transform: translate(-50%, -50%) scale(1); } to { transform: translate(-50%, -50%) scale(1.18); } }

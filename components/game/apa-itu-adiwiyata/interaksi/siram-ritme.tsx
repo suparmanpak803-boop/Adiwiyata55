@@ -197,12 +197,22 @@ export function SiramRitme({
     penilaian.length > 0
       ? clamp(Math.round(penilaian.reduce((s, n) => s + NILAI_POIN[n], 0) / penilaian.length), 0, 100)
       : 0
+
+  // Keyboard: Enter/Spasi = ketukan (onPointerDown tidak dipicu keyboard).
+  const onKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>) => {
+    if (e.key !== 'Enter' && e.key !== ' ') return
+    e.preventDefault()
+    if (e.repeat) return
+    ketuk()
+  }
   const detikPerKetuk = (intervalMs / 1000).toFixed(2)
 
   return (
     <div className="aia-stack">
       <style>{`
         .aia-gi-ritme-tombol { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 120px; padding: 20px; border-radius: 16px; border: 2px solid var(--green, #2f7d4f); background: color-mix(in srgb, #2f7d4f 10%, var(--card, #fff)); color: var(--foreground, #111); font-weight: 800; font-size: 18px; cursor: pointer; touch-action: manipulation; user-select: none; -webkit-user-select: none; }
+        @media (hover: hover) { .aia-gi-ritme-tombol:hover { box-shadow: 0 4px 14px rgba(0,0,0,.15); } }
+        .aia-gi-ritme-tombol:focus-visible { outline: 3px solid var(--green, #2f7d4f); outline-offset: 2px; }
         .aia-gi-ritme-tombol svg { width: 40px; height: 40px; }
         .aia-gi-ritme-tombol.denyut { animation: aia-gi-denyut .22s ease; }
         @keyframes aia-gi-denyut { 0% { transform: scale(1); } 50% { transform: scale(1.08); } 100% { transform: scale(1); } }
@@ -244,6 +254,7 @@ export function SiramRitme({
             : 'Ketuk tombol ini tepat pada ketukan metronom.'
         }
         onPointerDown={ketuk}
+        onKeyDown={onKeyDown}
       >
         <Droplets aria-hidden="true" />
         {kurangi ? 'Ketuk!' : denyut ? 'Ketuk!' : 'Siap… ketuk pada ketukan!'}

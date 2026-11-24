@@ -146,6 +146,8 @@ export function KartuMemori({
         .aia-gi-memori-kartu { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; border-radius: 14px; border: 1px solid var(--line, #e5e7eb); background: var(--card, #fff); color: var(--foreground, #111); font-weight: 700; font-size: 14px; cursor: pointer; touch-action: manipulation; transition: transform .15s ease, background .15s ease; }
         .aia-gi-memori-kartu.tertutup { background: color-mix(in srgb, #2f7d4f 14%, var(--card, #fff)); font-size: 22px; }
         .aia-gi-memori-kartu.terbuka { transform: scale(1.03); }
+        @media (hover: hover) { .aia-gi-memori-kartu:hover { transform: scale(1.05); box-shadow: 0 4px 14px rgba(0,0,0,.12); } }
+        .aia-gi-memori-kartu:focus-visible { outline: 3px solid var(--green, #2f7d4f); outline-offset: 2px; }
         .aia-gi-memori-kartu.cocok { border-color: var(--green, #2f7d4f); background: color-mix(in srgb, #2f7d4f 16%, var(--card, #fff)); }
         @media (prefers-reduced-motion: reduce) { .aia-gi-memori-kartu { transition: none; } .aia-gi-memori-kartu.terbuka { transform: none; } }
       `}</style>

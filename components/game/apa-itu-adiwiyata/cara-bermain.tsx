@@ -35,6 +35,7 @@ export function CaraBermain({ onTutup }: { onTutup: () => void }) {
       role="dialog"
       aria-modal="true"
       aria-label="Cara bermain"
+      className="aia-panduan-overlay"
       style={{
         position: 'fixed',
         inset: 0,
@@ -80,13 +81,28 @@ export function CaraBermain({ onTutup }: { onTutup: () => void }) {
           <li>NPC dengan tanda &quot;!&quot; emas punya misi untukmu. Di akhir dialog ada tombol &quot;Mulai misi&quot; (atau &quot;Main lagi&quot; bila sudah selesai).</li>
         </ul>
 
+        {/* Hanya tampil di desktop (laptop) — disembunyikan di HP lewat
+            .aia-keyboard di apa-itu-adiwiyata.css. */}
+        <section className="aia-keyboard" aria-label="Kontrol keyboard untuk laptop">
+          <h3 className="aia-section-title">Kontrol keyboard (laptop)</h3>
+          <ul style={{ margin: '0 0 12px', paddingLeft: 20 }}>
+            <li><kbd>WASD</kbd> / <kbd>←</kbd> <kbd>↑</kbd> <kbd>↓</kbd> <kbd>→</kbd> — gerak</li>
+            <li><kbd>E</kbd> / <kbd>Enter</kbd> — bicara dengan NPC</li>
+            <li><kbd>Spasi</kbd> — lanjut dialog</li>
+            <li><kbd>Esc</kbd> — tutup dialog</li>
+            <li>Klik mouse — jalan ke titik yang diklik</li>
+            <li><kbd>P</kbd> — jeda</li>
+            <li><kbd>M</kbd> — bisu</li>
+          </ul>
+        </section>
+
         <h3 className="aia-section-title">Misi</h3>
         <p className="aia-muted" style={{ marginTop: 0 }}>
           Misi utama berurutan: misi berikutnya terbuka setelah misi sebelumnya selesai. Misi Tambahan selalu tersedia
           sejak awal. Tiap misi 3 tahap — selesaikan ketiganya, lalu ketuk &quot;Selesaikan Misi&quot; di Pos Hijau.
           Cara main tiap misi beda:
         </p>
-        <ul style={{ margin: '0 0 12px', paddingLeft: 20 }}>
+        <ul className="aia-panduan-misi" style={{ margin: '0 0 12px', paddingLeft: 20 }}>
           {CARA_MISI.map((m) => (
             <li key={m.judul}>
               <strong>{m.judul}</strong> — {m.cara}

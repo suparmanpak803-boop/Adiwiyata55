@@ -32,7 +32,7 @@ import { koinArkade } from '@/lib/apa-itu-adiwiyata/arkade'
 import { Ensiklopedia } from './ensiklopedia'
 import { Leaderboard } from './leaderboard'
 import { Profil } from './profil'
-import { klik, startMusic, stopMusic, type MusicMode } from './suara'
+import { klik, setSuaraMuted, startMusic, stopMusic, type MusicMode } from './suara'
 import './apa-itu-adiwiyata.css'
 
 const MODE_BAB: MusicMode[] = ['bab1', 'bab2', 'bab3', 'bab4', 'bab5', 'bab6']
@@ -93,6 +93,29 @@ function Shell() {
   }, [screen, activeChapter, hydrated])
 
   useEffect(() => stopMusic, [])
+
+  // Shortcut global M: bisukan/nyalakan semua suara (disimpan di save,
+  // sama seperti tombol bisu di HUD dunia dan Profil). Tidak bentrok:
+  // tidak ada komponen game yang memakai tombol M (Jelajah memakai
+  // WASD/panah/E/Enter/Spasi/Esc; Tangkap Sampah hanya panah; Kuis tidak
+  // punya shortcut). Diabaikan saat mengetik di input atau bersama
+  // Ctrl/Cmd/Alt.
+  const mutedRef = useRef(save.muted)
+  mutedRef.current = save.muted
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null
+      const tag = target?.tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || target?.isContentEditable) return
+      if (e.metaKey || e.ctrlKey || e.altKey) return
+      if (e.key.toLowerCase() !== 'm') return
+      const next = !mutedRef.current
+      dispatch({ type: 'SET_MUTED', muted: next })
+      setSuaraMuted(next)
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [dispatch])
 
   const gantiTab = (tab: AiaTab) => {
     setPesanMisi(null)

@@ -577,3 +577,121 @@
     transition: none !important;
   }
 }
+
+/* --- Seksi keyboard: hanya tampil di desktop (lihat media query di bawah) --- */
+.aia-keyboard {
+  display: none;
+}
+
+/* ==========================================================================
+   LAYOUT DESKTOP (laptop, >= 1024px)
+   Semua aturan di blok ini HANYA berlaku di desktop. Mobile (<= 720px)
+   tidak berubah sama sekali: tidak ada aturan di luar blok ini yang diubah,
+   dan tidak ada warna/tema yang disentuh.
+   ========================================================================== */
+@media (min-width: 1024px) {
+  /* Shell lebih lebar (~1120px), tetap di tengah. .aia-shell adalah shell
+     yang dipakai runner (index.tsx); .aia-root dipertahankan untuk
+     kompatibilitas. */
+  .aia-root,
+  .aia-shell {
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 0 32px calc(96px + env(safe-area-inset-bottom));
+  }
+
+  /* Ring fokus keyboard juga berlaku di shell live (.aia-shell) — aturan
+     dasar hanya mencakup .aia-root. */
+  .aia-shell button:focus-visible,
+  .aia-shell a:focus-visible,
+  .aia-shell input:focus-visible {
+    outline: 3px solid var(--green);
+    outline-offset: 2px;
+  }
+
+  .aia-header-title h1 {
+    font-size: 24px;
+  }
+
+  .aia-header-title p {
+    font-size: 13px;
+  }
+
+  /* Kartu & teks: padding sedikit lega, panjang baris dibatasi supaya
+     paragraf tidak membentang selebar shell dan tetap nyaman dibaca. */
+  .aia-card {
+    padding: 20px 24px;
+  }
+
+  .aia-muted {
+    max-width: 75ch;
+  }
+
+  .aia-dialog {
+    max-width: 75ch;
+  }
+
+  /* Grid: kartu bab 3 kolom, daftar tahap 2 kolom — mengisi lebar baru
+     tanpa satu baris yang terlalu panjang. */
+  .aia-bab-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .aia-stage-list {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  /* Bottom nav selebar shell dan di tengah, bukan membentang selebar
+     viewport laptop. */
+  .aia-bottom-nav {
+    left: 50%;
+    right: auto;
+    width: min(1120px, 100%);
+    transform: translateX(-50%);
+    padding: 8px 16px calc(10px + env(safe-area-inset-bottom));
+    border-left: 1px solid var(--line);
+    border-right: 1px solid var(--line);
+    border-radius: 16px 16px 0 0;
+  }
+
+  .aia-nav-btn {
+    min-height: 56px;
+    font-size: 12px;
+  }
+
+  /* Layar Awal: tetap kartu tengah yang nyaman (maks. 640px), supaya
+     gambar sampul & tombol tidak membentang selebar 1120px. */
+  .aia-layar-awal {
+    max-width: 640px;
+    margin: 24px auto 0;
+  }
+
+  /* Panduan Cara Bermain: kartu lebih lebar dari 560px (menimpa inline
+     maxWidth di TSX — hanya di desktop), daftar misi 2 kolom. */
+  .aia-panduan-overlay > .aia-card {
+    max-width: 760px !important;
+  }
+
+  .aia-panduan-misi {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px 24px;
+    padding-left: 0;
+    list-style: none;
+  }
+
+  /* Seksi kontrol keyboard: hanya tampil di desktop. */
+  .aia-keyboard {
+    display: block;
+  }
+
+  .aia-keyboard kbd {
+    padding: 2px 7px;
+    border: 1px solid var(--line);
+    border-bottom-width: 2px;
+    border-radius: 6px;
+    background: var(--muted);
+    font-size: 12px;
+    font-weight: 700;
+  }
+}

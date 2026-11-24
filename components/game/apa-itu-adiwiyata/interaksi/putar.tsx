@@ -105,6 +105,28 @@ export function RotateDial({
     setSedangPutar(false)
   }
 
+  // Keyboard: panah = putar 15° (Shift = 45°). Mode satu-ketukan:
+  // Enter/Spasi = satu putaran 90° (setara ketuk dua kali).
+  const onKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>) => {
+    if (disabled || selesaiRef.current) return
+    if (modeSatuKetukan) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault()
+        if (e.repeat) return
+        terapkanPutaran(totalRef.current + 90)
+      }
+      return
+    }
+    const langkah = e.shiftKey ? 45 : 15
+    if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
+      e.preventDefault()
+      terapkanPutaran(totalRef.current + langkah)
+    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') {
+      e.preventDefault()
+      terapkanPutaran(totalRef.current - langkah)
+    }
+  }
+
   const onPointerUp = () => {
     if (!modeSatuKetukan) {
       akhiriPutar()
@@ -126,6 +148,8 @@ export function RotateDial({
     <div className="aia-stack" style={{ alignItems: 'center' }}>
       <style>{`
         .aia-gi-putar { position: relative; width: 148px; height: 148px; border-radius: 50%; border: 1px solid var(--line, #e5e7eb); background: var(--card, #fff); color: var(--foreground, #111); cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
+        @media (hover: hover) { .aia-gi-putar:hover { box-shadow: 0 4px 14px rgba(0,0,0,.15); } }
+        .aia-gi-putar:focus-visible { outline: 3px solid var(--green, #2f7d4f); outline-offset: 2px; }
         .aia-gi-putar-cakram { position: absolute; inset: 18px; border-radius: 50%; background: color-mix(in srgb, #2f7d4f 14%, var(--card, #fff)); border: 2px solid var(--green, #2f7d4f); display: flex; align-items: center; justify-content: center; pointer-events: none; }
         .aia-gi-putar-tanda { position: absolute; top: 6px; left: 50%; width: 10px; height: 10px; margin-left: -5px; border-radius: 50%; background: #b45309; }
       `}</style>
@@ -135,11 +159,12 @@ export function RotateDial({
         className="aia-gi-putar"
         style={{ minWidth: 148, minHeight: 148 }}
         disabled={disabled || selesaiRef.current}
-        aria-label={`${label}. ${modeSatuKetukan ? 'Ketuk dua kali untuk memutar 90 derajat.' : 'Putar dengan gerakan melingkar.'}`}
+        aria-label={`${label}. ${modeSatuKetukan ? 'Ketuk dua kali untuk memutar 90 derajat, atau tekan Enter/Spasi.' : 'Putar dengan gerakan melingkar, atau pakai tombol panah.'}`}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onPointerCancel={akhiriPutar}
+        onKeyDown={onKeyDown}
       >
         <svg
           width={148}
@@ -176,7 +201,7 @@ export function RotateDial({
       </button>
       <p className="aia-muted" style={{ textAlign: 'center', margin: 0 }}>
         Sudut: {Math.round(Math.abs(putaran))}° / {sudutTarget}°
-        {modeSatuKetukan ? ' — ketuk dua kali untuk memutar 90°.' : ' — putar melingkar sampai penuh.'}
+        {modeSatuKetukan ? ' — ketuk dua kali (atau Enter/Spasi) untuk memutar 90°.' : ' — putar melingkar sampai penuh, atau pakai tombol panah.'}
       </p>
     </div>
   )

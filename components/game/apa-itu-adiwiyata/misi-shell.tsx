@@ -207,6 +207,33 @@ export function MisiShell({
     return () => clearTimeout(t)
   }, [pesanSukses])
 
+  // Shortcut keyboard P: jeda/lanjutkan misi (sama seperti tombol Jeda di
+  // atas — hanya aktif saat permainan sedang berjalan). Esc saat jeda =
+  // lanjutkan (konsisten: Esc menutup dialog). Tidak bentrok: tidak ada
+  // mini-game yang memakai tombol P, dan Esc belum dipakai di shell ini.
+  // Diabaikan saat mengetik di input atau bersama Ctrl/Cmd/Alt.
+  useEffect(() => {
+    const bisaJeda = sudahMulai && tampilkanGame && !showEvent
+    const onKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null
+      const tag = target?.tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || target?.isContentEditable) return
+      if (e.metaKey || e.ctrlKey || e.altKey) return
+      const key = e.key.toLowerCase()
+      if (key === 'p' && bisaJeda) {
+        klik()
+        setTerjeda((v) => !v)
+        return
+      }
+      if (key === 'escape' && terjeda) {
+        klik()
+        setTerjeda(false)
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [sudahMulai, tampilkanGame, showEvent, terjeda])
+
   const selesaikanTahap = (stageIndex: number, score: number) => {
     if (kind === 'bab' && chapterId) {
       dispatch({ type: 'COMPLETE_STAGE', chapterId, stageIndex, score })
@@ -331,6 +358,7 @@ export function MisiShell({
                   setTerjeda(true)
                 }}
                 aria-label="Jeda permainan"
+                title="Jeda (P)"
               >
                 <Pause aria-hidden="true" />
               </button>

@@ -33,7 +33,7 @@ export function LayarAwal({
   const misiKader = TUGAS_ORDER.filter((id) => save.tugas[id].done).length
 
   return (
-    <section className="aia-card" aria-labelledby="aia-awal-title">
+    <section className="aia-card aia-layar-awal" aria-labelledby="aia-awal-title">
       <img
         src="/images/game/misi/gerbang.jpg"
         alt="Gambar sampul game: tas, tumbler, dan kotak bekal"

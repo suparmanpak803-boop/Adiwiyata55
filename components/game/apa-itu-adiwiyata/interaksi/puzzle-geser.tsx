@@ -128,6 +128,8 @@ export function PuzzleGeser({
         .aia-gi-puzzle-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
         .aia-gi-puzzle-petak { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: 84px; min-width: 56px; padding: 8px 4px; border-radius: 12px; border: 1px solid var(--line, #e5e7eb); background: var(--card, #fff); color: var(--foreground, #111); font-weight: 700; font-size: 14px; cursor: pointer; touch-action: manipulation; transition: transform .15s ease, outline .15s ease; }
         .aia-gi-puzzle-petak.dipilih { outline: 3px solid var(--green, #2f7d4f); outline-offset: 2px; transform: scale(1.04); }
+        @media (hover: hover) { .aia-gi-puzzle-petak:hover:not(:disabled) { transform: scale(1.04); box-shadow: 0 4px 14px rgba(0,0,0,.12); } }
+        .aia-gi-puzzle-petak:focus-visible { outline: 3px solid var(--green, #2f7d4f); outline-offset: 2px; }
         .aia-gi-puzzle-nomor { font-size: 11px; color: var(--green, #2f7d4f); font-weight: 800; }
         @media (prefers-reduced-motion: reduce) { .aia-gi-puzzle-petak { transition: none; } .aia-gi-puzzle-petak.dipilih { transform: none; } }
       `}</style>

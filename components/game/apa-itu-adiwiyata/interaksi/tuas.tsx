@@ -127,6 +127,7 @@ export function SliderLever({
         .aia-gi-tuas-isi { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 999px; background: var(--green, #2f7d4f); }
         .aia-gi-tuas-pegangan { position: absolute; top: 50%; width: 48px; height: 48px; margin: -24px 0 0 -24px; border-radius: 50%; border: 2px solid var(--green, #2f7d4f); background: var(--card, #fff); color: var(--foreground, #111); display: flex; align-items: center; justify-content: center; font-weight: 800; cursor: grab; touch-action: none; box-shadow: 0 2px 8px rgba(0,0,0,.15); }
         .aia-gi-tuas-pegangan:focus-visible { outline: 3px solid var(--green, #2f7d4f); outline-offset: 2px; }
+        @media (hover: hover) { .aia-gi-tuas-pegangan:hover { transform: scale(1.08); box-shadow: 0 4px 14px rgba(0,0,0,.2); } }
       `}</style>
 
       <div style={{ textAlign: 'center' }}>

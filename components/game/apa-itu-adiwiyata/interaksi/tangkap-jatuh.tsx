@@ -232,6 +232,7 @@ export function TangkapJatuh({
         .aia-gi-tangkap-objek { position: absolute; transform: translate(-50%, 0); display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 56px; min-height: 56px; padding: 6px; border-radius: 12px; border: 1px solid var(--line, #e5e7eb); background: var(--card, #fff); color: var(--foreground, #111); font-weight: 700; font-size: 13px; pointer-events: none; }
         .aia-gi-tangkap-keranjang { position: absolute; bottom: 10px; transform: translateX(-50%); display: flex; align-items: center; justify-content: center; min-height: 48px; border-radius: 12px; background: #2f7d4f; color: #fff; font-weight: 800; font-size: 22px; pointer-events: none; }
         .aia-gi-tangkap-tanah { position: absolute; left: 0; right: 0; bottom: 0; height: 8px; background: color-mix(in srgb, #2f7d4f 35%, var(--card, #fff)); }
+        .aia-gi-tangkap-area:focus-visible { outline: 3px solid var(--green, #2f7d4f); outline-offset: 2px; }
         .aia-gi-tangkap-panah { min-width: 56px; min-height: 48px; }
       `}</style>
 

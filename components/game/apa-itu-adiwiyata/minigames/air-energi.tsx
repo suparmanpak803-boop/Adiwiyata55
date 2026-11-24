@@ -360,8 +360,14 @@ function TampungHujan({
 
       {fase === 'main' && (
         <>
+          <style>{`
+            .aia-air-area:focus-visible { outline: 3px solid var(--green, #2f7d4f); outline-offset: 2px; }
+            .aia-air-tetes:focus-visible { outline: 3px solid #2b6cb0; outline-offset: 1px; border-radius: 50%; background: rgba(43,108,176,.12); }
+            @media (hover: hover) { .aia-air-tetes:hover { transform: scale(1.15); } }
+          `}</style>
           <div
             ref={areaRef}
+            className="aia-air-area"
             role="application"
             aria-label="Area hujan. Gerakkan tangki untuk menangkap tetes, atau ketuk tetesnya langsung."
             tabIndex={0}
@@ -392,10 +398,17 @@ function TampungHujan({
               <button
                 key={t.id}
                 type="button"
+                className="aia-air-tetes"
                 aria-label="Tetes hujan, ketuk untuk menangkap"
                 onPointerDown={(e) => {
                   e.stopPropagation()
                   tangkapLangsung(t.id)
+                }}
+                // Keyboard: klik keyboard (detail 0) tidak memicu
+                // pointerdown, jadi tangkap lewat onClick khusus ini.
+                // Klik mouse/sentuh (detail 1) diabaikan supaya tidak dobel.
+                onClick={(e) => {
+                  if (e.detail === 0) tangkapLangsung(t.id)
                 }}
                 style={{
                   position: 'absolute',

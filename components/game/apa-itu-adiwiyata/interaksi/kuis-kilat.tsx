@@ -143,11 +143,23 @@ export function KuisKilat({
   const persenWaktu = tanpaWaktu ? 100 : (sisaMs / waktuPerSoalMs) * 100
   const detik = Math.ceil(sisaMs / 1000)
 
+  // Keyboard: tombol 1–4 atau A–D memilih jawaban (Tab+Enter tetap bisa).
+  const onKeyDownPilihan = (e: React.KeyboardEvent) => {
+    if (!kini || dijawabRef.current) return
+    const k = e.key.toUpperCase()
+    let i = -1
+    if (/^[1-9]$/.test(k)) i = Number.parseInt(k, 10) - 1
+    else if (/^[A-D]$/.test(k)) i = k.charCodeAt(0) - 65
+    if (i >= 0 && i < kini.pilihan.length) nilaiJawaban(i)
+  }
+
   return (
-    <div className="aia-stack">
+    <div className="aia-stack" onKeyDown={onKeyDownPilihan}>
       <style>{`
         .aia-gi-kuis-soal { padding: 18px; border: 1px solid var(--line, #e5e7eb); border-radius: 14px; background: var(--card, #fff); color: var(--foreground, #111); font-size: 18px; font-weight: 700; }
         .aia-gi-kuis-pilihan { display: block; width: 100%; min-height: 56px; padding: 14px; border-radius: 12px; border: 1px solid var(--line, #e5e7eb); background: var(--card, #fff); color: var(--foreground, #111); font-size: 16px; font-weight: 600; text-align: left; cursor: pointer; touch-action: manipulation; }
+        @media (hover: hover) { .aia-gi-kuis-pilihan:hover:not(:disabled) { transform: scale(1.01); box-shadow: 0 4px 14px rgba(0,0,0,.12); } }
+        .aia-gi-kuis-pilihan:focus-visible { outline: 3px solid var(--green, #2f7d4f); outline-offset: 2px; }
         .aia-gi-kuis-pilihan.benar-dipilih { border-color: var(--green, #2f7d4f); background: color-mix(in srgb, #2f7d4f 14%, var(--card, #fff)); }
         .aia-gi-kuis-pilihan.salah-dipilih { border-color: #b83232; background: color-mix(in srgb, #b83232 10%, var(--card, #fff)); }
         .aia-gi-kuis-pilihan.jawaban-benar { border-color: var(--green, #2f7d4f); background: color-mix(in srgb, #2f7d4f 14%, var(--card, #fff)); }
@@ -240,8 +252,8 @@ export function KuisKilat({
           {!dijawab && (
             <p className="aia-muted" style={{ margin: 0, textAlign: 'center' }}>
               {kurangi || tanpaWaktu
-                ? 'Ketuk satu jawaban.'
-                : 'Ketuk jawaban sebelum waktu habis!'}
+                ? 'Ketuk satu jawaban (tombol 1–4 atau A–D juga bisa).'
+                : 'Ketuk jawaban sebelum waktu habis! (tombol 1–4 atau A–D juga bisa)'}
             </p>
           )}
         </>

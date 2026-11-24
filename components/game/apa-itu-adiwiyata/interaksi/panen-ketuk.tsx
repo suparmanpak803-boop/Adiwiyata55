@@ -184,6 +184,8 @@ export function PanenKetuk({
       <style>{`
         .aia-gi-panen-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
         .aia-gi-panen-petak { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-height: 84px; padding: 10px 6px; border-radius: 12px; border: 1px solid var(--line, #e5e7eb); background: var(--card, #fff); color: var(--foreground, #111); font-weight: 700; font-size: 13px; cursor: pointer; touch-action: manipulation; transition: transform .15s ease, outline .15s ease; }
+        @media (hover: hover) { .aia-gi-panen-petak:hover:not(:disabled) { transform: scale(1.03); box-shadow: 0 4px 14px rgba(0,0,0,.12); } }
+        .aia-gi-panen-petak:focus-visible { outline: 3px solid var(--green, #2f7d4f); outline-offset: 2px; }
         .aia-gi-panen-petak.aktif { outline: 3px solid var(--green, #2f7d4f); outline-offset: 1px; background: color-mix(in srgb, #2f7d4f 10%, var(--card, #fff)); }
         .aia-gi-panen-petak.aktif:active { transform: scale(.95); }
         .aia-gi-panen-petak:disabled { cursor: default; }

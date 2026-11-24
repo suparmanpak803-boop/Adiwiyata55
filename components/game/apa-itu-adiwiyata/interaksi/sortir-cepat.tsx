@@ -145,12 +145,21 @@ export function SortirCepat({
   const persenWaktu = waktu > 0 ? (sisaMs / waktu) * 100 : 100
   const detik = Math.ceil(sisaMs / 1000)
 
+  // Keyboard: tombol 1..n memilih target (Tab+Enter tetap bisa).
+  const onKeyDownPilihan = (e: React.KeyboardEvent) => {
+    const n = Number.parseInt(e.key, 10)
+    if (Number.isNaN(n) || n < 1 || n > target.length) return
+    jawab(target[n - 1].id)
+  }
+
   return (
-    <div className="aia-stack">
+    <div className="aia-stack" onKeyDown={onKeyDownPilihan}>
       <style>{`
         .aia-gi-sortir-ban { position: relative; min-height: 140px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 18px; border: 1px solid var(--line, #e5e7eb); border-radius: 14px; background: repeating-linear-gradient(90deg, var(--card, #fff) 0 26px, color-mix(in srgb, #2f7d4f 8%, var(--card, #fff)) 26px 28px); color: var(--foreground, #111); }
         .aia-gi-sortir-target { min-height: 64px; min-width: 64px; padding: 12px 10px; border-radius: 14px; border: 1px solid var(--line, #e5e7eb); background: var(--card, #fff); color: var(--foreground, #111); font-weight: 700; font-size: 15px; cursor: pointer; touch-action: manipulation; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; }
         .aia-gi-sortir-target:active { transform: scale(.96); }
+        @media (hover: hover) { .aia-gi-sortir-target:hover:not(:disabled) { transform: scale(1.04); box-shadow: 0 4px 14px rgba(0,0,0,.12); } }
+        .aia-gi-sortir-target:focus-visible { outline: 3px solid var(--green, #2f7d4f); outline-offset: 2px; }
         @media (prefers-reduced-motion: reduce) { .aia-gi-sortir-target:active { transform: none; } }
       `}</style>
 
@@ -182,7 +191,7 @@ export function SortirCepat({
             {kini.ikon}
             <strong style={{ fontSize: 20 }}>{kini.label}</strong>
             <small className="aia-muted">
-              {kurangi ? 'Ketuk target yang benar.' : 'Cepat! Masukkan ke target yang benar.'}
+              {kurangi ? 'Ketuk target yang benar (tombol 1–4 juga bisa).' : 'Cepat! Masukkan ke target yang benar (tombol 1–4 juga bisa).'}
             </small>
           </>
         ) : (

@@ -60,11 +60,23 @@ export function TapSpam({
 
   const persen = Math.min(100, (hitung / target) * 100)
 
+  // Keyboard: Enter/Spasi = satu ketukan. (onPointerDown tidak dipicu
+  // keyboard, jadi tanpa ini tombol tidak bisa dipakai dari keyboard.
+  // e.repeat diabaikan supaya menahan Spasi tidak jadi ketukan otomatis.)
+  const onKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>) => {
+    if (e.key !== 'Enter' && e.key !== ' ') return
+    e.preventDefault()
+    if (e.repeat) return
+    ketuk()
+  }
+
   return (
     <div className="aia-stack">
       <style>{`
         .aia-gi-ketuk { display: block; width: 100%; min-height: 120px; padding: 20px; border-radius: 14px; border: 1px solid var(--line, #e5e7eb); background: var(--card, #fff); color: var(--foreground, #111); cursor: pointer; touch-action: manipulation; user-select: none; -webkit-user-select: none; }
         .aia-gi-ketuk:active { transform: scale(.97); }
+        @media (hover: hover) { .aia-gi-ketuk:hover { box-shadow: 0 4px 14px rgba(0,0,0,.12); } }
+        .aia-gi-ketuk:focus-visible { outline: 3px solid var(--green, #2f7d4f); outline-offset: 2px; }
         .aia-gi-ketuk-ikon { display: inline-block; animation: aia-gi-pop .18s ease; }
         @keyframes aia-gi-pop { 0% { transform: scale(1); } 50% { transform: scale(1.3); } 100% { transform: scale(1); } }
         @media (prefers-reduced-motion: reduce) { .aia-gi-ketuk:active { transform: none; } .aia-gi-ketuk-ikon { animation: none; } }
@@ -76,6 +88,7 @@ export function TapSpam({
         disabled={disabled || selesaiRef.current}
         aria-label={`${label}. Ketuk ${target} kali. Sudah ${hitung} dari ${target}.`}
         onPointerDown={ketuk}
+        onKeyDown={onKeyDown}
       >
         <span key={hitung} className="aia-gi-ketuk-ikon" aria-hidden="true">
           {ikon}

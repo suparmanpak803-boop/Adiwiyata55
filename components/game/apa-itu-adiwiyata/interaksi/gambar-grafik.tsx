@@ -123,6 +123,8 @@ export function GambarGrafik({
         .aia-gi-grafik-batang { width: 100%; background: #3b7ea1; transition: height .2s ease; }
         .aia-gi-grafik-batang.benar { background: #2f7d4f; }
         .aia-gi-grafik-tombol { display: flex; align-items: center; justify-content: center; width: 100%; max-width: 72px; border-radius: 10px; border: 1px solid var(--line, #e5e7eb); background: var(--card, #fff); color: var(--foreground, #111); cursor: pointer; touch-action: manipulation; }
+        @media (hover: hover) { .aia-gi-grafik-tombol:hover:not(:disabled) { background: color-mix(in srgb, #2f7d4f 10%, var(--card, #fff)); } }
+        .aia-gi-grafik-tombol:focus-visible { outline: 3px solid var(--green, #2f7d4f); outline-offset: 2px; }
         .aia-gi-grafik-tombol svg { width: 20px; height: 20px; }
         .aia-gi-grafik-nilai { font-weight: 800; font-size: 16px; }
         @media (prefers-reduced-motion: reduce) { .aia-gi-grafik-batang { transition: none; } }

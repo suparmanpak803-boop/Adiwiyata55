@@ -214,6 +214,8 @@ export function DragDrop({
       <style>{`
         .aia-gi-drag-benda { display: block; width: 100%; padding: 18px; border-radius: 14px; border: 1px solid var(--line, #e5e7eb); background: var(--card, #fff); color: var(--foreground, #111); cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
         .aia-gi-drag-benda.dipilih { outline: 3px solid var(--green, #2f7d4f); outline-offset: 2px; }
+        @media (hover: hover) { .aia-gi-drag-benda:hover { box-shadow: 0 4px 14px rgba(0,0,0,.12); } .aia-gi-drag-target:hover { transform: scale(1.03); box-shadow: 0 4px 14px rgba(0,0,0,.12); } }
+        .aia-gi-drag-benda:focus-visible, .aia-gi-drag-target:focus-visible { outline: 3px solid var(--green, #2f7d4f); outline-offset: 2px; }
         .aia-gi-drag-target { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; border: 1px solid var(--line, #e5e7eb); border-radius: 14px; background: var(--card, #fff); color: var(--foreground, #111); font-weight: 700; cursor: pointer; transition: transform .15s ease, box-shadow .15s ease, outline .15s ease; }
         .aia-gi-drag-target.aktif { outline: 3px solid var(--green, #2f7d4f); outline-offset: 2px; transform: scale(1.05); box-shadow: 0 6px 18px rgba(0,0,0,.18); }
         .aia-gi-drag-target.siap { outline: 2px dashed var(--green, #2f7d4f); outline-offset: 2px; }

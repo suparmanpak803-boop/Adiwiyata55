@@ -1,9 +1,10 @@
 'use client'
 
 // Explorer "Jelajah" — peta sekolah top-down di Canvas 2D.
-// Tokoh siswa chibi berjalan dengan joystick virtual (sentuh) atau
-// WASD/panah (keyboard), bicara dengan NPC, dan memungut sampah yang
-// berserakan. Dialog dan HUD memakai DOM supaya terbaca pembaca layar.
+// Tokoh siswa chibi berjalan dengan joystick virtual (sentuh, hanya di
+// perangkat sentuh), WASD/panah (keyboard), atau klik peta (mouse,
+// click-to-move), bicara dengan NPC, dan memungut sampah yang berserakan.
+// Dialog dan HUD memakai DOM supaya terbaca pembaca layar.
 // Data dunia (DUNIA, NPCS) dan dialog NPC (DIALOG_NPC) dibuat agen lain
 // mengikuti kontrak di lib/apa-itu-adiwiyata/dunia.ts dan content/npc.ts.
 
@@ -45,6 +46,17 @@ interface PemainState {
   arah: Arah
   bergerak: boolean
   fase: number
+}
+
+/** Target click-to-move (mouse): titik dunia + NPC yang dituju (bila ada). */
+interface TujuanJalan {
+  x: number
+  y: number
+  npcId?: string
+  /** Detik pemain diam padahal sedang berjalan ke target (macet di dinding). */
+  macet: number
+  terakhirX: number
+  terakhirY: number
 }
 
 interface NpcJalan extends NpcDunia {
@@ -619,7 +631,14 @@ export function Jelajah({
   const keysRef = useRef<Set<string>>(new Set())
   const joyRef = useRef({ aktif: false, id: null as number | null, vx: 0, vy: 0 })
   const tapRef = useRef<{ id: number; x: number; y: number; t: number } | null>(null)
-  const sentuhRef = useRef(false)
+  /** Target click-to-move (mouse); null bila tidak sedang berjalan otomatis. */
+  const tujuanRef = useRef<TujuanJalan | null>(null)
+  /** true bila perangkat punya pointer kasar (layar sentuh) — joystick. */
+  const coarseRef = useRef(false)
+  /** true bila perangkat punya pointer halus (mouse laptop/desktop) — hint keyboard. */
+  const [isDesktop, setIsDesktop] = useState(false)
+  /** true bila laptop/desktop berlayar lebar — canvas dunia boleh lebih tinggi. */
+  const [isDesktopLebar, setIsDesktopLebar] = useState(false)
   const trashRef = useRef<boolean[]>(DUNIA.sampah.map(() => false))
   const popsRef = useRef<{ x: number; y: number; t: number }[]>([])
   const rafRef = useRef(0)
@@ -713,6 +732,29 @@ export function Jelajah({
     return () => mq.removeEventListener('change', onChange)
   }, [])
 
+  // Perangkat sentuh vs laptop: joystick hanya untuk pointer coarse,
+  // hint keyboard hanya untuk pointer fine. Listener supaya berubah saat
+  // perangkat (mis. layar sentuh) dipasang/dilepas.
+  useEffect(() => {
+    const mqCoarse = window.matchMedia('(pointer: coarse)')
+    const mqFine = window.matchMedia('(pointer: fine)')
+    const mqLebar = window.matchMedia('(min-width: 1024px)')
+    const perbarui = () => {
+      coarseRef.current = mqCoarse.matches
+      setIsDesktop(mqFine.matches)
+      setIsDesktopLebar(mqFine.matches && mqLebar.matches)
+    }
+    perbarui()
+    mqCoarse.addEventListener('change', perbarui)
+    mqFine.addEventListener('change', perbarui)
+    mqLebar.addEventListener('change', perbarui)
+    return () => {
+      mqCoarse.removeEventListener('change', perbarui)
+      mqFine.removeEventListener('change', perbarui)
+      mqLebar.removeEventListener('change', perbarui)
+    }
+  }, [])
+
   // Loop utama: update + gambar + keyboard + jeda saat tab disembunyikan.
   useEffect(() => {
     staticRef.current = bangunStatis()
@@ -720,6 +762,7 @@ export function Jelajah({
     const update = (dt: number) => {
       const p = playerRef.current
       const dialogTerbuka = dialogRef.current !== null
+      if (dialogTerbuka) tujuanRef.current = null
       let vx = 0
       let vy = 0
       const keys = keysRef.current
@@ -730,6 +773,38 @@ export function Jelajah({
       if (joyRef.current.aktif) {
         vx += joyRef.current.vx
         vy += joyRef.current.vy
+      }
+      // Input manual membatalkan click-to-move; tanpa input manual, tokoh
+      // berjalan sendiri menuju target klik (NPC diikuti bila ia berpindah).
+      if (Math.hypot(vx, vy) > 0.01) {
+        tujuanRef.current = null
+      } else if (tujuanRef.current && !dialogTerbuka) {
+        const tujuan = tujuanRef.current
+        let tx = tujuan.x
+        let ty = tujuan.y
+        let npcTarget: NpcJalan | undefined
+        if (tujuan.npcId) {
+          npcTarget = npcsRef.current.find((n) => n.id === tujuan.npcId)
+          if (!npcTarget) {
+            tujuanRef.current = null
+          } else {
+            tx = npcTarget.x
+            ty = npcTarget.y
+          }
+        }
+        if (tujuanRef.current) {
+          const dx = tx - p.x
+          const dy = ty - p.y
+          const jarak = Math.hypot(dx, dy)
+          const ambang = npcTarget ? JARAK_BICARA - 6 : 10
+          if (jarak <= ambang) {
+            tujuanRef.current = null
+            if (npcTarget) bukaDialogRef.current(npcTarget)
+          } else {
+            vx = dx / jarak
+            vy = dy / jarak
+          }
+        }
       }
       const panjang = Math.hypot(vx, vy)
       const bergerak = panjang > 0.01 && !dialogTerbuka
@@ -746,6 +821,27 @@ export function Jelajah({
           Math.abs(vx) > Math.abs(vy) ? (vx > 0 ? 'kanan' : 'kiri') : vy > 0 ? 'bawah' : 'atas'
       }
       p.bergerak = bergerak
+
+      // Click-to-move macet (mis. target di balik dinding): batalkan supaya
+      // tokoh tidak mendorong dinding selamanya.
+      const tujuan = tujuanRef.current
+      if (tujuan && bergerak) {
+        const geser = Math.hypot(p.x - tujuan.terakhirX, p.y - tujuan.terakhirY)
+        if (geser < 1) {
+          tujuan.macet += dt
+        } else {
+          tujuan.macet = 0
+          tujuan.terakhirX = p.x
+          tujuan.terakhirY = p.y
+        }
+        if (tujuan.macet > 0.6) {
+          const npcMacet = tujuan.npcId
+            ? npcsRef.current.find((n) => n.id === tujuan.npcId)
+            : undefined
+          tujuanRef.current = null
+          if (npcMacet) showToast(`Terhalang — dekati ${npcMacet.nama} dulu untuk bicara`)
+        }
+      }
 
       // NPC berkeliaran (dijeda saat dialog terbuka / reduced motion).
       for (const n of npcsRef.current) {
@@ -910,9 +1006,9 @@ export function Jelajah({
       for (const a of aktor) a.gambar()
       ctx.restore()
 
-      // Joystick (hanya tampil setelah sentuhan pertama, supaya tidak
-      // mengganggu tampilan di laptop).
-      if (sentuhRef.current) {
+      // Joystick virtual hanya untuk perangkat sentuh (pointer: coarse);
+      // di laptop (pointer: fine) tidak digambar sama sekali.
+      if (coarseRef.current) {
         const joy = joyRef.current
         const cx = 84
         const cy = view.h - 84
@@ -992,6 +1088,7 @@ export function Jelajah({
     const onBlur = () => {
       keysRef.current.clear()
       joyRef.current = { aktif: false, id: null, vx: 0, vy: 0 }
+      tujuanRef.current = null
     }
     const onVisibility = () => {
       if (document.hidden) {
@@ -1029,14 +1126,18 @@ export function Jelajah({
   }
 
   const onPointerDown = (e: React.PointerEvent) => {
-    if (e.pointerType === 'touch') sentuhRef.current = true
     if (dialogRef.current) return
     if ((e.target as HTMLElement).closest('button')) return
+    // Klik mouse membatalkan click-to-move yang sedang berjalan; klik baru
+    // (tap) akan menetapkan target baru di onPointerUp.
+    if (e.pointerType === 'mouse') tujuanRef.current = null
     const pos = posisiPointer(e)
     const view = viewRef.current
     const jx = 84
     const jy = view.h - 84
-    if (Math.hypot(pos.x - jx, pos.y - jy) < 80) {
+    // Joystick hanya untuk sentuhan: klik mouse di pojok kiri bawah tidak
+    // boleh mengaktifkan joystick yang tak terlihat.
+    if (e.pointerType === 'touch' && Math.hypot(pos.x - jx, pos.y - jy) < 80) {
       joyRef.current = { aktif: true, id: e.pointerId, vx: 0, vy: 0 }
       ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
       return
@@ -1046,18 +1147,47 @@ export function Jelajah({
 
   const onPointerMove = (e: React.PointerEvent) => {
     const joy = joyRef.current
-    if (!joy.aktif || joy.id !== e.pointerId) return
-    const pos = posisiPointer(e)
-    const view = viewRef.current
-    let dx = (pos.x - 84) / JARI_JOYSTICK
-    let dy = (pos.y - (view.h - 84)) / JARI_JOYSTICK
-    const panjang = Math.hypot(dx, dy)
-    if (panjang > 1) {
-      dx /= panjang
-      dy /= panjang
+    if (joy.aktif && joy.id === e.pointerId) {
+      const pos = posisiPointer(e)
+      const view = viewRef.current
+      let dx = (pos.x - 84) / JARI_JOYSTICK
+      let dy = (pos.y - (view.h - 84)) / JARI_JOYSTICK
+      const panjang = Math.hypot(dx, dy)
+      if (panjang > 1) {
+        dx /= panjang
+        dy /= panjang
+      }
+      joy.vx = dx
+      joy.vy = dy
+      return
     }
-    joy.vx = dx
-    joy.vy = dy
+    // Kursor pointer saat mouse hover di atas objek interaktif (NPC, sampah
+    // liar, petak kebun, kotak maggot); default di tanah kosong.
+    if (e.pointerType === 'mouse') {
+      const canvas = canvasRef.current
+      if (canvas) {
+        const pos = posisiPointer(e)
+        const p = playerRef.current
+        const view = viewRef.current
+        const camX = jepitKamera(p.x - view.w / 2, view.w, DUNIA.lebar)
+        const camY = jepitKamera(p.y - view.h / 2, view.h, DUNIA.tinggi)
+        const wx = pos.x + camX
+        const wy = pos.y + camY
+        const dunia = saveRef.current.dunia
+        const diAtasInteraktif =
+          npcsRef.current.some((n) => Math.hypot(n.x - wx, n.y - wy) < 46) ||
+          DUNIA.sampah.some(
+            (s, i) =>
+              i < dunia.sampahLiar && !trashRef.current[i] && Math.hypot(s.x - wx, s.y - wy) < 30,
+          ) ||
+          dunia.petak.some((pp) => {
+            const q = POSISI_PETAK[pp.id]
+            return Math.hypot(q.x - wx, q.y - wy) < 30
+          }) ||
+          Math.hypot(POSISI_KOTAK_MAGGOT.x - wx, POSISI_KOTAK_MAGGOT.y - wy) < 30
+        canvas.style.cursor = diAtasInteraktif ? 'pointer' : 'default'
+      }
+    }
   }
 
   const onPointerUp = (e: React.PointerEvent) => {
@@ -1082,7 +1212,10 @@ export function Jelajah({
     const npc = npcsRef.current.find((n) => Math.hypot(n.x - wx, n.y - wy) < 46)
     if (npc) {
       if (Math.hypot(npc.x - p.x, npc.y - p.y) <= JARAK_BICARA) bukaDialog(npc)
-      else showToast(`Dekati ${npc.nama} dulu untuk bicara`)
+      else if (e.pointerType === 'mouse') {
+        // Click-to-move: jalan mendekat, dialog terbuka otomatis saat sampai.
+        tujuanRef.current = { x: npc.x, y: npc.y, npcId: npc.id, macet: 0, terakhirX: p.x, terakhirY: p.y }
+      } else showToast(`Dekati ${npc.nama} dulu untuk bicara`)
       return
     }
 
@@ -1157,7 +1290,12 @@ export function Jelajah({
       const s = DUNIA.sampah[i]
       if (Math.hypot(s.x - wx, s.y - wy) >= 30) continue
       if (!dekatObjek(s.x, s.y)) {
-        showToast('Dekati sampahnya dulu untuk membersihkannya')
+        if (e.pointerType === 'mouse') {
+          // Click-to-move: pungut otomatis begitu sampai (radius 26 di update).
+          tujuanRef.current = { x: s.x, y: s.y, macet: 0, terakhirX: p.x, terakhirY: p.y }
+        } else {
+          showToast('Dekati sampahnya dulu untuk membersihkannya')
+        }
         return
       }
       const hasil = bersihkanSampah(dunia)
@@ -1172,7 +1310,12 @@ export function Jelajah({
       dispatch({ type: 'PERAWATAN_DUNIA', aksi: 'bersihkan', sekarang })
       return
     }
+
+  // Klik mouse di tanah kosong: click-to-move ke titik itu.
+  if (e.pointerType === 'mouse') {
+    tujuanRef.current = { x: wx, y: wy, macet: 0, terakhirX: p.x, terakhirY: p.y }
   }
+}
 
   // ------------------------------------------------------------ render ----
 
@@ -1249,11 +1392,19 @@ export function Jelajah({
         </p>
       )}
 
+      {isDesktop && (
+        <p className="aia-muted" style={{ margin: 0, fontSize: 12 }}>
+          Keyboard: WASD / panah gerak · E bicara · Spasi lanjut dialog · Esc tutup · Klik peta untuk berjalan
+        </p>
+      )}
+
       <div
         ref={wrapRef}
         style={{
           position: 'relative',
-          height: 'min(62vh, 520px)',
+          // Desktop lebar: area main lebih tinggi (dunia 960x640, jadi
+          // 640px menampilkan penuh tinggi dunia); HP tetap seperti semula.
+          height: isDesktopLebar ? 'min(72vh, 640px)' : 'min(62vh, 520px)',
           minHeight: 360,
           borderRadius: 16,
           overflow: 'hidden',
@@ -1398,7 +1549,9 @@ export function Jelajah({
       </div>
 
       <p className="aia-muted">
-        Gerakkan tokoh dengan joystick kiri bawah atau tombol WASD/panah. Dekati NPC lalu ketuk &quot;Bicara&quot; atau tekan E.
+        {isDesktop
+          ? 'Gerakkan tokoh dengan tombol WASD/panah, atau klik peta untuk berjalan ke titik itu. Dekati NPC lalu klik NPC-nya atau tekan E untuk bicara.'
+          : 'Gerakkan tokoh dengan joystick kiri bawah atau tombol WASD/panah. Dekati NPC lalu ketuk "Bicara" atau tekan E.'}{' '}
         NPC dengan tanda ! punya misi untukmu. Ketuk petak kebun untuk menyiram atau memanen, ketuk kotak maggot untuk
         memberi makan Magi, dan pungut sampah liar yang berserakan untuk Koin Hijau. Mau main santai? Temui Kak Yoga di
         arena pojok kanan bawah untuk Tangkap Sampah, atau Kak Dara di perpustakaan untuk Kuis Adiwiyata.

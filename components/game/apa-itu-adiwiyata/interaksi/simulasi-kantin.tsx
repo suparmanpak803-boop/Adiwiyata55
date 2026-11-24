@@ -163,6 +163,13 @@ export function SimulasiKantin({
   const detik = Math.ceil(sisaMs / 1000)
   const skorAkhir = pesanan.length > 0 ? clamp(Math.round((benarHitung / pesanan.length) * 100), 0, 100) : 0
 
+  // Keyboard: tombol 1..n memilih tindakan (Tab+Enter tetap bisa).
+  const onKeyDownPilihan = (e: React.KeyboardEvent) => {
+    const n = Number.parseInt(e.key, 10)
+    if (Number.isNaN(n) || n < 1 || n > tindakanAcak.length) return
+    pilihTindakan(tindakanAcak[n - 1])
+  }
+
   if (!aktif) {
     return (
       <div className="aia-stack">
@@ -172,11 +179,13 @@ export function SimulasiKantin({
   }
 
   return (
-    <div className="aia-stack" style={{ position: 'relative' }}>
+    <div className="aia-stack" style={{ position: 'relative' }} onKeyDown={onKeyDownPilihan}>
       <style>{`
         .aia-gi-kantin-pesanan { border: 1px solid var(--line, #e5e7eb); border-radius: 14px; background: var(--card, #fff); color: var(--foreground, #111); padding: 14px; }
         .aia-gi-kantin-tindakan { display: block; width: 100%; min-height: 64px; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line, #e5e7eb); background: var(--card, #fff); color: var(--foreground, #111); font-weight: 600; text-align: left; cursor: pointer; touch-action: manipulation; transition: transform .15s ease, outline .15s ease; }
         .aia-gi-kantin-tindakan:active { transform: scale(.97); }
+        @media (hover: hover) { .aia-gi-kantin-tindakan:hover:not(:disabled) { transform: scale(1.01); box-shadow: 0 4px 14px rgba(0,0,0,.12); } }
+        .aia-gi-kantin-tindakan:focus-visible { outline: 3px solid var(--green, #2f7d4f); outline-offset: 2px; }
         .aia-gi-kantin-tindakan.dipilih-benar { outline: 3px solid var(--green, #2f7d4f); background: color-mix(in srgb, #2f7d4f 12%, var(--card, #fff)); }
         .aia-gi-kantin-tindakan:disabled { cursor: default; }
         @media (prefers-reduced-motion: reduce) { .aia-gi-kantin-tindakan { transition: none; } .aia-gi-kantin-tindakan:active { transform: none; } }
@@ -250,8 +259,8 @@ export function SimulasiKantin({
       )}
       <p className="aia-muted" style={{ margin: 0 }}>
         {tanpaWaktu
-          ? 'Ketuk tindakan yang benar — tanpa batas waktu.'
-          : 'Layani pesanan sebelum waktu habis!'}
+          ? 'Ketuk tindakan yang benar — tanpa batas waktu (tombol 1–3 juga bisa).'
+          : 'Layani pesanan sebelum waktu habis! (tombol 1–3 juga bisa)'}
       </p>
     </div>
   )

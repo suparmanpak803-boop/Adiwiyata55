@@ -149,6 +149,8 @@ export function CariPerbedaan({
         .aia-gi-beda-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 8px; }
         .aia-gi-beda-sel { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: 64px; min-width: 56px; padding: 8px 4px; border-radius: 12px; border: 1px solid var(--line, #e5e7eb); background: var(--card, #fff); color: var(--foreground, #111); font-size: 13px; font-weight: 600; }
         button.aia-gi-beda-sel { cursor: pointer; touch-action: manipulation; }
+        @media (hover: hover) { button.aia-gi-beda-sel:hover:not(:disabled) { transform: scale(1.04); box-shadow: 0 4px 14px rgba(0,0,0,.12); } }
+        .aia-gi-beda-sel:focus-visible { outline: 3px solid var(--green, #2f7d4f); outline-offset: 2px; }
         .aia-gi-beda-sel.ditemukan { border-color: var(--green, #2f7d4f); background: color-mix(in srgb, #2f7d4f 16%, var(--card, #fff)); }
         .aia-gi-beda-sel.petunjuk { animation: aia-gi-beda-kilau 0.6s ease-in-out infinite alternate; outline: 3px solid #b45309; }
         @keyframes aia-gi-beda-kilau { from { transform: scale(1); } to { transform: scale(1.08); } }

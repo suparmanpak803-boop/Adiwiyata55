@@ -53,6 +53,10 @@ export function ThrowAim({
   const lebarRef = useRef(600)
   const animRef = useRef<Animation | null>(null)
   const timerRef = useRef<number | null>(null)
+  // Kekuatan bidikan keyboard (0..1); arah tetap -60° (sama seperti
+  // lemparan mode satu-ketukan). Bidik tong/zona dipilih lewat tombol
+  // terpisah di misi, jadi keyboard hanya mengatur kekuatan.
+  const bidikRef = useRef(0.7)
 
   useEffect(
     () => () => {
@@ -114,6 +118,18 @@ export function ThrowAim({
   const onPointerDown = (e: React.PointerEvent<HTMLButtonElement>) => {
     if (disabled || terbang || modeSatuKetukan) return
     klik()
+    ukurAsal()
+    awalRef.current = { x: e.clientX, y: e.clientY }
+    tarikRef.current = { x: 0, y: 0 }
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId)
+    } catch {
+      // Abaikan: perangkat tidak mendukung pointer capture.
+    }
+  }
+
+  /** Ukur posisi awal benda di dalam area (dipakai drag & keyboard). */
+  const ukurAsal = () => {
     const area = areaRef.current
     const benda = bendaRef.current
     if (area && benda) {
@@ -122,12 +138,33 @@ export function ThrowAim({
       lebarRef.current = ra.width
       asalRef.current = { x: rb.left + rb.width / 2 - ra.left, y: rb.top + rb.height / 2 - ra.top }
     }
-    awalRef.current = { x: e.clientX, y: e.clientY }
-    tarikRef.current = { x: 0, y: 0 }
-    try {
-      e.currentTarget.setPointerCapture(e.pointerId)
-    } catch {
-      // Abaikan: perangkat tidak mendukung pointer capture.
+  }
+
+  /** Kecepatan awal dari kekuatan (0..1) dengan arah tetap -60°. */
+  const kecepatanBidik = (kekuatan: number): Titik => {
+    const mag = kekuatan * TARIK_MAKS * 5
+    return { x: mag * 0.5, y: -mag * 0.866 }
+  }
+
+  // Keyboard: Panah Atas/Bawah = kekuatan ±0.1 (lintasan tampil),
+  // Spasi/Enter = lempar dengan kekuatan itu.
+  const onKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>) => {
+    if (disabled || terbang || modeSatuKetukan) return
+    if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+      e.preventDefault()
+      const k = clamp(bidikRef.current + (e.key === 'ArrowUp' ? 0.1 : -0.1), 0, 1)
+      bidikRef.current = k
+      ukurAsal()
+      const v = kecepatanBidik(k)
+      tarikRef.current = { x: -v.x / 5, y: -v.y / 5 }
+      setTarik(tarikRef.current)
+      setTitik(hitungLintasan(asalRef.current, v))
+    } else if (e.key === ' ' || e.key === 'Enter') {
+      e.preventDefault()
+      if (e.repeat) return
+      ukurAsal()
+      const k = bidikRef.current
+      lemparSekarang(k, -60, kecepatanBidik(k))
     }
   }
 
@@ -185,6 +222,8 @@ export function ThrowAim({
       <style>{`
         .aia-gi-lempar-area { position: relative; height: ${AREA_TINGGI}px; border: 1px solid var(--line, #e5e7eb); border-radius: 14px; background: linear-gradient(to bottom, color-mix(in srgb, #38bdf8 10%, var(--card, #fff)), var(--card, #fff)); overflow: hidden; touch-action: none; }
         .aia-gi-lempar-benda { position: absolute; left: 24px; bottom: 24px; width: 64px; height: 64px; border-radius: 50%; border: 2px solid var(--green, #2f7d4f); background: var(--card, #fff); color: var(--foreground, #111); display: flex; align-items: center; justify-content: center; cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
+        @media (hover: hover) { .aia-gi-lempar-benda:hover { box-shadow: 0 4px 14px rgba(0,0,0,.2); } }
+        .aia-gi-lempar-benda:focus-visible { outline: 3px solid var(--green, #2f7d4f); outline-offset: 2px; }
         .aia-gi-lempar-titik { position: absolute; width: 8px; height: 8px; margin: -4px 0 0 -4px; border-radius: 50%; background: #b45309; opacity: .8; pointer-events: none; }
         .aia-gi-lempar-meter { height: 10px; border-radius: 999px; background: var(--line, #e5e7eb); overflow: hidden; }
         .aia-gi-lempar-meter span { display: block; height: 100%; background: #b45309; transition: width .05s linear; }
@@ -209,11 +248,12 @@ export function ThrowAim({
             cursor: modeSatuKetukan ? 'default' : 'grab',
           }}
           disabled={disabled || terbang}
-          aria-label={`${label}. ${modeSatuKetukan ? 'Ketuk target untuk melempar.' : 'Tahan lalu tarik ke belakang, lepas untuk melempar.'}`}
+          aria-label={`${label}. ${modeSatuKetukan ? 'Ketuk target untuk melempar.' : 'Tahan lalu tarik ke belakang, lepas untuk melempar. Atau pakai Panah Atas/Bawah untuk kekuatan, lalu Spasi.'}`}
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
           onPointerCancel={onPointerCancel}
+          onKeyDown={onKeyDown}
         >
           {ikon}
         </button>
@@ -227,7 +267,7 @@ export function ThrowAim({
           ? `Ketuk target untuk melempar ${label}.`
           : tarik
             ? `Kekuatan ${Math.round(kekuatan * 100)}% — lepas untuk melempar!`
-            : `Tahan ${label}, tarik ke belakang, lalu lepas untuk melempar.`}
+            : `Tahan ${label}, tarik ke belakang, lalu lepas untuk melempar. Atau pakai Panah Atas/Bawah untuk kekuatan, lalu Spasi.`}
       </p>
 
       {modeSatuKetukan && (

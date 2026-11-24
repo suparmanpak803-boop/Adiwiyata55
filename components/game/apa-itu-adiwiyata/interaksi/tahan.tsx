@@ -138,11 +138,41 @@ export function HoldAction({
     berhenti()
   }
 
+  // Keyboard: tahan Spasi/Enter = menahan (lepas tombol = berhenti).
+  // Mode satu-ketukan: sekali tekan = isi otomatis, tekan lagi = batal.
+  // preventDefault mencegah klik bawaan tombol supaya tidak dobel.
+  const onKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>) => {
+    if (disabled || selesaiRef.current) return
+    if (e.key !== 'Enter' && e.key !== ' ') return
+    e.preventDefault()
+    if (e.repeat) return
+    if (modeSatuKetukan) {
+      if (menahanRef.current) berhenti()
+      else mulai()
+      return
+    }
+    mulai()
+  }
+
+  const onKeyUp = (e: React.KeyboardEvent<HTMLButtonElement>) => {
+    if (modeSatuKetukan) return
+    if (e.key !== 'Enter' && e.key !== ' ') return
+    e.preventDefault()
+    berhenti()
+  }
+
+  // Fokus lepas saat menahan (mis. Tab) = berhenti, seperti lepas pointer.
+  const onBlur = () => {
+    if (!modeSatuKetukan) berhenti()
+  }
+
   return (
     <div className="aia-stack" style={{ alignItems: 'center' }}>
       <style>{`
         .aia-gi-tahan { position: relative; width: 132px; height: 132px; border-radius: 50%; border: 1px solid var(--line, #e5e7eb); background: var(--card, #fff); color: var(--foreground, #111); cursor: pointer; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
         .aia-gi-tahan.menahan { outline: 3px solid var(--green, #2f7d4f); outline-offset: 2px; }
+        @media (hover: hover) { .aia-gi-tahan:hover { box-shadow: 0 4px 14px rgba(0,0,0,.15); } }
+        .aia-gi-tahan:focus-visible { outline: 3px solid var(--green, #2f7d4f); outline-offset: 2px; }
         .aia-gi-tahan-tengah { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; pointer-events: none; }
       `}</style>
       <button
@@ -150,11 +180,14 @@ export function HoldAction({
         className={`aia-gi-tahan${menahan ? ' menahan' : ''}`}
         style={{ minWidth: 132, minHeight: 132 }}
         disabled={disabled || selesaiRef.current}
-        aria-label={`${label}. ${modeSatuKetukan ? 'Ketuk sekali untuk mengisi otomatis.' : 'Tahan untuk mengisi.'}`}
+        aria-label={`${label}. ${modeSatuKetukan ? 'Ketuk sekali untuk mengisi otomatis.' : 'Tahan untuk mengisi. Tahan Spasi atau Enter juga bisa.'}`}
         onPointerDown={onPointerDown}
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerCancel}
         onPointerLeave={onPointerCancel}
+        onKeyDown={onKeyDown}
+        onKeyUp={onKeyUp}
+        onBlur={onBlur}
         onContextMenu={(e) => e.preventDefault()}
       >
         <svg width={132} height={132} viewBox="0 0 120 120" aria-hidden="true">
@@ -194,7 +227,7 @@ export function HoldAction({
           ? menahan
             ? `Mengisi ${label}… ketuk lagi untuk batal.`
             : `Ketuk sekali untuk mengisi ${label}.`
-          : `Tahan untuk ${label} sampai cincin penuh.`}
+          : `Tahan untuk ${label} sampai cincin penuh (atau tahan Spasi/Enter).`}
       </p>
     </div>
   )

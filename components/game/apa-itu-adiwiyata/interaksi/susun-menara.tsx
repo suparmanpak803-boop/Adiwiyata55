@@ -144,6 +144,8 @@ export function SusunMenara({ lapisan, modeSatuKetukan = false, disabled = false
         .aia-gi-menara-kosong { color: var(--foreground, #111); opacity: .6; font-weight: 600; }
         .aia-gi-menara-kartu { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 64px; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line, #e5e7eb); background: var(--card, #fff); color: var(--foreground, #111); font-weight: 700; text-align: left; cursor: pointer; touch-action: manipulation; transition: transform .15s ease; }
         .aia-gi-menara-kartu:active { transform: scale(.97); }
+        @media (hover: hover) { .aia-gi-menara-kartu:hover:not(:disabled) { transform: scale(1.01); box-shadow: 0 4px 14px rgba(0,0,0,.12); } }
+        .aia-gi-menara-kartu:focus-visible { outline: 3px solid var(--green, #2f7d4f); outline-offset: 2px; }
         .aia-gi-menara-kartu:disabled { cursor: default; }
         @media (prefers-reduced-motion: reduce) { .aia-gi-menara-lapisan { animation: none; } .aia-gi-menara-kartu { transition: none; } .aia-gi-menara-kartu:active { transform: none; } }
       `}</style>

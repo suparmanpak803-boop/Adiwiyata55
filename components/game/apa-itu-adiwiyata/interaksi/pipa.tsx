@@ -244,6 +244,8 @@ export function PipePuzzle({
     <div className="aia-stack">
       <style>{`
         .aia-gi-pipa-sel { position: relative; aspect-ratio: 1; min-width: 56px; min-height: 56px; padding: 4px; border-radius: 10px; border: 1px solid var(--line, #e5e7eb); background: var(--card, #fff); cursor: pointer; }
+        @media (hover: hover) { .aia-gi-pipa-sel:not(:disabled):hover { transform: scale(1.06); box-shadow: 0 4px 12px rgba(0,0,0,.15); } }
+        .aia-gi-pipa-sel:focus-visible { outline: 3px solid var(--green, #2f7d4f); outline-offset: 2px; }
         .aia-gi-pipa-sel.basah { background: color-mix(in srgb, #2563eb 14%, var(--card, #fff)); }
         .aia-gi-pipa-sel.tetap { cursor: default; opacity: .75; }
         .aia-gi-pipa-petunjuk { outline: 3px solid #b45309; outline-offset: 1px; animation: aia-gi-denyut 1s ease-in-out infinite alternate; }

@@ -164,6 +164,13 @@ export function BalasCepat({
   const detik = Math.ceil(sisaMs / 1000)
   const skorAkhir = pesan.length > 0 ? clamp(Math.round((benarHitung / pesan.length) * 100), 0, 100) : 0
 
+  // Keyboard: tombol 1..n memilih balasan (Tab+Enter tetap bisa).
+  const onKeyDownPilihan = (e: React.KeyboardEvent) => {
+    const n = Number.parseInt(e.key, 10)
+    if (Number.isNaN(n) || n < 1 || n > balasanAcak.length) return
+    jawab(balasanAcak[n - 1])
+  }
+
   if (!aktif) {
     return (
       <div className="aia-stack">
@@ -173,11 +180,13 @@ export function BalasCepat({
   }
 
   return (
-    <div className="aia-stack">
+    <div className="aia-stack" onKeyDown={onKeyDownPilihan}>
       <style>{`
         .aia-gi-chat-pesan { border: 1px solid var(--line, #e5e7eb); border-radius: 14px; background: var(--card, #fff); color: var(--foreground, #111); padding: 14px; }
         .aia-gi-chat-balasan { display: block; width: 100%; min-height: 56px; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line, #e5e7eb); background: var(--card, #fff); color: var(--foreground, #111); font-weight: 600; text-align: left; cursor: pointer; touch-action: manipulation; transition: transform .15s ease, outline .15s ease; }
         .aia-gi-chat-balasan:active { transform: scale(.97); }
+        @media (hover: hover) { .aia-gi-chat-balasan:hover:not(:disabled) { transform: scale(1.01); box-shadow: 0 4px 14px rgba(0,0,0,.12); } }
+        .aia-gi-chat-balasan:focus-visible { outline: 3px solid var(--green, #2f7d4f); outline-offset: 2px; }
         .aia-gi-chat-balasan.dipilih-benar { outline: 3px solid var(--green, #2f7d4f); background: color-mix(in srgb, #2f7d4f 12%, var(--card, #fff)); }
         .aia-gi-chat-balasan.dipilih-salah { outline: 3px solid #b83232; background: color-mix(in srgb, #b83232 10%, var(--card, #fff)); }
         .aia-gi-chat-balasan:disabled { cursor: default; }
@@ -251,8 +260,8 @@ export function BalasCepat({
 
       <p className="aia-muted" style={{ margin: 0 }}>
         {tanpaWaktu
-          ? 'Ketuk balasan terbaik — tanpa batas waktu.'
-          : 'Ketuk balasan terbaik sebelum waktu habis.'}
+          ? 'Ketuk balasan terbaik — tanpa batas waktu (tombol 1–3 juga bisa).'
+          : 'Ketuk balasan terbaik sebelum waktu habis (tombol 1–3 juga bisa).'}
       </p>
     </div>
   )
