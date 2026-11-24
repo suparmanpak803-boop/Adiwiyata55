@@ -1,7 +1,8 @@
 import { AuthRecoveryForm } from '@/components/auth-recovery-form'
 
 export const metadata = {
-  title: 'Atur Ulang Kata Sandi | Adiwiyata 55',
+  title: { absolute: 'Atur Ulang Kata Sandi | Adiwiyata 55' },
+  robots: { index: false, follow: false },
 }
 
 export default function ForgotPasswordPage() {

@@ -5,6 +5,9 @@ import { pool } from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
 
+// Leaderboard wajib login: jangan terindeks.
+export const metadata = { robots: { index: false, follow: false } }
+
 export default async function Page() {
   const user = await getPortalUser()
   if (!user) redirect('/sign-in')

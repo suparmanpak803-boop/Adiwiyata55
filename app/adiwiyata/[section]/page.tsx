@@ -21,10 +21,20 @@ export async function generateMetadata({ params }: { params: Promise<{ section: 
   const page = Object.hasOwn(content.pages, section) ? content.pages[section as keyof typeof content.pages] : null
   const title = section === 'tentang' ? 'Tentang Kami' : page?.title ?? 'Informasi Adiwiyata'
   const description = section === 'tentang' ? 'Kenali platform digital, tujuan pemantauan sampah, dan tim pengembang Adiwiyata 55 SMAN 55 Jakarta.' : page?.intro ?? 'Pusat Informasi Adiwiyata SMAN 55 Jakarta.'
-  // Judul halaman seperti 'Kader Adiwiyata' sudah mengandung kata Adiwiyata:
-  // jangan ditambah lagi agar tidak ganda ('Kader Adiwiyata Adiwiyata').
-  const fullTitle = title.endsWith('Adiwiyata') ? title : `${title} Adiwiyata`
-  return { title: `${fullTitle} | SMAN 55 Jakarta`, description }
+  // Judul lengkap (dengan nama sekolah) dirakit template title di root
+  // layout; di sini cukup nama section-nya saja.
+  const url = `https://adiwiyata55-cwpr.vercel.app/adiwiyata/${section}`
+  // Struktur petugas hanya tampil lengkap bila sudah login: jangan
+  // sampai terindeks.
+  if (section === 'struktur') {
+    return { title, description, robots: { index: false, follow: false } }
+  }
+  return {
+    title,
+    description,
+    alternates: { canonical: url },
+    openGraph: { title: `${title} | Adiwiyata SMAN 55 Jakarta`, description, url, type: 'website' },
+  }
 }
 
 export default async function AdiwiyataSectionPage({ params }: { params: Promise<{ section: string }> }) {

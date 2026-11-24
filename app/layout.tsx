@@ -4,9 +4,32 @@ import { SiteMotion } from '@/components/animations'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Adiwiyata SMAN 55 Jakarta',
+  metadataBase: new URL('https://adiwiyata55-cwpr.vercel.app'),
+  title: {
+    default: 'Adiwiyata SMAN 55 Jakarta',
+    template: '%s | Adiwiyata SMAN 55 Jakarta',
+  },
   description: 'Website Adiwiyata SMAN 55 Jakarta: edukasi lingkungan, program, dokumentasi kegiatan, publikasi, arsip, pelaporan sampah, dan aksi hijau.',
-  generator: 'v0.app',
+  keywords: ['Adiwiyata SMAN 55', 'SMAN 55 Jakarta', 'sekolah adiwiyata', 'pilah sampah', 'bank sampah sekolah', 'edukasi lingkungan'],
+  openGraph: {
+    type: 'website',
+    locale: 'id_ID',
+    url: 'https://adiwiyata55-cwpr.vercel.app',
+    siteName: 'Adiwiyata SMAN 55 Jakarta',
+    title: 'Adiwiyata SMAN 55 Jakarta',
+    description: 'Website Adiwiyata SMAN 55 Jakarta: edukasi lingkungan, program, dokumentasi kegiatan, publikasi, arsip, pelaporan sampah, dan aksi hijau.',
+    images: [{ url: '/adiwiyata-logo.png', width: 640, height: 640, alt: 'Logo Adiwiyata SMAN 55 Jakarta' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Adiwiyata SMAN 55 Jakarta',
+    description: 'Website Adiwiyata SMAN 55 Jakarta: edukasi lingkungan, program, dokumentasi kegiatan, publikasi, arsip, pelaporan sampah, dan aksi hijau.',
+    images: ['/adiwiyata-logo.png'],
+  },
+  robots: { index: true, follow: true },
+  // Canonical bawaan: halaman publik menimpa dengan canonical-nya
+  // sendiri; halaman ber-login/admin memakai robots noindex.
+  alternates: { canonical: 'https://adiwiyata55-cwpr.vercel.app' },
   icons: {
     icon: '/adiwiyata-logo.png',
     apple: '/adiwiyata-logo.png',

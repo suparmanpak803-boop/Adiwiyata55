@@ -1,7 +1,8 @@
 import { AuthRecoveryForm } from '@/components/auth-recovery-form'
 
 export const metadata = {
-  title: 'Kata Sandi Baru | Adiwiyata 55',
+  title: { absolute: 'Kata Sandi Baru | Adiwiyata 55' },
+  robots: { index: false, follow: false },
 }
 
 type ResetPasswordPageProps = {

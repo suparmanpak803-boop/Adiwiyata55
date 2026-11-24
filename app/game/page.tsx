@@ -5,7 +5,10 @@ import { pool } from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
 
-export const metadata = { title: 'Main Game | Adiwiyata 55' }
+export const metadata = {
+  title: { absolute: 'Main Game | Adiwiyata 55' },
+  robots: { index: false, follow: false },
+}
 
 export default async function Page() {
   const user = await getPortalUser()

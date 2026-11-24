@@ -3,8 +3,15 @@ import { EducationVideosPage } from '@/components/education/education-videos-pag
 import { getEducationVideos } from '@/lib/education-videos'
 
 export const metadata: Metadata = {
-  title: 'Video Edukasi Lingkungan | Adiwiyata SMAN 55 Jakarta',
+  title: 'Video Edukasi Lingkungan',
   description: 'Belajar memilah sampah, daur ulang, kompos, wadah makan ramah lingkungan, dan kegiatan Adiwiyata SMAN 55 Jakarta.',
+  alternates: { canonical: 'https://adiwiyata55-cwpr.vercel.app/edukasi' },
+  openGraph: {
+    title: 'Video Edukasi Lingkungan | Adiwiyata SMAN 55 Jakarta',
+    description: 'Belajar memilah sampah, daur ulang, kompos, wadah makan ramah lingkungan, dan kegiatan Adiwiyata SMAN 55 Jakarta.',
+    url: 'https://adiwiyata55-cwpr.vercel.app/edukasi',
+    type: 'website',
+  },
 }
 
 export const revalidate = 300
