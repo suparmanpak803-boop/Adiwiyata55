@@ -1,10 +1,10 @@
 'use client'
 
 // Mini-game Bab 5 "Air dan Energi" — tiga tahap, dipilih dari stageIndex:
-//   0 = Biopori (putar bor), 1 = Tampung Hujan (seret tetes ke tong),
+//   0 = Biopori (putar bor), 1 = Tampung Hujan (labirin pipa),
 //   2 = Cari Boros (cari perangkat boros).
 // Versi utama memakai gestur langsung dari pustaka ../interaksi
-// (RotateDial, DragDrop, HiddenObject) sesuai INTERAKSI_MISI. Versi tombol
+// (RotateDial, PipePuzzle, HiddenObject) sesuai INTERAKSI_MISI. Versi tombol
 // lama disimpan sebagai mode alternatif satu-ketukan (prop modeSatuKetukan).
 // Tiap tahap memanggil onStageComplete(score) TEPAT SATU KALI (dijaga ref
 // di komponen utama).
@@ -27,13 +27,13 @@ import {
 import type { MiniGameSlotProps } from '../misi-shell'
 import { INTERAKSI_MISI } from '@/lib/apa-itu-adiwiyata/content/interaksi'
 import {
-  DragDrop,
-  EfekSalah,
   HiddenObject,
   PetunjukMagi,
+  PipePuzzle,
   RotateDial,
   TanganPenunjuk,
 } from '../interaksi'
+import type { PotonganPipa } from '../interaksi'
 import { benar, getar, klik, koin, salah, siram } from '../suara'
 
 /** Petunjuk di data diawali 'Magi: "..."' — komponen PetunjukMagi sudah
@@ -783,8 +783,36 @@ function BioporiGestur({
   )
 }
 
-const TARGET_TETES = 10
-const WAKTU_TETES = 45
+// -------------------------------------------------------- Tampung Hujan ----
+// Versi gestur baru: PipePuzzle (labirin pipa 3x3) — bukan lagi seret tetes.
+// Jalur yang benar: (0,0) → (0,1) → (0,2) → (1,2) → (2,2), dari sumber
+// hujan (atas kiri) ke tong penampung (kanan bawah). Tiap potongan sengaja
+// diputar dari posisi benarnya supaya puzzle belum tersambung di awal;
+// pemain memutar potongan (ketuk = putar 90°) sampai air mengalir.
+// Sorotan petunjuk muncul sendiri di dalam PipePuzzle setelah 2 putaran
+// yang tidak menambah aliran (1 putaran di mode satu-ketukan).
+//
+// Aturan skor (0–100): mulai 100, −5 per putaran di atas putaran minimal.
+// Putaran minimal dari susunan awal = 12: (0,0) 3 + (0,1) 3 + (0,2) 3 +
+// (1,2) 1 + (2,2) 2. Skor = max(0, 100 − 5 × max(0, totalPutaran − 12)).
+
+const PIPA_AWAL: PotonganPipa[] = [
+  { id: 'p00', jenis: 'belok', rotasi: 90 },
+  { id: 'p01', jenis: 'lurus', rotasi: 90 },
+  { id: 'p02', jenis: 'belok', rotasi: 270 },
+  { id: 'p10', jenis: 'lurus', rotasi: 90 },
+  { id: 'p11', jenis: 'belok', rotasi: 270 },
+  { id: 'p12', jenis: 'lurus', rotasi: 0 },
+  { id: 'p20', jenis: 'belok', rotasi: 0 },
+  { id: 'p21', jenis: 'tiga', rotasi: 90 },
+  { id: 'p22', jenis: 'belok', rotasi: 90 },
+]
+
+const PUTARAN_MINIMAL = 12
+
+function skorPipa(totalPutaran: number): number {
+  return Math.max(0, 100 - 5 * Math.max(0, totalPutaran - PUTARAN_MINIMAL))
+}
 
 function TampungHujanGestur({
   onSelesai,
@@ -793,121 +821,56 @@ function TampungHujanGestur({
   onSelesai: (score: number) => void
   modeSatuKetukan?: boolean
 }) {
-  const [ronde, setRonde] = useState(0)
-  const [tertangkap, setTertangkap] = useState(0)
-  const [gagal, setGagal] = useState(0)
-  const [waktu, setWaktu] = useState(WAKTU_TETES)
   const [fase, setFase] = useState<'main' | 'selesai'>('main')
-  const [salahTerakhir, setSalahTerakhir] = useState(false)
+  const [putaran, setPutaran] = useState(0)
+  const [skor, setSkor] = useState(100)
+  const putaranRef = useRef(0)
   const spec = INTERAKSI_MISI['air-energi'][1]
-  const skor = tertangkap * 5
 
-  // Timer 1 detik.
-  useEffect(() => {
-    if (fase !== 'main') return
-    const id = window.setInterval(() => setWaktu((w) => Math.max(0, w - 1)), 1000)
-    return () => window.clearInterval(id)
-  }, [fase])
+  const aliranTersambung = useCallback(() => {
+    setSkor(skorPipa(putaranRef.current))
+    setFase('selesai')
+  }, [])
 
-  // Akhir tahap: target tercapai atau waktu habis (skor parsial tetap dihitung).
-  useEffect(() => {
-    if (fase === 'main' && waktu <= 0) setFase('selesai')
-  }, [waktu, fase])
-  useEffect(() => {
-    if (fase === 'main' && tertangkap >= TARGET_TETES) setFase('selesai')
-  }, [tertangkap, fase])
-
-  const benarDrop = () => {
-    setTertangkap((t) => t + 1)
-    setRonde((r) => r + 1)
-    setSalahTerakhir(false)
-  }
-  const salahDrop = () => {
-    setGagal((g) => g + 1)
-    setSalahTerakhir(true)
-  }
+  const catatPutaran = useCallback(() => {
+    putaranRef.current += 1
+    setPutaran(putaranRef.current)
+  }, [])
 
   return (
     <div className="aia-stack">
       <div className="aia-card">
-        <span className="aia-kicker">Tampung hujan · seret tetes ke tong penampung</span>
-        <div className="aia-progress-row" style={{ marginTop: 8 }}>
-          <div
-            className="aia-progress"
-            role="progressbar"
-            aria-valuenow={tertangkap}
-            aria-valuemin={0}
-            aria-valuemax={TARGET_TETES}
-            aria-label="Tetes hujan tertampung"
-          >
-            <span
-              style={{ width: `${(tertangkap / TARGET_TETES) * 100}%`, background: '#3b7ea1' }}
-            />
-          </div>
-          <span>
-            {tertangkap}/{TARGET_TETES} tetes
-          </span>
-        </div>
-        <p className="aia-muted" style={{ margin: '8px 0 0', display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-          <span>
-            <Clock aria-hidden="true" style={{ verticalAlign: '-3px' }} /> {waktu} dtk
-          </span>
-          <span>Skor: {skor}</span>
+        <span className="aia-kicker">Tampung hujan · susun pipa ke tong penampung</span>
+        <p className="aia-muted" style={{ margin: '8px 0 0' }}>
+          Hujan turun dari awan! Ketuk potongan pipa untuk memutarnya sampai air mengalir dari sumber
+          ke tong penampung.
         </p>
+        <p className="aia-muted" style={{ margin: '8px 0 0' }}>
+          Putaran: {putaran} · Skor: {fase === 'selesai' ? skor : skorPipa(putaran)}
+        </p>
+        <PetunjukMagi teks={teksMagi(spec.petunjukMagi)} />
       </div>
 
-      {fase === 'main' && ronde < TARGET_TETES && (
-        <DragDrop
-          key={ronde}
-          benda={{
-            id: `tetes-${ronde}`,
-            label: `Tetes hujan ${ronde + 1}`,
-            konten: <Droplet aria-hidden="true" size={40} color="#2b6cb0" />,
-          }}
-          target={{ id: 'tong', label: 'Tong penampung', ikon: <Droplets aria-hidden="true" /> }}
-          targetLain={[
-            {
-              id: 'tanah',
-              label: 'Tanah',
-              ikon: (
-                <span
-                  aria-hidden="true"
-                  style={{
-                    display: 'inline-block',
-                    width: 22,
-                    height: 22,
-                    borderRadius: 6,
-                    background: '#8a6a3b',
-                  }}
-                />
-              ),
-            },
-          ]}
-          perbesarTarget={gagal >= 2}
-          modeSatuKetukan={modeSatuKetukan}
-          onBenar={benarDrop}
-          onSalah={salahDrop}
-        />
-      )}
-
-      {fase === 'main' && salahTerakhir && (
-        <EfekSalah tampil petunjuk={teksMagi(spec.petunjukMagi)} />
-      )}
-
       {fase === 'main' && (
-        <p className="aia-muted" style={{ margin: 0 }}>
-          Seret tetes hujan ke tong penampung. Tetes yang jatuh ke tanah terbuang.
-        </p>
+        <PipePuzzle
+          ukuran={3}
+          potongan={PIPA_AWAL}
+          awal={{ baris: 0, kolom: 0, dari: 'atas' }}
+          akhir={{ baris: 2, kolom: 2 }}
+          modeSatuKetukan={modeSatuKetukan}
+          onSelesai={aliranTersambung}
+          onPutar={catatPutaran}
+        />
       )}
 
       {fase === 'selesai' && (
         <div className="aia-card aia-pos-hijau">
           <h3>
-            <Check aria-hidden="true" /> {tertangkap >= TARGET_TETES ? 'Tangki penuh!' : 'Hujan reda!'}
+            <Check aria-hidden="true" /> Air mengalir ke tong!
           </h3>
+          <p>{spec.hasilBenar}</p>
           <p>
-            Kamu menampung {tertangkap} tetes hujan. Air ini bisa dipakai menyiram kebun — tidak perlu lagi
-            membuka keran!
+            Putaran dipakai: {putaran} (minimal {PUTARAN_MINIMAL}).
           </p>
           <button type="button" className="aia-btn aia-btn-primary" onClick={() => onSelesai(skor)}>
             Selesai · +{skor} Koin Hijau

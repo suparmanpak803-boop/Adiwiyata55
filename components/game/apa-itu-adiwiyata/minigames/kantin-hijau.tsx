@@ -1,21 +1,29 @@
 'use client'
 
 // Mini-game Misi Kader "Kantin Hijau" — Mbak Dewi (GESTUR).
-// Tiga tahap cari-objek + drag-drop: cari masalah di kantin, ketuk,
-// lalu seret tindakan yang benar ke masalah itu. Isi dari
-// KONTEN_TUGAS['kantin-hijau'] (12 temuan). Gestur tiap tahap dari
-// INTERAKSI_MISI['kantin-hijau'].
-// Skor 0–100: 25 per temuan bila benar di seretan pertama, 10 bila
-// setelah gagal. onStageComplete dipanggil TEPAT SATU KALI.
+// Tiga tahap simulasi kantin: 4 pesanan (temuan) datang bergantian
+// dengan timer; pemain mengetuk tindakan yang benar di antara 3 kartu
+// tindakan. Isi dari KONTEN_TUGAS['kantin-hijau'] (12 temuan).
+// Gestur tiap tahap dari INTERAKSI_MISI['kantin-hijau'].
+// Skor 0–100: benar +25 / salah +10 per pesanan, seperti skor lama.
+// SimulasiKantin memberi 25 per pesanan benar (0 bila salah), jadi
+// skor akhir dipetakan: skor = 40 + 0,6 × skorKomponen (0 benar → 40,
+// 4 benar → 100). onStageComplete dipanggil TEPAT SATU KALI.
 // Prop modeSatuKetukan menampilkan versi tombol lama (aksesibilitas).
 
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { Check, ClipboardCheck, Search, Wrench, X } from 'lucide-react'
+import { useMemo, useRef, useState } from 'react'
+import { Check, ClipboardCheck, X } from 'lucide-react'
 import { KONTEN_TUGAS } from '@/lib/apa-itu-adiwiyata/content/tugas'
 import { INTERAKSI_MISI } from '@/lib/apa-itu-adiwiyata/content/interaksi'
 import type { TugasKaderId } from '@/lib/apa-itu-adiwiyata/types'
 import { benar, koin, salah } from '../suara'
-import { DragDrop, EfekBenar, EfekSalah, HiddenObject, TanganPenunjuk } from '../interaksi'
+import {
+  EfekBenar,
+  PetunjukMagi,
+  SimulasiKantin,
+  TanganPenunjuk,
+  type PesananKantin,
+} from '../interaksi'
 
 export interface TugasMiniGameSlotProps {
   tugasId: TugasKaderId
@@ -38,21 +46,6 @@ function acak<T>(arr: T[]): T[] {
   return hasil
 }
 
-/** Posisi (x%, y%) tiap temuan di area pencarian; diputar per tahap. */
-const POS_TEMUAN: Array<[number, number]> = [
-  [22, 26],
-  [72, 24],
-  [26, 72],
-  [74, 70],
-]
-
-/** Ikon tiap temuan, per tahap (hanya hiasan — isi tetap dari data). */
-const IKON_TEMUAN: string[][] = [
-  ['🍽️', '🧽', '⚠️', '🗑️'],
-  ['🛍️', '🥤', '📦', '🗑️'],
-  ['🥤', '🍔', '🧤', '🗑️'],
-]
-
 const SKOR_PERTAMA = 25
 const SKOR_SESUDAH_GAGAL = 10
 
@@ -66,7 +59,12 @@ export function KantinHijau(props: TugasMiniGameSlotProps) {
   return <VersiGestur {...props} />
 }
 
-function VersiGestur({ tugasId, stageIndex, onStageComplete }: TugasMiniGameSlotProps) {
+function VersiGestur({
+  tugasId,
+  stageIndex,
+  onStageComplete,
+  modeSatuKetukan = false,
+}: TugasMiniGameSlotProps) {
   const tahap = KONTEN_TUGAS[tugasId].tahapan[stageIndex]
   const spek = INTERAKSI_MISI[tugasId]?.[stageIndex]
   const temuan = tahap && tahap.jenis === 'inspeksi' ? tahap.temuan : []
@@ -78,55 +76,24 @@ function VersiGestur({ tugasId, stageIndex, onStageComplete }: TugasMiniGameSlot
   const tutorial = spek?.tutorial ?? false
   const langkah = spek?.langkah ?? []
 
-  // Acak urutan 3 pilihan tindakan tiap temuan (sekali per tahap).
-  const opsiPerTemuan = useMemo(
+  // Tiap temuan jadi satu pesanan kantin (sekali per tahap).
+  const pesanan = useMemo<PesananKantin[]>(
     () =>
-      temuan.map((t) =>
-        acak<OpsiTindakan>([
-          { teks: t.tindakan, benar: true },
-          { teks: t.pilihanSalah[0], benar: false },
-          { teks: t.pilihanSalah[1], benar: false },
-        ]),
-      ),
+      temuan.map((t, i) => ({
+        id: `pesanan-${i}`,
+        pelanggan: `Temuan ${i + 1}`,
+        permintaan: t.masalah,
+        tindakanBenar: t.tindakan,
+        tindakanSalah: [t.pilihanSalah[0], t.pilihanSalah[1]],
+      })),
     [temuan],
   )
 
-  // Objek pencarian (identitas stabil per tahap — HiddenObject mereset
-  // bila array ini berubah).
-  const objek = useMemo(
-    () =>
-      temuan.map((t, i) => ({
-        id: `temuan-${i}`,
-        label: t.masalah,
-        x: POS_TEMUAN[(i + stageIndex) % POS_TEMUAN.length][0],
-        y: POS_TEMUAN[(i + stageIndex) % POS_TEMUAN.length][1],
-        ikon: <span aria-hidden="true">{IKON_TEMUAN[stageIndex % IKON_TEMUAN.length]?.[i] ?? '🔍'}</span>,
-      })),
-    [temuan, stageIndex],
-  )
-
   const [fase, setFase] = useState<'main' | 'selesai'>('main')
-  const [ditemukan, setDitemukan] = useState<number[]>([])
-  const [terpilih, setTerpilih] = useState<number | null>(null)
-  const [diselesaikan, setDiselesaikan] = useState<number[]>([])
-  const [upaya, setUpaya] = useState<Record<number, number>>({})
-  const [aksiSalah, setAksiSalah] = useState<Record<number, number[]>>({})
-  const [aksiDipilih, setAksiDipilih] = useState<number | null>(null)
   const [skor, setSkor] = useState(0)
-  const [umpanSalah, setUmpanSalah] = useState<string | null>(null)
-  const [efekBenar, setEfekBenar] = useState(false)
-  const [terkunci, setTerkunci] = useState(false)
-  const [ronde, setRonde] = useState(0)
+  const [tampilPetunjuk, setTampilPetunjuk] = useState(false)
 
   const selesaiRef = useRef(false)
-  const timerRef = useRef<number | null>(null)
-
-  useEffect(
-    () => () => {
-      if (timerRef.current) window.clearTimeout(timerRef.current)
-    },
-    [],
-  )
 
   const selesai = (nilai: number) => {
     if (selesaiRef.current) return
@@ -143,54 +110,19 @@ function VersiGestur({ tugasId, stageIndex, onStageComplete }: TugasMiniGameSlot
     )
   }
 
-  const temuanAktif = terpilih !== null ? temuan[terpilih] : undefined
-  const opsiAktif = terpilih !== null ? (opsiPerTemuan[terpilih] ?? []) : []
-  const aksi = aksiDipilih !== null ? opsiAktif[aksiDipilih] : undefined
-  const gagalAktif = terpilih !== null ? (upaya[terpilih] ?? 0) : 0
-
-  const temukan = (id: string) => {
-    const i = Number(id.replace('temuan-', ''))
-    if (Number.isNaN(i) || diselesaikan.includes(i)) return
-    setDitemukan((d) => (d.includes(i) ? d : [...d, i]))
-    setTerpilih(i)
-    setAksiDipilih(null)
-    setUmpanSalah(null)
-  }
-
-  const pilihTemuan = (i: number) => {
-    if (terkunci || diselesaikan.includes(i)) return
-    setTerpilih(i)
-    setAksiDipilih(null)
-    setUmpanSalah(null)
-  }
-
-  /** DragDrop memanggil ini saat tindakan dilepas di masalahnya. */
-  const dropTindakan = () => {
-    if (terkunci || terpilih === null || aksiDipilih === null || !aksi) return
-    if (aksi.benar) {
-      const baru = [...diselesaikan, terpilih]
-      setDiselesaikan(baru)
-      setSkor((s) => s + (gagalAktif === 0 ? SKOR_PERTAMA : SKOR_SESUDAH_GAGAL))
-      setEfekBenar(true)
-      setUmpanSalah(null)
-      setTerkunci(true)
-      timerRef.current = window.setTimeout(() => {
-        setEfekBenar(false)
-        setTerkunci(false)
-        setTerpilih(null)
-        setAksiDipilih(null)
-        if (baru.length >= temuan.length) setFase('selesai')
-      }, 1200)
-    } else {
-      setUpaya((u) => ({ ...u, [terpilih]: (u[terpilih] ?? 0) + 1 }))
-      setAksiSalah((a) => ({
-        ...a,
-        [terpilih]: [...(a[terpilih] ?? []), aksiDipilih],
-      }))
-      setUmpanSalah(petunjuk)
-      setRonde((r) => r + 1)
-      setAksiDipilih(null)
-    }
+  /**
+   * Simulasi selesai — petakan skor komponen (25 per pesanan benar)
+   * ke aturan lama: benar +25, salah +10 per pesanan.
+   */
+  const simulasiSelesai = (skorKomponen: number) => {
+    const benarHitung = Math.round(skorKomponen / SKOR_PERTAMA)
+    const salahHitung = Math.max(0, temuan.length - benarHitung)
+    const nilai = Math.min(
+      100,
+      benarHitung * SKOR_PERTAMA + salahHitung * SKOR_SESUDAH_GAGAL,
+    )
+    setSkor(nilai)
+    setFase('selesai')
   }
 
   return (
@@ -199,7 +131,7 @@ function VersiGestur({ tugasId, stageIndex, onStageComplete }: TugasMiniGameSlot
         <>
           <div className="aia-card">
             <span className="aia-kicker">
-              Kantin Hijau · {judul} · Selesai {diselesaikan.length} dari {temuan.length}
+              Kantin Hijau · {judul} · {temuan.length} pesanan
             </span>
             <p className="aia-muted" style={{ margin: '8px 0 0' }}>
               {instruksi}
@@ -211,161 +143,51 @@ function VersiGestur({ tugasId, stageIndex, onStageComplete }: TugasMiniGameSlot
                 ))}
               </ol>
             )}
-            <p style={{ margin: '8px 0 0', fontSize: 13, fontWeight: 700 }}>Skor: {skor}</p>
           </div>
 
-          {tutorial && ditemukan.length === 0 && (
+          {tutorial && (
             <div style={{ textAlign: 'center' }}>
-              <TanganPenunjuk label="Cari masalahnya, ketuk!" />
+              <TanganPenunjuk label="Ketuk tindakan yang benar sebelum waktu habis" />
             </div>
           )}
 
-          <HiddenObject objek={objek} onTemukan={temukan} onSelesai={() => undefined} />
+          <div className="aia-card">
+            <p style={{ margin: '0 0 12px', fontSize: 16, lineHeight: 1.5, fontWeight: 700 }}>
+              Layani tiap pesanan: ketuk tindakan yang benar.
+            </p>
+            <SimulasiKantin
+              pesanan={pesanan}
+              modeSatuKetukan={modeSatuKetukan}
+              onSelesai={simulasiSelesai}
+            />
+          </div>
 
-          {ditemukan.length > 0 && (
-            <div className="aia-card" aria-label="Temuan yang sudah ditemukan">
-              <p style={{ margin: '0 0 8px', fontWeight: 700 }}>
-                <Search aria-hidden="true" style={{ verticalAlign: '-3px' }} /> Temuan:
-              </p>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                {ditemukan.map((i) => {
-                  const sudah = diselesaikan.includes(i)
-                  return (
-                    <button
-                      key={i}
-                      type="button"
-                      className="aia-btn aia-btn-ghost"
-                      disabled={terkunci || sudah}
-                      onClick={() => pilihTemuan(i)}
-                      aria-label={`Temuan ${i + 1}: ${temuan[i]?.masalah ?? ''}`}
-                      style={{
-                        minHeight: 44,
-                        background: sudah ? '#dcfce7' : terpilih === i ? '#dcfce7' : undefined,
-                        border: terpilih === i ? '2px solid #236b4d' : undefined,
-                      }}
-                    >
-                      {sudah ? '✓ ' : ''}Temuan {i + 1}
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-          )}
-
-          {temuanAktif && terpilih !== null && !diselesaikan.includes(terpilih) && (
-            <div style={{ position: 'relative' }}>
-              <EfekBenar tampil={efekBenar} />
-              <div className="aia-card">
-                <p style={{ margin: '0 0 4px', fontSize: 16, lineHeight: 1.5, fontWeight: 700 }}>
-                  <ClipboardCheck aria-hidden="true" style={{ verticalAlign: '-3px' }} />{' '}
-                  {temuanAktif.masalah}
-                </p>
-                <p className="aia-muted" style={{ margin: '0 0 12px' }}>
-                  Ketuk tindakan yang benar, lalu seret ke masalahnya.
-                </p>
-                <div style={{ display: 'grid', gap: 8 }}>
-                  {opsiAktif.map((pilihan, i) => {
-                    const isSalah = (aksiSalah[terpilih] ?? []).includes(i)
-                    const isDipilih = i === aksiDipilih
-                    let latar: string | undefined
-                    let border: string | undefined
-                    if (isDipilih) {
-                      latar = '#dcfce7'
-                      border = '2px solid #236b4d'
-                    } else if (isSalah) {
-                      latar = '#fee2e2'
-                      border = '2px solid #b83232'
-                    }
-                    return (
-                      <button
-                        key={i}
-                        type="button"
-                        className="aia-btn aia-btn-block"
-                        disabled={terkunci || isSalah}
-                        onClick={() => {
-                          setAksiDipilih(i)
-                          setUmpanSalah(null)
-                        }}
-                        aria-label={`Tindakan ${String.fromCharCode(65 + i)}: ${pilihan.teks}`}
-                        aria-pressed={isDipilih}
-                        style={{
-                          justifyContent: 'flex-start',
-                          textAlign: 'left',
-                          minHeight: 48,
-                          background: latar,
-                          border,
-                          whiteSpace: 'normal',
-                          height: 'auto',
-                          padding: '12px 16px',
-                        }}
-                      >
-                        <span aria-hidden="true" style={{ fontWeight: 800 }}>
-                          {String.fromCharCode(65 + i)}.
-                        </span>
-                        <span>{pilihan.teks}</span>
-                        {isDipilih && !isSalah && <Check aria-hidden="true" color="#236b4d" />}
-                        {isSalah && <X aria-hidden="true" color="#b83232" />}
-                      </button>
-                    )
-                  })}
-                </div>
-
-                {tutorial && aksiDipilih === null && (
-                  <div style={{ textAlign: 'center', marginTop: 10 }}>
-                    <TanganPenunjuk label="Ketuk tindakan yang benar" />
-                  </div>
-                )}
-                {tutorial && aksiDipilih !== null && (
-                  <div style={{ textAlign: 'center', marginTop: 10 }}>
-                    <TanganPenunjuk label="Seret ke masalahnya" />
-                  </div>
-                )}
-
-                {aksi && (
-                  <div style={{ marginTop: 12 }}>
-                    <DragDrop
-                      key={`${terpilih}-${aksiDipilih}-${ronde}`}
-                      benda={{
-                        id: `aksi-${aksiDipilih}`,
-                        label: `Tindakan ${String.fromCharCode(65 + (aksiDipilih ?? 0))}`,
-                        konten: <span style={{ fontSize: 14, lineHeight: 1.5 }}>{aksi.teks}</span>,
-                      }}
-                      target={{
-                        id: 'masalah',
-                        label: `Atasi: ${temuanAktif.masalah}`,
-                        ikon: <Wrench aria-hidden="true" />,
-                      }}
-                      perbesarTarget={gagalAktif >= 2}
-                      disabled={terkunci}
-                      onBenar={dropTindakan}
-                      onSalah={() => undefined}
-                    />
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {umpanSalah && (
-            <div>
-              <p className="aia-muted" style={{ margin: '0 0 8px' }}>
-                {hasilSalah}
-              </p>
-              <EfekSalah tampil petunjuk={umpanSalah} />
-            </div>
+          {!tampilPetunjuk ? (
+            <button
+              type="button"
+              className="aia-btn aia-btn-ghost"
+              style={{ minHeight: 44, alignSelf: 'center' }}
+              onClick={() => setTampilPetunjuk(true)}
+            >
+              Minta petunjuk Magi
+            </button>
+          ) : (
+            <PetunjukMagi teks={petunjuk} />
           )}
         </>
       )}
 
       {fase === 'selesai' && (
-        <div className="aia-card aia-pos-hijau">
+        <div className="aia-card aia-pos-hijau" style={{ position: 'relative' }}>
+          <EfekBenar tampil />
           <h3>
             <Check aria-hidden="true" /> Inspeksi kantin selesai!
           </h3>
           <p>{hasilBenar}</p>
+          {skor < 100 && <p>{hasilSalah}</p>}
           <p>
-            Kamu menyelesaikan {diselesaikan.length} dari {temuan.length} temuan. Kantin jadi
-            lebih bersih dan sehat berkatmu!
+            Kamu menyelesaikan {temuan.length} temuan. Kantin jadi lebih bersih dan sehat
+            berkatmu!
           </p>
           <p>
             Skor tahap ini: <strong>{skor} Koin Hijau</strong>

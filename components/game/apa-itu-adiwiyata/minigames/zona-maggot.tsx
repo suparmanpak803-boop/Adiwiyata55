@@ -3,7 +3,7 @@
 // Mini-game Bab 3 "Pos Maggot" — dipakai per tahap, stageIndex memilih fase:
 // 0 Beri pakan -> 1 Jaga kotak -> 2 Panen. Tiap tahap memanggil
 // onStageComplete TEPAT SATU KALI dengan skor tahap itu (0–100).
-// Mode gestur (default): DragDrop / SliderLever / HoldAction dari pustaka
+// Mode gestur (default): TangkapJatuh / SliderLever / HoldAction dari pustaka
 // interaksi. Mode satu-ketukan (prop modeSatuKetukan): versi tombol lama
 // dipakai sebagai alternatif aksesibilitas. Gagal di satu tahap menampilkan
 // layar "Coba lagi" internal (hanya tahap itu yang diulang); setelah 2x
@@ -39,13 +39,13 @@ import { FAKTA_MAGGOT } from '@/lib/apa-itu-adiwiyata/content/fakta'
 import { INTERAKSI_MISI } from '@/lib/apa-itu-adiwiyata/content/interaksi'
 import type { MiniGameSlotProps } from '../misi-shell'
 import {
-  DragDrop,
   EfekBenar,
   EfekSalah,
   HoldAction,
   PetunjukMagi,
   SliderLever,
   TanganPenunjuk,
+  TangkapJatuh,
 } from '../interaksi'
 import {
   benar,
@@ -290,22 +290,38 @@ function FasePakan({
 }
 
 // ------------------------------------------------- Versi gestur: beri pakan ----
+// TangkapJatuh: makanan jatuh satu per satu dari atas; tangkap makanan yang
+// aman untuk maggot, biarkan makanan yang bikin sakit jatuh ke tanah.
+// TangkapJatuh hanya melaporkan skor akhir (skor = round(benar/3*100 -
+// 5*salah), diklem 0–100). Dengan 3 pakan benar, tiap pasangan (benar, salah)
+// menghasilkan skor yang berbeda, jadi jumlah tangkapan salah diurai kembali
+// dari skor untuk menghitung bau — kecuali skor 0 (tidak ada pakan benar yang
+// tertangkap), yang langsung dianggap gagal.
+
+function uraiSkorTangkap(skor: number): { benar: number; salah: number } {
+  for (let b = 3; b >= 0; b--) {
+    for (let s = 0; s <= 3; s++) {
+      if (Math.max(0, Math.round((b / 3) * 100 - 5 * s)) === skor) return { benar: b, salah: s }
+    }
+  }
+  return { benar: 0, salah: 0 }
+}
 
 function FasePakanGestur({ tambahSkor, onSelesai, onGagal, onSalah, perbesarTarget }: PropsGestur) {
   const { save, dispatch } = useCampaign()
   const spec = INTERAKSI_MISI.maggot[0]
-  const urutan = useMemo(() => [...PAKAN].sort(() => Math.random() - 0.5).slice(0, 5), [])
-  const [indeks, setIndeks] = useState(0)
-  const [bau, setBau] = useState(() => (save.carryover.maggotKenaMinyak ? 2 : 0))
+  const bauAwal = save.carryover.maggotKenaMinyak ? 2 : 0
+  const [bau, setBau] = useState(bauAwal)
   const [pesan, setPesan] = useState<string | null>(
     save.carryover.maggotKenaMinyak
-      ? 'Maggot kena minyak dari kantin! Baunya sudah tinggi. Beri pakan bersih untuk memulihkan.'
+      ? 'Maggot kena minyak dari kantin! Baunya sudah tinggi. Tangkap pakan bersih untuk memulihkan.'
       : null,
   )
   const [petunjuk, setPetunjuk] = useState<string | null>(null)
   const [efekBenar, setEfekBenar] = useState(false)
   const [selesai, setSelesai] = useState(false)
   const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const diprosesRef = useRef(false)
 
   useEffect(
     () => () => {
@@ -314,43 +330,55 @@ function FasePakanGestur({ tambahSkor, onSelesai, onGagal, onSalah, perbesarTarg
     [],
   )
 
-  const aktif = urutan[indeks]
-  const IkonAktif = aktif ? IKON_PAKAN[aktif.id] : Soup
+  const objek = useMemo(
+    () =>
+      [...PAKAN].sort(() => Math.random() - 0.5).map((pakan) => {
+        const Ikon = IKON_PAKAN[pakan.id]
+        return { id: pakan.id, label: pakan.nama, benar: pakan.benar, ikon: <Ikon aria-hidden="true" /> }
+      }),
+    [],
+  )
 
-  const beriBenar = () => {
-    tambahSkor(20)
-    setEfekBenar(true)
-    setPetunjuk(null)
-    setPesan(aktif.penjelasan)
-    if (indeks + 1 >= urutan.length) {
-      setSelesai(true)
-      timerRef.current = setTimeout(() => {
-        if (save.carryover.maggotKenaMinyak) {
-          dispatch({ type: 'SET_CARRYOVER', patch: { maggotKenaMinyak: false } })
-        }
-        onSelesai()
-      }, 900)
-    } else {
-      timerRef.current = setTimeout(() => {
-        setEfekBenar(false)
-        setIndeks(indeks + 1)
-      }, 650)
+  const selesaiTangkap = (skorAkhir: number) => {
+    if (diprosesRef.current) return
+    diprosesRef.current = true
+    setSelesai(true)
+    const { benar: jumlahBenar, salah: jumlahSalah } = uraiSkorTangkap(skorAkhir)
+    const bauAkhir = bauAwal + jumlahSalah
+    setBau(bauAkhir)
+    for (let i = 0; i < jumlahSalah; i++) onSalah()
+    if (jumlahBenar === 0) {
+      setPetunjuk(bersihPetunjuk(spec.petunjukMagi))
+      setPesan('Maggot tidak mendapat pakan sama sekali — semua makanan jatuh ke tanah.')
+      timerRef.current = setTimeout(
+        () =>
+          onGagal(
+            'Maggot masih lapar karena tidak ada pakan yang tertangkap. Coba lagi dan tangkap makanan yang aman untuk maggot.',
+          ),
+        1200,
+      )
+      return
     }
-  }
-
-  const beriSalah = () => {
-    onSalah()
-    setPetunjuk(bersihPetunjuk(spec.petunjukMagi))
-    setPesan(aktif.penjelasan)
-    const bauBaru = bau + 1
-    setBau(bauBaru)
-    if (bauBaru >= 1) lalat()
-    if (bauBaru >= 3) {
+    if (bauAkhir >= 3) {
+      lalat()
+      setPetunjuk(bersihPetunjuk(spec.petunjukMagi))
+      setPesan('Kotak jadi bau karena makanan yang bikin sakit ikut tertangkap.')
       timerRef.current = setTimeout(
         () => onGagal('Bau kotak sudah tidak tertahankan dan lalat menyerbu. Kotak maggot perlu diulang dari awal.'),
         1200,
       )
+      return
     }
+    tambahSkor(skorAkhir)
+    setEfekBenar(true)
+    setPetunjuk(null)
+    setPesan(spec.hasilBenar)
+    timerRef.current = setTimeout(() => {
+      if (save.carryover.maggotKenaMinyak) {
+        dispatch({ type: 'SET_CARRYOVER', patch: { maggotKenaMinyak: false } })
+      }
+      onSelesai()
+    }, 900)
   }
 
   return (
@@ -361,7 +389,8 @@ function FasePakanGestur({ tambahSkor, onSelesai, onGagal, onSalah, perbesarTarg
         Beri maggot makan
       </h3>
       <p className="aia-muted">
-        Seret makanan ke tempat yang benar: makanan maggot masuk kotak, makanan yang bikin sakit jangan diberi.
+        Makanan jatuh satu per satu dari atas. Gerakkan keranjang untuk menangkap makanan yang aman untuk maggot,
+        dan biarkan makanan yang bikin sakit jatuh ke tanah.
       </p>
 
       {save.carryover.maggotKenaMinyak && (
@@ -371,7 +400,7 @@ function FasePakanGestur({ tambahSkor, onSelesai, onGagal, onSalah, perbesarTarg
       )}
 
       <div className="aia-progress-row">
-        <span>Diberi {Math.min(indeks, 5)}/5 pakan</span>
+        <span>Bau kotak (salah tangkap menaikkan bau)</span>
         <strong>Bau: {bau}/3</strong>
       </div>
       <div
@@ -391,36 +420,13 @@ function FasePakanGestur({ tambahSkor, onSelesai, onGagal, onSalah, perbesarTarg
         </p>
       )}
 
-      {spec.tutorial && indeks === 0 && !selesai && (
+      {spec.tutorial && !selesai && (
         <p style={{ textAlign: 'center', margin: '4px 0' }}>
-          <TanganPenunjuk label="Seret makanan ini ke tempat yang benar" />
+          <TanganPenunjuk label="Gerakkan keranjang, tangkap makanan yang aman" />
         </p>
       )}
 
-      {selesai ? (
-        <p role="status" aria-live="polite">
-          <Check aria-hidden="true" /> Maggot kenyang! Kotaknya bersih dan tidak bau.
-        </p>
-      ) : (
-        <DragDrop
-          key={aktif.id}
-          benda={{ id: aktif.id, label: aktif.nama, konten: <IkonAktif aria-hidden="true" /> }}
-          target={
-            aktif.benar
-              ? { id: 'kotak', label: 'Kotak maggot', ikon: <Bug aria-hidden="true" /> }
-              : { id: 'jangan', label: 'Jangan diberi', ikon: <X aria-hidden="true" /> }
-          }
-          targetLain={
-            aktif.benar
-              ? [{ id: 'jangan', label: 'Jangan diberi', ikon: <X aria-hidden="true" /> }]
-              : [{ id: 'kotak', label: 'Kotak maggot', ikon: <Bug aria-hidden="true" /> }]
-          }
-          perbesarTarget={perbesarTarget}
-          disabled={bau >= 3}
-          onBenar={beriBenar}
-          onSalah={beriSalah}
-        />
-      )}
+      <TangkapJatuh objek={objek} modeSatuKetukan={perbesarTarget} disabled={selesai} onSelesai={selesaiTangkap} />
 
       {petunjuk && <EfekSalah tampil petunjuk={petunjuk} />}
 

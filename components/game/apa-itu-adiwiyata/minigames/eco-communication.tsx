@@ -1,24 +1,27 @@
 'use client'
 
 // Mini-game Misi Kader "Eco-Communication" (Kak Naya) — VERSI GESTUR.
-// Tiap tahap: seret konsep/kapsyen yang paling efektif ke target
-// (storyboard/feed/papan) sesuai INTERAKSI_MISI. Bukan tombol pilihan.
+// Tiap tahap: susun storyboard 3 frame ke urutan yang benar dengan mengetuk
+// kartu sesuai urutan ceritanya (komponen SusunCerita), bukan seret kartu.
+// Frame dibuat dari brief + teks konsep yang benar di KONTEN_TUGAS
+// (hook → contoh → ajakan); tidak ada isi baru yang dikarang.
 // Mode satu-ketukan (prop modeSatuKetukan) menampilkan versi tombol lama
 // sebagai alternatif aksesibilitas. Skor 0–100 per tahap; onStageComplete
 // dipanggil TEPAT SATU KALI.
 //
-// Catatan: DragDrop di pustaka hanya menerima satu benda, sedangkan tahap
-// ini butuh 3 kartu opsi yang bisa diseret — jadi drag multi-kartu
-// diimplementasikan di sini mengikuti pola Pointer Events pilah-sampah
-// (hit-test geometris via getBoundingClientRect target).
+// Satu jalan SusunCerita = satu percobaan: selesai tanpa ketukan salah
+// (skor internal 100) = berhasil (100 di percobaan pertama, 50 di kedua);
+// bila ada ketukan salah, percobaan itu gagal dan bisa diulang sekali.
+// Dua kali gagal = skor 0 dan urutan benar diungkap.
 
-import { useRef, useState } from 'react'
-import { Check, Megaphone, X } from 'lucide-react'
+import { useMemo, useRef, useState } from 'react'
+import { Check, Megaphone, RotateCcw, X } from 'lucide-react'
 import { KONTEN_TUGAS } from '@/lib/apa-itu-adiwiyata/content/tugas'
+import type { TahapTugas } from '@/lib/apa-itu-adiwiyata/content/tugas'
 import { INTERAKSI_MISI } from '@/lib/apa-itu-adiwiyata/content/interaksi'
 import type { TugasKaderId } from '@/lib/apa-itu-adiwiyata/types'
-import { ambil, benar, getar, klik, koin, lepas, salah } from '../suara'
-import { EfekBenar, EfekSalah, TanganPenunjuk } from '../interaksi'
+import { benar, getar, klik, koin, salah } from '../suara'
+import { EfekSalah, SusunCerita, TanganPenunjuk, type FrameCerita } from '../interaksi'
 
 export interface MiniGameTugasSlotProps {
   tugasId: TugasKaderId
@@ -35,6 +38,65 @@ function bersihkanPetunjuk(teks: string): string {
   return teks.replace(/^Magi:\s*"/, '').replace(/"$/, '').trim()
 }
 
+function kapital(teks: string): string {
+  return teks.length > 0 ? teks.charAt(0).toUpperCase() + teks.slice(1) : teks
+}
+
+/** Brief tanpa awalan "Buat " dan titik akhir, untuk dipakai sebagai frame hook. */
+function bersihBrief(brief: string): string {
+  return kapital(brief.replace(/^Buat /, '').replace(/\.$/, '').trim())
+}
+
+/**
+ * Susun 3 frame storyboard dari brief + teks konsep yang benar.
+ * Tiap tahap memecah teks konsep benar menjadi ketukan cerita
+ * (hook dari brief, lalu 2 ketukan dari teks konsep itu sendiri).
+ * Bila pola teks data berubah, cadangan: storyboard 2 frame.
+ */
+function buatFrame(tahap: Extract<TahapTugas, { jenis: 'pilih' }>, stageIndex: number): FrameCerita[] {
+  const benar = tahap.pilihan.find((p) => p.benar)
+  if (!benar) return []
+  const hook = bersihBrief(tahap.brief)
+  const teks = benar.teks
+  if (stageIndex === 0) {
+    // 'Video: siswa bawa tumbler dan tas kain, diakhiri ajakan "Coba ...".'
+    const m = teks.match(/^Video: (.+), diakhiri ajakan (.+?)\.?$/)
+    if (m) {
+      return [
+        { id: 'f1', teks: `Hook: ${hook}` },
+        { id: 'f2', teks: `Contoh: ${kapital(m[1])}` },
+        { id: 'f3', teks: `Ajakan: ${m[2]}` },
+      ]
+    }
+  }
+  if (stageIndex === 1) {
+    // 'Infografis: "3 Hal yang Sering Lupa Dimatikan" dengan ikon lampu, ... .'
+    const m = teks.match(/^Infografis: ("[^"]+") dengan ikon (.+?)\.?$/)
+    if (m) {
+      return [
+        { id: 'f1', teks: `Hook: ${hook}` },
+        { id: 'f2', teks: `Judul: ${m[1]}` },
+        { id: 'f3', teks: `Isi: Ikon ${m[2]}` },
+      ]
+    }
+  }
+  if (stageIndex === 2) {
+    // 'Seri postingan "Pilah 10 Detik": tiap hari satu jenis sampah dan tongnya.'
+    const m = teks.match(/^(.+?): (.+?)\.?$/)
+    if (m) {
+      return [
+        { id: 'f1', teks: `Hook: ${hook}` },
+        { id: 'f2', teks: `Konsep: ${m[1]}` },
+        { id: 'f3', teks: `Rutinitas: ${kapital(m[2])}` },
+      ]
+    }
+  }
+  return [
+    { id: 'f1', teks: `Hook: ${hook}` },
+    { id: 'f2', teks: `Konsep: ${teks}` },
+  ]
+}
+
 export function EcoCommunication({
   tugasId,
   stageIndex,
@@ -48,29 +110,26 @@ export function EcoCommunication({
 }
 
 // ---------------------------------------------------------------------------
-// Mode gestur: seret kartu konsep ke target
+// Mode gestur: susun storyboard (SusunCerita)
 // ---------------------------------------------------------------------------
 
 function EcoCommunicationGestur({ tugasId, stageIndex, onStageComplete }: MiniGameTugasSlotProps) {
   const tahap = KONTEN_TUGAS[tugasId]?.tahapan[stageIndex]
   const spec = INTERAKSI_MISI[tugasId]?.[stageIndex]
-  const [dragId, setDragId] = useState<number | null>(null)
-  const [dragPos, setDragPos] = useState<{ x: number; y: number } | null>(null)
-  const [diAtasTarget, setDiAtasTarget] = useState(false)
-  const [dipilih, setDipilih] = useState<number | null>(null)
+  const frame = useMemo(() => {
+    if (!tahap || tahap.jenis !== 'pilih') return []
+    return buatFrame(tahap, stageIndex)
+  }, [tahap, stageIndex])
   const [percobaan, setPercobaan] = useState(0)
-  const [salahIndeks, setSalahIndeks] = useState<number[]>([])
-  const [salahTerakhir, setSalahTerakhir] = useState<{ index: number; alasan: string } | null>(null)
+  const [kunciUlang, setKunciUlang] = useState(0)
+  const [gagal, setGagal] = useState(false)
   const [selesai, setSelesai] = useState(false)
   const [berhasil, setBerhasil] = useState(false)
   const [skor, setSkor] = useState(0)
 
   const selesaiRef = useRef(false)
-  const dragRef = useRef<{ x0: number; y0: number; bergerak: boolean; id: number } | null>(null)
-  const tekanRef = useRef(false)
-  const targetRef = useRef<HTMLButtonElement | null>(null)
 
-  if (!tahap || tahap.jenis !== 'pilih') {
+  if (!tahap || tahap.jenis !== 'pilih' || frame.length === 0) {
     return (
       <div className="aia-card">
         <p className="aia-muted">Tahap ini belum tersedia.</p>
@@ -80,102 +139,34 @@ function EcoCommunicationGestur({ tugasId, stageIndex, onStageComplete }: MiniGa
 
   const jawabanBenar = tahap.pilihan.findIndex((p) => p.benar)
   const opsiBenar = jawabanBenar >= 0 ? tahap.pilihan[jawabanBenar] : undefined
-  const targetLabel = spec?.target ?? 'Target'
+  const opsiSalah = tahap.pilihan.filter((p) => !p.benar)
   const tutorial = spec?.tutorial ?? stageIndex === 0
   const petunjuk = spec ? bersihkanPetunjuk(spec.petunjukMagi) : undefined
-  // Kesulitan adaptif: setelah 1 kali gagal, zona target membesar.
-  const perbesar = percobaan >= 1
 
-  /** Apakah titik layar berada di dalam zona target (dengan toleransi). */
-  const cekDiTarget = (clientX: number, clientY: number): boolean => {
-    const el = targetRef.current
-    if (!el) return false
-    const r = el.getBoundingClientRect()
-    const pad = perbesar ? 28 : 12
-    return clientX >= r.left - pad && clientX <= r.right + pad && clientY >= r.top - pad && clientY <= r.bottom + pad
-  }
-
-  const resolve = (i: number) => {
-    if (selesai || salahIndeks.includes(i)) return
-    const opsi = tahap.pilihan[i]
-    if (!opsi) return
-    setDipilih(null)
-    if (opsi.benar) {
-      benar()
-      koin()
+  /** Satu jalan SusunCerita selesai: 100 = tanpa ketukan salah. */
+  const susunSelesai = (skorInternal: number) => {
+    if (selesai || gagal) return
+    if (skorInternal >= 100) {
       setSkor(percobaan === 0 ? 100 : 50)
       setBerhasil(true)
       setSelesai(true)
     } else {
-      salah()
-      getar([40, 40, 40])
       const p = percobaan + 1
       setPercobaan(p)
-      setSalahIndeks((daftar) => [...daftar, i])
-      setSalahTerakhir({ index: i, alasan: opsi.alasan })
       if (p >= MAKS_PERCOBAAN) {
         setSkor(0)
         setBerhasil(false)
         setSelesai(true)
-      }
-    }
-  }
-
-  const onPointerDownKartu = (e: React.PointerEvent<HTMLButtonElement>, i: number) => {
-    if (selesai || salahIndeks.includes(i)) return
-    ambil()
-    dragRef.current = { x0: e.clientX, y0: e.clientY, bergerak: false, id: i }
-    setDragId(i)
-    try {
-      e.currentTarget.setPointerCapture(e.pointerId)
-    } catch {
-      // Abaikan: perangkat tidak mendukung pointer capture.
-    }
-  }
-
-  const onPointerMoveKartu = (e: React.PointerEvent<HTMLButtonElement>, i: number) => {
-    const d = dragRef.current
-    if (!d || d.id !== i) return
-    const dx = e.clientX - d.x0
-    const dy = e.clientY - d.y0
-    if (Math.abs(dx) + Math.abs(dy) > 10) d.bergerak = true
-    setDragPos({ x: dx, y: dy })
-    setDiAtasTarget(cekDiTarget(e.clientX, e.clientY))
-  }
-
-  const onPointerUpKartu = (e: React.PointerEvent<HTMLButtonElement>, i: number) => {
-    const d = dragRef.current
-    dragRef.current = null
-    setDragId(null)
-    setDragPos(null)
-    setDiAtasTarget(false)
-    if (!d || d.id !== i) return
-    if (d.bergerak) {
-      tekanRef.current = true
-      if (cekDiTarget(e.clientX, e.clientY)) {
-        lepas()
-        resolve(i)
       } else {
-        lepas()
+        setGagal(true)
       }
     }
   }
 
-  const onPointerCancelKartu = () => {
-    dragRef.current = null
-    setDragId(null)
-    setDragPos(null)
-    setDiAtasTarget(false)
-  }
-
-  const onClickKartu = (i: number) => {
-    if (tekanRef.current) {
-      tekanRef.current = false
-      return
-    }
-    if (selesai || salahIndeks.includes(i)) return
+  const cobaLagi = () => {
     klik()
-    setDipilih((v) => (v === i ? null : i))
+    setGagal(false)
+    setKunciUlang((k) => k + 1)
   }
 
   const lanjutkan = () => {
@@ -206,143 +197,36 @@ function EcoCommunicationGestur({ tugasId, stageIndex, onStageComplete }: MiniGa
           <Megaphone aria-hidden="true" style={{ width: 18, height: 18, verticalAlign: -3 }} /> Brief konten
         </strong>
         <p>{tahap.brief}</p>
-        {tutorial && spec?.langkah && (
-          <p className="aia-muted" style={{ fontSize: 13, margin: '8px 0 0' }}>
-            Langkah: {spec.langkah.map((l, i) => `${i + 1}. ${l}`).join(' → ')}
-          </p>
-        )}
       </div>
 
-      <div style={{ position: 'relative' }}>
-        <EfekBenar tampil={selesai && berhasil} />
-
-        <div style={{ display: 'grid', gap: 10 }}>
-          {tahap.pilihan.map((opsi, i) => {
-            const isJawaban = i === jawabanBenar
-            const isSalah = salahIndeks.includes(i)
-            const sedangDisere = dragId === i
-            let latar: string | undefined
-            let border: string | undefined
-            if (selesai && isJawaban) {
-              latar = '#dcfce7'
-              border = '2px solid #236b4d'
-            } else if (isSalah) {
-              latar = '#fee2e2'
-              border = '2px solid #b83232'
-            }
-            return (
-              <button
-                key={i}
-                type="button"
-                className="aia-btn aia-btn-block"
-                disabled={selesai || isSalah}
-                onPointerDown={(e) => onPointerDownKartu(e, i)}
-                onPointerMove={(e) => onPointerMoveKartu(e, i)}
-                onPointerUp={(e) => onPointerUpKartu(e, i)}
-                onPointerCancel={onPointerCancelKartu}
-                onClick={() => onClickKartu(i)}
-                aria-pressed={dipilih === i}
-                aria-label={`Konsep ${String.fromCharCode(65 + i)}: ${opsi.teks}. Seret ke target, atau ketuk untuk memilih.`}
-                style={{
-                  justifyContent: 'flex-start',
-                  textAlign: 'left',
-                  minHeight: 64,
-                  background: latar,
-                  border,
-                  whiteSpace: 'normal',
-                  height: 'auto',
-                  padding: '12px 16px',
-                  cursor: selesai || isSalah ? 'default' : 'grab',
-                  touchAction: 'none',
-                  userSelect: 'none',
-                  WebkitUserSelect: 'none',
-                  transform:
-                    sedangDisere && dragPos
-                      ? `translate(${dragPos.x}px, ${dragPos.y}px) rotate(${dragPos.x * 0.04}deg)`
-                      : undefined,
-                  outline: dipilih === i ? '3px solid var(--green, #2f7d4f)' : undefined,
-                  outlineOffset: 2,
-                  opacity: isSalah ? 0.55 : 1,
-                  position: 'relative',
-                  zIndex: sedangDisere ? 10 : undefined,
-                }}
-              >
-                <span aria-hidden="true" style={{ fontWeight: 800 }}>
-                  {String.fromCharCode(65 + i)}.
-                </span>
-                <span>{opsi.teks}</span>
-                {selesai && isJawaban && <Check aria-hidden="true" color="#236b4d" />}
-                {isSalah && <X aria-hidden="true" color="#b83232" />}
-                <small
-                  className="aia-muted"
-                  style={{ display: 'block', width: '100%', fontSize: 12, marginTop: 4 }}
-                >
-                  {sedangDisere
-                    ? 'Sedang diseret…'
-                    : dipilih === i
-                      ? 'Sudah dipilih — ketuk targetnya'
-                      : isSalah
-                        ? 'Sudah dicoba'
-                        : 'Seret ke target, atau ketuk untuk memilih'}
-                </small>
-              </button>
-            )
-          })}
+      {tutorial && !selesai && !gagal && (
+        <div style={{ textAlign: 'center' }}>
+          <TanganPenunjuk label="Ketuk frame sesuai urutan ceritanya" />
         </div>
+      )}
 
-        {tutorial && !selesai && (
-          <div style={{ textAlign: 'center', marginTop: 12 }}>
-            <TanganPenunjuk label="Seret konsep terbaik ke sini" />
-          </div>
-        )}
+      {!gagal && <SusunCerita key={kunciUlang} frame={frame} onSelesai={susunSelesai} />}
 
-        <button
-          type="button"
-          ref={targetRef}
-          data-aia-target
-          disabled={selesai}
-          onClick={() => {
-            if (dipilih !== null) resolve(dipilih)
-          }}
-          aria-label={`Target: ${targetLabel}${dipilih !== null ? '. Ketuk untuk menaruh kartu yang dipilih.' : ''}`}
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 4,
-            width: '100%',
-            minHeight: perbesar ? 170 : 120,
-            marginTop: 12,
-            padding: perbesar ? '20px 12px' : '14px 12px',
-            border: `2px dashed ${diAtasTarget ? '#236b4d' : '#9ca3af'}`,
-            borderRadius: 14,
-            background: diAtasTarget ? '#dcfce7' : dipilih !== null ? '#f0fdf4' : '#fafafa',
-            color: 'var(--foreground, #111)',
-            fontSize: 15,
-            fontWeight: 700,
-            cursor: selesai ? 'default' : 'pointer',
-            transform: diAtasTarget ? 'scale(1.02)' : undefined,
-          }}
-        >
-          <Megaphone aria-hidden="true" style={{ width: 28, height: 28, color: '#2f7d4f' }} />
-          {targetLabel}
-          <small style={{ fontWeight: 400, color: 'var(--ink-soft, #6b7280)' }}>
-            {selesai && berhasil && opsiBenar
-              ? `✓ ${opsiBenar.teks}`
-              : dipilih !== null
-                ? 'Ketuk untuk menaruh kartu yang dipilih'
-                : 'Seret kartu ke sini'}
-          </small>
-        </button>
-      </div>
-
-      {salahTerakhir && !selesai && (
+      {gagal && !selesai && (
         <div>
           <EfekSalah tampil petunjuk={petunjuk} />
-          <p className="aia-muted" style={{ fontSize: 13, margin: '8px 0 0' }}>
-            Kenapa salah: {salahTerakhir.alasan}
-          </p>
+          <div style={{ marginTop: 8 }}>
+            <p className="aia-muted" style={{ fontSize: 13, margin: '0 0 4px' }}>
+              Kenapa konsep lain kurang tepat:
+            </p>
+            <ul className="aia-muted" style={{ fontSize: 13, margin: 0, paddingLeft: 18 }}>
+              {opsiSalah.map((o) => (
+                <li key={o.teks}>
+                  {o.teks} — {o.alasan}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="aia-actions" style={{ marginTop: 12 }}>
+            <button type="button" className="aia-btn aia-btn-primary" style={{ minHeight: 44 }} onClick={cobaLagi}>
+              <RotateCcw aria-hidden="true" /> Coba lagi · 1 kesempatan tersisa
+            </button>
+          </div>
         </div>
       )}
 
@@ -368,8 +252,13 @@ function EcoCommunicationGestur({ tugasId, stageIndex, onStageComplete }: MiniGa
             background: '#fee2e2',
           }}
         >
-          <strong>Belum berhasil.</strong> Pilihan yang tepat:{' '}
-          <strong>{opsiBenar.teks}</strong> — {opsiBenar.alasan}
+          <strong>Belum berhasil.</strong> Urutan storyboard yang benar:
+          <ol style={{ margin: '8px 0', paddingLeft: 20 }}>
+            {frame.map((f) => (
+              <li key={f.id}>{f.teks}</li>
+            ))}
+          </ol>
+          Pilihan yang tepat: <strong>{opsiBenar.teks}</strong> — {opsiBenar.alasan}
         </div>
       )}
 

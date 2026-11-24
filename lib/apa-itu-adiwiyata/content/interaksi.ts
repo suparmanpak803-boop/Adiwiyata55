@@ -12,11 +12,28 @@
 // - ketuk-berulang: ketuk berulang untuk mencangkul atau mengaduk
 // - pipa: susun dan putar potongan pipa agar air mengalir
 // - cari-objek: cari dan ketuk objek di area dalam batas waktu
+// - tangkap-jatuh: objek jatuh, tangkap yang benar dengan keranjang
+// - sortir-cepat: ban berjalan, ketuk target yang benar sebelum waktu habis
+// - kuis-kilat: soal + bar waktu, bonus beruntun
+// - kartu-memori: balik kartu, pasangkan soal dengan jawaban
+// - puzzle-geser: susun potongan 3x3 dengan ketuk-dua-petak-untuk-tukar
+// - cari-perbedaan: dua panel berdampingan, ketuk perbedaannya
+// - gambar-grafik: ketuk batang grafik sampai tingginya sesuai data
+// - susun-cerita: ketuk frame sesuai urutan cerita yang benar
+// - balas-cepat: pesan masuk, ketuk balasan terbaik sebelum waktu habis
+// - simulasi-kantin: pesanan datang bergantian, ketuk tindakan yang benar
+// - susun-menara: ketuk kandidat lapisan untuk menumpuk selang-seling
+// - siram-ritme: ketuk mengikuti irama/ketukan
+// - panen-ketuk: objek muncul bergantian, ketuk yang matang saja
+// - ketuk-sel: ketuk sel tabel yang benar
 // - pilihan: JALAN TERAKHIR bila satu tahap benar-benar tidak bisa digambarkan
 //   sebagai gestur. Saat ini TIDAK ADA tahap yang memakai 'pilihan'.
-// 'putar' dipakai di biopori (bor tanah); 'ketuk-berulang' dan 'pipa' belum
-// terpakai di 42 tahap ini — keduanya tersedia untuk misi baru (mis. mencangkul
-// kebun, menyusun pipa air hujan ke tong penampung).
+// Gelombang V (variasi mekanik, Nov 2026): tiap misi kini memakai mekanik
+// berbeda — tangkap-jatuh, sortir-cepat, kuis-kilat, kartu-memori,
+// puzzle-geser, cari-perbedaan, gambar-grafik, susun-cerita, balas-cepat,
+// simulasi-kantin, susun-menara, siram-ritme, panen-ketuk, ketuk-sel —
+// supaya tidak semua tahap terasa sama. 'pipa' kini dipakai di Air & Energi
+// T2; 'ketuk-berulang' dipakai di perbaikan kompos bau (TapSpam).
 //
 // Isi tiap tahap konsisten dengan konten yang sudah ada (item pilah, soal,
 // temuan inspeksi, pilihan) — hanya CARA memainkannya yang diubah menjadi
@@ -34,6 +51,20 @@ export type JenisInteraksi =
   | 'ketuk-berulang'
   | 'pipa'
   | 'cari-objek'
+  | 'tangkap-jatuh'
+  | 'sortir-cepat'
+  | 'kuis-kilat'
+  | 'kartu-memori'
+  | 'puzzle-geser'
+  | 'cari-perbedaan'
+  | 'gambar-grafik'
+  | 'susun-cerita'
+  | 'balas-cepat'
+  | 'simulasi-kantin'
+  | 'susun-menara'
+  | 'siram-ritme'
+  | 'panen-ketuk'
+  | 'ketuk-sel'
   | 'pilihan'
 
 export interface SpesifikasiInteraksi {
@@ -55,7 +86,7 @@ export const INTERAKSI_MISI: Record<ChapterId | TugasKaderId, SpesifikasiInterak
   // ---------------------------------------------------------- 6 misi utama
   gerbang: [
     {
-      jenis: 'drag-drop',
+      jenis: 'tangkap-jatuh',
       objek: ['Tumbler', 'Lunch box', 'Botol plastik sekali pakai', 'Kantong kresek', 'Kotak bekal styrofoam'],
       target: 'Tas (untuk dibawa) atau Tinggalkan (barang sekali pakai)',
       hasilBenar: 'Barang masuk tas dengan bunyi ceria, kombo naik, daun confetti berterbangan.',
@@ -64,12 +95,12 @@ export const INTERAKSI_MISI: Record<ChapterId | TugasKaderId, SpesifikasiInterak
       tutorial: true,
       langkah: [
         'Tebak dulu: seret jawaban tebakan ke kotak jawaban',
-        'Seret barang ke Tas kalau bisa dipakai ulang',
-        'Seret ke Tinggalkan kalau barang sekali pakai',
+        'Tangkap barang guna ulang yang jatuh',
+        'Biarkan barang sekali pakai jatuh',
       ],
     },
     {
-      jenis: 'drag-drop',
+      jenis: 'tangkap-jatuh',
       objek: ['Tumbler', 'Lunch box', 'Botol plastik sekali pakai', 'Kantong kresek', 'Kotak bekal styrofoam'],
       target: 'Tas (untuk dibawa) atau Tinggalkan (barang sekali pakai)',
       hasilBenar: 'Barang masuk tas makin cepat, kombo beruntun membuat skor berlipat.',
@@ -89,7 +120,7 @@ export const INTERAKSI_MISI: Record<ChapterId | TugasKaderId, SpesifikasiInterak
   ],
   kantin: [
     {
-      jenis: 'drag-drop',
+      jenis: 'sortir-cepat',
       objek: ['Sisa makanan dan kulit buah', 'Botol dan gelas plastik', 'Kertas dan kardus', 'Daun kering'],
       target: 'Tong Organik atau Tong Anorganik',
       hasilBenar: 'Sampah masuk tong dengan sparkle, tong tersenyum.',
@@ -98,7 +129,7 @@ export const INTERAKSI_MISI: Record<ChapterId | TugasKaderId, SpesifikasiInterak
       tutorial: true,
     },
     {
-      jenis: 'drag-drop',
+      jenis: 'sortir-cepat',
       objek: ['Sisa makanan', 'Botol plastik', 'Kotak styrofoam', 'Bungkus plastik berminyak', 'Tisu bekas'],
       target: 'Tong Organik, Anorganik, atau Residu',
       hasilBenar: 'Sampah masuk tong yang benar, termasuk kasus abu-abu yang menjebak.',
@@ -118,7 +149,7 @@ export const INTERAKSI_MISI: Record<ChapterId | TugasKaderId, SpesifikasiInterak
   ],
   maggot: [
     {
-      jenis: 'drag-drop',
+      jenis: 'tangkap-jatuh',
       objek: ['Sisa nasi', 'Sayur sisa', 'Buah matang', 'Daging berlebih', 'Makanan berminyak', 'Plastik'],
       target: 'Kotak maggot',
       hasilBenar: 'Maggot melahap pakan dengan lahap, kotaknya bersih dan tidak bau.',
@@ -126,9 +157,9 @@ export const INTERAKSI_MISI: Record<ChapterId | TugasKaderId, SpesifikasiInterak
       petunjukMagi: 'Magi: "Aku doyan nasi dan buah, tapi minyak dan plastik bikin aku sakit!"',
       tutorial: true,
       langkah: [
-        'Seret pakan ke kotak maggot',
+        'Tangkap pakan yang aman untuk maggot',
+        'Biarkan pakan berminyak atau plastik jatuh',
         'Beri pakan bersih sampai maggot kenyang',
-        'Jangan beri daging, minyak, atau plastik',
       ],
     },
     {
@@ -162,7 +193,7 @@ export const INTERAKSI_MISI: Record<ChapterId | TugasKaderId, SpesifikasiInterak
   ],
   kompos: [
     {
-      jenis: 'drag-drop',
+      jenis: 'susun-menara',
       objek: ['Daun kering', 'Kardus sobek', 'Ranting', 'Sisa sayur', 'Potongan rumput'],
       target: 'Tumpukan kompos (lapis cokelat dan hijau bergantian)',
       hasilBenar: 'Lapis tersusun rapi, tumpukan menghangat dan siap jadi kompos.',
@@ -170,13 +201,13 @@ export const INTERAKSI_MISI: Record<ChapterId | TugasKaderId, SpesifikasiInterak
       petunjukMagi: 'Magi: "Cokelat, hijau, cokelat, hijau — selang-seling biar komposnya jadi!"',
       tutorial: true,
       langkah: [
-        'Seret bahan cokelat (daun, kardus, ranting)',
-        'Seret bahan hijau (sayur, rumput)',
+        'Ketuk lapisan yang benar untuk giliran ini',
+        'Tumpuk selang-seling cokelat dan hijau',
         'Ulangi sampai 8 lapis',
       ],
     },
     {
-      jenis: 'drag-drop',
+      jenis: 'siram-ritme',
       objek: ['Gayung air', 'Sinar matahari', 'Pupuk kasgot'],
       target: 'Cabai atau kangkung yang butuh dirawat',
       hasilBenar: 'Tanaman segar kembali, daunnya tegak dan hijau.',
@@ -185,12 +216,12 @@ export const INTERAKSI_MISI: Record<ChapterId | TugasKaderId, SpesifikasiInterak
       tutorial: false,
       langkah: [
         'Lihat kebutuhan tanaman (haus, kurang cahaya, butuh pupuk)',
-        'Seret alat yang benar ke tanaman',
+        'Ketuk mengikuti irama untuk merawat tanaman',
         'Ulangi untuk tanaman berikutnya',
       ],
     },
     {
-      jenis: 'drag-drop',
+      jenis: 'panen-ketuk',
       objek: ['Cabai matang', 'Kangkung matang'],
       target: 'Keranjang panen',
       hasilBenar: 'Sayur segar masuk keranjang, kebun siap dipanen lagi.',
@@ -198,9 +229,9 @@ export const INTERAKSI_MISI: Record<ChapterId | TugasKaderId, SpesifikasiInterak
       petunjukMagi: 'Magi: "Petik yang sudah matang saja, yang masih kecil biar tumbuh dulu!"',
       tutorial: false,
       langkah: [
-        'Tunggu sayur matang',
-        'Petik sayur yang sudah matang',
-        'Seret ke keranjang panen',
+        'Tunggu sayur matang muncul',
+        'Ketuk sayur yang sudah matang saja',
+        'Biarkan yang masih muda tumbuh dulu',
       ],
     },
   ],
@@ -220,17 +251,17 @@ export const INTERAKSI_MISI: Record<ChapterId | TugasKaderId, SpesifikasiInterak
       ],
     },
     {
-      jenis: 'drag-drop',
-      objek: ['Ember penampung', 'Tetes hujan'],
-      target: 'Tong penampung air hujan',
-      hasilBenar: 'Ember penuh, air hujan tertampung untuk menyiram kebun.',
-      hasilSalah: 'Tetes hujan jatuh ke tanah dan terbuang.',
-      petunjukMagi: 'Magi: "Seret embernya mengikuti tetes hujan, jangan diam saja!"',
+      jenis: 'pipa',
+      objek: ['Potongan pipa', 'Sumber air hujan', 'Tong penampung'],
+      target: 'Tong penampung (sambung pipa dari sumber hujan)',
+      hasilBenar: 'Pipa tersambung, air hujan mengalir ke tong penampung.',
+      hasilSalah: 'Pipa belum tersambung, air tidak mengalir ke tong.',
+      petunjukMagi: 'Magi: "Putar potongannya sampai air mengalir ke tong!"',
       tutorial: false,
       langkah: [
-        'Seret ember ke bawah tetes hujan',
-        'Tangkap 10 tetes sebelum waktu habis',
-        'Tampung airnya ke tong penampung',
+        'Ketuk potongan pipa untuk memutarnya',
+        'Sambung jalur dari sumber ke tong penampung',
+        'Periksa aliran sampai air mengalir',
       ],
     },
     {
@@ -250,29 +281,29 @@ export const INTERAKSI_MISI: Record<ChapterId | TugasKaderId, SpesifikasiInterak
   ],
   biodiversitas: [
     {
-      jenis: 'drag-drop',
+      jenis: 'kuis-kilat',
       objek: ['Kartu jawaban pilah sampah'],
-      target: 'Kotak jawaban',
-      hasilBenar: 'Jawaban melayang ke kotak dengan sparkle.',
-      hasilSalah: 'Jawaban memantul, kotak menggeleng, waktu terus berjalan.',
+      target: 'Jawaban kilat sebelum waktu habis',
+      hasilBenar: 'Jawaban benar sebelum waktu habis, beruntun naik!',
+      hasilSalah: 'Jawaban salah atau waktu habis, beruntun putus.',
       petunjukMagi: 'Magi: "Ingat pelajaran pilah di kantin, jawabannya ada di sana!"',
       tutorial: true,
     },
     {
-      jenis: 'drag-drop',
+      jenis: 'kuis-kilat',
       objek: ['Kartu jawaban maggot dan kompos'],
-      target: 'Kotak jawaban',
-      hasilBenar: 'Jawaban melayang ke kotak dengan sparkle.',
-      hasilSalah: 'Jawaban memantul, kotak menggeleng, waktu terus berjalan.',
+      target: 'Jawaban kilat sebelum waktu habis',
+      hasilBenar: 'Jawaban benar sebelum waktu habis, beruntun naik!',
+      hasilSalah: 'Jawaban salah atau waktu habis, beruntun putus.',
       petunjukMagi: 'Magi: "Ingat apa yang aku makan dan apa itu bahan cokelat!"',
       tutorial: false,
     },
     {
-      jenis: 'drag-drop',
+      jenis: 'kuis-kilat',
       objek: ['Kartu jawaban air, energi, dan kebun'],
-      target: 'Kotak jawaban',
-      hasilBenar: 'Jawaban melayang ke kotak dengan sparkle.',
-      hasilSalah: 'Jawaban memantul, kotak menggeleng, waktu terus berjalan.',
+      target: 'Jawaban kilat sebelum waktu habis',
+      hasilBenar: 'Jawaban benar sebelum waktu habis, beruntun naik!',
+      hasilSalah: 'Jawaban salah atau waktu habis, beruntun putus.',
       petunjukMagi: 'Magi: "Kompos diaduk biar bernafas, biopori biar air meresap!"',
       tutorial: false,
     },
@@ -280,7 +311,7 @@ export const INTERAKSI_MISI: Record<ChapterId | TugasKaderId, SpesifikasiInterak
   // --------------------------------------------------------- 8 Misi Kader
   'bank-sampah': [
     {
-      jenis: 'drag-drop',
+      jenis: 'sortir-cepat',
       objek: ['Botol plastik PET', 'Kertas bekas', 'Kaleng minuman', 'Botol kaca'],
       target: 'Kelompok PET, Kertas, Kaleng, atau Kaca di bank sampah',
       hasilBenar: 'Item masuk kelompok yang benar, timbangan bank sampah naik.',
@@ -289,28 +320,28 @@ export const INTERAKSI_MISI: Record<ChapterId | TugasKaderId, SpesifikasiInterak
       tutorial: true,
       langkah: [
         'Lihat item yang muncul',
-        'Seret ke kelompok jenisnya',
+        'Ketuk jenis yang benar sebelum waktu habis',
         'Pilah sampai 10 item selesai',
       ],
     },
     {
-      jenis: 'drag-drop',
+      jenis: 'ketuk-sel',
       objek: ['Angka berat (kg)', 'Buku tabungan bank sampah'],
       target: 'Kolom PET, Kertas, Kaleng, atau Kaca di buku tabungan',
       hasilBenar: 'Berat tercatat rapi, total tabungan terhitung.',
       hasilSalah: 'Berat salah kolom, catatan tabungan jadi berantakan.',
-      petunjukMagi: 'Magi: "Baca tabel timbangan dulu, baru seret angkanya!"',
+      petunjukMagi: 'Magi: "Baca tabel timbangan dulu, baru ketuk selnya!"',
       tutorial: false,
       langkah: [
         'Lihat tabel timbangan hari ini',
-        'Seret berat yang benar ke jenisnya',
+        'Ketuk sel berat yang benar',
         'Periksa total 15,5 kg di akhir',
       ],
     },
     {
-      jenis: 'drag-drop',
+      jenis: 'kuis-kilat',
       objek: ['Kartu jawaban hitungan tabungan'],
-      target: 'Kotak jawaban',
+      target: 'Jawaban kilat hitungan tabungan',
       hasilBenar: 'Hitungan benar, tabungan kelas bertambah.',
       hasilSalah: 'Hitungan meleset, tabungan salah catat.',
       petunjukMagi: 'Magi: "Berat dikali harga per kilo, pelan-pelan saja!"',
@@ -319,7 +350,7 @@ export const INTERAKSI_MISI: Record<ChapterId | TugasKaderId, SpesifikasiInterak
   ],
   'lingkungan-sehat': [
     {
-      jenis: 'cari-objek',
+      jenis: 'cari-perbedaan',
       objek: ['Keran menetes', 'Sabun habis', 'Lantai licin', 'Gayung pecah', 'Tong sampah penuh'],
       target: 'Masalah di toilet sekolah',
       hasilBenar: 'Masalah ketemu dan langsung ditangani, toilet bersih dan wangi.',
@@ -329,11 +360,11 @@ export const INTERAKSI_MISI: Record<ChapterId | TugasKaderId, SpesifikasiInterak
       langkah: [
         'Cari masalah di toilet',
         'Ketuk masalah yang ditemukan',
-        'Seret tindakan yang benar ke masalah itu',
+        'Ketuk tindakan yang benar untuk masalah itu',
       ],
     },
     {
-      jenis: 'cari-objek',
+      jenis: 'cari-perbedaan',
       objek: ['Selokan mampet', 'Genangan air', 'Jentik nyamuk', 'Daun menumpuk', 'Bau saluran'],
       target: 'Masalah di saluran air dan selokan',
       hasilBenar: 'Selokan lancar lagi, genangan hilang.',
@@ -343,11 +374,11 @@ export const INTERAKSI_MISI: Record<ChapterId | TugasKaderId, SpesifikasiInterak
       langkah: [
         'Cari masalah di saluran air',
         'Ketuk masalah yang ditemukan',
-        'Seret tindakan yang benar ke masalah itu',
+        'Ketuk tindakan yang benar untuk masalah itu',
       ],
     },
     {
-      jenis: 'cari-objek',
+      jenis: 'cari-perbedaan',
       objek: ['Tanaman layu', 'Rumput liar', 'Sampah berserakan', 'Poster rusak', 'Teman tidak cuci tangan'],
       target: 'Masalah di taman dan kebiasaan sehat',
       hasilBenar: 'Taman rapi lagi, semua cuci tangan sebelum makan.',
@@ -357,33 +388,33 @@ export const INTERAKSI_MISI: Record<ChapterId | TugasKaderId, SpesifikasiInterak
       langkah: [
         'Cari masalah di taman',
         'Ketuk masalah yang ditemukan',
-        'Seret tindakan yang benar ke masalah itu',
+        'Ketuk tindakan yang benar untuk masalah itu',
       ],
     },
   ],
   'edu-lingkungan': [
     {
-      jenis: 'drag-drop',
+      jenis: 'kartu-memori',
       objek: ['Kartu jawaban pilah sampah'],
-      target: 'Kotak jawaban temanmu',
+      target: 'Pasangan kartu soal dan jawaban',
       hasilBenar: 'Temanmu paham dan langsung memilah dengan benar.',
       hasilSalah: 'Temanmu bingung, sampahnya salah tong.',
       petunjukMagi: 'Magi: "Ajar pelan-pelan, kayak kamu belajar di kantin dulu!"',
       tutorial: true,
     },
     {
-      jenis: 'drag-drop',
+      jenis: 'kartu-memori',
       objek: ['Kartu jawaban kompos dan maggot'],
-      target: 'Kotak jawaban temanmu',
+      target: 'Pasangan kartu soal dan jawaban',
       hasilBenar: 'Temanmu paham dan langsung merawat kompos dengan benar.',
       hasilSalah: 'Temanmu bingung, komposnya salah urus.',
       petunjukMagi: 'Magi: "Ceritakan apa yang aku makan dan kenapa kompos diaduk!"',
       tutorial: false,
     },
     {
-      jenis: 'drag-drop',
+      jenis: 'kartu-memori',
       objek: ['Kartu jawaban hemat air dan energi'],
-      target: 'Kotak jawaban temanmu',
+      target: 'Pasangan kartu soal dan jawaban',
       hasilBenar: 'Temanmu paham dan langsung hemat air dan listrik.',
       hasilSalah: 'Temanmu bingung, keran tetap menetes.',
       petunjukMagi: 'Magi: "AC 16°C itu boros, keran menetes itu buang-buang air!"',
@@ -392,51 +423,51 @@ export const INTERAKSI_MISI: Record<ChapterId | TugasKaderId, SpesifikasiInterak
   ],
   'inovasi-hijau': [
     {
-      jenis: 'drag-drop',
+      jenis: 'puzzle-geser',
       objek: ['Gambar poster', 'Slogan kampanye', 'Warna poster'],
-      target: 'Kanvas poster bebas plastik',
+      target: 'Puzzle poster bebas plastik 3×3',
       hasilBenar: 'Poster jadi menarik, semua orang berhenti dan membacanya.',
       hasilSalah: 'Poster sepi peminat, pesannya tidak sampai.',
       petunjukMagi: 'Magi: "Poster yang bagus itu pesannya jelas dalam sekali lihat!"',
       tutorial: true,
       langkah: [
         'Baca brief kampanyenya',
-        'Seret elemen yang paling efektif ke kanvas',
+        'Ketuk dua potongan untuk menukar posisinya',
         'Periksa apakah pesannya jelas',
       ],
     },
     {
-      jenis: 'drag-drop',
+      jenis: 'puzzle-geser',
       objek: ['Data hemat energi', 'Ikon lampu dan AC', 'Judul infografis'],
-      target: 'Kanvas infografis',
+      target: 'Puzzle infografis 3×3',
       hasilBenar: 'Infografis jadi jelas, semua orang paham cara hemat listrik.',
       hasilSalah: 'Infografis membingungkan, datanya tidak terbaca.',
       petunjukMagi: 'Magi: "Angka hematnya yang besar, biar semua orang kaget!"',
       tutorial: false,
       langkah: [
         'Baca brief kampanyenya',
-        'Seret elemen yang paling efektif ke kanvas',
+        'Ketuk dua potongan untuk menukar posisinya',
         'Periksa apakah datanya terbaca',
       ],
     },
     {
-      jenis: 'drag-drop',
+      jenis: 'puzzle-geser',
       objek: ['Bahan bekas', 'Sketsa alat', 'Cara kerja alat'],
-      target: 'Meja karya inovasi',
+      target: 'Puzzle alat sederhana 3×3',
       hasilBenar: 'Alat sederhana jadi dan bisa dipakai, bahan bekas punya guna lagi.',
       hasilSalah: 'Alat tidak masuk akal, bahannya susah dicari.',
       petunjukMagi: 'Magi: "Alat yang bagus itu bahannya gampang dicari dan cara pakainya jelas!"',
       tutorial: false,
       langkah: [
         'Baca brief kampanyenya',
-        'Seret ide yang paling masuk akal ke meja karya',
+        'Ketuk dua potongan untuk menukar posisinya',
         'Periksa apakah alatnya bisa dibuat',
       ],
     },
   ],
   'kantin-hijau': [
     {
-      jenis: 'cari-objek',
+      jenis: 'simulasi-kantin',
       objek: ['Meja lengket', 'Tempat cuci piring kotor', 'Lantai licin berminyak', 'Tong sampah tercampur'],
       target: 'Masalah kebersihan di kantin',
       hasilBenar: 'Kantin bersih dan wangi, pembeli nyaman.',
@@ -446,11 +477,11 @@ export const INTERAKSI_MISI: Record<ChapterId | TugasKaderId, SpesifikasiInterak
       langkah: [
         'Cari masalah kebersihan di kantin',
         'Ketuk masalah yang ditemukan',
-        'Seret tindakan yang benar ke masalah itu',
+        'Ketuk tindakan yang benar untuk pesanan itu',
       ],
     },
     {
-      jenis: 'cari-objek',
+      jenis: 'simulasi-kantin',
       objek: ['Kantong plastik', 'Sedotan plastik', 'Styrofoam', 'Kemasan menumpuk'],
       target: 'Plastik sekali pakai di kantin',
       hasilBenar: 'Plastik sekali pakai terganti tumbler dan wadah guna ulang.',
@@ -460,11 +491,11 @@ export const INTERAKSI_MISI: Record<ChapterId | TugasKaderId, SpesifikasiInterak
       langkah: [
         'Cari plastik sekali pakai di kantin',
         'Ketuk plastik yang ditemukan',
-        'Seret tindakan yang benar ke plastik itu',
+        'Ketuk tindakan yang benar untuk pesanan itu',
       ],
     },
     {
-      jenis: 'cari-objek',
+      jenis: 'simulasi-kantin',
       objek: ['Minuman warna mencolok', 'Makanan tak tertutup', 'Penjual tanpa penjepit', 'Sisa makanan dibuang'],
       target: 'Masalah pada jajanan kantin',
       hasilBenar: 'Jajanan sehat dan higienis, semua aman dimakan.',
@@ -474,57 +505,57 @@ export const INTERAKSI_MISI: Record<ChapterId | TugasKaderId, SpesifikasiInterak
       langkah: [
         'Cari masalah pada jajanan kantin',
         'Ketuk masalah yang ditemukan',
-        'Seret tindakan yang benar ke masalah itu',
+        'Ketuk tindakan yang benar untuk pesanan itu',
       ],
     },
   ],
   'data-hijau': [
     {
-      jenis: 'drag-drop',
+      jenis: 'gambar-grafik',
       objek: ['Angka berat sampah (kg)', 'Kartu jawaban soal tabel'],
-      target: 'Sel tabel setoran sampah tiap kelas',
+      target: 'Batang grafik setoran sampah tiap kelas',
       hasilBenar: 'Tabel terisi rapi, soal terjawab dari data yang benar.',
       hasilSalah: 'Angka salah sel, tabel dan jawaban ikut salah.',
       petunjukMagi: 'Magi: "Catat dulu angkanya, baru jawab soalnya!"',
       tutorial: true,
       langkah: [
-        'Seret angka ke sel tabel yang benar',
+        'Ketuk batang grafik sampai tingginya sesuai data',
         'Baca tabel yang sudah lengkap',
-        'Seret jawaban ke kotak soal',
+        'Jawab soal tabel dengan kuis kilat',
       ],
     },
     {
-      jenis: 'drag-drop',
+      jenis: 'gambar-grafik',
       objek: ['Angka pemakaian air dan listrik', 'Kartu jawaban soal tabel'],
-      target: 'Sel tabel pemakaian minggu lalu dan minggu ini',
+      target: 'Batang grafik pemakaian minggu lalu dan minggu ini',
       hasilBenar: 'Tabel terisi rapi, hematnya kelihatan dari data.',
       hasilSalah: 'Angka salah sel, hematnya tidak kelihatan.',
       petunjukMagi: 'Magi: "Bandingkan minggu lalu dan minggu ini, hematnya kelihatan!"',
       tutorial: false,
       langkah: [
-        'Seret angka ke sel tabel yang benar',
+        'Ketuk batang grafik sampai tingginya sesuai data',
         'Baca tabel yang sudah lengkap',
-        'Seret jawaban ke kotak soal',
+        'Jawab soal tabel dengan kuis kilat',
       ],
     },
     {
-      jenis: 'drag-drop',
+      jenis: 'gambar-grafik',
       objek: ['Angka jumlah tanaman', 'Kartu jawaban soal tabel'],
-      target: 'Sel tabel tanaman kebun dan hidroponik',
+      target: 'Batang grafik tanaman kebun dan hidroponik',
       hasilBenar: 'Tabel terisi rapi, tanaman yang butuh perhatian ketemu.',
       hasilSalah: 'Angka salah sel, tanaman yang butuh perhatian terlewat.',
       petunjukMagi: 'Magi: "Hitung tanamannya satu per satu, jangan dikira-kira!"',
       tutorial: false,
       langkah: [
-        'Seret angka ke sel tabel yang benar',
+        'Ketuk batang grafik sampai tingginya sesuai data',
         'Baca tabel yang sudah lengkap',
-        'Seret jawaban ke kotak soal',
+        'Jawab soal tabel dengan kuis kilat',
       ],
     },
   ],
   'eco-communication': [
     {
-      jenis: 'drag-drop',
+      jenis: 'susun-cerita',
       objek: ['Konsep reels', 'Cuplikan video', 'Kapsyen reels'],
       target: 'Storyboard reels zero waste',
       hasilBenar: 'Reels ditonton banyak orang, kampanye zero waste menyebar.',
@@ -533,12 +564,12 @@ export const INTERAKSI_MISI: Record<ChapterId | TugasKaderId, SpesifikasiInterak
       tutorial: true,
       langkah: [
         'Baca brief kontennya',
-        'Seret konsep yang paling efektif ke storyboard',
+        'Ketuk frame sesuai urutan cerita yang benar',
         'Periksa apakah pesannya jelas',
       ],
     },
     {
-      jenis: 'drag-drop',
+      jenis: 'susun-cerita',
       objek: ['Data hemat energi', 'Desain postingan', 'Kapsyen infografis'],
       target: 'Feed media sosial sekolah',
       hasilBenar: 'Postingan dibagikan banyak orang, hemat energi jadi tren.',
@@ -547,12 +578,12 @@ export const INTERAKSI_MISI: Record<ChapterId | TugasKaderId, SpesifikasiInterak
       tutorial: false,
       langkah: [
         'Baca brief kontennya',
-        'Seret konsep yang paling efektif ke feed',
+        'Ketuk frame sesuai urutan cerita yang benar',
         'Periksa apakah datanya terbaca',
       ],
     },
     {
-      jenis: 'drag-drop',
+      jenis: 'susun-cerita',
       objek: ['Strategi kampanye', 'Poster "Pilah 10 Detik"', 'Jadwal posting'],
       target: 'Papan kampanye olah sampah',
       hasilBenar: 'Kampanye jalan, semua orang ikut memilah 10 detik.',
@@ -561,14 +592,14 @@ export const INTERAKSI_MISI: Record<ChapterId | TugasKaderId, SpesifikasiInterak
       tutorial: false,
       langkah: [
         'Baca brief kampanyenya',
-        'Seret strategi yang paling efektif ke papan kampanye',
+        'Ketuk frame sesuai urutan cerita yang benar',
         'Periksa apakah ajakannya bisa diikuti',
       ],
     },
   ],
   'jejaring-hijau': [
     {
-      jenis: 'drag-drop',
+      jenis: 'balas-cepat',
       objek: ['Kartu pendekatan ke DLH', 'Surat kerja sama', 'Jadwal pelatihan pilah'],
       target: 'Meja kerja sama DLH',
       hasilBenar: 'DLH setuju membantu, bibit dan pelatihan pilah datang ke sekolah.',
@@ -577,12 +608,12 @@ export const INTERAKSI_MISI: Record<ChapterId | TugasKaderId, SpesifikasiInterak
       tutorial: true,
       langkah: [
         'Baca skenario mitranya',
-        'Seret pendekatan yang paling tepat ke meja kerja sama',
+        'Ketuk balasan terbaik sebelum waktu habis',
         'Periksa apakah semua pihak diuntungkan',
       ],
     },
     {
-      jenis: 'drag-drop',
+      jenis: 'balas-cepat',
       objek: ['Kartu proposal', 'Rencana dana tong pilah', 'Ucapan terima kasih'],
       target: 'Meja proposal pelaku usaha',
       hasilBenar: 'Pelaku usaha setuju mendukung, tong pilah baru datang.',
@@ -591,12 +622,12 @@ export const INTERAKSI_MISI: Record<ChapterId | TugasKaderId, SpesifikasiInterak
       tutorial: false,
       langkah: [
         'Baca skenario mitranya',
-        'Seret pendekatan yang paling tepat ke meja proposal',
+        'Ketuk balasan terbaik sebelum waktu habis',
         'Periksa apakah semua pihak diuntungkan',
       ],
     },
     {
-      jenis: 'drag-drop',
+      jenis: 'balas-cepat',
       objek: ['Kartu ajakan', 'Rencana aksi bersih sungai', 'Poster kegiatan'],
       target: 'Papan pengumuman komunitas',
       hasilBenar: 'Komunitas ikut, aksi bersih sungai ramai.',
@@ -605,7 +636,7 @@ export const INTERAKSI_MISI: Record<ChapterId | TugasKaderId, SpesifikasiInterak
       tutorial: false,
       langkah: [
         'Baca skenario mitranya',
-        'Seret pendekatan yang paling tepat ke papan pengumuman',
+        'Ketuk balasan terbaik sebelum waktu habis',
         'Periksa apakah semua pihak diuntungkan',
       ],
     },

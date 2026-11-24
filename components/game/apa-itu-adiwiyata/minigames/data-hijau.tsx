@@ -1,21 +1,30 @@
 'use client'
 
 // Mini-game Misi Kader "Data Hijau" — Kak Fajar (GESTUR).
-// Tiga tahap drag-drop: seret slip data ke sel tabel yang benar, lalu
-// seret jawaban ke kotak soal. Isi dari KONTEN_TUGAS['data-hijau']
+// Tiga tahap: gambar grafik batang dari tabel, lalu jawab 3 soal baca
+// data dengan kuis kilat. Isi dari KONTEN_TUGAS['data-hijau']
 // (tabel + soal baca data). Gestur tiap tahap dari
 // INTERAKSI_MISI['data-hijau'].
-// Skor 0–100: Math.round(benar / total * 100) — 3 sel tabel + soal,
-// benar di percobaan pertama. onStageComplete dipanggil TEPAT SATU KALI.
+// Skor 0–100 per tahap: 50/50 — 50% skor grafik (aturan GambarGrafik)
+// + 50% skor kuis (aturan KuisKilat). onStageComplete dipanggil
+// TEPAT SATU KALI saat tahap selesai.
 // Prop modeSatuKetukan menampilkan versi tombol lama (aksesibilitas).
 
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { BarChart3, Check, Inbox, X } from 'lucide-react'
+import { useMemo, useRef, useState } from 'react'
+import { BarChart3, Check, X } from 'lucide-react'
 import { KONTEN_TUGAS } from '@/lib/apa-itu-adiwiyata/content/tugas'
 import { INTERAKSI_MISI } from '@/lib/apa-itu-adiwiyata/content/interaksi'
 import type { TugasKaderId } from '@/lib/apa-itu-adiwiyata/types'
 import { benar, koin, salah } from '../suara'
-import { DragDrop, EfekBenar, EfekSalah, TanganPenunjuk } from '../interaksi'
+import {
+  EfekBenar,
+  GambarGrafik,
+  KuisKilat,
+  PetunjukMagi,
+  TanganPenunjuk,
+  type BatangGrafik,
+  type SoalKilat,
+} from '../interaksi'
 
 export interface TugasMiniGameSlotProps {
   tugasId: TugasKaderId
@@ -29,15 +38,90 @@ function bersihkanPetunjuk(teks: string): string {
   return teks.replace(/^Magi:\s*"/, '').replace(/"$/, '').trim()
 }
 
-/** Kolom data pertama dikosongkan untuk dicatat pemain (sisanya terisi). */
-const KOLOM_KOSONG = 1
+/** "3,0" → 3 ; "12" → 12. */
+function angka(teks: string | undefined): number {
+  const n = parseFloat((teks ?? '').replace(',', '.'))
+  return Number.isFinite(n) ? n : 0
+}
+
+/** Ambil satuan dari label baris, mis. "Air (m³)" → "m³". */
+function satuanDariLabel(label: string): string | undefined {
+  const cocok = label.match(/\(([^)]+)\)/)
+  return cocok ? cocok[1] : undefined
+}
+
+interface TabelData {
+  judul: string
+  kolom: string[]
+  baris: string[][]
+}
+
+/**
+ * Batang grafik dari tabel tahap itu (semua angka diambil dari data):
+ * - Tahap 0 (Sampah Harian): 6 batang (3 kelas × Organik/Anorganik).
+ *   Nilai tabel berkoma (3,0 kg), sedangkan GambarGrafik melangkah 1 —
+ *   jadi 1 ketuk = 0,5 kg (nilaiBenar = kg × 2, maks 10).
+ * - Tahap 1 (Air+Listrik): 3 batang = yang dihemat minggu ini
+ *   (minggu lalu − minggu ini), karena nilai mentahnya sampai 180 dan
+ *   tidak masuk akal diketuk satu per satu; hemat adalah isi soal tahap
+ *   ini juga.
+ * - Tahap 2 (Tanaman): 3 batang = jumlah tanaman per jenis.
+ */
+function batangDariTabel(stageIndex: number, tabel: TabelData): BatangGrafik[] {
+  if (stageIndex === 0) {
+    const batang: BatangGrafik[] = []
+    tabel.baris.forEach((baris, i) => {
+      for (let j = 1; j < baris.length; j += 1) {
+        batang.push({
+          id: `batang-${i}-${j}`,
+          label: `${baris[0] ?? ''} · ${tabel.kolom[j] ?? ''}`,
+          nilaiBenar: Math.round(angka(baris[j]) * 2),
+          maks: 10,
+        })
+      }
+    })
+    return batang
+  }
+  if (stageIndex === 1) {
+    return tabel.baris.map((baris, i) => {
+      const hemat = angka(baris[1]) - angka(baris[2])
+      return {
+        id: `batang-${i}`,
+        label: baris[0] ?? '',
+        nilaiBenar: Math.round(hemat),
+        maks: 20,
+        satuan: satuanDariLabel(baris[0] ?? ''),
+      }
+    })
+  }
+  return tabel.baris.map((baris, i) => ({
+    id: `batang-${i}`,
+    label: baris[0] ?? '',
+    nilaiBenar: Math.round(angka(baris[1])),
+    maks: 30,
+    satuan: 'tanaman',
+  }))
+}
+
+/** Penjelasan skala batang per tahap (ditampilkan di atas grafik). */
+function penjelasanSkala(stageIndex: number): string {
+  if (stageIndex === 0) return 'Tiap ketuk = 0,5 kg. Atur tiap batang sesuai angka di tabel.'
+  if (stageIndex === 1)
+    return 'Batang = jumlah yang dihemat minggu ini (minggu lalu − minggu ini).'
+  return 'Atur tiap batang sesuai jumlah tanaman di tabel.'
+}
 
 export function DataHijau(props: TugasMiniGameSlotProps) {
   if (props.modeSatuKetukan) return <VersiTombol {...props} />
   return <VersiGestur {...props} />
 }
 
-function VersiGestur({ tugasId, stageIndex, onStageComplete }: TugasMiniGameSlotProps) {
+function VersiGestur({
+  tugasId,
+  stageIndex,
+  onStageComplete,
+  modeSatuKetukan = false,
+}: TugasMiniGameSlotProps) {
   const tahap = KONTEN_TUGAS[tugasId].tahapan[stageIndex]
   const spek = INTERAKSI_MISI[tugasId]?.[stageIndex]
   const isCatat = !!tahap && tahap.jenis === 'catat'
@@ -47,52 +131,36 @@ function VersiGestur({ tugasId, stageIndex, onStageComplete }: TugasMiniGameSlot
   const instruksi = tahap?.instruksi ?? ''
   const petunjuk = spek ? bersihkanPetunjuk(spek.petunjukMagi) : 'Coba pikirkan lagi.'
   const hasilBenar = spek?.hasilBenar ?? ''
-  const hasilSalah = spek?.hasilSalah ?? ''
   const tutorial = spek?.tutorial ?? false
   const langkah = spek?.langkah ?? []
 
-  // Slip data: satu per baris, nilainya dari kolom yang dikosongkan.
-  const slip = useMemo(() => {
-    if (!tabel) return []
-    return tabel.baris.map((baris, i) => {
-      const sel = `${baris[0] ?? ''} · ${tabel.kolom[KOLOM_KOSONG] ?? ''}`
-      return {
-        kunci: `sel-${i}`,
-        label: sel,
-        nilai: baris[KOLOM_KOSONG] ?? '',
-        teks: `${sel}: ${baris[KOLOM_KOSONG] ?? ''}`,
-      }
-    })
-  }, [tabel])
-
-  const totalItem = slip.length + soal.length
-
-  const [bagian, setBagian] = useState<'catat' | 'soal' | 'selesai'>('catat')
-  const [selIndex, setSelIndex] = useState(0)
-  const [terisi, setTerisi] = useState<Record<string, string>>({})
-  const [upayaSel, setUpayaSel] = useState<Record<number, number>>({})
-  const [benarSel, setBenarSel] = useState(0)
-  const [qIndex, setQIndex] = useState(0)
-  const [jawabanDipilih, setJawabanDipilih] = useState<number | null>(null)
-  const [salahJawaban, setSalahJawaban] = useState<number[]>([])
-  const [upayaSoal, setUpayaSoal] = useState<Record<number, number>>({})
-  const [benarSoal, setBenarSoal] = useState(0)
-  const [umpanSalah, setUmpanSalah] = useState<string | null>(null)
-  const [umpanBenar, setUmpanBenar] = useState<string | null>(null)
-  const [efekBenar, setEfekBenar] = useState(false)
-  const [terkunci, setTerkunci] = useState(false)
-
-  const selesaiRef = useRef(false)
-  const timerRef = useRef<number | null>(null)
-
-  useEffect(
-    () => () => {
-      if (timerRef.current) window.clearTimeout(timerRef.current)
-    },
-    [],
+  // Batang grafik dari tabel (sekali per tahap).
+  const batang = useMemo(
+    () => (tabel ? batangDariTabel(stageIndex, tabel) : []),
+    [tabel, stageIndex],
   )
 
-  const skorAkhir = totalItem > 0 ? Math.round(((benarSel + benarSoal) / totalItem) * 100) : 0
+  // Soal kuis kilat dari soal baca data (sekali per tahap).
+  const soalKilat = useMemo<SoalKilat[]>(
+    () =>
+      soal.map((s) => ({
+        pertanyaan: s.pertanyaan,
+        pilihan: s.pilihan,
+        jawaban: s.jawaban,
+        penjelasan: s.penjelasan,
+      })),
+    [soal],
+  )
+
+  const [bagian, setBagian] = useState<'grafik' | 'kuis' | 'selesai'>('grafik')
+  const [skorGrafik, setSkorGrafik] = useState(0)
+  const [skorKuis, setSkorKuis] = useState(0)
+  const [tampilPetunjuk, setTampilPetunjuk] = useState(false)
+
+  const selesaiRef = useRef(false)
+
+  // Skor tahap = 50% grafik + 50% kuis.
+  const skorAkhir = Math.round((skorGrafik + skorKuis) / 2)
 
   const selesai = (nilai: number) => {
     if (selesaiRef.current) return
@@ -109,67 +177,16 @@ function VersiGestur({ tugasId, stageIndex, onStageComplete }: TugasMiniGameSlot
     )
   }
 
-  const slipAktif = slip[selIndex]
-  const pertanyaan = soal[qIndex]
-  const jawaban = jawabanDipilih !== null && pertanyaan ? pertanyaan.pilihan[jawabanDipilih] : undefined
-  const gagalSel = upayaSel[selIndex] ?? 0
-  const gagalSoal = upayaSoal[qIndex] ?? 0
-
-  /** Slip dilepas di sel tabel (benar menurut komponen = sel yang dituju). */
-  const dropSlip = () => {
-    if (terkunci || !slipAktif) return
-    setTerisi((t) => ({ ...t, [slipAktif.kunci]: slipAktif.nilai }))
-    if (gagalSel === 0) setBenarSel((b) => b + 1)
-    setEfekBenar(true)
-    setUmpanSalah(null)
-    setUmpanBenar('Tercatat! Lanjut ke slip berikutnya.')
-    setTerkunci(true)
-    timerRef.current = window.setTimeout(() => {
-      setEfekBenar(false)
-      setUmpanBenar(null)
-      setTerkunci(false)
-      if (selIndex + 1 >= slip.length) {
-        setBagian(soal.length > 0 ? 'soal' : 'selesai')
-      } else {
-        setSelIndex((s) => s + 1)
-      }
-    }, 1000)
+  /** Grafik selesai — lanjut ke kuis soal tabel. */
+  const grafikSelesai = (nilai: number) => {
+    setSkorGrafik(nilai)
+    setBagian('kuis')
   }
 
-  const dropSlipSalah = (_bendaId: string, _targetId?: string) => {
-    if (terkunci) return
-    setUpayaSel((u) => ({ ...u, [selIndex]: (u[selIndex] ?? 0) + 1 }))
-    setUmpanSalah(petunjuk)
-  }
-
-  /** Jawaban dilepas di kotak soal. */
-  const dropJawaban = () => {
-    if (terkunci || jawabanDipilih === null || !pertanyaan) return
-    if (jawabanDipilih === pertanyaan.jawaban) {
-      if (gagalSoal === 0) setBenarSoal((b) => b + 1)
-      setEfekBenar(true)
-      setUmpanSalah(null)
-      setUmpanBenar(pertanyaan.penjelasan)
-      setTerkunci(true)
-      timerRef.current = window.setTimeout(() => {
-        setEfekBenar(false)
-        setUmpanBenar(null)
-        setTerkunci(false)
-        setJawabanDipilih(null)
-        setSalahJawaban([])
-        if (qIndex + 1 >= soal.length) {
-          setBagian('selesai')
-        } else {
-          setQIndex((q) => q + 1)
-        }
-      }, 1200)
-    } else {
-      setUpayaSoal((u) => ({ ...u, [qIndex]: (u[qIndex] ?? 0) + 1 }))
-      setSalahJawaban((d) => [...d, jawabanDipilih])
-      // Penjelasan soal dipakai sebagai petunjuk Magi (1 kalimat dari data).
-      setUmpanSalah(pertanyaan.penjelasan)
-      setJawabanDipilih(null)
-    }
+  /** Kuis selesai — hitung skor akhir 50/50. */
+  const kuisSelesai = (nilai: number) => {
+    setSkorKuis(nilai)
+    setBagian('selesai')
   }
 
   return (
@@ -178,9 +195,7 @@ function VersiGestur({ tugasId, stageIndex, onStageComplete }: TugasMiniGameSlot
         <div className="aia-card">
           <span className="aia-kicker">
             Data Hijau · {judul} ·{' '}
-            {bagian === 'catat'
-              ? `Slip ${Math.min(selIndex + 1, slip.length)} dari ${slip.length}`
-              : `Soal ${Math.min(qIndex + 1, soal.length)} dari ${soal.length}`}
+            {bagian === 'grafik' ? 'Gambar grafik' : `Kuis · ${soal.length} soal`}
           </span>
           <p className="aia-muted" style={{ margin: '8px 0 0' }}>
             {instruksi}
@@ -192,223 +207,80 @@ function VersiGestur({ tugasId, stageIndex, onStageComplete }: TugasMiniGameSlot
               ))}
             </ol>
           )}
-          <p style={{ margin: '8px 0 0', fontSize: 13, fontWeight: 700 }}>
-            Benar: {benarSel + benarSoal}/{totalItem}
-          </p>
+          {bagian === 'kuis' && (
+            <p style={{ margin: '8px 0 0', fontSize: 13, fontWeight: 700 }}>
+              Skor grafik: {skorGrafik}
+            </p>
+          )}
         </div>
       )}
 
-      {bagian === 'catat' && (
+      {bagian === 'grafik' && (
         <>
-          <div className="aia-card" aria-label="Tabel data">
-            <p style={{ margin: '0 0 10px', fontWeight: 700 }}>
-              <BarChart3 aria-hidden="true" style={{ verticalAlign: '-3px' }} /> {tabel.judul}
-            </p>
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
-                <thead>
-                  <tr>
-                    {tabel.kolom.map((kolom) => (
-                      <th
-                        key={kolom}
-                        scope="col"
-                        style={{
-                          border: '1px solid #cbd5ce',
-                          padding: '8px 10px',
-                          textAlign: 'left',
-                          background: '#eef3ee',
-                        }}
-                      >
-                        {kolom}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {tabel.baris.map((baris, i) => (
-                    <tr key={i}>
-                      {baris.map((sel, j) => (
-                        <td
-                          key={j}
-                          style={{
-                            border: '1px solid #cbd5ce',
-                            padding: '8px 10px',
-                            background:
-                              j === KOLOM_KOSONG && terisi[`sel-${i}`] === undefined
-                                ? '#fef9c3'
-                                : undefined,
-                            fontWeight: j === KOLOM_KOSONG ? 700 : undefined,
-                          }}
-                        >
-                          {j === KOLOM_KOSONG ? (terisi[`sel-${i}`] ?? '?') : sel}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <p className="aia-muted" style={{ margin: '8px 0 0', fontSize: 13 }}>
-              Sel kuning masih kosong — catat slip datanya ke sana.
-            </p>
-          </div>
+          <TabelReferensi tabel={tabel} />
 
           {tutorial && (
             <div style={{ textAlign: 'center' }}>
-              <TanganPenunjuk label="Seret slip ke sel yang benar" />
+              <TanganPenunjuk label="Ketuk naik/turun sampai batangnya sesuai tabel" />
             </div>
           )}
 
-          <div style={{ position: 'relative' }}>
-            <EfekBenar tampil={efekBenar} />
-            {slipAktif && (
-              <DragDrop
-                key={`sel-${selIndex}`}
-                benda={{
-                  id: slipAktif.kunci,
-                  label: 'Slip data',
-                  konten: <span style={{ fontSize: 14, lineHeight: 1.5 }}>{slipAktif.teks}</span>,
-                }}
-                target={{ id: slipAktif.kunci, label: slipAktif.label }}
-                targetLain={slip
-                  .filter((s, i) => i !== selIndex)
-                  .map((s) => ({ id: s.kunci, label: s.label }))}
-                perbesarTarget={gagalSel >= 2}
-                disabled={terkunci}
-                onBenar={dropSlip}
-                onSalah={dropSlipSalah}
-              />
-            )}
+          <div className="aia-card">
+            <p style={{ margin: '0 0 12px', fontSize: 16, lineHeight: 1.5, fontWeight: 700 }}>
+              {penjelasanSkala(stageIndex)}
+            </p>
+            <GambarGrafik
+              key={stageIndex}
+              batang={batang}
+              modeSatuKetukan={modeSatuKetukan}
+              onSelesai={grafikSelesai}
+            />
           </div>
 
-          {umpanBenar && (
-            <div role="status" style={{ padding: 12, borderRadius: 12, background: '#dcfce7' }}>
-              <strong>Benar!</strong> {umpanBenar}
-            </div>
-          )}
-          {umpanSalah && (
-            <div>
-              <p className="aia-muted" style={{ margin: '0 0 8px' }}>
-                {hasilSalah}
-              </p>
-              <EfekSalah tampil petunjuk={umpanSalah} />
-            </div>
+          {!tampilPetunjuk ? (
+            <button
+              type="button"
+              className="aia-btn aia-btn-ghost"
+              style={{ minHeight: 44, alignSelf: 'center' }}
+              onClick={() => setTampilPetunjuk(true)}
+            >
+              Minta petunjuk Magi
+            </button>
+          ) : (
+            <PetunjukMagi teks={petunjuk} />
           )}
         </>
       )}
 
-      {bagian === 'soal' && pertanyaan && (
+      {bagian === 'kuis' && (
         <>
+          <TabelReferensi tabel={tabel} />
           <div className="aia-card">
             <p style={{ margin: '0 0 12px', fontSize: 16, lineHeight: 1.5, fontWeight: 700 }}>
-              {pertanyaan.pertanyaan}
+              Sekarang jawab soal dari tabelnya — cepat!
             </p>
-            <p className="aia-muted" style={{ margin: '0 0 12px' }}>
-              Ketuk jawabannya, lalu seret ke kotak soal.
-            </p>
-            <div style={{ display: 'grid', gap: 8 }}>
-              {pertanyaan.pilihan.map((pilihan, i) => {
-                const isSalah = salahJawaban.includes(i)
-                const isDipilih = i === jawabanDipilih
-                let latar: string | undefined
-                let border: string | undefined
-                if (isDipilih) {
-                  latar = '#dcfce7'
-                  border = '2px solid #236b4d'
-                } else if (isSalah) {
-                  latar = '#fee2e2'
-                  border = '2px solid #b83232'
-                }
-                return (
-                  <button
-                    key={i}
-                    type="button"
-                    className="aia-btn aia-btn-block"
-                    disabled={terkunci || isSalah}
-                    onClick={() => {
-                      setJawabanDipilih(i)
-                      setUmpanSalah(null)
-                    }}
-                    aria-label={`Jawaban ${String.fromCharCode(65 + i)}: ${pilihan}`}
-                    aria-pressed={isDipilih}
-                    style={{
-                      justifyContent: 'flex-start',
-                      textAlign: 'left',
-                      minHeight: 48,
-                      background: latar,
-                      border,
-                      whiteSpace: 'normal',
-                      height: 'auto',
-                      padding: '12px 16px',
-                    }}
-                  >
-                    <span aria-hidden="true" style={{ fontWeight: 800 }}>
-                      {String.fromCharCode(65 + i)}.
-                    </span>
-                    <span>{pilihan}</span>
-                    {isDipilih && !isSalah && <Check aria-hidden="true" color="#236b4d" />}
-                    {isSalah && <X aria-hidden="true" color="#b83232" />}
-                  </button>
-                )
-              })}
-            </div>
+            <KuisKilat
+              key={stageIndex}
+              soal={soalKilat}
+              modeSatuKetukan={modeSatuKetukan}
+              onSelesai={kuisSelesai}
+            />
           </div>
-
-          {tutorial && jawabanDipilih === null && (
-            <div style={{ textAlign: 'center' }}>
-              <TanganPenunjuk label="Seret jawaban ke kotak soal" />
-            </div>
-          )}
-
-          <div style={{ position: 'relative' }}>
-            <EfekBenar tampil={efekBenar} />
-            {jawaban !== undefined && jawabanDipilih !== null && (
-              <DragDrop
-                key={`${qIndex}-${jawabanDipilih}`}
-                benda={{
-                  id: `jwb-${jawabanDipilih}`,
-                  label: `Jawaban ${String.fromCharCode(65 + jawabanDipilih)}`,
-                  konten: <span style={{ fontSize: 14, lineHeight: 1.5 }}>{jawaban}</span>,
-                }}
-                target={{
-                  id: 'kotak-soal',
-                  label: 'Kotak jawaban',
-                  ikon: <Inbox aria-hidden="true" />,
-                }}
-                perbesarTarget={gagalSoal >= 2}
-                disabled={terkunci}
-                onBenar={dropJawaban}
-                onSalah={() => undefined}
-              />
-            )}
-          </div>
-
-          {umpanBenar && (
-            <div role="status" style={{ padding: 12, borderRadius: 12, background: '#dcfce7' }}>
-              <strong>Benar!</strong> {umpanBenar}
-            </div>
-          )}
-          {umpanSalah && (
-            <div>
-              <p className="aia-muted" style={{ margin: '0 0 8px' }}>
-                {hasilSalah}
-              </p>
-              <EfekSalah tampil petunjuk={umpanSalah} />
-            </div>
-          )}
         </>
       )}
 
       {bagian === 'selesai' && (
-        <div className="aia-card aia-pos-hijau">
+        <div className="aia-card aia-pos-hijau" style={{ position: 'relative' }}>
+          <EfekBenar tampil />
           <h3>
             <Check aria-hidden="true" /> Pencatatan selesai!
           </h3>
           <p>{hasilBenar}</p>
           <p>
-            Kamu mencatat {benarSel} dari {slip.length} sel dan menjawab {benarSoal} dari{' '}
-            {soal.length} soal dengan benar di percobaan pertama. Data yang rapi bikin kerja tim
-            Adiwiyata tidak asal tebak!
+            Skor grafik: <strong>{skorGrafik}</strong> · Skor kuis: <strong>{skorKuis}</strong>
+          </p>
+          <p>
+            Data yang rapi bikin kerja tim Adiwiyata tidak asal tebak!
           </p>
           <p>
             Skor tahap ini: <strong>{skorAkhir} Koin Hijau</strong>
@@ -422,6 +294,53 @@ function VersiGestur({ tugasId, stageIndex, onStageComplete }: TugasMiniGameSlot
           </button>
         </div>
       )}
+    </div>
+  )
+}
+
+/** Tabel data tahap itu, tampil sebagai referensi saat menggambar grafik dan kuis. */
+function TabelReferensi({ tabel }: { tabel: TabelData }) {
+  return (
+    <div className="aia-card" aria-label="Tabel data">
+      <p style={{ margin: '0 0 10px', fontWeight: 700 }}>
+        <BarChart3 aria-hidden="true" style={{ verticalAlign: '-3px' }} /> {tabel.judul}
+      </p>
+      <div style={{ overflowX: 'auto' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
+          <thead>
+            <tr>
+              {tabel.kolom.map((kolom) => (
+                <th
+                  key={kolom}
+                  scope="col"
+                  style={{
+                    border: '1px solid #cbd5ce',
+                    padding: '8px 10px',
+                    textAlign: 'left',
+                    background: '#eef3ee',
+                  }}
+                >
+                  {kolom}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {tabel.baris.map((baris, i) => (
+              <tr key={i}>
+                {baris.map((sel, j) => (
+                  <td
+                    key={j}
+                    style={{ border: '1px solid #cbd5ce', padding: '8px 10px' }}
+                  >
+                    {sel}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   )
 }

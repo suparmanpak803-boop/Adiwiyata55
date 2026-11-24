@@ -1,20 +1,28 @@
 'use client'
 
 // Mini-game Misi Kader "Inovasi Hijau" — Kak Raka (GESTUR).
-// Tiga tahap drag-drop: seret desain yang paling efektif ke kanvas
-// (bukan tombol pilihan). Isi dari KONTEN_TUGAS['inovasi-hijau'].
-// Gestur tiap tahap dari INTERAKSI_MISI['inovasi-hijau'].
-// Skor 0–100: benar di percobaan pertama 100, kedua 60, ketiga 30.
-// onStageComplete dipanggil TEPAT SATU KALI saat tahap selesai.
+// Tiga tahap puzzle geser: susun 9 potongan poster kampanye sampai
+// urut. Isi dari KONTEN_TUGAS['inovasi-hijau'] (3 desain per tahap,
+// 1 benar + alasan). Gestur tiap tahap dari
+// INTERAKSI_MISI['inovasi-hijau'].
+// Skor 0–100: aturan PuzzleGeser — mulai 100, dikurangi 5 poin untuk
+// setiap pertukaran di atas jumlah minimal. onStageComplete dipanggil
+// TEPAT SATU KALI saat tahap selesai.
 // Prop modeSatuKetukan menampilkan versi tombol lama (aksesibilitas).
 
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { Check, Frame, Lightbulb, Megaphone, Sparkles, X } from 'lucide-react'
+import { useMemo, useRef, useState } from 'react'
+import { Check, Lightbulb, Megaphone, Sparkles, X } from 'lucide-react'
 import { KONTEN_TUGAS } from '@/lib/apa-itu-adiwiyata/content/tugas'
 import { INTERAKSI_MISI } from '@/lib/apa-itu-adiwiyata/content/interaksi'
 import type { TugasKaderId } from '@/lib/apa-itu-adiwiyata/types'
 import { benar, koin, salah } from '../suara'
-import { DragDrop, EfekBenar, EfekSalah, TanganPenunjuk } from '../interaksi'
+import {
+  EfekBenar,
+  PetunjukMagi,
+  PuzzleGeser,
+  TanganPenunjuk,
+  type PotonganPuzzle,
+} from '../interaksi'
 
 export interface TugasMiniGameSlotProps {
   tugasId: TugasKaderId
@@ -28,12 +36,44 @@ function bersihkanPetunjuk(teks: string): string {
   return teks.replace(/^Magi:\s*"/, '').replace(/"$/, '').trim()
 }
 
+/**
+ * Potongan poster 3×3 dari teks data tahap itu saja (tanpa gambar baru):
+ * judul + brief + teks desain yang benar, dibagi menjadi 9 kelompok kata.
+ * Urutan benar = urutan baca poster dari atas ke bawah.
+ */
+function potonganPoster(judul: string, brief: string, teksBenar: string): PotonganPuzzle[] {
+  const kata = `${judul} ${brief} ${teksBenar}`.split(/\s+/).filter(Boolean)
+  const jumlah = 9
+  const perKelompok = Math.max(1, Math.ceil(kata.length / jumlah))
+  const potongan: PotonganPuzzle[] = []
+  for (let i = 0; i < jumlah; i += 1) {
+    const kelompok = kata.slice(i * perKelompok, (i + 1) * perKelompok)
+    if (kelompok.length === 0) break
+    const teks = kelompok.join(' ')
+    potongan.push({
+      id: `potongan-${i}`,
+      label: teks,
+      konten: (
+        <span aria-hidden="true" style={{ fontSize: 22 }}>
+          🧩
+        </span>
+      ),
+    })
+  }
+  return potongan
+}
+
 export function InovasiHijau(props: TugasMiniGameSlotProps) {
   if (props.modeSatuKetukan) return <VersiTombol {...props} />
   return <VersiGestur {...props} />
 }
 
-function VersiGestur({ tugasId, stageIndex, onStageComplete }: TugasMiniGameSlotProps) {
+function VersiGestur({
+  tugasId,
+  stageIndex,
+  onStageComplete,
+  modeSatuKetukan = false,
+}: TugasMiniGameSlotProps) {
   const tahap = KONTEN_TUGAS[tugasId].tahapan[stageIndex]
   const spek = INTERAKSI_MISI[tugasId]?.[stageIndex]
   const pilihan = tahap && tahap.jenis === 'pilih' ? tahap.pilihan : []
@@ -41,31 +81,23 @@ function VersiGestur({ tugasId, stageIndex, onStageComplete }: TugasMiniGameSlot
   const judul = tahap?.judul ?? ''
   const instruksi = tahap?.instruksi ?? ''
   const petunjuk = spek ? bersihkanPetunjuk(spek.petunjukMagi) : 'Coba pikirkan lagi.'
-  const targetLabel = spek?.target ?? 'Kanvas'
   const hasilBenar = spek?.hasilBenar ?? ''
-  const hasilSalah = spek?.hasilSalah ?? ''
   const tutorial = spek?.tutorial ?? false
   const langkah = spek?.langkah ?? []
 
-  const [dipilih, setDipilih] = useState(0)
-  const [salahDipilih, setSalahDipilih] = useState<number[]>([])
-  const [gagal, setGagal] = useState(0)
+  const opsiBenar = pilihan.find((p) => p.benar)
+
+  // 9 potongan poster dari desain yang benar (sekali per tahap).
+  const potongan = useMemo(
+    () => (opsiBenar ? potonganPoster(judul, brief, opsiBenar.teks) : []),
+    [opsiBenar, judul, brief],
+  )
+
   const [fase, setFase] = useState<'main' | 'selesai'>('main')
   const [skor, setSkor] = useState(0)
-  const [umpanSalah, setUmpanSalah] = useState<string | null>(null)
-  const [efekBenar, setEfekBenar] = useState(false)
-  const [terkunci, setTerkunci] = useState(false)
-  const [ronde, setRonde] = useState(0)
+  const [tampilPetunjuk, setTampilPetunjuk] = useState(false)
 
   const selesaiRef = useRef(false)
-  const timerRef = useRef<number | null>(null)
-
-  useEffect(
-    () => () => {
-      if (timerRef.current) window.clearTimeout(timerRef.current)
-    },
-    [],
-  )
 
   const selesai = (nilai: number) => {
     if (selesaiRef.current) return
@@ -74,7 +106,7 @@ function VersiGestur({ tugasId, stageIndex, onStageComplete }: TugasMiniGameSlot
     onStageComplete(nilai)
   }
 
-  if (!tahap || tahap.jenis !== 'pilih' || pilihan.length === 0) {
+  if (!tahap || tahap.jenis !== 'pilih' || pilihan.length === 0 || !opsiBenar) {
     return (
       <div className="aia-card">
         <p className="aia-muted">Tahap ini belum tersedia.</p>
@@ -82,37 +114,11 @@ function VersiGestur({ tugasId, stageIndex, onStageComplete }: TugasMiniGameSlot
     )
   }
 
-  const opsi = pilihan[dipilih]
-
-  /** DragDrop memanggil ini saat benda dilepas di kanvas. */
-  const dropKeKanvas = () => {
-    if (terkunci || !opsi) return
-    if (opsi.benar) {
-      const nilai = gagal === 0 ? 100 : gagal === 1 ? 60 : 30
-      setSkor(nilai)
-      setEfekBenar(true)
-      setUmpanSalah(null)
-      setTerkunci(true)
-      timerRef.current = window.setTimeout(() => setFase('selesai'), 1200)
-    } else {
-      const gagalBaru = [...salahDipilih, dipilih]
-      setGagal((g) => g + 1)
-      setSalahDipilih(gagalBaru)
-      setUmpanSalah(petunjuk)
-      setRonde((r) => r + 1)
-      // Pilih otomatis desain berikutnya yang belum dicoba salah.
-      const berikutnya = pilihan.findIndex((_, i) => !gagalBaru.includes(i))
-      if (berikutnya >= 0) setDipilih(berikutnya)
-    }
+  /** Puzzle selesai — komponen sudah menghitung skor 0–100. */
+  const puzzleSelesai = (nilai: number) => {
+    setSkor(nilai)
+    setFase('selesai')
   }
-
-  const pilihKartu = (index: number) => {
-    if (terkunci || salahDipilih.includes(index)) return
-    setDipilih(index)
-    setUmpanSalah(null)
-  }
-
-  const opsiBenar = pilihan.find((p) => p.benar)
 
   return (
     <div className="aia-stack">
@@ -144,104 +150,49 @@ function VersiGestur({ tugasId, stageIndex, onStageComplete }: TugasMiniGameSlot
 
           <div className="aia-card">
             <p style={{ margin: '0 0 12px', fontSize: 16, lineHeight: 1.5, fontWeight: 700 }}>
-              Ketuk desainnya, lalu seret ke kanvas.
+              Susun posternya: ketuk dua petak untuk menukar isinya sampai urut.
             </p>
-            <div style={{ display: 'grid', gap: 8 }}>
-              {pilihan.map((p, i) => {
-                const isSalah = salahDipilih.includes(i)
-                const isDipilih = i === dipilih
-                let latar: string | undefined
-                let border: string | undefined
-                if (isDipilih) {
-                  latar = '#dcfce7'
-                  border = '2px solid #236b4d'
-                } else if (isSalah) {
-                  latar = '#fee2e2'
-                  border = '2px solid #b83232'
-                }
-                return (
-                  <button
-                    key={i}
-                    type="button"
-                    className="aia-btn aia-btn-block"
-                    disabled={terkunci || isSalah}
-                    onClick={() => pilihKartu(i)}
-                    aria-label={`Desain ${String.fromCharCode(65 + i)}: ${p.teks}`}
-                    aria-pressed={isDipilih}
-                    style={{
-                      justifyContent: 'flex-start',
-                      textAlign: 'left',
-                      minHeight: 48,
-                      background: latar,
-                      border,
-                      whiteSpace: 'normal',
-                      height: 'auto',
-                      padding: '12px 16px',
-                    }}
-                  >
-                    <span aria-hidden="true" style={{ fontWeight: 800 }}>
-                      {String.fromCharCode(65 + i)}.
-                    </span>
-                    <span>{p.teks}</span>
-                    {isDipilih && !isSalah && <Check aria-hidden="true" color="#236b4d" />}
-                    {isSalah && <X aria-hidden="true" color="#b83232" />}
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-
-          {tutorial && (
-            <div style={{ textAlign: 'center' }}>
-              <TanganPenunjuk label="Seret desain terbaik ke kanvas" />
-            </div>
-          )}
-
-          <div style={{ position: 'relative' }}>
-            <EfekBenar tampil={efekBenar} />
-            {opsi && (
-              <DragDrop
-                key={`${dipilih}-${ronde}`}
-                benda={{
-                  id: `desain-${dipilih}`,
-                  label: `Desain ${String.fromCharCode(65 + dipilih)}`,
-                  konten: <span style={{ fontSize: 14, lineHeight: 1.5 }}>{opsi.teks}</span>,
-                }}
-                target={{
-                  id: 'kanvas',
-                  label: targetLabel,
-                  ikon: <Frame aria-hidden="true" />,
-                }}
-                perbesarTarget={gagal >= 2}
-                disabled={terkunci}
-                onBenar={dropKeKanvas}
-                onSalah={() => undefined}
-              />
+            {tutorial && (
+              <div style={{ textAlign: 'center', marginBottom: 10 }}>
+                <TanganPenunjuk label="Ketuk dua petak untuk menukar isinya" />
+              </div>
             )}
+            <PuzzleGeser
+              key={stageIndex}
+              potongan={potongan}
+              modeSatuKetukan={modeSatuKetukan}
+              onSelesai={puzzleSelesai}
+            />
           </div>
 
-          {umpanSalah && (
-            <div>
-              <p className="aia-muted" style={{ margin: '0 0 8px' }}>
-                {hasilSalah}
-              </p>
-              <EfekSalah tampil petunjuk={umpanSalah} />
-            </div>
+          {!tampilPetunjuk ? (
+            <button
+              type="button"
+              className="aia-btn aia-btn-ghost"
+              style={{ minHeight: 44, alignSelf: 'center' }}
+              onClick={() => setTampilPetunjuk(true)}
+            >
+              Minta petunjuk Magi
+            </button>
+          ) : (
+            <PetunjukMagi teks={petunjuk} />
           )}
         </>
       )}
 
       {fase === 'selesai' && (
-        <div className="aia-card aia-pos-hijau">
+        <div className="aia-card aia-pos-hijau" style={{ position: 'relative' }}>
+          <EfekBenar tampil />
           <h3>
             <Sparkles aria-hidden="true" /> Tahap selesai!
           </h3>
           <p>{hasilBenar}</p>
-          {opsiBenar && (
-            <p>
-              <strong>Kenapa ini yang terbaik:</strong> {opsiBenar.alasan}
-            </p>
-          )}
+          <p>
+            <strong>Kenapa ini yang terbaik:</strong> {opsiBenar.alasan}
+          </p>
+          <p>
+            Desain yang benar: <strong>{opsiBenar.teks}</strong>
+          </p>
           <p>
             Skor tahap ini: <strong>{skor}</strong>
           </p>

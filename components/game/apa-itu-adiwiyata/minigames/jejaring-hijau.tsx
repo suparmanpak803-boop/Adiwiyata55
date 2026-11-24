@@ -1,24 +1,26 @@
 'use client'
 
 // Mini-game Misi Kader "Jejaring Hijau" (Pak Jaka) — VERSI GESTUR.
-// Tiap tahap: seret pendekatan yang paling tepat ke meja/papan mitra
-// sesuai INTERAKSI_MISI. Bukan tombol pilihan.
+// Tiap tahap: pesan mitra masuk seperti chat, pemain mengetuk balasan
+// terbaik sebelum waktu habis (komponen BalasCepat), bukan seret kartu.
+// Pesan diambil dari brief tahap itu; 3 balasan = 3 pilihan pendekatan
+// dari KONTEN_TUGAS (teks + benar + alasan).
 // Mode satu-ketukan (prop modeSatuKetukan) menampilkan versi tombol lama
 // sebagai alternatif aksesibilitas. Skor 0–100 per tahap; onStageComplete
 // dipanggil TEPAT SATU KALI.
 //
-// Catatan: DragDrop di pustaka hanya menerima satu benda, sedangkan tahap
-// ini butuh 3 kartu opsi yang bisa diseret — jadi drag multi-kartu
-// diimplementasikan di sini mengikuti pola Pointer Events pilah-sampah
-// (hit-test geometris via getBoundingClientRect target).
+// Satu jalan BalasCepat (1 pesan) = satu percobaan: balasan benar
+// (skor internal 100) = berhasil (100 di percobaan pertama, 50 di kedua);
+// balasan salah atau waktu habis = percobaan gagal, bisa diulang sekali.
+// Dua kali gagal = skor 0 dan balasan benar diungkap.
 
-import { useRef, useState } from 'react'
-import { Check, Handshake, X } from 'lucide-react'
+import { useMemo, useRef, useState } from 'react'
+import { Check, Handshake, RotateCcw, X } from 'lucide-react'
 import { KONTEN_TUGAS } from '@/lib/apa-itu-adiwiyata/content/tugas'
 import { INTERAKSI_MISI } from '@/lib/apa-itu-adiwiyata/content/interaksi'
 import type { TugasKaderId } from '@/lib/apa-itu-adiwiyata/types'
-import { ambil, benar, getar, klik, koin, lepas, salah } from '../suara'
-import { EfekBenar, EfekSalah, TanganPenunjuk } from '../interaksi'
+import { benar, getar, klik, koin, salah } from '../suara'
+import { BalasCepat, EfekBenar, PetunjukMagi, TanganPenunjuk, type PesanChat } from '../interaksi'
 
 export interface MiniGameTugasSlotProps {
   tugasId: TugasKaderId
@@ -29,6 +31,10 @@ export interface MiniGameTugasSlotProps {
 }
 
 const MAKS_PERCOBAAN = 2
+const WAKTU_PER_PESAN_MS = 15000
+
+/** Pengirim pesan mitra tiap tahap, mengikuti brief (DLH → pelaku usaha → komunitas). */
+const PENGIRIM_MITRA = ['DLH', 'Pelaku Usaha', 'Komunitas Daur Ulang']
 
 /** Bersihkan awalan 'Magi: "..."' agar tidak dobel dengan label Magi. */
 function bersihkanPetunjuk(teks: string): string {
@@ -48,29 +54,33 @@ export function JejaringHijau({
 }
 
 // ---------------------------------------------------------------------------
-// Mode gestur: seret kartu pendekatan ke meja/papan mitra
+// Mode gestur: balas pesan mitra sebelum waktu habis (BalasCepat)
 // ---------------------------------------------------------------------------
 
 function JejaringHijauGestur({ tugasId, stageIndex, onStageComplete }: MiniGameTugasSlotProps) {
   const tahap = KONTEN_TUGAS[tugasId]?.tahapan[stageIndex]
   const spec = INTERAKSI_MISI[tugasId]?.[stageIndex]
-  const [dragId, setDragId] = useState<number | null>(null)
-  const [dragPos, setDragPos] = useState<{ x: number; y: number } | null>(null)
-  const [diAtasTarget, setDiAtasTarget] = useState(false)
-  const [dipilih, setDipilih] = useState<number | null>(null)
+  const pesan = useMemo((): PesanChat[] => {
+    if (!tahap || tahap.jenis !== 'pilih') return []
+    return [
+      {
+        id: `pesan-${stageIndex}`,
+        pengirim: PENGIRIM_MITRA[stageIndex] ?? 'Mitra',
+        teks: tahap.brief,
+        balasan: tahap.pilihan.map((p) => ({ teks: p.teks, benar: p.benar, alasan: p.alasan })),
+      },
+    ]
+  }, [tahap, stageIndex])
   const [percobaan, setPercobaan] = useState(0)
-  const [salahIndeks, setSalahIndeks] = useState<number[]>([])
-  const [salahTerakhir, setSalahTerakhir] = useState<{ index: number; alasan: string } | null>(null)
+  const [kunciUlang, setKunciUlang] = useState(0)
+  const [gagal, setGagal] = useState(false)
   const [selesai, setSelesai] = useState(false)
   const [berhasil, setBerhasil] = useState(false)
   const [skor, setSkor] = useState(0)
 
   const selesaiRef = useRef(false)
-  const dragRef = useRef<{ x0: number; y0: number; bergerak: boolean; id: number } | null>(null)
-  const tekanRef = useRef(false)
-  const targetRef = useRef<HTMLButtonElement | null>(null)
 
-  if (!tahap || tahap.jenis !== 'pilih') {
+  if (!tahap || tahap.jenis !== 'pilih' || pesan.length === 0) {
     return (
       <div className="aia-card">
         <p className="aia-muted">Tahap ini belum tersedia.</p>
@@ -80,102 +90,33 @@ function JejaringHijauGestur({ tugasId, stageIndex, onStageComplete }: MiniGameT
 
   const jawabanBenar = tahap.pilihan.findIndex((p) => p.benar)
   const opsiBenar = jawabanBenar >= 0 ? tahap.pilihan[jawabanBenar] : undefined
-  const targetLabel = spec?.target ?? 'Target'
   const tutorial = spec?.tutorial ?? stageIndex === 0
   const petunjuk = spec ? bersihkanPetunjuk(spec.petunjukMagi) : undefined
-  // Kesulitan adaptif: setelah 1 kali gagal, zona target membesar.
-  const perbesar = percobaan >= 1
 
-  /** Apakah titik layar berada di dalam zona target (dengan toleransi). */
-  const cekDiTarget = (clientX: number, clientY: number): boolean => {
-    const el = targetRef.current
-    if (!el) return false
-    const r = el.getBoundingClientRect()
-    const pad = perbesar ? 28 : 12
-    return clientX >= r.left - pad && clientX <= r.right + pad && clientY >= r.top - pad && clientY <= r.bottom + pad
-  }
-
-  const resolve = (i: number) => {
-    if (selesai || salahIndeks.includes(i)) return
-    const opsi = tahap.pilihan[i]
-    if (!opsi) return
-    setDipilih(null)
-    if (opsi.benar) {
-      benar()
-      koin()
+  /** Satu jalan BalasCepat selesai: 100 = balasan benar, 0 = salah / waktu habis. */
+  const balasSelesai = (skorInternal: number) => {
+    if (selesai || gagal) return
+    if (skorInternal >= 100) {
       setSkor(percobaan === 0 ? 100 : 50)
       setBerhasil(true)
       setSelesai(true)
     } else {
-      salah()
-      getar([40, 40, 40])
       const p = percobaan + 1
       setPercobaan(p)
-      setSalahIndeks((daftar) => [...daftar, i])
-      setSalahTerakhir({ index: i, alasan: opsi.alasan })
       if (p >= MAKS_PERCOBAAN) {
         setSkor(0)
         setBerhasil(false)
         setSelesai(true)
-      }
-    }
-  }
-
-  const onPointerDownKartu = (e: React.PointerEvent<HTMLButtonElement>, i: number) => {
-    if (selesai || salahIndeks.includes(i)) return
-    ambil()
-    dragRef.current = { x0: e.clientX, y0: e.clientY, bergerak: false, id: i }
-    setDragId(i)
-    try {
-      e.currentTarget.setPointerCapture(e.pointerId)
-    } catch {
-      // Abaikan: perangkat tidak mendukung pointer capture.
-    }
-  }
-
-  const onPointerMoveKartu = (e: React.PointerEvent<HTMLButtonElement>, i: number) => {
-    const d = dragRef.current
-    if (!d || d.id !== i) return
-    const dx = e.clientX - d.x0
-    const dy = e.clientY - d.y0
-    if (Math.abs(dx) + Math.abs(dy) > 10) d.bergerak = true
-    setDragPos({ x: dx, y: dy })
-    setDiAtasTarget(cekDiTarget(e.clientX, e.clientY))
-  }
-
-  const onPointerUpKartu = (e: React.PointerEvent<HTMLButtonElement>, i: number) => {
-    const d = dragRef.current
-    dragRef.current = null
-    setDragId(null)
-    setDragPos(null)
-    setDiAtasTarget(false)
-    if (!d || d.id !== i) return
-    if (d.bergerak) {
-      tekanRef.current = true
-      if (cekDiTarget(e.clientX, e.clientY)) {
-        lepas()
-        resolve(i)
       } else {
-        lepas()
+        setGagal(true)
       }
     }
   }
 
-  const onPointerCancelKartu = () => {
-    dragRef.current = null
-    setDragId(null)
-    setDragPos(null)
-    setDiAtasTarget(false)
-  }
-
-  const onClickKartu = (i: number) => {
-    if (tekanRef.current) {
-      tekanRef.current = false
-      return
-    }
-    if (selesai || salahIndeks.includes(i)) return
+  const cobaLagi = () => {
     klik()
-    setDipilih((v) => (v === i ? null : i))
+    setGagal(false)
+    setKunciUlang((k) => k + 1)
   }
 
   const lanjutkan = () => {
@@ -206,143 +147,35 @@ function JejaringHijauGestur({ tugasId, stageIndex, onStageComplete }: MiniGameT
           <Handshake aria-hidden="true" style={{ width: 18, height: 18, verticalAlign: -3 }} /> Skenario mitra
         </strong>
         <p>{tahap.brief}</p>
-        {tutorial && spec?.langkah && (
-          <p className="aia-muted" style={{ fontSize: 13, margin: '8px 0 0' }}>
-            Langkah: {spec.langkah.map((l, i) => `${i + 1}. ${l}`).join(' → ')}
-          </p>
-        )}
       </div>
+
+      {tutorial && !selesai && !gagal && (
+        <div style={{ textAlign: 'center' }}>
+          <TanganPenunjuk label="Ketuk balasan terbaik sebelum waktu habis" />
+        </div>
+      )}
 
       <div style={{ position: 'relative' }}>
         <EfekBenar tampil={selesai && berhasil} />
-
-        <div style={{ display: 'grid', gap: 10 }}>
-          {tahap.pilihan.map((opsi, i) => {
-            const isJawaban = i === jawabanBenar
-            const isSalah = salahIndeks.includes(i)
-            const sedangDisere = dragId === i
-            let latar: string | undefined
-            let border: string | undefined
-            if (selesai && isJawaban) {
-              latar = '#dcfce7'
-              border = '2px solid #236b4d'
-            } else if (isSalah) {
-              latar = '#fee2e2'
-              border = '2px solid #b83232'
-            }
-            return (
-              <button
-                key={i}
-                type="button"
-                className="aia-btn aia-btn-block"
-                disabled={selesai || isSalah}
-                onPointerDown={(e) => onPointerDownKartu(e, i)}
-                onPointerMove={(e) => onPointerMoveKartu(e, i)}
-                onPointerUp={(e) => onPointerUpKartu(e, i)}
-                onPointerCancel={onPointerCancelKartu}
-                onClick={() => onClickKartu(i)}
-                aria-pressed={dipilih === i}
-                aria-label={`Pendekatan ${String.fromCharCode(65 + i)}: ${opsi.teks}. Seret ke target, atau ketuk untuk memilih.`}
-                style={{
-                  justifyContent: 'flex-start',
-                  textAlign: 'left',
-                  minHeight: 64,
-                  background: latar,
-                  border,
-                  whiteSpace: 'normal',
-                  height: 'auto',
-                  padding: '12px 16px',
-                  cursor: selesai || isSalah ? 'default' : 'grab',
-                  touchAction: 'none',
-                  userSelect: 'none',
-                  WebkitUserSelect: 'none',
-                  transform:
-                    sedangDisere && dragPos
-                      ? `translate(${dragPos.x}px, ${dragPos.y}px) rotate(${dragPos.x * 0.04}deg)`
-                      : undefined,
-                  outline: dipilih === i ? '3px solid var(--green, #2f7d4f)' : undefined,
-                  outlineOffset: 2,
-                  opacity: isSalah ? 0.55 : 1,
-                  position: 'relative',
-                  zIndex: sedangDisere ? 10 : undefined,
-                }}
-              >
-                <span aria-hidden="true" style={{ fontWeight: 800 }}>
-                  {String.fromCharCode(65 + i)}.
-                </span>
-                <span>{opsi.teks}</span>
-                {selesai && isJawaban && <Check aria-hidden="true" color="#236b4d" />}
-                {isSalah && <X aria-hidden="true" color="#b83232" />}
-                <small
-                  className="aia-muted"
-                  style={{ display: 'block', width: '100%', fontSize: 12, marginTop: 4 }}
-                >
-                  {sedangDisere
-                    ? 'Sedang diseret…'
-                    : dipilih === i
-                      ? 'Sudah dipilih — ketuk targetnya'
-                      : isSalah
-                        ? 'Sudah dicoba'
-                        : 'Seret ke target, atau ketuk untuk memilih'}
-                </small>
-              </button>
-            )
-          })}
-        </div>
-
-        {tutorial && !selesai && (
-          <div style={{ textAlign: 'center', marginTop: 12 }}>
-            <TanganPenunjuk label="Seret pendekatan terbaik ke sini" />
-          </div>
-        )}
-
-        <button
-          type="button"
-          ref={targetRef}
-          data-aia-target
-          disabled={selesai}
-          onClick={() => {
-            if (dipilih !== null) resolve(dipilih)
-          }}
-          aria-label={`Target: ${targetLabel}${dipilih !== null ? '. Ketuk untuk menaruh kartu yang dipilih.' : ''}`}
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 4,
-            width: '100%',
-            minHeight: perbesar ? 170 : 120,
-            marginTop: 12,
-            padding: perbesar ? '20px 12px' : '14px 12px',
-            border: `2px dashed ${diAtasTarget ? '#236b4d' : '#9ca3af'}`,
-            borderRadius: 14,
-            background: diAtasTarget ? '#dcfce7' : dipilih !== null ? '#f0fdf4' : '#fafafa',
-            color: 'var(--foreground, #111)',
-            fontSize: 15,
-            fontWeight: 700,
-            cursor: selesai ? 'default' : 'pointer',
-            transform: diAtasTarget ? 'scale(1.02)' : undefined,
-          }}
-        >
-          <Handshake aria-hidden="true" style={{ width: 28, height: 28, color: '#2f7d4f' }} />
-          {targetLabel}
-          <small style={{ fontWeight: 400, color: 'var(--ink-soft, #6b7280)' }}>
-            {selesai && berhasil && opsiBenar
-              ? `✓ ${opsiBenar.teks}`
-              : dipilih !== null
-                ? 'Ketuk untuk menaruh kartu yang dipilih'
-                : 'Seret kartu ke sini'}
-          </small>
-        </button>
+        <BalasCepat
+          key={kunciUlang}
+          pesan={pesan}
+          waktuPerPesanMs={WAKTU_PER_PESAN_MS}
+          onSelesai={balasSelesai}
+        />
       </div>
 
-      {salahTerakhir && !selesai && (
+      {gagal && !selesai && (
         <div>
-          <EfekSalah tampil petunjuk={petunjuk} />
+          {petunjuk && <PetunjukMagi teks={petunjuk} />}
           <p className="aia-muted" style={{ fontSize: 13, margin: '8px 0 0' }}>
-            Kenapa salah: {salahTerakhir.alasan}
+            Balasan yang kamu pilih kurang tepat — alasannya sudah tampil di atas. Coba sekali lagi.
           </p>
+          <div className="aia-actions" style={{ marginTop: 12 }}>
+            <button type="button" className="aia-btn aia-btn-primary" style={{ minHeight: 44 }} onClick={cobaLagi}>
+              <RotateCcw aria-hidden="true" /> Coba lagi · 1 kesempatan tersisa
+            </button>
+          </div>
         </div>
       )}
 
@@ -368,7 +201,7 @@ function JejaringHijauGestur({ tugasId, stageIndex, onStageComplete }: MiniGameT
             background: '#fee2e2',
           }}
         >
-          <strong>Belum berhasil.</strong> Pendekatan yang tepat:{' '}
+          <strong>Belum berhasil.</strong> Balasan yang tepat:{' '}
           <strong>{opsiBenar.teks}</strong> — {opsiBenar.alasan}
         </div>
       )}

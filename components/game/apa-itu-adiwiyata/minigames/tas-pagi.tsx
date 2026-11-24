@@ -24,7 +24,8 @@ import { TEBAK_DULU } from '@/lib/apa-itu-adiwiyata/content/fakta'
 import { INTERAKSI_MISI } from '@/lib/apa-itu-adiwiyata/content/interaksi'
 import { benar, getar, koin, lepas, salah } from '../suara'
 import type { MiniGameSlotProps } from '../misi-shell'
-import { DragDrop, EfekBenar, EfekSalah, TanganPenunjuk, ThrowAim } from '../interaksi'
+import { DragDrop, EfekBenar, EfekSalah, TanganPenunjuk, TangkapJatuh, ThrowAim } from '../interaksi'
+import type { ObjekJatuh } from '../interaksi'
 
 type Zona = 'tas' | 'tinggalkan'
 type Fase = 'tebak' | 'main' | 'selesai' | 'gagal'
@@ -87,6 +88,14 @@ const DURASI_MS = [12000, 9000, 10000]
 const MAKS_SALAH = 5
 const JUMLAH_BARANG = 10
 
+// Jeda kemunculan barang di TangkapJatuh (ms): tahap 2 lebih cepat.
+const INTERVAL_TANGKAP_MS = [1400, 900]
+// TangkapJatuh hanya melaporkan skor akhir (0-100), bukan tiap tangkapan.
+// Aturan lama "5 salah = gagal" dipetakan ke skor akhir: skor < 45 berarti
+// setara dengan 5 kesalahan bersih atau lebih (barang guna ulang terlewat +
+// barang sekali pakai tertangkap), sehingga meter sampah dianggap penuh.
+const SKOR_MINIMAL_LOLOS = 45
+
 function acak<T>(daftar: T[]): T[] {
   const salin = [...daftar]
   for (let i = salin.length - 1; i > 0; i -= 1) {
@@ -105,13 +114,19 @@ function bersihPetunjuk(teks: string): string {
 
 /**
  * Mini-game Misi 1 — Tas Pagi (Kader Budaya Lingkungan), versi gestur.
- * Tahap 1-2: seret barang ke Tas / Tinggalkan (DragDrop).
+ * Tahap 1-2: tangkap barang yang jatuh (TangkapJatuh) — tangkap yang bisa
+ * dipakai ulang, biarkan barang sekali pakai jatuh; tahap 2 lebih cepat.
  * Tahap 3: bidik zona lalu lempar (ThrowAim).
  * Tahap 1 dibuka "Tebak dulu": seret kartu jawaban ke pilihan yang benar.
  * Bila modeSatuKetukan = true, tampilkan versi tombol lama (ketuk barang,
- * lalu ketuk zona) sebagai alternatif aksesibilitas.
- * Benar +10 (combo >= 3 jadi +15), salah menaikkan meter "sampah hari ini".
- * 5 salah = tahap gagal. Skor akhir dibatasi 0-100.
+ * lalu ketuk zona) sebagai alternatif aksesibilitas — termasuk seret
+ * DragDrop tahap 1-2 versi lama.
+ * Benar +10 (combo >= 3 jadi +15), salah menaikkan meter "sampah hari ini"
+ * — aturan ini berlaku penuh di versi tombol; di versi tangkap, skor akhir
+ * 0-100 dihitung pustaka TangkapJatuh (% benar tertangkap, -5 per tangkapan
+ * salah) dan skor < 45 berarti tahap gagal (meter sampah penuh).
+ * Mode mudah (setelah 2 gagal): barang jatuh lebih pelan + keranjang lebih
+ * lebar + petunjuk barang mana yang ditangkap. Skor akhir dibatasi 0-100.
  */
 export function TasPagi({
   stageIndex,
@@ -121,6 +136,9 @@ export function TasPagi({
   const tahap = Math.min(stageIndex, 2)
   const spec = INTERAKSI_MISI['gerbang'][tahap]
   const petunjuk = bersihPetunjuk(spec.petunjukMagi)
+  // Mode gestur baru hanya untuk tahap 1-2; tahap 3 tetap ThrowAim dan
+  // modeSatuKetukan memakai versi tombol lama untuk semua tahap.
+  const gestur = !modeSatuKetukan && tahap < 2
 
   const [fase, setFase] = useState<Fase>(stageIndex === 0 ? 'tebak' : 'main')
   const [soalIdx] = useState(() => Math.floor(Math.random() * TEBAK_DULU.length))
@@ -156,6 +174,21 @@ export function TasPagi({
   const saatIni = deck[idx] ?? null
   const durasi = DURASI_MS[tahap] + (modeMudah ? 6000 : 0)
   const soal = TEBAK_DULU[soalIdx]
+
+  // Deck yang sama, dipetakan ke objek jatuh TangkapJatuh.
+  const deckTangkap: ObjekJatuh[] = useMemo(
+    () =>
+      deck.map(({ barang, kunci }) => {
+        const IkonBarang = barang.ikon
+        return {
+          id: kunci,
+          label: barang.nama,
+          benar: barang.benar,
+          ikon: <IkonBarang aria-hidden="true" style={{ width: 28, height: 28, color: 'var(--green)' }} />,
+        }
+      }),
+    [deck],
+  )
 
   // Bersihkan timer saat komponen dilepas.
   useEffect(
@@ -225,6 +258,17 @@ export function TasPagi({
     advanceTimer.current = window.setTimeout(lanjutkan, 3200)
   }
 
+  /** Hasil lari TangkapJatuh (tahap 1-2 gestur): skor akhir 0-100 dari pustaka. */
+  const tangkapSelesai = (skorAkhir: number) => {
+    setSkor(skorAkhir)
+    if (skorAkhir < SKOR_MINIMAL_LOLOS) {
+      setGagalHitung((g) => g + 1)
+      setFase('gagal')
+      return
+    }
+    setFase('selesai')
+  }
+
   /** Versi tombol (mode satu-ketukan): ketuk zona setelah memilih barang. */
   const resolveDrop = (zona: Zona) => {
     const barang = saatIni?.barang
@@ -262,7 +306,9 @@ export function TasPagi({
   }
 
   // Batas waktu tiap barang: habis = dianggap salah (meter naik).
+  // Tidak berlaku di tahap 1-2 gestur — TangkapJatuh mengatur waktunya sendiri.
   useEffect(() => {
+    if (gestur) return
     if (fase !== 'main' || resolving || !saatIni) return
     const id = window.setTimeout(() => {
       const barang = saatIni.barang
@@ -274,7 +320,7 @@ export function TasPagi({
     }, durasi)
     return () => window.clearTimeout(id)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fase, resolving, idx, timerKey, durasi])
+  }, [fase, resolving, idx, timerKey, durasi, gestur])
 
   const cobaLagi = (mudah: boolean) => {
     if (mudah) setModeMudah(true)
@@ -312,7 +358,6 @@ export function TasPagi({
   }
 
   const IkonBarang = saatIni?.barang.ikon ?? Package
-  const zonaBenar: Zona | null = saatIni ? (saatIni.barang.benar ? 'tas' : 'tinggalkan') : null
 
   return (
     <div className="aia-stack">
@@ -429,7 +474,35 @@ export function TasPagi({
         </section>
       )}
 
-      {fase === 'main' && saatIni && (
+      {fase === 'main' && gestur && (
+        <>
+          {spec.tutorial && (
+            <div style={{ textAlign: 'center', marginBottom: 8 }}>
+              <TanganPenunjuk label="Gerakkan keranjang, tangkap yang bisa dipakai ulang!" />
+            </div>
+          )}
+          <TangkapJatuh
+            key={`tangkap-${ronde}`}
+            objek={deckTangkap}
+            intervalMs={INTERVAL_TANGKAP_MS[tahap] + (modeMudah ? 600 : 0)}
+            // Di TangkapJatuh, prop ini berarti jatuh lebih pelan + keranjang
+            // lebih lebar — dipakai sebagai mode mudah, bukan mode satu-ketukan.
+            modeSatuKetukan={modeMudah}
+            onSelesai={tangkapSelesai}
+          />
+          {modeMudah && (
+            <p className="aia-muted" style={{ textAlign: 'center', margin: 0 }}>
+              Petunjuk: tangkap tumbler, lunch box, dan tas kain. Biarkan botol sekali pakai, styrofoam, dan sedotan
+              jatuh.
+            </p>
+          )}
+          <p className="aia-muted" style={{ textAlign: 'center', margin: 0 }}>
+            Gerakkan keranjang ke kiri-kanan. Tangkap barang guna ulang, biarkan barang sekali pakai jatuh ke tanah.
+          </p>
+        </>
+      )}
+
+      {fase === 'main' && saatIni && !gestur && (
         <>
           <div className="aia-stats" aria-label="Skor tahap ini">
             <span className="aia-stat">
@@ -494,31 +567,6 @@ export function TasPagi({
               <div style={{ textAlign: 'center', marginBottom: 8 }}>
                 <TanganPenunjuk label={tahap === 2 ? 'Bidik dulu, lalu lempar!' : 'Seret barang ke Tas atau Tinggalkan'} />
               </div>
-            )}
-
-            {!modeSatuKetukan && tahap < 2 && zonaBenar && (
-              <DragDrop
-                key={saatIni.kunci}
-                benda={{
-                  id: saatIni.barang.id,
-                  label: saatIni.barang.nama,
-                  konten: <IkonBarang aria-hidden="true" style={{ width: 44, height: 44, color: 'var(--green)' }} />,
-                }}
-                target={
-                  zonaBenar === 'tas'
-                    ? { id: 'tas', label: 'Tas', ikon: <Backpack aria-hidden="true" style={{ width: 24, height: 24 }} /> }
-                    : { id: 'tinggalkan', label: 'Tinggalkan', ikon: <Trash2 aria-hidden="true" style={{ width: 24, height: 24 }} /> }
-                }
-                targetLain={
-                  zonaBenar === 'tas'
-                    ? [{ id: 'tinggalkan', label: 'Tinggalkan', ikon: <Trash2 aria-hidden="true" style={{ width: 24, height: 24 }} /> }]
-                    : [{ id: 'tas', label: 'Tas', ikon: <Backpack aria-hidden="true" style={{ width: 24, height: 24 }} /> }]
-                }
-                perbesarTarget={salahHitung >= 2}
-                disabled={resolving}
-                onBenar={() => resolveBenar()}
-                onSalah={() => resolveSalah(saatIni.barang.penjelasan)}
-              />
             )}
 
             {!modeSatuKetukan && tahap === 2 && (
@@ -688,9 +736,17 @@ export function TasPagi({
             Tahap selesai!
           </h3>
           <p className="aia-muted">
-            Kamu berhasil membawa {benarHitung} dari {JUMLAH_BARANG} barang dengan benar dan mengumpulkan {skor} Koin
-            Hijau.
-            {comboTerbaik >= 3 ? ` Combo terbaikmu x${comboTerbaik}. Hebat!` : ''}
+            {gestur ? (
+              <>
+                Kamu mengumpulkan {skor} Koin Hijau dari tangkapanmu. {spec.hasilBenar}
+              </>
+            ) : (
+              <>
+                Kamu berhasil membawa {benarHitung} dari {JUMLAH_BARANG} barang dengan benar dan mengumpulkan {skor}{' '}
+                Koin Hijau.
+                {comboTerbaik >= 3 ? ` Combo terbaikmu x${comboTerbaik}. Hebat!` : ''}
+              </>
+            )}
           </p>
           <div className="aia-actions" style={{ justifyContent: 'center' }}>
             <button type="button" className="aia-btn aia-btn-primary" onClick={selesaikan}>
@@ -706,10 +762,20 @@ export function TasPagi({
           <h3 id="aia-tp-gagal-title" className="aia-section-title">
             Meter sampah penuh
           </h3>
-          <p className="aia-muted">
-            Sampah hari ini sudah terlalu banyak. Tidak apa-apa, coba lagi dari awal tahap ini — barangnya diacak
-            ulang.
-          </p>
+          {gestur ? (
+            <>
+              <EfekSalah tampil petunjuk={petunjuk} />
+              <p className="aia-muted" style={{ marginTop: 12 }}>
+                Skor tangkapanmu {skor} — terlalu banyak barang guna ulang terlewat atau barang sekali pakai
+                tertangkap. Tidak apa-apa, coba lagi dari awal tahap ini — barangnya diacak ulang.
+              </p>
+            </>
+          ) : (
+            <p className="aia-muted">
+              Sampah hari ini sudah terlalu banyak. Tidak apa-apa, coba lagi dari awal tahap ini — barangnya diacak
+              ulang.
+            </p>
+          )}
           <div className="aia-actions" style={{ justifyContent: 'center' }}>
             <button type="button" className="aia-btn aia-btn-primary" onClick={() => cobaLagi(false)}>
               <RotateCcw aria-hidden="true" /> Coba lagi

@@ -21,7 +21,8 @@ import { useCampaign } from '@/lib/apa-itu-adiwiyata/context'
 import type { Carryover, TongSampah } from '@/lib/apa-itu-adiwiyata/types'
 import { benar, getar, koin, lepas, lempar, nyawa, plop, salah } from '../suara'
 import type { MiniGameSlotProps } from '../misi-shell'
-import { DragDrop, EfekBenar, EfekSalah, TanganPenunjuk, ThrowAim } from '../interaksi'
+import { EfekBenar, EfekSalah, SortirCepat, TanganPenunjuk, ThrowAim } from '../interaksi'
+import type { ItemSortir, TargetSortir } from '../interaksi'
 
 type Fase = 'main' | 'selesai' | 'gagal'
 
@@ -49,6 +50,20 @@ const TONG_PER_TAHAP: TongSampah[][] = [
 const JUMLAH_ITEM = [8, 8, 10]
 const NYAWA_AWAL = 3
 
+// Waktu per item di SortirCepat (ms): tahap 2 lebih cepat.
+const WAKTU_SORTIR_MS = [5000, 4000]
+// SortirCepat hanya melaporkan skor akhir (0-100). Aturan lama "3 nyawa"
+// dipetakan ke skor akhir: 8 item, 3 salah = 5/8 benar = skor 63, jadi
+// skor < 64 berarti nyawa habis (tahap gagal).
+const SKOR_MINIMAL_LOLOS_SORTIR = 64
+// Gabungan id pemicu dampak berantai di siklus.ts (berminyak / plastik / popok).
+const ITEM_PEMICU_DAMPAK = [
+  'bungkus-plastik-berminyak',
+  'minyak-jelantah',
+  'styrofoam',
+  'popok-sekali-pakai',
+]
+
 function acak<T>(daftar: T[]): T[] {
   const salin = [...daftar]
   for (let i = salin.length - 1; i > 0; i -= 1) {
@@ -75,12 +90,19 @@ function bersihPetunjuk(teks: string): string {
 
 /**
  * Mini-game Misi 2 — Pilah Sampah (Kader Pilah), versi gestur.
- * Tahap 1-2: seret sampah ke tong yang benar (DragDrop).
+ * Tahap 1-2: sortir cepat di ban berjalan (SortirCepat) — ketuk tong yang
+ * benar sebelum sampah lewat; tahap 1 memakai 2 tong (Organik/Anorganik),
+ * tahap 2 memakai 3 tong (+Residu) dan waktu per item lebih singkat.
  * Tahap 3: bidik tong lalu lempar (ThrowAim); tong bergerak pelan.
  * Bila modeSatuKetukan = true, tampilkan versi tombol lama (ketuk sampah,
- * lalu ketuk tong) sebagai alternatif aksesibilitas.
- * Benar +10, salah pilah -1 nyawa dan dicatat untuk dampak berantai
- * (siklus.ts). 3 nyawa per tahap. Skor akhir dibatasi 0-100.
+ * lalu ketuk tong) sebagai alternatif aksesibilitas — termasuk seret
+ * DragDrop tahap 1-2 versi lama.
+ * Benar +10, salah pilah -1 nyawa (3 nyawa per tahap) — aturan ini berlaku
+ * penuh di versi tombol dan tahap 3; di versi sortir, skor akhir 0-100
+ * dihitung pustaka SortirCepat (% jawaban benar) dan skor < 64 berarti
+ * nyawa habis. Salah pilah tetap dicatat untuk dampak berantai (siklus.ts):
+ * di akhir tahap hitungDampak + SET_CARRYOVER tetap jalan (maggot rewel /
+ * kompos bau di misi berikutnya). Skor akhir dibatasi 0-100.
  */
 export function PilahSampah({
   stageIndex,
@@ -91,6 +113,9 @@ export function PilahSampah({
   const tahap = Math.min(stageIndex, 2)
   const spec = INTERAKSI_MISI['kantin'][tahap]
   const petunjuk = bersihPetunjuk(spec.petunjukMagi)
+  // Mode gestur baru hanya untuk tahap 1-2; tahap 3 tetap ThrowAim dan
+  // modeSatuKetukan memakai versi tombol lama untuk semua tahap.
+  const gestur = !modeSatuKetukan && tahap < 2
 
   const [fase, setFase] = useState<Fase>('main')
   const [ronde, setRonde] = useState(0)
@@ -138,6 +163,32 @@ export function PilahSampah({
   )
   const saatIni = deck[idx] ?? null
   const tongBergerak = tahap === 2 && !modeMudah
+
+  // Deck yang sama, dipetakan ke item + target SortirCepat.
+  const deckSortir: ItemSortir[] = useMemo(
+    () =>
+      deck.map((item) => ({
+        id: item.id,
+        label: item.nama,
+        target: item.tong,
+        ikon: <Package aria-hidden="true" style={{ width: 40, height: 40, color: 'var(--green)' }} />,
+      })),
+    [deck],
+  )
+  const targetSortir: TargetSortir[] = useMemo(
+    () =>
+      tongTersedia.map((tongId) => {
+        const tong = infoTong(tongId)
+        const IkonTong = tong.ikon
+        return {
+          id: tongId,
+          label: tong.nama,
+          ikon: <IkonTong aria-hidden="true" style={{ width: 24, height: 24, color: tong.warna }} />,
+        }
+      }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [stageIndex],
+  )
 
   // Bersihkan timer saat komponen dilepas.
   useEffect(
@@ -229,6 +280,32 @@ export function PilahSampah({
     hasilRef.current = { benarPilihan: false, nyawaBaru }
     setUmpan({ jenis: 'salah', teks })
     advanceTimer.current = window.setTimeout(lanjutkan, 3200)
+  }
+
+  /** Hasil lari SortirCepat (tahap 1-2 gestur): skor akhir 0-100 dari pustaka. */
+  const sortirSelesai = (skorAkhir: number) => {
+    // Skor SortirCepat = % jawaban benar, jadi jumlah benar bisa dihitung
+    // kembali dari skor (8 item: tiap jawaban benar bernilai 12,5%).
+    const benarJumlah = Math.round((skorAkhir / 100) * deck.length)
+    const salahJumlah = deck.length - benarJumlah
+    setBenarHitung(benarJumlah)
+    setSkor(skorAkhir)
+    if (skorAkhir < SKOR_MINIMAL_LOLOS_SORTIR) {
+      setGagalHitung((g) => g + 1)
+      setFase('gagal')
+      return
+    }
+    // SortirCepat tidak melaporkan item mana yang salah — hanya jumlahnya
+    // (lewat skor). Bila ada jawaban salah dan deck berisi item pemicu
+    // dampak berantai, catat pemicu itu sebagai kemungkinan salah pilah;
+    // hitungDampak + SET_CARRYOVER tetap jalan di akhiriTahap. Semangatnya
+    // sama dengan aturan lama yang juga tidak memeriksa tong tujuan saat
+    // mencatat salah pilah.
+    idsSalahRef.current =
+      salahJumlah > 0
+        ? deck.filter((d) => ITEM_PEMICU_DAMPAK.includes(d.id)).map((d) => d.id)
+        : []
+    akhiriTahap()
   }
 
   /** Hasil lemparan tahap 3 (gestur): butuh bidikan benar + kekuatan cukup. */
@@ -359,7 +436,38 @@ export function PilahSampah({
         </div>
       )}
 
-      {fase === 'main' && saatIni && (
+      {fase === 'main' && saatIni && gestur && (
+        <>
+          {spec.tutorial && (
+            <div style={{ textAlign: 'center', marginBottom: 8 }}>
+              <TanganPenunjuk label="Ketuk tong yang benar sebelum sampah lewat!" />
+            </div>
+          )}
+          <SortirCepat
+            key={`sortir-${ronde}`}
+            item={deckSortir}
+            target={targetSortir}
+            waktuPerItemMs={WAKTU_SORTIR_MS[tahap]}
+            // Di SortirCepat, prop ini berarti waktu per item 2× lipat —
+            // dipakai sebagai mode mudah, bukan mode satu-ketukan.
+            modeSatuKetukan={modeMudah}
+            onSelesai={sortirSelesai}
+          />
+          {modeMudah && (
+            <p className="aia-muted" style={{ textAlign: 'center', margin: 0 }}>
+              Petunjuk:{' '}
+              {tahap === 0
+                ? 'sisa makanan, kulit buah & daun → Organik; plastik, kertas, kaleng & kaca → Anorganik.'
+                : 'styrofoam, tisu, masker & bungkus berminyak → Residu; sisanya seperti tahap 1.'}
+            </p>
+          )}
+          <p className="aia-muted" style={{ textAlign: 'center', margin: 0 }}>
+            Sampah berjalan di ban — ketuk tong yang benar sebelum waktunya habis!
+          </p>
+        </>
+      )}
+
+      {fase === 'main' && saatIni && !gestur && (
         <>
           <div className="aia-stats" aria-label="Skor dan nyawa tahap ini">
             <span className="aia-stat">
@@ -394,39 +502,6 @@ export function PilahSampah({
               <div style={{ textAlign: 'center', marginBottom: 8 }}>
                 <TanganPenunjuk label={tahap === 2 ? 'Bidik tongnya, lalu lempar!' : 'Seret sampah ke tong yang benar'} />
               </div>
-            )}
-
-            {!modeSatuKetukan && tahap < 2 && (
-              <DragDrop
-                key={`${saatIni.id}-${idx}`}
-                benda={{
-                  id: saatIni.id,
-                  label: saatIni.nama,
-                  konten: <Package aria-hidden="true" style={{ width: 44, height: 44, color: 'var(--green)' }} />,
-                }}
-                target={{
-                  id: saatIni.tong,
-                  label: namaTong(saatIni.tong),
-                  ikon: (() => {
-                    const IkonTong = infoTong(saatIni.tong).ikon
-                    return <IkonTong aria-hidden="true" style={{ width: 24, height: 24 }} />
-                  })(),
-                }}
-                targetLain={tongTersedia
-                  .filter((t) => t !== saatIni.tong)
-                  .map((t) => {
-                    const IkonTong = infoTong(t).ikon
-                    return {
-                      id: t,
-                      label: namaTong(t),
-                      ikon: <IkonTong aria-hidden="true" style={{ width: 24, height: 24 }} />,
-                    }
-                  })}
-                perbesarTarget={NYAWA_AWAL - nyawaSisa >= 2}
-                disabled={resolving}
-                onBenar={() => resolveBenar()}
-                onSalah={() => resolveSalah(saatIni.penjelasan)}
-              />
             )}
 
             {!modeSatuKetukan && tahap === 2 && (
@@ -640,7 +715,8 @@ export function PilahSampah({
           <h3 id="aia-ps-gagal-title" className="aia-section-title">
             Nyawa habis
           </h3>
-          <p className="aia-muted">
+          {gestur && <EfekSalah tampil petunjuk={petunjuk} />}
+          <p className="aia-muted" style={gestur ? { marginTop: 12 } : undefined}>
             Tiga nyawa sudah habis. Baca penjelasannya baik-baik, lalu coba lagi dari awal tahap ini — sampahnya
             diacak ulang.
           </p>
@@ -650,7 +726,7 @@ export function PilahSampah({
             </button>
             {gagalHitung >= 2 && !modeMudah && (
               <button type="button" className="aia-btn aia-btn-ghost" onClick={() => cobaLagi(true)}>
-                Mode mudah: tong diam + petunjuk
+                {gestur ? 'Mode mudah: waktu 2× lipat + petunjuk' : 'Mode mudah: tong diam + petunjuk'}
               </button>
             )}
           </div>
