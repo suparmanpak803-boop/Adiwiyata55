@@ -9,6 +9,7 @@ import { BabShell } from './bab-shell'
 import { BottomNav, type AiaTab } from './bottom-nav'
 import { Ensiklopedia } from './ensiklopedia'
 import { JanjiHarian } from './janji-harian'
+import { KoleksiSpesies } from './koleksi-spesies'
 import { Leaderboard } from './leaderboard'
 import { Lencana } from './lencana'
 import { MenuUtama } from './menu-utama'
@@ -104,6 +105,7 @@ function Kampanye({ onExit, onFinished }: { onExit: () => void; onFinished: (sco
             <Profil />
             <RaporSekolah />
             <Lencana />
+            <KoleksiSpesies />
             <JanjiHarian />
           </div>
         )}
