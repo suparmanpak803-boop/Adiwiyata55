@@ -54,7 +54,7 @@ type EducationVideoAdminData = { videos: EducationVideo[]; error: string | null 
 
 const navigation: { id: View; label: string; icon: typeof Leaf; enabled: boolean }[] = [
   { id: 'beranda', label: 'Beranda', icon: Leaf, enabled: true },
-  { id: 'edukasi', label: 'Edukasi', icon: GraduationCap, enabled: true },
+  { id: 'edukasi', label: 'Video Edukasi', icon: GraduationCap, enabled: true },
   { id: 'kelas', label: 'Daftar Kelas & Petugas', icon: Users, enabled: true },
   { id: 'monitoring', label: 'Dashboard Monitoring', icon: BarChart3, enabled: true },
   { id: 'setoran', label: 'Input Laporan', icon: ArrowDownRight, enabled: true },
