@@ -6,7 +6,7 @@ export type AiaTab = 'menu' | 'peta' | 'ensiklopedia' | 'peringkat' | 'profil'
 
 const TABS: { id: AiaTab; label: string; Icon: typeof Home }[] = [
   { id: 'menu', label: 'Main', Icon: Home },
-  { id: 'peta', label: 'Peta Sekolah', Icon: Map },
+  { id: 'peta', label: 'Jelajah', Icon: Map },
   { id: 'ensiklopedia', label: 'Ensiklopedia', Icon: BookOpen },
   { id: 'peringkat', label: 'Peringkat', Icon: Trophy },
   { id: 'profil', label: 'Profil', Icon: User },

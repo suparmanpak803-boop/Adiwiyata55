@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Check, Clock, Coins, Flame, Lock, Play } from 'lucide-react'
+import { Check, Clock, Coins, Flame, Lock, Map, Play } from 'lucide-react'
 import { CHAPTERS, CHAPTER_ICONS, CHAPTER_ORDER } from '@/lib/apa-itu-adiwiyata/chapters'
 import { selectChapterUnlocked, useCampaign } from '@/lib/apa-itu-adiwiyata/context'
 import type { ChapterId } from '@/lib/apa-itu-adiwiyata/types'
@@ -9,7 +9,7 @@ import { playPop } from './suara'
 
 const TOTAL_TAHAP = 18
 
-export function MenuUtama({ onPlayChapter }: { onPlayChapter: (chapterId: ChapterId) => void }) {
+export function MenuUtama({ onPlayChapter, onExplore }: { onPlayChapter: (chapterId: ChapterId) => void; onExplore: () => void }) {
   const { save, dispatch, hydrated } = useCampaign()
   const [nickname, setNickname] = useState('')
   const [confirmReset, setConfirmReset] = useState(false)
@@ -130,6 +130,9 @@ export function MenuUtama({ onPlayChapter }: { onPlayChapter: (chapterId: Chapte
           {menitTersisa > 0 ? `Sisa ±${menitTersisa} menit lagi menuju Sekolah Adiwiyata Mandiri.` : 'Kampanye selesai. Kamu Pahlawan Adiwiyata!'}
         </p>
         <div className="aia-actions">
+          <button type="button" className="aia-btn aia-btn-primary" onClick={onExplore}>
+            <Map aria-hidden="true" /> Jelajahi Sekolah
+          </button>
           {adaProgres && babSelesai < 6 && (
             <button type="button" className="aia-btn aia-btn-primary" onClick={lanjutkan}>
               <Play aria-hidden="true" /> Lanjutkan

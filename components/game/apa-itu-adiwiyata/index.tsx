@@ -13,7 +13,7 @@ import { KoleksiSpesies } from './koleksi-spesies'
 import { Leaderboard } from './leaderboard'
 import { Lencana } from './lencana'
 import { MenuUtama } from './menu-utama'
-import { PetaSekolah } from './peta-sekolah'
+import { Jelajah } from './jelajah'
 import { Profil } from './profil'
 import { RaporSekolah } from './rapor-sekolah'
 import { Tamat } from './tamat'
@@ -26,6 +26,8 @@ function Kampanye({ onExit, onFinished }: { onExit: () => void; onFinished: (sco
   const { save, dispatch } = useCampaign()
   const [screen, setScreen] = useState<Screen>('menu')
   const [activeChapter, setActiveChapter] = useState<ChapterId>('gerbang')
+  // True bila bab dibuka dari dunia — keluar bab kembali ke dunia.
+  const [kembaliKeDunia, setKembaliKeDunia] = useState(false)
 
   // Hentikan musik latar saat kampanye ditutup. Sinkronisasi pengaturan
   // suara (volume/mute) sudah dilakukan provider lewat syncSettings().
@@ -50,8 +52,28 @@ function Kampanye({ onExit, onFinished }: { onExit: () => void; onFinished: (sco
 
   const mainBab = (chapterId: ChapterId) => {
     playPop()
+    setKembaliKeDunia(false)
     setActiveChapter(chapterId)
     setScreen('bab')
+  }
+
+  const mainBabDariDunia = (chapterId: ChapterId) => {
+    playPop()
+    setKembaliKeDunia(true)
+    setActiveChapter(chapterId)
+    setScreen('bab')
+  }
+
+  // Keluar dari bab: kembali ke dunia bila bab dibuka dari dunia,
+  // kecuali tamat (ke layar tamat).
+  const keluarBab = (tamat: boolean) => {
+    if (tamat) {
+      setKembaliKeDunia(false)
+      setScreen('tamat')
+      return
+    }
+    setScreen(kembaliKeDunia ? 'peta' : 'menu')
+    setKembaliKeDunia(false)
   }
 
   const gantiTab = (tab: AiaTab) => {
@@ -88,13 +110,13 @@ function Kampanye({ onExit, onFinished }: { onExit: () => void; onFinished: (sco
       </header>
 
       <main>
-        {screen === 'menu' && <MenuUtama onPlayChapter={mainBab} />}
-        {screen === 'peta' && <PetaSekolah onPlayChapter={mainBab} />}
+        {screen === 'menu' && <MenuUtama onPlayChapter={mainBab} onExplore={() => gantiTab('peta')} />}
+        {screen === 'peta' && <Jelajah onPlayChapter={mainBabDariDunia} />}
         {screen === 'bab' && (
           <BabShell
             chapterId={activeChapter}
-            onExit={() => setScreen('menu')}
-            onChapterComplete={(tamat) => setScreen(tamat ? 'tamat' : 'menu')}
+            onExit={() => keluarBab(false)}
+            onChapterComplete={keluarBab}
           />
         )}
         {screen === 'tamat' && <Tamat onExit={() => setScreen('menu')} />}

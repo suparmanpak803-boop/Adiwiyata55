@@ -322,3 +322,13 @@ Kejadian acak tiap bab (1x): Badai Sampah, Serangan Lalat, Hujan Deras, dll.
   ikon, atau teks); hormati `prefers-reduced-motion`; opsi getar
   (`navigator.vibrate`) di HP.
 - Keputusan: tanpa file audio sama sekali (sintesis Web Audio) — lihat asumsi 9.
+
+## 12. Mode Jelajah (dunia yang bisa dijelajahi, ditambahkan 24 Nov)
+
+Atas permintaan user ("rubah semuanya jadi seperti itu bisa keliling dan interaksi"), tab Peta Sekolah diganti dunia top-down yang bisa dijelajahi. Mini-game, progres, dan sistem pendukung tidak berubah — dunia adalah cara baru masuk ke bab.
+
+- **Dunia** (`lib/apa-itu-adiwiyata/dunia.ts`): 960×640 unit, 8 zona (Gerbang, Kantin, Pos Maggot, Kompos, Kebun, Taman Air, Panel Surya, Pohon) dipetakan ke 6 bab; 23 dinding (tepi, bangunan zona, pohon); 12 titik sampah; 8 NPC. Geometri terverifikasi BFS: semua zona/NPC/sampah terjangkau dari spawn Gerbang.
+- **NPC** (`lib/apa-itu-adiwiyata/content/npc.ts`): Magi, Pak Plastik, Kang Kantin, Pak Kebun, Mbak Rani, Bu Sari, Dimas, Sinta — masing-masing sapaan + 3 baris + tips. NPC dengan `chapterId` membuka babnya bila sudah terbuka (aturan `selectChapterUnlocked` yang sama).
+- **Explorer** (`components/game/apa-itu-adiwiyata/jelajah.tsx`): Canvas + rAF, kamera mengikuti pemain, joystick virtual + WASD/panah + E/Enter/Spasi, tabrakan AABB (geser di dinding), dialog overlay DOM (role=dialog, terbaca pembaca layar), sampah dipungut +5 Koin Hijau (EARN_COINS), toast nama zona, zona terkunci digelapkan + label "Terkunci", `prefers-reduced-motion` mematikan goyangan.
+- **Integrasi** (`components/game/apa-itu-adiwiyata/index.tsx`): tab 'peta' merender `Jelajah`; tombol "Jelajahi Sekolah" di menu utama; bab yang dibuka dari dunia kembali ke dunia saat keluar (kecuali tamat); label tab jadi "Jelajah". Komponen lama `peta-sekolah.tsx` (grid zona statis) dihapus karena tidak terpakai.
+- **Asumsi**: posisi pemain tidak disimpan (spawn ulang di Gerbang tiap masuk dunia); sampah muncul lagi tiap masuk dunia (12 per kunjungan); zona terkunci tetap bisa dimasuki pejalan kaki, hanya babnya yang tidak bisa dimulai dari NPC-nya.
