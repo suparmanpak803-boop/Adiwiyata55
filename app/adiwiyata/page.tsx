@@ -8,11 +8,11 @@ import './adiwiyata.css'
 export const metadata: Metadata = {
   title: 'Informasi Adiwiyata',
   description: 'Pusat informasi, program, publikasi, dokumentasi kegiatan dan arsip Adiwiyata SMAN 55 Jakarta.',
-  alternates: { canonical: 'https://adiwiyata55-cwpr.vercel.app/adiwiyata' },
+  alternates: { canonical: 'https://www.adiwiyata55jkt.my.id/adiwiyata' },
   openGraph: {
     title: 'Informasi Adiwiyata | Adiwiyata SMAN 55 Jakarta',
     description: 'Pusat informasi, program, publikasi, dokumentasi kegiatan dan arsip Adiwiyata SMAN 55 Jakarta.',
-    url: 'https://adiwiyata55-cwpr.vercel.app/adiwiyata',
+    url: 'https://www.adiwiyata55jkt.my.id/adiwiyata',
     type: 'website',
   },
 }
@@ -23,8 +23,8 @@ const jsonLd = {
   '@context': 'https://schema.org',
   '@type': 'EducationalOrganization',
   name: 'Adiwiyata SMAN 55 Jakarta',
-  url: 'https://adiwiyata55-cwpr.vercel.app/adiwiyata',
-  logo: 'https://adiwiyata55-cwpr.vercel.app/adiwiyata-logo.png',
+  url: 'https://www.adiwiyata55jkt.my.id/adiwiyata',
+  logo: 'https://www.adiwiyata55jkt.my.id/adiwiyata-logo.png',
   description: 'Pusat informasi, program, publikasi, dokumentasi kegiatan dan arsip Adiwiyata SMAN 55 Jakarta.',
   inLanguage: 'id',
 }

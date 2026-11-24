@@ -23,7 +23,7 @@ export async function generateMetadata({ params }: { params: Promise<{ section: 
   const description = section === 'tentang' ? 'Kenali platform digital, tujuan pemantauan sampah, dan tim pengembang Adiwiyata 55 SMAN 55 Jakarta.' : page?.intro ?? 'Pusat Informasi Adiwiyata SMAN 55 Jakarta.'
   // Judul lengkap (dengan nama sekolah) dirakit template title di root
   // layout; di sini cukup nama section-nya saja.
-  const url = `https://adiwiyata55-cwpr.vercel.app/adiwiyata/${section}`
+  const url = `https://www.adiwiyata55jkt.my.id/adiwiyata/${section}`
   // Struktur petugas hanya tampil lengkap bila sudah login: jangan
   // sampai terindeks.
   if (section === 'struktur') {

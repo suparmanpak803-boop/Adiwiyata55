@@ -4,7 +4,7 @@ import { SiteMotion } from '@/components/animations'
 import './globals.css'
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://adiwiyata55-cwpr.vercel.app'),
+  metadataBase: new URL('https://www.adiwiyata55jkt.my.id'),
   title: {
     default: 'Adiwiyata SMAN 55 Jakarta',
     template: '%s | Adiwiyata SMAN 55 Jakarta',
@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'id_ID',
-    url: 'https://adiwiyata55-cwpr.vercel.app',
+    url: 'https://www.adiwiyata55jkt.my.id',
     siteName: 'Adiwiyata SMAN 55 Jakarta',
     title: 'Adiwiyata SMAN 55 Jakarta',
     description: 'Website Adiwiyata SMAN 55 Jakarta: edukasi lingkungan, program, dokumentasi kegiatan, publikasi, arsip, pelaporan sampah, dan aksi hijau.',
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true },
   // Canonical bawaan: halaman publik menimpa dengan canonical-nya
   // sendiri; halaman ber-login/admin memakai robots noindex.
-  alternates: { canonical: 'https://adiwiyata55-cwpr.vercel.app' },
+  alternates: { canonical: 'https://www.adiwiyata55jkt.my.id' },
   icons: {
     icon: '/adiwiyata-logo.png',
     apple: '/adiwiyata-logo.png',

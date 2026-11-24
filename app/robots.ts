@@ -20,6 +20,6 @@ export default function robots(): MetadataRoute.Robots {
         ],
       },
     ],
-    sitemap: 'https://adiwiyata55-cwpr.vercel.app/sitemap.xml',
+    sitemap: 'https://www.adiwiyata55jkt.my.id/sitemap.xml',
   }
 }

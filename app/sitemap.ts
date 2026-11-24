@@ -1,6 +1,6 @@
 import type { MetadataRoute } from 'next'
 
-const SITE_URL = 'https://adiwiyata55-cwpr.vercel.app'
+const SITE_URL = 'https://www.adiwiyata55jkt.my.id'
 
 // Hanya URL publik yang boleh diindeks. Sengaja TIDAK dimasukkan:
 // - '/' (portal) — pengunjung dialihkan ke /sign-in bila belum login,
