@@ -28,6 +28,8 @@ export interface TangkapJatuhProps {
   intervalMs?: number
   modeSatuKetukan?: boolean
   disabled?: boolean
+  /** Jeda: bekukan jatuhnya objek & kemunculan objek berikutnya. */
+  terjeda?: boolean
   onSelesai: (skor: number) => void
 }
 
@@ -42,6 +44,7 @@ export function TangkapJatuh({
   intervalMs = 1400,
   modeSatuKetukan = false,
   disabled = false,
+  terjeda = false,
   onSelesai,
 }: TangkapJatuhProps) {
   const kurangi = useKurangiAnimasi()
@@ -68,6 +71,10 @@ export function TangkapJatuh({
   disabledRef.current = disabled
   const modeRef = useRef(modeSatuKetukan)
   modeRef.current = modeSatuKetukan
+  const terjedaRef = useRef(terjeda)
+  useEffect(() => {
+    terjedaRef.current = terjeda
+  }, [terjeda])
 
   const totalBenar = objek.filter((o) => o.benar).length
   const lebarKeranjang = modeSatuKetukan ? 34 : 22
@@ -105,6 +112,15 @@ export function TangkapJatuh({
     setJatuh({ ...aktif })
   }
 
+  // Kemunculan objek berikutnya: bila sedang terjeda, tunda sampai jeda selesai.
+  const munculTertunda = (i: number) => {
+    if (terjedaRef.current) {
+      spawnTimerRef.current = window.setTimeout(() => munculTertunda(i), 100)
+      return
+    }
+    munculkan(i)
+  }
+
   const lanjut = () => {
     const i = idxRef.current + 1
     idxRef.current = i
@@ -112,7 +128,7 @@ export function TangkapJatuh({
       akhiri()
       return
     }
-    spawnTimerRef.current = window.setTimeout(() => munculkan(i), intervalMs)
+    spawnTimerRef.current = window.setTimeout(() => munculTertunda(i), intervalMs)
   }
 
   // Loop jatuh (rAF) + kemunculan objek pertama.
@@ -125,6 +141,13 @@ export function TangkapJatuh({
     munculkan(0)
     let terakhir = performance.now()
     const langkah = (t: number) => {
+      // Jeda: bekukan jatuhnya objek — buang dt selama jeda supaya
+      // objek tidak melompat saat lanjut.
+      if (terjedaRef.current) {
+        terakhir = t
+        rafRef.current = requestAnimationFrame(langkah)
+        return
+      }
       const dt = Math.min(100, t - terakhir)
       terakhir = t
       const j = jatuhRef.current

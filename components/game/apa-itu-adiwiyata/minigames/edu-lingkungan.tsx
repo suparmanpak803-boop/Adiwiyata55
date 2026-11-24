@@ -27,6 +27,8 @@ export interface TugasMiniGameProps {
   onStageComplete: (score: number) => void
   /** Bila true, tampilkan versi tombol lama (mode alternatif satu-ketukan). */
   modeSatuKetukan?: boolean
+  /** True saat misi dijeda dari shell: mini-game membekukan timer/interval/rAF-nya. */
+  terjeda?: boolean
 }
 
 type TahapKuis = Extract<TahapTugas, { jenis: 'kuis' }>
@@ -58,10 +60,12 @@ function EduLingkunganGestur({
   tahap,
   spec,
   onStageComplete,
+  terjeda = false,
 }: {
   tahap: TahapKuis
   spec: SpesifikasiInteraksi
   onStageComplete: (score: number) => void
+  terjeda?: boolean
 }) {
   const soal = tahap.soal
   const [skorAkhir, setSkorAkhir] = useState<number | null>(null)
@@ -154,7 +158,7 @@ function EduLingkunganGestur({
       <EfekBenar tampil={efekBenar} />
       <div className="aia-card">
         <span className="aia-kicker">
-          Kader Edu-Lingkungan · Pasangan {cocok} dari {soal.length}
+          Edu-Lingkungan · Pasangan {cocok} dari {soal.length}
         </span>
         <h3 className="aia-section-title" style={{ marginTop: 4 }}>
           <GraduationCap aria-hidden="true" style={{ verticalAlign: '-3px' }} /> {tahap.judul}
@@ -170,6 +174,7 @@ function EduLingkunganGestur({
       )}
       <KartuMemori
         kartu={kartu}
+        terjeda={terjeda}
         onPasangan={onPasangan}
         onSelesai={(skor) => {
           setTunjuk(false)
@@ -245,7 +250,7 @@ function EduLingkunganTombol({ tugasId, stageIndex, onStageComplete }: TugasMini
         <>
           <div className="aia-card">
             <span className="aia-kicker">
-              Kader Edu-Lingkungan · Soal {qIndex + 1} dari {soal.length}
+              Edu-Lingkungan · Soal {qIndex + 1} dari {soal.length}
             </span>
             <h3 className="aia-section-title" style={{ marginTop: 4 }}>
               <GraduationCap aria-hidden="true" style={{ verticalAlign: '-3px' }} /> {tahap.judul}
@@ -360,7 +365,7 @@ function EduLingkunganTombol({ tugasId, stageIndex, onStageComplete }: TugasMini
  * modeSatuKetukan = true menampilkan versi tombol lama.
  * TIDAK disambungkan ke mana pun di sini — agen integrasi yang menyambung.
  */
-export function EduLingkungan({ tugasId, stageIndex, onStageComplete, modeSatuKetukan = false }: TugasMiniGameProps) {
+export function EduLingkungan({ tugasId, stageIndex, onStageComplete, modeSatuKetukan = false, terjeda = false }: TugasMiniGameProps) {
   const konten = KONTEN_TUGAS[tugasId]
   const tahap = konten?.tahapan[stageIndex]
   const spec = INTERAKSI_MISI[tugasId]?.[stageIndex]
@@ -375,5 +380,5 @@ export function EduLingkungan({ tugasId, stageIndex, onStageComplete, modeSatuKe
   if (modeSatuKetukan) {
     return <EduLingkunganTombol key={kunci} tugasId={tugasId} stageIndex={stageIndex} onStageComplete={onStageComplete} />
   }
-  return <EduLingkunganGestur key={kunci} tahap={tahap} spec={spec} onStageComplete={onStageComplete} />
+  return <EduLingkunganGestur key={kunci} tahap={tahap} spec={spec} onStageComplete={onStageComplete} terjeda={terjeda} />
 }

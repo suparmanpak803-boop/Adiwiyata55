@@ -29,6 +29,7 @@ export interface TugasMiniGameSlotProps {
   stageIndex: number
   onStageComplete: (score: number) => void
   modeSatuKetukan?: boolean
+  terjeda?: boolean
 }
 
 /** Bersihkan 'Magi: "..."' menjadi kalimat petunjuk saja. */
@@ -73,6 +74,7 @@ function VersiGestur({
   stageIndex,
   onStageComplete,
   modeSatuKetukan = false,
+  terjeda = false,
 }: TugasMiniGameSlotProps) {
   const tahap = KONTEN_TUGAS[tugasId].tahapan[stageIndex]
   const spek = INTERAKSI_MISI[tugasId]?.[stageIndex]
@@ -125,7 +127,7 @@ function VersiGestur({
       {fase === 'main' && (
         <>
           <div className="aia-card">
-            <span className="aia-kicker">Kader Inovasi Hijau</span>
+            <span className="aia-kicker">Inovasi Hijau</span>
             <h3 className="aia-section-title" style={{ marginTop: 4 }}>
               <Lightbulb aria-hidden="true" style={{ verticalAlign: '-3px' }} /> {judul}
             </h3>
@@ -161,6 +163,7 @@ function VersiGestur({
               key={stageIndex}
               potongan={potongan}
               modeSatuKetukan={modeSatuKetukan}
+              terjeda={terjeda}
               onSelesai={puzzleSelesai}
             />
           </div>
@@ -259,7 +262,7 @@ function VersiTombol({ tugasId, stageIndex, onStageComplete }: TugasMiniGameSlot
       {fase === 'main' && (
         <>
           <div className="aia-card">
-            <span className="aia-kicker">Kader Inovasi Hijau</span>
+            <span className="aia-kicker">Inovasi Hijau</span>
             <h3 className="aia-section-title" style={{ marginTop: 4 }}>
               <Lightbulb aria-hidden="true" style={{ verticalAlign: '-3px' }} /> {tahap.judul}
             </h3>

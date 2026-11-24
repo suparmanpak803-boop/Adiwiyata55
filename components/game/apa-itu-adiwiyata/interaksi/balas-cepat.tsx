@@ -28,6 +28,8 @@ export interface BalasCepatProps {
   waktuPerPesanMs?: number
   modeSatuKetukan?: boolean
   disabled?: boolean
+  /** Jeda: bekukan hitung mundur & tunda lanjut ke pesan berikutnya. */
+  terjeda?: boolean
   onSelesai: (skor: number) => void
 }
 
@@ -36,6 +38,7 @@ export function BalasCepat({
   waktuPerPesanMs = 15000,
   modeSatuKetukan = false,
   disabled = false,
+  terjeda = false,
   onSelesai,
 }: BalasCepatProps) {
   const tanpaWaktu = modeSatuKetukan
@@ -53,6 +56,10 @@ export function BalasCepat({
   const jawabanRef = useRef(jawaban)
   jawabanRef.current = jawaban
   const jedaRef = useRef<number | null>(null)
+  const terjedaRef = useRef(terjeda)
+  useEffect(() => {
+    terjedaRef.current = terjeda
+  }, [terjeda])
 
   useEffect(
     () => () => {
@@ -92,15 +99,28 @@ export function BalasCepat({
     setJawaban(null)
   }
 
+  // Lanjut ke pesan berikutnya: bila sedang terjeda, tunda sampai jeda selesai.
+  const lanjutTertunda = () => {
+    if (terjedaRef.current) {
+      jedaRef.current = window.setTimeout(lanjutTertunda, 100)
+      return
+    }
+    lanjut()
+  }
+
   const jadwalkanLanjut = () => {
     if (jedaRef.current) window.clearTimeout(jedaRef.current)
-    jedaRef.current = window.setTimeout(lanjut, 1400)
+    jedaRef.current = window.setTimeout(lanjutTertunda, 1400)
   }
 
   // Timer hitung mundur per pesan.
   useEffect(() => {
     if (tanpaWaktu || disabled || selesaiRef.current || jawaban) return
-    const id = window.setInterval(() => setSisaMs((s) => Math.max(0, s - 100)), 100)
+    const id = window.setInterval(() => {
+      // Jeda: lewati tick supaya sisa waktu tidak berkurang selama jeda.
+      if (terjedaRef.current) return
+      setSisaMs((s) => Math.max(0, s - 100))
+    }, 100)
     return () => window.clearInterval(id)
   }, [tanpaWaktu, disabled, jawaban, idx])
 

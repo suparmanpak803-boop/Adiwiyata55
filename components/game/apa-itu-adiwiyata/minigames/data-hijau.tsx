@@ -31,6 +31,7 @@ export interface TugasMiniGameSlotProps {
   stageIndex: number
   onStageComplete: (score: number) => void
   modeSatuKetukan?: boolean
+  terjeda?: boolean
 }
 
 /** Bersihkan 'Magi: "..."' menjadi kalimat petunjuk saja. */
@@ -121,6 +122,7 @@ function VersiGestur({
   stageIndex,
   onStageComplete,
   modeSatuKetukan = false,
+  terjeda = false,
 }: TugasMiniGameSlotProps) {
   const tahap = KONTEN_TUGAS[tugasId].tahapan[stageIndex]
   const spek = INTERAKSI_MISI[tugasId]?.[stageIndex]
@@ -233,6 +235,7 @@ function VersiGestur({
               key={stageIndex}
               batang={batang}
               modeSatuKetukan={modeSatuKetukan}
+              terjeda={terjeda}
               onSelesai={grafikSelesai}
             />
           </div>
@@ -263,6 +266,7 @@ function VersiGestur({
               key={stageIndex}
               soal={soalKilat}
               modeSatuKetukan={modeSatuKetukan}
+              terjeda={terjeda}
               onSelesai={kuisSelesai}
             />
           </div>

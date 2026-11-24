@@ -24,6 +24,8 @@ export interface KartuMemoriProps {
   kartu: KartuPasangan[]
   modeSatuKetukan?: boolean
   disabled?: boolean
+  /** Jeda: tunda baliknya kartu yang tidak cocok sampai jeda selesai. */
+  terjeda?: boolean
   onPasangan?: (pasanganId: string) => void
   onSelesai: (skor: number) => void
 }
@@ -36,6 +38,7 @@ export function KartuMemori({
   kartu,
   modeSatuKetukan = false,
   disabled = false,
+  terjeda = false,
   onPasangan,
   onSelesai,
 }: KartuMemoriProps) {
@@ -58,6 +61,10 @@ export function KartuMemori({
   onSelesaiRef.current = onSelesai
   const onPasanganRef = useRef(onPasangan)
   onPasanganRef.current = onPasangan
+  const terjedaRef = useRef(terjeda)
+  useEffect(() => {
+    terjedaRef.current = terjeda
+  }, [terjeda])
 
   const totalPasangan = new Set(kartu.map((k) => k.pasanganId)).size
 
@@ -92,6 +99,15 @@ export function KartuMemori({
     onSelesaiRef.current(skor)
   }
 
+  // Balik kartu yang tidak cocok: bila sedang terjeda, tunda sampai jeda selesai.
+  const balikTertunda = () => {
+    if (terjedaRef.current) {
+      timerRef.current = window.setTimeout(balikTertunda, 100)
+      return
+    }
+    setTerbuka([])
+  }
+
   const balik = (inst: number) => {
     if (disabled || selesaiRef.current) return
     const k = dek.find((d) => d.inst === inst)
@@ -117,7 +133,7 @@ export function KartuMemori({
       salah()
       getar([40, 40, 40])
       if (timerRef.current) window.clearTimeout(timerRef.current)
-      timerRef.current = window.setTimeout(() => setTerbuka([]), kurangi ? 400 : 800)
+      timerRef.current = window.setTimeout(balikTertunda, kurangi ? 400 : 800)
     }
   }
 

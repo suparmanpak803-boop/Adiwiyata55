@@ -42,7 +42,7 @@ export function Misi() {
         </h2>
         <p className="aia-muted">
           Jelajahi sekolah, temui pemberi misi, dan selesaikan 6 misi utama untuk menjadikan sekolahmu
-          Adiwiyata Mandiri — plus 8 Misi Kader dari tim-tim kader yang lain. Misi tidak bisa dimulai dari
+          Adiwiyata Mandiri — plus 8 Misi Tambahan dari tim-tim yang lain. Misi tidak bisa dimulai dari
           daftar ini — temui langsung pemberi misinya di dunia.
         </p>
         <div className="aia-progress-row">
@@ -110,12 +110,12 @@ export function Misi() {
       </section>
 
       <section className="aia-card" aria-labelledby="aia-misi-kader-title">
-        <span className="aia-kicker">Misi Kader · 8 tim kader</span>
+        <span className="aia-kicker">Misi Tambahan · 8 tim</span>
         <h2 id="aia-misi-kader-title" className="aia-section-title">
-          Misi Kader
+          Misi Tambahan
         </h2>
         <p className="aia-muted">
-          Delapan misi penuh dari tim-tim kader yang lain. Semuanya tersedia sejak awal — tidak berantai
+          Delapan misi penuh dari tim-tim yang lain. Semuanya tersedia sejak awal — tidak berantai
           seperti misi utama. Temui pemberi misinya di dunia untuk memulai.
         </p>
         <div className="aia-progress-row">
@@ -125,15 +125,15 @@ export function Misi() {
             aria-valuenow={tugasSelesai}
             aria-valuemin={0}
             aria-valuemax={8}
-            aria-label="Progres Misi Kader"
+            aria-label="Progres Misi Tambahan"
           >
             <span style={{ width: `${(tugasSelesai / 8) * 100}%` }} />
           </div>
-          <span>{tugasSelesai}/8 Misi Kader selesai</span>
+          <span>{tugasSelesai}/8 Misi Tambahan selesai</span>
         </div>
       </section>
 
-      <section aria-label="Daftar Misi Kader">
+      <section aria-label="Daftar Misi Tambahan">
         <div className="aia-bab-grid">
           {TUGAS_ORDER.map((id, index) => {
             const meta = TUGAS[id]
@@ -146,14 +146,14 @@ export function Misi() {
               <article
                 key={id}
                 className={`aia-bab-card statis${status === 'selesai' ? ' done' : ''}`}
-                aria-label={`Misi Kader ${index + 1}: ${meta.judul}, ${labelStatus}`}
+                aria-label={`Misi Tambahan ${index + 1}: ${meta.judul}, ${labelStatus}`}
               >
                 <span className="aia-bab-icon">
                   <Icon aria-hidden="true" />
                 </span>
                 <span className="aia-bab-body">
                   <strong>
-                    Misi Kader {index + 1} · {meta.judul}
+                    Misi Tambahan {index + 1} · {meta.judul}
                   </strong>
                   <p>{meta.deskripsi}</p>
                   <span className="aia-bab-meta">

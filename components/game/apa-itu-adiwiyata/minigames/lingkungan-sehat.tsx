@@ -28,6 +28,8 @@ export interface TugasMiniGameSlotProps {
   onStageComplete: (score: number) => void
   /** Bila true, tampilkan versi tombol lama (mode alternatif satu-ketukan). */
   modeSatuKetukan?: boolean
+  /** True saat misi dijeda dari shell: mini-game membekukan timer/interval/rAF-nya. */
+  terjeda?: boolean
 }
 
 const NYAWA_AWAL = 3
@@ -82,11 +84,13 @@ function InspeksiGestur({
   stageIndex,
   spec,
   onStageComplete,
+  terjeda = false,
 }: {
   tahap: TahapInspeksi
   stageIndex: number
   spec: SpesifikasiInteraksi
   onStageComplete: (score: number) => void
+  terjeda?: boolean
 }) {
   const [temuanSelesai, setTemuanSelesai] = useState<Set<string>>(new Set())
   const [temuanAktif, setTemuanAktif] = useState<number | null>(null)
@@ -102,6 +106,12 @@ function InspeksiGestur({
   const selesaiRef = useRef(false)
   const terkunciRef = useRef(false)
   const timerEfekRef = useRef<number | null>(null)
+  // Jeda: penandaan temuan selesai ditunda selama terjeda.
+  const terjedaRef = useRef(terjeda)
+  const timerLanjutRef = useRef<number | null>(null)
+  useEffect(() => {
+    terjedaRef.current = terjeda
+  }, [terjeda])
   const temuan = tahap.temuan
   const IkonTahap = IKON_TAHAP[stageIndex] ?? Droplets
   const temuanSaatIni = temuanAktif !== null ? temuan[temuanAktif] ?? null : null
@@ -140,6 +150,7 @@ function InspeksiGestur({
   useEffect(
     () => () => {
       if (timerEfekRef.current) window.clearTimeout(timerEfekRef.current)
+      if (timerLanjutRef.current) window.clearTimeout(timerLanjutRef.current)
     },
     [],
   )
@@ -179,7 +190,13 @@ function InspeksiGestur({
       setTunjuk(false)
       kilauBenar()
       setJawabanBenar(temuanSaatIni?.tindakan ?? '')
-      window.setTimeout(() => {
+      // Tandai temuan selesai setelah 550 ms; bila sedang dijeda,
+      // tunda sampai jeda selesai supaya tidak ada kemajuan saat jeda.
+      const maju = () => {
+        if (terjedaRef.current) {
+          timerLanjutRef.current = window.setTimeout(maju, 150)
+          return
+        }
         terkunciRef.current = false
         const baru = new Set(temuanSelesai)
         baru.add(id)
@@ -188,7 +205,8 @@ function InspeksiGestur({
         setPercobaanAktif(0)
         setJawabanBenar(null)
         if (baru.size >= temuan.length) setSelesai(true)
-      }, 550)
+      }
+      timerLanjutRef.current = window.setTimeout(maju, 550)
     } else {
       salah()
       getar([40, 40, 40])
@@ -245,6 +263,7 @@ function InspeksiGestur({
         item={sel}
         beda={bedaIds}
         batasWaktuMs={0}
+        terjeda={terjeda}
         disabled={temuanAktif !== null}
         onTemukan={onTemukan}
         onSelesai={() => {
@@ -568,7 +587,7 @@ function InspeksiSehat({
  * modeSatuKetukan = true menampilkan versi tombol lama.
  * TIDAK disambungkan ke mana pun di sini — agen integrasi yang menyambung.
  */
-export function LingkunganSehat({ tugasId, stageIndex, onStageComplete, modeSatuKetukan = false }: TugasMiniGameSlotProps) {
+export function LingkunganSehat({ tugasId, stageIndex, onStageComplete, modeSatuKetukan = false, terjeda = false }: TugasMiniGameSlotProps) {
   const konten = KONTEN_TUGAS[tugasId]
   const tahap = konten?.tahapan[stageIndex]
   const spec = INTERAKSI_MISI[tugasId]?.[stageIndex]
@@ -583,5 +602,5 @@ export function LingkunganSehat({ tugasId, stageIndex, onStageComplete, modeSatu
   if (modeSatuKetukan) {
     return <InspeksiSehat key={kunci} tahap={tahap} stageIndex={stageIndex} onStageComplete={onStageComplete} />
   }
-  return <InspeksiGestur key={kunci} tahap={tahap} stageIndex={stageIndex} spec={spec} onStageComplete={onStageComplete} />
+  return <InspeksiGestur key={kunci} tahap={tahap} stageIndex={stageIndex} spec={spec} onStageComplete={onStageComplete} terjeda={terjeda} />
 }

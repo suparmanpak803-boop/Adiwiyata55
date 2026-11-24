@@ -132,6 +132,7 @@ export function TasPagi({
   stageIndex,
   onStageComplete,
   modeSatuKetukan = false,
+  terjeda = false,
 }: MiniGameSlotProps & { modeSatuKetukan?: boolean }) {
   const tahap = Math.min(stageIndex, 2)
   const spec = INTERAKSI_MISI['gerbang'][tahap]
@@ -163,6 +164,16 @@ export function TasPagi({
   const dijawabRef = useRef(-1)
   const advanceTimer = useRef<number | null>(null)
   const hasilRef = useRef<{ salahBaru: number; benarPilihan: boolean } | null>(null)
+  // Jeda: bekukan jam. Tiap setTimeout dicatat deadline-nya (Date.now() +
+  // durasi); saat terjeda, timeout dibersihkan dan sisa waktunya disimpan,
+  // lalu dijadwalkan ulang dengan sisa itu saat lanjut — jam tidak maju
+  // selama jeda. File ini tidak punya setInterval/rAF sendiri.
+  const terjedaRef = useRef(terjeda)
+  const advanceDeadlineRef = useRef<number | null>(null)
+  const advanceSisaRef = useRef<number | null>(null)
+  const itemTimerRef = useRef<number | null>(null)
+  const itemDeadlineRef = useRef<number | null>(null)
+  const itemSisaRef = useRef<number | null>(null)
 
   const deck = useMemo(
     () =>
@@ -203,6 +214,9 @@ export function TasPagi({
     if (lanjutRef.current) return
     lanjutRef.current = true
     if (advanceTimer.current) window.clearTimeout(advanceTimer.current)
+    advanceTimer.current = null
+    advanceDeadlineRef.current = null
+    advanceSisaRef.current = null
     const hasil = hasilRef.current
     setUmpan(null)
     setDipilih(false)
@@ -225,6 +239,18 @@ export function TasPagi({
     setResolving(false)
   }
 
+  /** Jadwalkan lanjutkan setelah ms, sambil mencatat deadline untuk jeda. */
+  const jadwalkanLanjut = (ms: number) => {
+    if (advanceTimer.current) window.clearTimeout(advanceTimer.current)
+    advanceDeadlineRef.current = Date.now() + ms
+    advanceSisaRef.current = null
+    advanceTimer.current = window.setTimeout(() => {
+      advanceTimer.current = null
+      advanceDeadlineRef.current = null
+      lanjutkan()
+    }, ms)
+  }
+
   /** Penilaian benar — tanpa SFX (komponen gestur sudah memutarnya sendiri). */
   const resolveBenar = () => {
     if (dijawabRef.current === idx) return
@@ -241,7 +267,7 @@ export function TasPagi({
     lanjutRef.current = false
     hasilRef.current = { salahBaru: salahHitung, benarPilihan: true }
     setUmpan({ jenis: 'benar', teks: barang.penjelasan, poin })
-    advanceTimer.current = window.setTimeout(lanjutkan, 1600)
+    jadwalkanLanjut(1600)
   }
 
   /** Penilaian salah — tanpa SFX (pemanggil yang memutarnya). */
@@ -255,7 +281,7 @@ export function TasPagi({
     lanjutRef.current = false
     hasilRef.current = { salahBaru, benarPilihan: false }
     setUmpan({ jenis: 'salah', teks })
-    advanceTimer.current = window.setTimeout(lanjutkan, 3200)
+    jadwalkanLanjut(3200)
   }
 
   /** Hasil lari TangkapJatuh (tahap 1-2 gestur): skor akhir 0-100 dari pustaka. */
@@ -305,22 +331,72 @@ export function TasPagi({
     }
   }
 
-  // Batas waktu tiap barang: habis = dianggap salah (meter naik).
+  /** Batas waktu tiap barang habis = dianggap salah (meter naik). */
+  const waktuHabis = () => {
+    itemTimerRef.current = null
+    itemDeadlineRef.current = null
+    const barang = saatIni?.barang
+    if (!barang) return
+    salah()
+    getar([40, 40, 40])
+    resolveSalah(
+      `Waktu habis! ${barang.nama} seharusnya masuk ${barang.benar ? 'Tas' : 'Tinggalkan'}. ${barang.penjelasan}`,
+    )
+  }
+
+  // Batas waktu tiap barang.
   // Tidak berlaku di tahap 1-2 gestur — TangkapJatuh mengatur waktunya sendiri.
   useEffect(() => {
     if (gestur) return
     if (fase !== 'main' || resolving || !saatIni) return
-    const id = window.setTimeout(() => {
-      const barang = saatIni.barang
-      salah()
-      getar([40, 40, 40])
-      resolveSalah(
-        `Waktu habis! ${barang.nama} seharusnya masuk ${barang.benar ? 'Tas' : 'Tinggalkan'}. ${barang.penjelasan}`,
-      )
-    }, durasi)
-    return () => window.clearTimeout(id)
+    itemDeadlineRef.current = Date.now() + durasi
+    itemSisaRef.current = null
+    const id = window.setTimeout(waktuHabis, durasi)
+    itemTimerRef.current = id
+    return () => {
+      window.clearTimeout(id)
+      if (itemTimerRef.current === id) itemTimerRef.current = null
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fase, resolving, idx, timerKey, durasi, gestur])
+
+  // Bekukan jam saat terjeda: bersihkan timeout yang sedang berjalan dan
+  // simpan sisa waktunya; saat lanjut, jadwalkan ulang dengan sisa itu.
+  // Jam internal TangkapJatuh/ThrowAim/DragDrop dibekukan lewat prop terjeda
+  // yang diteruskan ke mereka.
+  useEffect(() => {
+    terjedaRef.current = terjeda
+    if (terjeda) {
+      if (advanceTimer.current !== null && advanceDeadlineRef.current !== null) {
+        window.clearTimeout(advanceTimer.current)
+        advanceTimer.current = null
+        advanceSisaRef.current = Math.max(0, advanceDeadlineRef.current - Date.now())
+      }
+      if (itemTimerRef.current !== null && itemDeadlineRef.current !== null) {
+        window.clearTimeout(itemTimerRef.current)
+        itemTimerRef.current = null
+        itemSisaRef.current = Math.max(0, itemDeadlineRef.current - Date.now())
+      }
+      return
+    }
+    if (advanceSisaRef.current !== null && advanceTimer.current === null) {
+      const sisa = advanceSisaRef.current
+      advanceSisaRef.current = null
+      advanceDeadlineRef.current = Date.now() + sisa
+      advanceTimer.current = window.setTimeout(() => {
+        advanceTimer.current = null
+        advanceDeadlineRef.current = null
+        lanjutkan()
+      }, sisa)
+    }
+    if (itemSisaRef.current !== null && itemTimerRef.current === null) {
+      const sisa = itemSisaRef.current
+      itemSisaRef.current = null
+      itemDeadlineRef.current = Date.now() + sisa
+      itemTimerRef.current = window.setTimeout(waktuHabis, sisa)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [terjeda])
 
   const cobaLagi = (mudah: boolean) => {
     if (mudah) setModeMudah(true)
@@ -338,6 +414,8 @@ export function TasPagi({
     dijawabRef.current = -1
     lanjutRef.current = false
     hasilRef.current = null
+    advanceSisaRef.current = null
+    itemSisaRef.current = null
     setTimerKey((k) => k + 1)
     setFase('main')
   }
@@ -398,6 +476,7 @@ export function TasPagi({
               .map((teks, i) => ({ id: `opsi-${i}`, label: teks }))
               .filter((_, i) => i !== soal.jawabanIndex)}
             disabled={pilihan !== null}
+            terjeda={terjeda}
             onBenar={() => jawabTebak(soal.jawabanIndex, false)}
             onSalah={(_bendaId, targetId) => {
               const i = targetId ? Number(targetId.replace('opsi-', '')) : -1
@@ -488,6 +567,7 @@ export function TasPagi({
             // Di TangkapJatuh, prop ini berarti jatuh lebih pelan + keranjang
             // lebih lebar — dipakai sebagai mode mudah, bukan mode satu-ketukan.
             modeSatuKetukan={modeMudah}
+            terjeda={terjeda}
             onSelesai={tangkapSelesai}
           />
           {modeMudah && (
@@ -553,7 +633,7 @@ export function TasPagi({
               className="aia-tp-timer-fill"
               style={{
                 animationDuration: `${durasi}ms`,
-                animationPlayState: resolving ? 'paused' : 'running',
+                animationPlayState: resolving || terjeda ? 'paused' : 'running',
               }}
             />
           </div>
@@ -608,6 +688,7 @@ export function TasPagi({
                   ikon={<IkonBarang aria-hidden="true" style={{ width: 28, height: 28 }} />}
                   targetLabel={aim === 'tinggalkan' ? 'Tinggalkan' : 'Tas'}
                   disabled={aim === null || resolving}
+                  terjeda={terjeda}
                   onLempar={(kekuatan) => lemparHasil(kekuatan)}
                 />
               </>

@@ -35,7 +35,7 @@ const LABEL_MEKANIK: Record<string, string> = {
   air: 'air dan energi',
 }
 
-function InspeksiTombol({ stageIndex, onStageComplete }: MiniGameSlotProps) {
+function InspeksiTombol({ stageIndex, onStageComplete, terjeda = false }: MiniGameSlotProps) {
   const soal = useMemo(
     () => SOAL_INSPEKSI.slice(stageIndex * 4, stageIndex * 4 + 4),
     [stageIndex],
@@ -65,13 +65,19 @@ function InspeksiTombol({ stageIndex, onStageComplete }: MiniGameSlotProps) {
 
   // Timer: tiap detik berkurang; 5 detik terakhir bunyi tik
   // (makin cepat di 3 detik terakhir). Berhenti saat sudah dijawab.
+  // Saat terjeda, timeout yang tertunda dibersihkan (cleanup efek) dan
+  // tidak ada timeout baru yang dijadwalkan — hitung mundur membeku.
+  // Saat lanjut, efek jalan lagi dan menjadwalkan 1 detik penuh yang baru
+  // (hitung mundur diskret per detik, jadi tidak ada baseline yang
+  // perlu digeser).
   useEffect(() => {
     if (fase !== 'main' || dijawab) return
+    if (terjeda) return
     if (waktu <= 0) return
     if (waktu <= 5) tik(waktu <= 3)
     const id = setTimeout(() => setWaktu((w) => Math.max(0, w - 1)), 1000)
     return () => clearTimeout(id)
-  }, [waktu, fase, dijawab])
+  }, [waktu, fase, dijawab, terjeda])
 
   // Waktu habis: dianggap salah, nyawa berkurang, penjelasan tampil.
   useEffect(() => {
@@ -353,9 +359,11 @@ function InspeksiTombol({ stageIndex, onStageComplete }: MiniGameSlotProps) {
 function InspeksiGestur({
   stageIndex,
   onSelesai,
+  terjeda = false,
 }: {
   stageIndex: number
   onSelesai: (score: number) => void
+  terjeda?: boolean
 }) {
   const soal = useMemo(
     () =>
@@ -410,7 +418,9 @@ function InspeksiGestur({
         </div>
       )}
 
-      {fase === 'main' && <KuisKilat soal={soal} waktuPerSoalMs={10000} onSelesai={kuisSelesai} />}
+      {fase === 'main' && (
+        <KuisKilat soal={soal} waktuPerSoalMs={10000} terjeda={terjeda} onSelesai={kuisSelesai} />
+      )}
 
       {fase === 'selesai' && (
         <div className="aia-card aia-pos-hijau">
@@ -437,6 +447,7 @@ export function Inspeksi({
   stageIndex,
   onStageComplete,
   modeSatuKetukan = false,
+  terjeda = false,
 }: MiniGameSlotProps & { modeSatuKetukan?: boolean }) {
   const selesaiRef = useRef(false)
   const selesai = useCallback(
@@ -454,8 +465,9 @@ export function Inspeksi({
         chapterId={chapterId}
         stageIndex={stageIndex}
         onStageComplete={selesai}
+        terjeda={terjeda}
       />
     )
   }
-  return <InspeksiGestur stageIndex={stageIndex} onSelesai={selesai} />
+  return <InspeksiGestur stageIndex={stageIndex} onSelesai={selesai} terjeda={terjeda} />
 }

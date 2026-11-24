@@ -1,11 +1,13 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Home, Pause, Play, Volume2, VolumeX } from 'lucide-react'
+import { LogOut, Pause, Play, Volume2, VolumeX } from 'lucide-react'
 import { BINS, WASTE_ITEMS, type Bin } from '@/lib/waste-items'
-import { SessionShell, useGameSession } from './game-session'
+import { useCampaign } from '@/lib/apa-itu-adiwiyata/context'
+import { koinTangkapSampah } from '@/lib/apa-itu-adiwiyata/arkade'
 
 const W = 360, H = 480, BASKET_W = 84, BASKET_Y = H - 34
+const DURASI_DETIK = 60
 type Falling = { x: number; y: number; vy: number; name: string; bin: Bin }
 
 // Suara dibuat dengan Web Audio API (tanpa file audio): nada pendek untuk
@@ -55,26 +57,55 @@ function useGameSound() {
   return { muted, toggleMuted, playCatch, playFail, playStart, playEnd }
 }
 
+/**
+ * Tangkap Sampah — game arkade di dunia kampanye, dibuka lewat NPC Kak Yoga.
+ * Sesi sepenuhnya lokal (tanpa server): skor diubah jadi Koin Hijau oleh
+ * runner lewat onFinished, dan skor terbaik tersimpan di save kampanye.
+ */
 export function TangkapSampah({ onExit, onFinished }: { onExit: () => void; onFinished: (score: number) => void }) {
-  const session = useGameSession('tangkap_sampah', onFinished)
-  const { phase, duration, start, push, finish } = session
+  const { save } = useCampaign()
   const canvas = useRef<HTMLCanvasElement>(null)
-  const [hud, setHud] = useState({ score: 0, lives: 3, bin: BINS[0].label, left: 60 })
-  const [stage, setStage] = useState<'tutorial' | 'main'>('tutorial')
+  const [hud, setHud] = useState({ score: 0, lives: 3, bin: BINS[0].label, left: DURASI_DETIK })
+  const [stage, setStage] = useState<'judul' | 'main' | 'selesai'>('judul')
   const [paused, setPaused] = useState(false)
+  const [skorAkhir, setSkorAkhir] = useState(0)
+  const [terbaikLama, setTerbaikLama] = useState(0)
   const pausedRef = useRef(false)
+  const rondeRef = useRef(0)
+  const [ronde, setRonde] = useState(0)
+  const selesaiRef = useRef(false)
+  const onFinishedRef = useRef(onFinished)
+  onFinishedRef.current = onFinished
+  const saveRef = useRef(save)
+  saveRef.current = save
   const sound = useGameSound()
+
+  // Selesai lokal: dipanggil tepat satu kali per ronde — simpan skor akhir,
+  // tampilkan layar hasil, dan beri tahu runner (koin + rekor terbaik).
+  const finishLocal = useCallback((score: number) => {
+    if (selesaiRef.current) return
+    selesaiRef.current = true
+    setTerbaikLama(saveRef.current.arkade?.tangkap ?? 0)
+    setSkorAkhir(score)
+    sound.playEnd()
+    setStage('selesai')
+    onFinishedRef.current(score)
+  }, [sound.playEnd])
 
   const mulaiMain = () => {
     sound.playStart()
+    selesaiRef.current = false
+    pausedRef.current = false
+    setPaused(false)
+    rondeRef.current += 1
+    setRonde(rondeRef.current)
     setStage('main')
-    void start()
   }
   const jeda = () => { pausedRef.current = true; setPaused(true) }
   const lanjut = () => { pausedRef.current = false; setPaused(false) }
 
   useEffect(() => {
-    if (phase !== 'main') return
+    if (stage !== 'main') return
     const el = canvas.current
     const ctx = el?.getContext('2d')
     if (!el || !ctx) return
@@ -83,15 +114,15 @@ export function TangkapSampah({ onExit, onFinished }: { onExit: () => void; onFi
     let nextBinAt = 15, nextSpawn = 0.6, lastFrame = performance.now()
     let score = 0, streak = 0, lives = 3, ended = false, raf = 0
     const items: Falling[] = []
-    setHud({ score: 0, lives: 3, bin: BINS[activeIndex].label, left: duration })
+    setHud({ score: 0, lives: 3, bin: BINS[activeIndex].label, left: DURASI_DETIK })
 
     const fail = () => {
       sound.playFail()
-      push({ ok: false }); streak = 0; lives -= 1
+      streak = 0; lives -= 1
       setHud((h) => ({ ...h, lives }))
       if (lives <= 0) end()
     }
-    const end = () => { if (ended) return; ended = true; cancelAnimationFrame(raf); sound.playEnd(); void finish() }
+    const end = () => { if (ended) return; ended = true; cancelAnimationFrame(raf); finishLocal(score) }
 
     const move = (event: PointerEvent) => {
       const rect = el.getBoundingClientRect()
@@ -136,7 +167,7 @@ export function TangkapSampah({ onExit, onFinished }: { onExit: () => void; onFi
         return
       }
       const elapsed = (Date.now() - startTime) / 1000
-      if (elapsed >= duration) return end()
+      if (elapsed >= DURASI_DETIK) return end()
       if (elapsed >= nextBinAt) {
         let next = activeIndex
         while (next === activeIndex) next = Math.floor(Math.random() * BINS.length)
@@ -162,7 +193,7 @@ export function TangkapSampah({ onExit, onFinished }: { onExit: () => void; onFi
           if (item.bin === active.id) {
             streak += 1; score += 10 + Math.min(streak - 1, 5) * 2
             sound.playCatch()
-            push({ ok: true }); setHud((h) => ({ ...h, score }))
+            setHud((h) => ({ ...h, score }))
           } else fail()
         } else if (item.y > H + 10) {
           items.splice(i, 1)
@@ -172,7 +203,7 @@ export function TangkapSampah({ onExit, onFinished }: { onExit: () => void; onFi
       }
 
       draw()
-      setHud((h) => { const left = Math.max(0, Math.ceil(duration - elapsed)); return h.left === left ? h : { ...h, left } })
+      setHud((h) => { const left = Math.max(0, Math.ceil(DURASI_DETIK - elapsed)); return h.left === left ? h : { ...h, left } })
       raf = requestAnimationFrame(frame)
     }
     raf = requestAnimationFrame(frame)
@@ -181,43 +212,62 @@ export function TangkapSampah({ onExit, onFinished }: { onExit: () => void; onFi
       el.removeEventListener('pointermove', move); el.removeEventListener('pointerdown', move)
       window.removeEventListener('keydown', keyDown); window.removeEventListener('keyup', keyUp)
     }
-  }, [phase, duration, push, finish, sound.playCatch, sound.playFail, sound.playEnd])
+  }, [stage, ronde, finishLocal, sound.playCatch, sound.playFail])
 
-  if (stage === 'tutorial') {
+  if (stage === 'judul') {
     return (
-      <section className="game-stage" aria-labelledby="tangkap-tutorial-title">
-        <h2 id="tangkap-tutorial-title">Cara main Tangkap Sampah</h2>
+      <section className="game-stage" aria-labelledby="tangkap-judul">
+        <h2 id="tangkap-judul">Tangkap Sampah</h2>
+        <p className="game-hint">Tangkap sampah yang jatuh dan masukkan ke bak yang tepat sebelum waktu habis.</p>
         <ol className="game-tutorial">
           <li>Sampah jatuh dari atas layar. Geser keranjang dengan mouse, sentuhan, atau tombol panah kiri dan kanan.</li>
           <li>Tangkap hanya sampah jenis yang tertulis di keranjang: Organik, Anorganik, Kertas, Residu, atau B3.</li>
           <li>Tangkapan benar menambah skor (beruntun makin besar). Tangkapan salah, atau sampah yang diminta lolos, mengurangi 1 nyawa.</li>
-          <li>Kamu punya 3 nyawa. Kumpulkan skor sebanyak-banyaknya sebelum waktu habis.</li>
+          <li>Kamu punya 3 nyawa dan waktu 60 detik. Kumpulkan skor sebanyak-banyaknya.</li>
         </ol>
         <div className="game-actions">
-          <button type="button" className="game-play" onClick={mulaiMain}><Play aria-hidden="true" /> Mulai main</button>
-          <button type="button" className="game-ghost" onClick={onExit}>Kembali ke menu</button>
+          <button type="button" className="game-play" style={{ minHeight: 44 }} onClick={mulaiMain}><Play aria-hidden="true" /> Mulai main</button>
+          <button type="button" className="game-ghost" style={{ minHeight: 44 }} onClick={onExit}>Kembali ke dunia</button>
+        </div>
+      </section>
+    )
+  }
+
+  if (stage === 'selesai') {
+    const koin = koinTangkapSampah(skorAkhir)
+    const rekorBaru = skorAkhir > terbaikLama
+    return (
+      <section className="game-stage" aria-labelledby="tangkap-selesai">
+        <h2 id="tangkap-selesai">Permainan selesai</h2>
+        <p className="game-big">Skor {skorAkhir}</p>
+        <p className="game-hint">Kamu mendapat <b>+{koin} Koin Hijau</b>.</p>
+        <p className="game-hint">
+          Rekor terbaik: <b>{Math.max(terbaikLama, skorAkhir)}</b>
+          {rekorBaru && ' — Rekor baru!'}
+        </p>
+        <div className="game-actions">
+          <button type="button" className="game-play" style={{ minHeight: 44 }} onClick={mulaiMain}><Play aria-hidden="true" /> Main lagi</button>
+          <button type="button" className="game-ghost" style={{ minHeight: 44 }} onClick={onExit}>Kembali ke dunia</button>
         </div>
       </section>
     )
   }
 
   return (
-    <SessionShell session={session} onExit={onExit} title="Permainan selesai">
-      <section className="game-stage">
-        <div className="game-hud"><span>Skor <b>{hud.score}</b></span><span>Nyawa <b>{hud.lives}</b></span><span>Waktu <b>{hud.left}s</b></span></div>
-        <p className="game-hint">Tangkap sampah jenis <b>{hud.bin}</b>. Geser keranjang dengan mouse, sentuhan, atau tombol panah.</p>
-        <div className="game-controls">
-          {paused
-            ? <button type="button" className="game-play" onClick={lanjut}><Play aria-hidden="true" /> Lanjutkan</button>
-            : <button type="button" className="game-play" onClick={jeda}><Pause aria-hidden="true" /> Jeda</button>}
-          <button type="button" className="game-ghost" onClick={onExit}><Home aria-hidden="true" /> Menu</button>
-          <button type="button" className="game-ghost" onClick={sound.toggleMuted} aria-pressed={sound.muted}>{sound.muted ? <VolumeX aria-hidden="true" /> : <Volume2 aria-hidden="true" />} {sound.muted ? 'Suara mati' : 'Suara nyala'}</button>
-        </div>
-        <div className="game-canvas-wrap">
-          <canvas ref={canvas} width={W} height={H} className="game-canvas" aria-label="Area permainan Tangkap Sampah" />
-          {paused && <div className="game-paused-overlay" role="status"><strong>Jeda</strong><span>Ketuk Lanjutkan untuk bermain lagi.</span></div>}
-        </div>
-      </section>
-    </SessionShell>
+    <section className="game-stage">
+      <div className="game-hud"><span>Skor <b>{hud.score}</b></span><span>Nyawa <b>{hud.lives}</b></span><span>Waktu <b>{hud.left}s</b></span></div>
+      <p className="game-hint">Tangkap sampah jenis <b>{hud.bin}</b>. Geser keranjang dengan mouse, sentuhan, atau tombol panah.</p>
+      <div className="game-controls">
+        {paused
+          ? <button type="button" className="game-play" style={{ minHeight: 44 }} onClick={lanjut}><Play aria-hidden="true" /> Lanjutkan</button>
+          : <button type="button" className="game-play" style={{ minHeight: 44 }} onClick={jeda}><Pause aria-hidden="true" /> Jeda</button>}
+        <button type="button" className="game-ghost" style={{ minHeight: 44 }} onClick={onExit}><LogOut aria-hidden="true" /> Keluar</button>
+        <button type="button" className="game-ghost" style={{ minHeight: 44 }} onClick={sound.toggleMuted} aria-pressed={sound.muted}>{sound.muted ? <VolumeX aria-hidden="true" /> : <Volume2 aria-hidden="true" />} {sound.muted ? 'Suara mati' : 'Suara nyala'}</button>
+      </div>
+      <div className="game-canvas-wrap">
+        <canvas ref={canvas} width={W} height={H} className="game-canvas" aria-label="Area permainan Tangkap Sampah" />
+        {paused && <div className="game-paused-overlay" role="status"><strong>Jeda</strong><span>Ketuk Lanjutkan untuk bermain lagi.</span></div>}
+      </div>
+    </section>
   )
 }

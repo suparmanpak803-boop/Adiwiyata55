@@ -193,7 +193,13 @@ const TARGET_MUDAH = 7
 const WAKTU_NORMAL = 30
 const WAKTU_MUDAH = 40
 
-function TampungHujan({ onSelesai }: { onSelesai: (score: number) => void }) {
+function TampungHujan({
+  onSelesai,
+  terjeda = false,
+}: {
+  onSelesai: (score: number) => void
+  terjeda?: boolean
+}) {
   const [fase, setFase] = useState<'main' | 'selesai' | 'gagal'>('main')
   const [mudah, setMudah] = useState(false)
   const [gagal, setGagal] = useState(0)
@@ -201,6 +207,12 @@ function TampungHujan({ onSelesai }: { onSelesai: (score: number) => void }) {
   const [tertangkap, setTertangkap] = useState(0)
   const [tangkiX, setTangkiX] = useState(140)
   const [, setRender] = useState(0)
+
+  // Jeda: bekukan loop tetes dan hitung mundur selama terjeda.
+  const terjedaRef = useRef(false)
+  useEffect(() => {
+    terjedaRef.current = terjeda
+  }, [terjeda])
 
   const target = mudah ? TARGET_MUDAH : TARGET_NORMAL
   const lebarTangki = mudah ? 96 : 72
@@ -219,6 +231,7 @@ function TampungHujan({ onSelesai }: { onSelesai: (score: number) => void }) {
   useEffect(() => {
     if (fase !== 'main') return
     const id = setInterval(() => {
+      if (terjedaRef.current) return // jeda: tetes membeku di tempat
       const area = areaRef.current
       const lebar = area ? area.clientWidth : 360
       spawnRef.current += 1
@@ -254,10 +267,13 @@ function TampungHujan({ onSelesai }: { onSelesai: (score: number) => void }) {
     return () => clearInterval(id)
   }, [fase, lebarTangki])
 
-  // Timer 1 detik.
+  // Timer 1 detik (beku saat terjeda).
   useEffect(() => {
     if (fase !== 'main') return
-    const id = setInterval(() => setWaktu((w) => Math.max(0, w - 1)), 1000)
+    const id = setInterval(() => {
+      if (terjedaRef.current) return
+      setWaktu((w) => Math.max(0, w - 1))
+    }, 1000)
     return () => clearInterval(id)
   }, [fase])
 
@@ -699,9 +715,11 @@ function CariBoros({ onSelesai }: { onSelesai: (score: number) => void }) {
 function BioporiGestur({
   onSelesai,
   modeSatuKetukan,
+  terjeda = false,
 }: {
   onSelesai: (score: number) => void
   modeSatuKetukan?: boolean
+  terjeda?: boolean
 }) {
   const [selesai, setSelesai] = useState(0)
   const tuntas = selesai >= JUMLAH_LUBANG
@@ -754,6 +772,7 @@ function BioporiGestur({
             sudutTarget={360}
             ikon={<Shovel aria-hidden="true" />}
             modeSatuKetukan={modeSatuKetukan}
+            terjeda={terjeda}
             onSelesai={() => {
               setSelesai((s) => s + 1)
               siram()
@@ -817,9 +836,11 @@ function skorPipa(totalPutaran: number): number {
 function TampungHujanGestur({
   onSelesai,
   modeSatuKetukan,
+  terjeda = false,
 }: {
   onSelesai: (score: number) => void
   modeSatuKetukan?: boolean
+  terjeda?: boolean
 }) {
   const [fase, setFase] = useState<'main' | 'selesai'>('main')
   const [putaran, setPutaran] = useState(0)
@@ -858,6 +879,7 @@ function TampungHujanGestur({
           awal={{ baris: 0, kolom: 0, dari: 'atas' }}
           akhir={{ baris: 2, kolom: 2 }}
           modeSatuKetukan={modeSatuKetukan}
+          terjeda={terjeda}
           onSelesai={aliranTersambung}
           onPutar={catatPutaran}
         />
@@ -897,7 +919,13 @@ const LABEL_PENDEK: Record<string, string> = {
   'keran-toilet': 'Keran',
 }
 
-function CariBorosGestur({ onSelesai }: { onSelesai: (score: number) => void }) {
+function CariBorosGestur({
+  onSelesai,
+  terjeda = false,
+}: {
+  onSelesai: (score: number) => void
+  terjeda?: boolean
+}) {
   const [ditemukan, setDitemukan] = useState<ReadonlySet<string>>(new Set())
   const [pesan, setPesan] = useState<string | null>(null)
   const [tuntas, setTuntas] = useState(false)
@@ -959,6 +987,7 @@ function CariBorosGestur({ onSelesai }: { onSelesai: (score: number) => void }) 
       {!tuntas && (
         <HiddenObject
           objek={objek}
+          terjeda={terjeda}
           onTemukan={temukan}
           onSelesai={(semua) => {
             if (semua) setTuntas(true)
@@ -999,6 +1028,7 @@ export function AirEnergi({
   stageIndex,
   onStageComplete,
   modeSatuKetukan = false,
+  terjeda = false,
 }: MiniGameSlotProps & { modeSatuKetukan?: boolean }) {
   const selesaiRef = useRef(false)
   const selesai = useCallback(
@@ -1012,12 +1042,14 @@ export function AirEnergi({
 
   if (modeSatuKetukan) {
     if (stageIndex === 0) return <Biopori onSelesai={selesai} />
-    if (stageIndex === 1) return <TampungHujan onSelesai={selesai} />
+    if (stageIndex === 1) return <TampungHujan onSelesai={selesai} terjeda={terjeda} />
     if (stageIndex === 2) return <CariBoros onSelesai={selesai} />
   } else {
-    if (stageIndex === 0) return <BioporiGestur onSelesai={selesai} modeSatuKetukan={modeSatuKetukan} />
-    if (stageIndex === 1) return <TampungHujanGestur onSelesai={selesai} modeSatuKetukan={modeSatuKetukan} />
-    if (stageIndex === 2) return <CariBorosGestur onSelesai={selesai} />
+    if (stageIndex === 0)
+      return <BioporiGestur onSelesai={selesai} modeSatuKetukan={modeSatuKetukan} terjeda={terjeda} />
+    if (stageIndex === 1)
+      return <TampungHujanGestur onSelesai={selesai} modeSatuKetukan={modeSatuKetukan} terjeda={terjeda} />
+    if (stageIndex === 2) return <CariBorosGestur onSelesai={selesai} terjeda={terjeda} />
   }
   return (
     <div className="aia-card">

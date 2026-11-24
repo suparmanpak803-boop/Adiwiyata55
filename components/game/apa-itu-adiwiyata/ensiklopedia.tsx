@@ -83,7 +83,7 @@ export function Ensiklopedia() {
                 </div>
                 {sedangDibuka && isiPanjang && (
                   <p className="aia-muted" style={{ marginTop: 8 }}>
-                    Ingat intinya: {kartu.ringkasan} Kalau mau tahu lebih banyak, tanyakan ke kader
+                    Ingat intinya: {kartu.ringkasan} Kalau mau tahu lebih banyak, tanyakan ke tim
                     Adiwiyata di sekolahmu atau cari di perpustakaan sekolah.
                   </p>
                 )}

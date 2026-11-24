@@ -69,6 +69,8 @@ interface PropsGestur {
   onSalah: () => void
   /** True setelah 2 kali salah — target membesar. */
   perbesarTarget: boolean
+  /** True saat misi dijeda: jam/timer fase dibekukan, diteruskan ke pustaka interaksi. */
+  terjeda?: boolean
 }
 
 function TombolBisukan() {
@@ -363,7 +365,7 @@ function FaseLapis({
 // (carryover) tetap dua langkah seperti versi lama — tambah bahan cokelat lalu
 // aduk — keduanya kini TapSpam supaya tidak ada lagi DragDrop di file ini.
 
-function FaseLapisGestur({ tambahSkor, onSelesai, perbesarTarget }: PropsGestur) {
+function FaseLapisGestur({ tambahSkor, onSelesai, perbesarTarget, terjeda = false }: PropsGestur) {
   const { save, dispatch } = useCampaign()
   const spec = INTERAKSI_MISI.kompos[0]
   const [perluPerbaikan, setPerluPerbaikan] = useState(save.carryover.komposBau)
@@ -428,6 +430,7 @@ function FaseLapisGestur({ tambahSkor, onSelesai, perbesarTarget }: PropsGestur)
               label="Tambah bahan cokelat"
               jumlahKetukan={5}
               ikon={<Leaf aria-hidden="true" />}
+              terjeda={terjeda}
               onSelesai={perbaikiCokelatSelesai}
             />
           ) : (
@@ -435,6 +438,7 @@ function FaseLapisGestur({ tambahSkor, onSelesai, perbesarTarget }: PropsGestur)
               label="Aduk kompos"
               jumlahKetukan={5}
               ikon={<RefreshCw aria-hidden="true" />}
+              terjeda={terjeda}
               onSelesai={perbaikiAdukSelesai}
             />
           )}
@@ -453,6 +457,7 @@ function FaseLapisGestur({ tambahSkor, onSelesai, perbesarTarget }: PropsGestur)
             lapisan={URUTAN_LAPIS}
             modeSatuKetukan={perbesarTarget}
             disabled={selesai}
+            terjeda={terjeda}
             onSelesai={selesaiMenara}
           />
         </>
@@ -673,7 +678,7 @@ function FaseTanaman({
 
 const SKOR_RONDE_RAWAT = [34, 33, 33]
 
-function FaseTanamanGestur({ tambahSkor, onSelesai, onGagal, onSalah, perbesarTarget }: PropsGestur) {
+function FaseTanamanGestur({ tambahSkor, onSelesai, onGagal, onSalah, perbesarTarget, terjeda = false }: PropsGestur) {
   const { save, dispatch } = useCampaign()
   const spec = INTERAKSI_MISI.kompos[1]
   const sehatAwal = save.carryover.kebunLayu ? 2 : 3
@@ -797,6 +802,7 @@ function FaseTanamanGestur({ tambahSkor, onSelesai, onGagal, onSalah, perbesarTa
           tempoBpm={80}
           modeSatuKetukan={perbesarTarget}
           disabled={terkunci}
+          terjeda={terjeda}
           onSelesai={selesaiRonde}
         />
       )}
@@ -827,15 +833,31 @@ const OBJEK_PANEN: ObjekPanen[] = [
 
 // ------------------------------------------- Versi tombol (mode satu-ketukan) ----
 
-function FasePanenSayur({ tambahSkor, onSelesai }: { tambahSkor: (n: number) => void; onSelesai: () => void }) {
+function FasePanenSayur({
+  tambahSkor,
+  onSelesai,
+  terjeda = false,
+}: {
+  tambahSkor: (n: number) => void
+  onSelesai: () => void
+  /** True saat misi dijeda: pematangan sayur dibekukan. */
+  terjeda?: boolean
+}) {
   const [matang, setMatang] = useState(0)
   const [dipanen, setDipanen] = useState<number[]>([])
   const [selesaiPanen, setSelesaiPanen] = useState(false)
   const [pesan, setPesan] = useState<string | null>('Sayur sedang tumbuh. Tunggu sampai matang, lalu ketuk untuk memanen.')
+  // Cermin terjeda untuk dibaca di dalam tick interval (hindari closure basi).
+  const terjedaRef = useRef(terjeda)
+
+  useEffect(() => {
+    terjedaRef.current = terjeda
+  }, [terjeda])
 
   useEffect(() => {
     if (matang >= SAYUR.length) return
     const t = setInterval(() => {
+      if (terjedaRef.current) return
       setMatang((m) => {
         if (m >= SAYUR.length) return m
         tumbuh()
@@ -926,7 +948,7 @@ function FasePanenSayur({ tambahSkor, onSelesai }: { tambahSkor: (n: number) => 
 // matang (12 giliran, 6 sayur matang + 3 pengecoh belum matang). Skor akhir
 // PanenKetuk (0–100) dipakai langsung sebagai skor tahap.
 
-function FasePanenGestur({ tambahSkor, onSelesai, perbesarTarget }: PropsGestur) {
+function FasePanenGestur({ tambahSkor, onSelesai, perbesarTarget, terjeda = false }: PropsGestur) {
   const spec = INTERAKSI_MISI.kompos[2]
   const [selesaiPanen, setSelesaiPanen] = useState(false)
   const [skorPanen, setSkorPanen] = useState<number | null>(null)
@@ -966,6 +988,7 @@ function FasePanenGestur({ tambahSkor, onSelesai, perbesarTarget }: PropsGestur)
             giliranMs={2500}
             jumlahGiliran={12}
             modeSatuKetukan={perbesarTarget}
+            terjeda={terjeda}
             onSelesai={selesaiKetuk}
           />
         </>
@@ -1003,6 +1026,7 @@ export function KomposKebun({
   stageIndex,
   onStageComplete,
   modeSatuKetukan = false,
+  terjeda = false,
 }: MiniGameSlotProps & { modeSatuKetukan?: boolean }) {
   const { save, dispatch } = useCampaign()
   // Fase = tahap yang sedang dimainkan (dipilih kerangka bab).
@@ -1085,7 +1109,7 @@ export function KomposKebun({
         ) : fase === 1 ? (
           <FaseTanaman key={`tanaman-${percobaan}`} mudah={mudah} tambahSkor={tambahSkor} onSelesai={selesaiFase} onGagal={gagalFase} />
         ) : (
-          <FasePanenSayur key={`panen-${percobaan}`} tambahSkor={tambahSkor} onSelesai={selesaiFase} />
+          <FasePanenSayur key={`panen-${percobaan}`} tambahSkor={tambahSkor} onSelesai={selesaiFase} terjeda={terjeda} />
         )
       ) : fase === 0 ? (
         <FaseLapisGestur
@@ -1095,6 +1119,7 @@ export function KomposKebun({
           onGagal={gagalFase}
           onSalah={salahAksi}
           perbesarTarget={perbesarTarget}
+          terjeda={terjeda}
         />
       ) : fase === 1 ? (
         <FaseTanamanGestur
@@ -1104,6 +1129,7 @@ export function KomposKebun({
           onGagal={gagalFase}
           onSalah={salahAksi}
           perbesarTarget={perbesarTarget}
+          terjeda={terjeda}
         />
       ) : (
         <FasePanenGestur
@@ -1113,6 +1139,7 @@ export function KomposKebun({
           onGagal={gagalFase}
           onSalah={salahAksi}
           perbesarTarget={perbesarTarget}
+          terjeda={terjeda}
         />
       )}
 

@@ -29,6 +29,8 @@ export interface MiniGameTugasSlotProps {
   onStageComplete: (score: number) => void
   /** Bila true, tampilkan versi tombol lama (alternatif aksesibilitas). */
   modeSatuKetukan?: boolean
+  /** Bila true, permainan dijeda (timer dibekukan oleh komponen pustaka). */
+  terjeda?: boolean
 }
 
 const MAKS_PERCOBAAN = 2
@@ -102,18 +104,19 @@ export function EcoCommunication({
   stageIndex,
   onStageComplete,
   modeSatuKetukan = false,
+  terjeda = false,
 }: MiniGameTugasSlotProps) {
   if (modeSatuKetukan) {
     return <EcoCommunicationTombol tugasId={tugasId} stageIndex={stageIndex} onStageComplete={onStageComplete} />
   }
-  return <EcoCommunicationGestur tugasId={tugasId} stageIndex={stageIndex} onStageComplete={onStageComplete} />
+  return <EcoCommunicationGestur tugasId={tugasId} stageIndex={stageIndex} onStageComplete={onStageComplete} terjeda={terjeda} />
 }
 
 // ---------------------------------------------------------------------------
 // Mode gestur: susun storyboard (SusunCerita)
 // ---------------------------------------------------------------------------
 
-function EcoCommunicationGestur({ tugasId, stageIndex, onStageComplete }: MiniGameTugasSlotProps) {
+function EcoCommunicationGestur({ tugasId, stageIndex, onStageComplete, terjeda = false }: MiniGameTugasSlotProps) {
   const tahap = KONTEN_TUGAS[tugasId]?.tahapan[stageIndex]
   const spec = INTERAKSI_MISI[tugasId]?.[stageIndex]
   const frame = useMemo(() => {
@@ -178,7 +181,7 @@ function EcoCommunicationGestur({ tugasId, stageIndex, onStageComplete }: MiniGa
   return (
     <div className="aia-stack">
       <div className="aia-card">
-        <span className="aia-kicker">Misi Kader · Eco-Communication · Tahap {stageIndex + 1} dari 3</span>
+        <span className="aia-kicker">Misi Tambahan · Eco-Communication · Tahap {stageIndex + 1} dari 3</span>
         <h3 className="aia-section-title" style={{ marginTop: 4 }}>
           {tahap.judul}
         </h3>
@@ -205,7 +208,7 @@ function EcoCommunicationGestur({ tugasId, stageIndex, onStageComplete }: MiniGa
         </div>
       )}
 
-      {!gagal && <SusunCerita key={kunciUlang} frame={frame} onSelesai={susunSelesai} />}
+      {!gagal && <SusunCerita key={kunciUlang} frame={frame} onSelesai={susunSelesai} terjeda={terjeda} />}
 
       {gagal && !selesai && (
         <div>
@@ -337,7 +340,7 @@ function EcoCommunicationTombol({ tugasId, stageIndex, onStageComplete }: MiniGa
   return (
     <div className="aia-stack">
       <div className="aia-card">
-        <span className="aia-kicker">Misi Kader · Eco-Communication · Tahap {stageIndex + 1} dari 3</span>
+        <span className="aia-kicker">Misi Tambahan · Eco-Communication · Tahap {stageIndex + 1} dari 3</span>
         <h3 className="aia-section-title" style={{ marginTop: 4 }}>
           {tahap.judul}
         </h3>

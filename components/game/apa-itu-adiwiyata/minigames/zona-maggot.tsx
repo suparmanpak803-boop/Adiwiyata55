@@ -75,6 +75,8 @@ interface PropsGestur {
   onSalah: () => void
   /** True setelah 2 kali salah — target membesar. */
   perbesarTarget: boolean
+  /** True saat misi dijeda: jam/timer fase dibekukan, diteruskan ke pustaka interaksi. */
+  terjeda?: boolean
 }
 
 function TombolBisukan() {
@@ -307,7 +309,7 @@ function uraiSkorTangkap(skor: number): { benar: number; salah: number } {
   return { benar: 0, salah: 0 }
 }
 
-function FasePakanGestur({ tambahSkor, onSelesai, onGagal, onSalah, perbesarTarget }: PropsGestur) {
+function FasePakanGestur({ tambahSkor, onSelesai, onGagal, onSalah, perbesarTarget, terjeda = false }: PropsGestur) {
   const { save, dispatch } = useCampaign()
   const spec = INTERAKSI_MISI.maggot[0]
   const bauAwal = save.carryover.maggotKenaMinyak ? 2 : 0
@@ -426,7 +428,7 @@ function FasePakanGestur({ tambahSkor, onSelesai, onGagal, onSalah, perbesarTarg
         </p>
       )}
 
-      <TangkapJatuh objek={objek} modeSatuKetukan={perbesarTarget} disabled={selesai} onSelesai={selesaiTangkap} />
+      <TangkapJatuh objek={objek} modeSatuKetukan={perbesarTarget} disabled={selesai} terjeda={terjeda} onSelesai={selesaiTangkap} />
 
       {petunjuk && <EfekSalah tampil petunjuk={petunjuk} />}
 
@@ -658,7 +660,7 @@ function FaseJaga({
 
 const SKOR_RONDE_JAGA = [34, 33, 33]
 
-function FaseJagaGestur({ tambahSkor, onSelesai, onGagal, onSalah }: PropsGestur) {
+function FaseJagaGestur({ tambahSkor, onSelesai, onGagal, onSalah, terjeda = false }: PropsGestur) {
   const spec = INTERAKSI_MISI.maggot[1]
   const [ronde, setRonde] = useState(0)
   const [nilai, setNilai] = useState({ kelembapan: 55, suhu: 50, bau: 45 })
@@ -758,6 +760,7 @@ function FaseJagaGestur({ tambahSkor, onSelesai, onGagal, onSalah }: PropsGestur
             langkah={1}
             satuan="%"
             disabled={terkunci}
+            terjeda={terjeda}
             onUbah={(v) => setNilai((lama) => ({ ...lama, [aktif.indikator]: v }))}
             onSelesai={nilaiAkhir}
           />
@@ -787,14 +790,32 @@ function FaseJagaGestur({ tambahSkor, onSelesai, onGagal, onSalah }: PropsGestur
 
 // ------------------------------------------- Versi tombol (mode satu-ketukan) ----
 
-function FasePanen({ tambahSkor, onSelesai }: { tambahSkor: (n: number) => void; onSelesai: () => void }) {
+function FasePanen({
+  tambahSkor,
+  onSelesai,
+  terjeda = false,
+}: {
+  tambahSkor: (n: number) => void
+  onSelesai: () => void
+  /** True saat misi dijeda: hitung mundur dibekukan. */
+  terjeda?: boolean
+}) {
   const [sisa, setSisa] = useState(20)
   const [dipanen, setDipanen] = useState(false)
   const fakta = useMemo(() => FAKTA_MAGGOT[Math.floor(Math.random() * FAKTA_MAGGOT.length)], [])
+  // Cermin terjeda untuk dibaca di dalam tick interval (hindari closure basi).
+  const terjedaRef = useRef(terjeda)
+
+  useEffect(() => {
+    terjedaRef.current = terjeda
+  }, [terjeda])
 
   useEffect(() => {
     if (sisa <= 0) return
-    const t = setInterval(() => setSisa((s) => Math.max(0, s - 1)), 1000)
+    const t = setInterval(() => {
+      if (terjedaRef.current) return
+      setSisa((s) => Math.max(0, s - 1))
+    }, 1000)
     return () => clearInterval(t)
   }, [sisa])
 
@@ -873,17 +894,30 @@ function FasePanen({ tambahSkor, onSelesai }: { tambahSkor: (n: number) => void;
 
 // -------------------------------------------------- Versi gestur: panen ----
 
-function FasePanenGestur({ tambahSkor, onSelesai }: Pick<PropsGestur, 'tambahSkor' | 'onSelesai'>) {
+function FasePanenGestur({
+  tambahSkor,
+  onSelesai,
+  terjeda = false,
+}: Pick<PropsGestur, 'tambahSkor' | 'onSelesai'> & { terjeda?: boolean }) {
   const [sisa, setSisa] = useState(20)
   const [siap, setSiap] = useState(false)
   const [dipanen, setDipanen] = useState(false)
   const [petunjuk, setPetunjuk] = useState<string | null>(null)
   const fakta = useMemo(() => FAKTA_MAGGOT[Math.floor(Math.random() * FAKTA_MAGGOT.length)], [])
   const spec = INTERAKSI_MISI.maggot[2]
+  // Cermin terjeda untuk dibaca di dalam tick interval (hindari closure basi).
+  const terjedaRef = useRef(terjeda)
+
+  useEffect(() => {
+    terjedaRef.current = terjeda
+  }, [terjeda])
 
   useEffect(() => {
     if (sisa <= 0) return
-    const t = setInterval(() => setSisa((s) => Math.max(0, s - 1)), 1000)
+    const t = setInterval(() => {
+      if (terjedaRef.current) return
+      setSisa((s) => Math.max(0, s - 1))
+    }, 1000)
     return () => clearInterval(t)
   }, [sisa])
 
@@ -937,6 +971,7 @@ function FasePanenGestur({ tambahSkor, onSelesai }: Pick<PropsGestur, 'tambahSko
                 label="Tahan saringan untuk mengayak"
                 durasiMs={2000}
                 ikon={<Fish aria-hidden="true" />}
+                terjeda={terjeda}
                 onSelesai={ayakSelesai}
                 onBatal={ayakBatal}
               />
@@ -978,6 +1013,7 @@ export function ZonaMaggot({
   stageIndex,
   onStageComplete,
   modeSatuKetukan = false,
+  terjeda = false,
 }: MiniGameSlotProps & { modeSatuKetukan?: boolean }) {
   const { save, dispatch } = useCampaign()
   // Fase = tahap yang sedang dimainkan (dipilih kerangka bab).
@@ -1067,7 +1103,7 @@ export function ZonaMaggot({
         ) : fase === 1 ? (
           <FaseJaga key={`jaga-${percobaan}`} mudah={mudah} tambahSkor={tambahSkor} onSelesai={selesaiFase} onGagal={gagalFase} />
         ) : (
-          <FasePanen key={`panen-${percobaan}`} tambahSkor={tambahSkor} onSelesai={selesaiFase} />
+          <FasePanen key={`panen-${percobaan}`} tambahSkor={tambahSkor} onSelesai={selesaiFase} terjeda={terjeda} />
         )
       ) : fase === 0 ? (
         <FasePakanGestur
@@ -1077,6 +1113,7 @@ export function ZonaMaggot({
           onGagal={gagalFase}
           onSalah={salahAksi}
           perbesarTarget={perbesarTarget}
+          terjeda={terjeda}
         />
       ) : fase === 1 ? (
         <FaseJagaGestur
@@ -1086,9 +1123,10 @@ export function ZonaMaggot({
           onGagal={gagalFase}
           onSalah={salahAksi}
           perbesarTarget={perbesarTarget}
+          terjeda={terjeda}
         />
       ) : (
-        <FasePanenGestur key={`panen-g-${percobaan}`} tambahSkor={tambahSkor} onSelesai={selesaiFase} />
+        <FasePanenGestur key={`panen-g-${percobaan}`} tambahSkor={tambahSkor} onSelesai={selesaiFase} terjeda={terjeda} />
       )}
 
       <p className="aia-muted">

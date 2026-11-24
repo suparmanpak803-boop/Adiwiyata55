@@ -33,6 +33,8 @@ export interface DragDropProps {
   /** Bila true, seret diganti ketuk benda lalu ketuk target. */
   modeSatuKetukan?: boolean
   disabled?: boolean
+  /** Bila true, permainan dijeda: panggilan selesai ditunda sampai lanjut. */
+  terjeda?: boolean
   onBenar: (bendaId: string) => void
   /** Dipanggil saat dilepas di target yang salah (argumen kedua = id target itu). */
   onSalah: (bendaId: string, targetId?: string) => void
@@ -50,6 +52,7 @@ export function DragDrop({
   perbesarTarget = false,
   modeSatuKetukan = false,
   disabled = false,
+  terjeda = false,
   onBenar,
   onSalah,
 }: DragDropProps) {
@@ -65,6 +68,10 @@ export function DragDrop({
   const abaikanKlikRef = useRef(false)
   const selesaiRef = useRef(false)
   const timerRef = useRef<number | null>(null)
+  // Jeda: panggilan selesai ditunda selama terjeda (ref supaya callback
+  // timeout membaca nilai terbaru).
+  const terjedaRef = useRef(false)
+  useEffect(() => { terjedaRef.current = terjeda }, [terjeda])
   const bendaRef = useRef<HTMLButtonElement | null>(null)
   const targetRefs = useRef<Map<string, HTMLButtonElement>>(new Map())
 
@@ -120,14 +127,16 @@ export function DragDrop({
       benar()
       getar(20)
       if (timerRef.current) window.clearTimeout(timerRef.current)
-      timerRef.current = window.setTimeout(
-        () => {
+      // Selesai ditunda selama jeda (cek ulang tiap 100 ms).
+      const jadwalkanBenar = (ms: number) => {
+        timerRef.current = window.setTimeout(() => {
+          if (terjedaRef.current) { jadwalkanBenar(100); return }
           if (selesaiRef.current) return
           selesaiRef.current = true
           onBenar(benda.id)
-        },
-        kurangi ? 60 : 450,
-      )
+        }, ms)
+      }
+      jadwalkanBenar(kurangi ? 60 : 450)
     } else {
       salah()
       getar([40, 40, 40])

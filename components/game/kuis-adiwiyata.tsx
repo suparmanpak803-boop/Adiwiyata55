@@ -1,107 +1,177 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
-import { readJsonResponse } from '@/lib/api-client'
-import { SessionShell, useGameSession } from './game-session'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { LogOut, Pause, Play } from 'lucide-react'
+import { SOAL_INSPEKSI } from '@/lib/apa-itu-adiwiyata/content/pertanyaan'
+import { useCampaign } from '@/lib/apa-itu-adiwiyata/context'
+import { koinKuis } from '@/lib/apa-itu-adiwiyata/arkade'
 
-type Prepared = { id: string; q: string; options: { key: string; text: string }[]; correctIndex: number | null; explanation: string }
-type QuizAnswer = { correct: boolean; correctOptionKey: string; explanation: string; remaining: number; completed: boolean }
+const WAKTU_PER_SOAL = 20
 
+type Prepared = { id: string; q: string; options: { key: string; text: string }[]; correctIndex: number; explanation: string }
+
+function acakSoal(): Prepared[] {
+  const salin = [...SOAL_INSPEKSI]
+  for (let i = salin.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[salin[i], salin[j]] = [salin[j], salin[i]]
+  }
+  return salin.map((soal, i) => ({
+    id: `soal-${i}`,
+    q: soal.pertanyaan,
+    options: soal.pilihan.map((text, j) => ({ key: String.fromCharCode(65 + j), text })),
+    correctIndex: soal.jawabanIndex,
+    explanation: soal.penjelasan,
+  }))
+}
+
+/**
+ * Kuis Adiwiyata — game arkade di dunia kampanye, dibuka lewat NPC Kak Dara.
+ * Soal sepenuhnya lokal dari SOAL_INSPEKSI (tanpa server): 12 soal, 20 detik
+ * per soal. Jumlah jawaban benar diubah jadi Koin Hijau oleh runner lewat
+ * onFinished, dan rekor terbaik tersimpan di save kampanye.
+ */
 export function KuisAdiwiyata({ onExit, onFinished }: { onExit: () => void; onFinished: (score: number) => void }) {
-  const session = useGameSession('kuis_adiwiyata', onFinished)
-  const { phase, start, finish, sessionData } = session
+  const { save } = useCampaign()
+  const [stage, setStage] = useState<'judul' | 'main' | 'selesai'>('judul')
   const [questions, setQuestions] = useState<Prepared[]>([])
   const [index, setIndex] = useState(0)
   const [chosen, setChosen] = useState<number | null>(null)
   const [revealed, setRevealed] = useState(false)
-  const [left, setLeft] = useState(20)
-  const [questionSeconds, setQuestionSeconds] = useState(20)
+  const [left, setLeft] = useState(WAKTU_PER_SOAL)
   const [correct, setCorrect] = useState(0)
-  const [answerError, setAnswerError] = useState('')
-  const [answering, setAnswering] = useState(false)
-  const answeringRef = useRef(false)
-  const askedAt = useRef(0)
+  const [jeda, setJeda] = useState(false)
+  const [skorAkhir, setSkorAkhir] = useState(0)
+  const [terbaikLama, setTerbaikLama] = useState(0)
+  const selesaiRef = useRef(false)
+  const onFinishedRef = useRef(onFinished)
+  onFinishedRef.current = onFinished
+  const saveRef = useRef(save)
+  saveRef.current = save
 
-  useEffect(() => { void start() }, [start])
-  useEffect(() => {
-    if (phase !== 'main') return
-    const payload = sessionData?.questions
-    if (!Array.isArray(payload) || !payload.length) return
-    setQuestions(payload.map((entry) => {
-      const question = entry as { id: string; question: string; options: { key: string; text: string }[] }
-      return { id: question.id, q: question.question, options: question.options, correctIndex: null, explanation: '' }
-    }))
-    const seconds = typeof sessionData?.waktuPerSoal === 'number' ? sessionData.waktuPerSoal : 20
-    setQuestionSeconds(seconds); setIndex(0); setChosen(null); setRevealed(false); setCorrect(0); setLeft(seconds); setAnswerError('')
-    answeringRef.current = false
-    askedAt.current = Date.now()
-  }, [phase, sessionData])
+  // Selesai lokal: dipanggil tepat satu kali per ronde — simpan jumlah benar,
+  // tampilkan layar hasil, dan beri tahu runner (koin + rekor terbaik).
+  const finishLocal = useCallback((benar: number) => {
+    if (selesaiRef.current) return
+    selesaiRef.current = true
+    setTerbaikLama(saveRef.current.arkade?.kuis ?? 0)
+    setSkorAkhir(benar)
+    setStage('selesai')
+    onFinishedRef.current(benar)
+  }, [])
 
-  async function answer(option: number | null) {
-    const current = questions[index]
-    if (revealed || answeringRef.current || !current) return
-    answeringRef.current = true; setAnswering(true); setAnswerError(''); setChosen(option)
-    try {
-      const response = await fetch('/api/game/quiz-answer', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: sessionData?.token, questionId: current.id, optionKey: option === null ? null : current.options[option]?.key }),
-      })
-      const body = await readJsonResponse<QuizAnswer>(response)
-      const correctIndex = current.options.findIndex((item) => item.key === body.correctOptionKey)
-      setQuestions((items) => items.map((item, itemIndex) => itemIndex === index ? { ...item, correctIndex, explanation: body.explanation } : item))
-      setChosen(option); setRevealed(true)
-      if (body.correct) setCorrect((count) => count + 1)
-    } catch (cause) {
-      setAnswerError(cause instanceof Error ? cause.message : 'Jawaban belum dapat diperiksa. Coba lagi.')
-      answeringRef.current = false
-    } finally {
-      setAnswering(false)
-    }
+  const mulai = () => {
+    selesaiRef.current = false
+    setQuestions(acakSoal())
+    setIndex(0); setChosen(null); setRevealed(false)
+    setCorrect(0); setLeft(WAKTU_PER_SOAL); setJeda(false)
+    setStage('main')
   }
 
+  const answer = useCallback((option: number | null) => {
+    if (revealed) return
+    setChosen(option)
+    setRevealed(true)
+    const current = questions[index]
+    if (current && option === current.correctIndex) setCorrect((count) => count + 1)
+  }, [revealed, questions, index])
+
+  // Hitung mundur 1 detik sekali; berhenti saat jawaban terbuka atau dijeda.
   useEffect(() => {
-    if (phase !== 'main' || revealed || answering || !questions.length) return
+    if (stage !== 'main' || revealed || jeda || !questions.length) return
     const timer = window.setInterval(() => {
-      const remaining = Math.max(0, Math.ceil(questionSeconds - (Date.now() - askedAt.current) / 1000))
-      setLeft(remaining)
-      if (remaining <= 0) { window.clearInterval(timer); void answer(null) }
-    }, 250)
+      setLeft((sisa) => Math.max(0, sisa - 1))
+    }, 1000)
     return () => window.clearInterval(timer)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, revealed, answering, index, questions, questionSeconds])
+  }, [stage, revealed, jeda, index, questions.length])
+
+  // Waktu habis -> jawab kosong (dianggap salah) begitu hitungan mencapai 0.
+  useEffect(() => {
+    if (stage === 'main' && !revealed && !jeda && questions.length && left <= 0) answer(null)
+  }, [stage, revealed, jeda, questions.length, left, answer])
 
   function next() {
-    if (index >= questions.length - 1) { void finish(); return }
-    setIndex(index + 1); setChosen(null); setRevealed(false); setLeft(questionSeconds); setAnswerError('')
-    answeringRef.current = false
-    askedAt.current = Date.now()
+    if (index >= questions.length - 1) { finishLocal(correct); return }
+    setIndex(index + 1); setChosen(null); setRevealed(false); setLeft(WAKTU_PER_SOAL)
+  }
+
+  if (stage === 'judul') {
+    return (
+      <section className="game-stage" aria-labelledby="kuis-judul">
+        <h2 id="kuis-judul">Kuis Adiwiyata</h2>
+        <p className="game-hint">Jawab 12 soal tentang sekolah hijau — 20 detik per soal, makin banyak benar makin banyak Koin Hijau.</p>
+        <div className="game-actions">
+          <button type="button" className="game-play" style={{ minHeight: 44 }} onClick={mulai}><Play aria-hidden="true" /> Mulai</button>
+          <button type="button" className="game-ghost" style={{ minHeight: 44 }} onClick={onExit}>Keluar</button>
+        </div>
+      </section>
+    )
+  }
+
+  if (stage === 'selesai') {
+    const koin = koinKuis(skorAkhir)
+    const rekorBaru = skorAkhir > terbaikLama
+    return (
+      <section className="game-stage" aria-labelledby="kuis-selesai">
+        <h2 id="kuis-selesai">Kuis selesai</h2>
+        <p className="game-big">Benar {skorAkhir} dari {questions.length || SOAL_INSPEKSI.length}</p>
+        <p className="game-hint">Kamu mendapat <b>+{koin} Koin Hijau</b>.</p>
+        <p className="game-hint">
+          Rekor terbaik: <b>{Math.max(terbaikLama, skorAkhir)} benar</b>
+          {rekorBaru && ' — Rekor baru!'}
+        </p>
+        <div className="game-actions">
+          <button type="button" className="game-play" style={{ minHeight: 44 }} onClick={mulai}><Play aria-hidden="true" /> Main lagi</button>
+          <button type="button" className="game-ghost" style={{ minHeight: 44 }} onClick={onExit}>Kembali ke dunia</button>
+        </div>
+      </section>
+    )
   }
 
   const current = questions[index]
+  if (!current) {
+    return (
+      <section className="game-stage" role="alert">
+        <p>Soal kuis belum dapat dimuat. Coba lagi.</p>
+        <button className="game-ghost" type="button" style={{ minHeight: 44 }} onClick={onExit}>Kembali ke dunia</button>
+      </section>
+    )
+  }
+
+  if (jeda) {
+    return (
+      <section className="game-stage" role="dialog" aria-modal="true" aria-label="Jeda">
+        <h2>Jeda</h2>
+        <p className="game-hint">Hitungan waktu berhenti. Progres kampanye (Koin Hijau) tetap tersimpan.</p>
+        <div className="game-actions">
+          <button type="button" className="game-play" style={{ minHeight: 44 }} onClick={() => setJeda(false)}><Play aria-hidden="true" /> Lanjutkan</button>
+          <button type="button" className="game-ghost" style={{ minHeight: 44 }} onClick={onExit}><LogOut aria-hidden="true" /> Keluar</button>
+        </div>
+      </section>
+    )
+  }
+
   return (
-    <SessionShell session={session} onExit={onExit} title="Kuis selesai">
-      {current && (
-        <section className="game-stage">
-          <div className="game-hud"><span>Soal <b>{index + 1}/{questions.length}</b></span><span>Benar <b>{correct}</b></span><span>Waktu <b>{revealed ? '-' : `${left}s`}</b></span></div>
-          <h2 className="game-question">{current.q}</h2>
-          <div className="game-options" role="group" aria-label="Pilihan jawaban">
-            {current.options.map((option, i) => {
-              const state = revealed ? (i === current.correctIndex ? 'right' : i === chosen ? 'wrong' : '') : ''
-              return <button key={option.key} type="button" className={`game-option ${state}`} disabled={revealed || answering} onClick={() => void answer(i)}>{option.text}</button>
-            })}
-          </div>
-          {answerError && <p role="alert">{answerError} <button className="game-ghost" type="button" onClick={() => void answer(chosen)}>Coba periksa lagi</button></p>}
-          {answering && <p role="status">Memeriksa jawaban…</p>}
-          {revealed && (
-            <div className="game-explain" aria-live="polite">
-              <p><b>{chosen === current.correctIndex ? 'Benar!' : chosen === null ? 'Waktu habis.' : 'Kurang tepat.'}</b> {current.explanation}</p>
-              <p><a href="/edukasi" target="_blank" rel="noreferrer">Pelajari lebih lanjut di Edukasi</a></p>
-              <button className="game-play" type="button" onClick={next}>{index >= questions.length - 1 ? 'Lihat hasil' : 'Soal berikutnya'}</button>
-            </div>
-          )}
-        </section>
+    <section className="game-stage">
+      <div className="game-hud"><span>Soal <b>{index + 1}/{questions.length}</b></span><span>Benar <b>{correct}</b></span><span>Waktu <b>{revealed ? '-' : `${left}s`}</b></span></div>
+      <div className="game-controls">
+        <button type="button" className="game-play" style={{ minHeight: 44 }} onClick={() => setJeda(true)}><Pause aria-hidden="true" /> Jeda</button>
+        <button type="button" className="game-ghost" style={{ minHeight: 44 }} onClick={onExit}><LogOut aria-hidden="true" /> Keluar</button>
+      </div>
+      <h2 className="game-question">{current.q}</h2>
+      <div className="game-options" role="group" aria-label="Pilihan jawaban">
+        {current.options.map((option, i) => {
+          const state = revealed ? (i === current.correctIndex ? 'right' : i === chosen ? 'wrong' : '') : ''
+          return <button key={option.key} type="button" className={`game-option ${state}`} disabled={revealed} onClick={() => answer(i)}>{option.text}</button>
+        })}
+      </div>
+      {revealed && (
+        <div className="game-explain" aria-live="polite">
+          <p><b>{chosen === current.correctIndex ? 'Benar!' : chosen === null ? 'Waktu habis.' : 'Kurang tepat.'}</b> {current.explanation}</p>
+          <p><a href="/edukasi" target="_blank" rel="noreferrer">Pelajari lebih lanjut di Edukasi</a></p>
+          <button className="game-play" type="button" style={{ minHeight: 44 }} onClick={next}>{index >= questions.length - 1 ? 'Lihat hasil' : 'Soal berikutnya'}</button>
+        </div>
       )}
-      {phase === 'main' && !current && <section className="game-stage" role="alert"><p>Soal kuis belum dapat dimuat. Hubungi Admin.</p><button className="game-ghost" type="button" onClick={onExit}>Kembali</button></section>}
-    </SessionShell>
+    </section>
   )
 }

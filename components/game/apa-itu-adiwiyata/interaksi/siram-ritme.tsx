@@ -18,6 +18,8 @@ export interface SiramRitmeProps {
   tempoBpm?: number
   modeSatuKetukan?: boolean
   disabled?: boolean
+  /** Jeda: bekukan metronom (baseline digeser sebesar durasi jeda). */
+  terjeda?: boolean
   onSelesai: (skor: number) => void
 }
 
@@ -32,6 +34,7 @@ export function SiramRitme({
   tempoBpm = 80,
   modeSatuKetukan = false,
   disabled = false,
+  terjeda = false,
   onSelesai,
 }: SiramRitmeProps) {
   const kurangi = useKurangiAnimasi()
@@ -51,6 +54,21 @@ export function SiramRitme({
   const waktuMulaiRef = useRef(0)
   const timerRef = useRef<number[]>([])
   const intervalRef = useRef<number | null>(null)
+  const terjedaRef = useRef(terjeda)
+  useEffect(() => {
+    terjedaRef.current = terjeda
+  }, [terjeda])
+  // Jeda: catat waktu mulai jeda; saat lanjut, geser baseline metronom
+  // sebesar durasi jeda supaya ketukan tidak maju selama jeda.
+  const jedaMulaiRef = useRef<number | null>(null)
+  useEffect(() => {
+    if (terjeda) {
+      if (jedaMulaiRef.current === null) jedaMulaiRef.current = performance.now()
+    } else if (jedaMulaiRef.current !== null) {
+      waktuMulaiRef.current += performance.now() - jedaMulaiRef.current
+      jedaMulaiRef.current = null
+    }
+  }, [terjeda])
 
   const bersihkanTimer = () => {
     timerRef.current.forEach((id) => window.clearTimeout(id))
@@ -86,6 +104,25 @@ export function SiramRitme({
     if (baru.length >= total) selesaikan(baru)
   }
 
+  // Ketukan metronom: bila sedang terjeda, tunda bunyi/denyut sampai
+  // jeda selesai (baseline sudah digeser saat lanjut, jadi ketukan
+  // tetap jatuh pada waktu yang benar).
+  const jadwalkanDenyut = (tunda: number) => {
+    const id = window.setTimeout(() => {
+      if (terjedaRef.current) {
+        jadwalkanDenyut(100)
+        return
+      }
+      tik()
+      if (!kurangi) {
+        setDenyut(true)
+        const lepas = window.setTimeout(() => setDenyut(false), 220)
+        timerRef.current.push(lepas)
+      }
+    }, tunda)
+    timerRef.current.push(id)
+  }
+
   const mulai = () => {
     bersihkanTimer()
     penilaianRef.current = []
@@ -93,25 +130,21 @@ export function SiramRitme({
     setDenyut(false)
     setSelesai(false)
     selesaiRef.current = false
+    // Bila diulang saat terjeda, mulai hitung jeda dari sekarang supaya
+    // geseran baseline saat lanjut tidak memakai jeda yang lama.
+    jedaMulaiRef.current = terjedaRef.current ? performance.now() : null
     // Hitungan awal 800ms sebelum ketukan pertama.
     const mulaiPada = performance.now() + 800
     waktuMulaiRef.current = mulaiPada
     for (let i = 0; i < total; i += 1) {
       const tunda = 800 + i * intervalMs
-      const id = window.setTimeout(() => {
-        tik()
-        if (!kurangi) {
-          setDenyut(true)
-          const lepas = window.setTimeout(() => setDenyut(false), 220)
-          timerRef.current.push(lepas)
-        }
-      }, tunda)
-      timerRef.current.push(id)
+      jadwalkanDenyut(tunda)
     }
     // Pemeriksa ketukan yang terlewat: bila jendela Bagus sudah lewat
     // tanpa ketukan, ketukan itu dinilai Meleset.
     intervalRef.current = window.setInterval(() => {
-      if (selesaiRef.current) return
+      // Jeda: lewati pemeriksaan supaya ketukan tidak dinilai Meleset selama jeda.
+      if (terjedaRef.current || selesaiRef.current) return
       const sekarang = performance.now()
       const idxBerikut = penilaianRef.current.length
       if (idxBerikut >= total) return
@@ -131,7 +164,9 @@ export function SiramRitme({
   }, [ketukan, tempoBpm])
 
   const ketuk = () => {
-    if (disabled || selesaiRef.current) return
+    // Ketukan saat terjeda diabaikan: penilaiannya memakai baseline
+    // yang baru digeser saat jeda selesai.
+    if (terjedaRef.current || disabled || selesaiRef.current) return
     const idxBerikut = penilaianRef.current.length
     if (idxBerikut >= total) return
     const sekarang = performance.now()

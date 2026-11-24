@@ -28,6 +28,8 @@ export interface MiniGameTugasSlotProps {
   onStageComplete: (score: number) => void
   /** Bila true, tampilkan versi tombol lama (alternatif aksesibilitas). */
   modeSatuKetukan?: boolean
+  /** Bila true, permainan dijeda (timer dibekukan oleh komponen pustaka). */
+  terjeda?: boolean
 }
 
 const MAKS_PERCOBAAN = 2
@@ -46,18 +48,19 @@ export function JejaringHijau({
   stageIndex,
   onStageComplete,
   modeSatuKetukan = false,
+  terjeda = false,
 }: MiniGameTugasSlotProps) {
   if (modeSatuKetukan) {
     return <JejaringHijauTombol tugasId={tugasId} stageIndex={stageIndex} onStageComplete={onStageComplete} />
   }
-  return <JejaringHijauGestur tugasId={tugasId} stageIndex={stageIndex} onStageComplete={onStageComplete} />
+  return <JejaringHijauGestur tugasId={tugasId} stageIndex={stageIndex} onStageComplete={onStageComplete} terjeda={terjeda} />
 }
 
 // ---------------------------------------------------------------------------
 // Mode gestur: balas pesan mitra sebelum waktu habis (BalasCepat)
 // ---------------------------------------------------------------------------
 
-function JejaringHijauGestur({ tugasId, stageIndex, onStageComplete }: MiniGameTugasSlotProps) {
+function JejaringHijauGestur({ tugasId, stageIndex, onStageComplete, terjeda = false }: MiniGameTugasSlotProps) {
   const tahap = KONTEN_TUGAS[tugasId]?.tahapan[stageIndex]
   const spec = INTERAKSI_MISI[tugasId]?.[stageIndex]
   const pesan = useMemo((): PesanChat[] => {
@@ -128,7 +131,7 @@ function JejaringHijauGestur({ tugasId, stageIndex, onStageComplete }: MiniGameT
   return (
     <div className="aia-stack">
       <div className="aia-card">
-        <span className="aia-kicker">Misi Kader · Jejaring Hijau · Tahap {stageIndex + 1} dari 3</span>
+        <span className="aia-kicker">Misi Tambahan · Jejaring Hijau · Tahap {stageIndex + 1} dari 3</span>
         <h3 className="aia-section-title" style={{ marginTop: 4 }}>
           {tahap.judul}
         </h3>
@@ -162,6 +165,7 @@ function JejaringHijauGestur({ tugasId, stageIndex, onStageComplete }: MiniGameT
           pesan={pesan}
           waktuPerPesanMs={WAKTU_PER_PESAN_MS}
           onSelesai={balasSelesai}
+          terjeda={terjeda}
         />
       </div>
 
@@ -281,7 +285,7 @@ function JejaringHijauTombol({ tugasId, stageIndex, onStageComplete }: MiniGameT
   return (
     <div className="aia-stack">
       <div className="aia-card">
-        <span className="aia-kicker">Misi Kader · Jejaring Hijau · Tahap {stageIndex + 1} dari 3</span>
+        <span className="aia-kicker">Misi Tambahan · Jejaring Hijau · Tahap {stageIndex + 1} dari 3</span>
         <h3 className="aia-section-title" style={{ marginTop: 4 }}>
           {tahap.judul}
         </h3>

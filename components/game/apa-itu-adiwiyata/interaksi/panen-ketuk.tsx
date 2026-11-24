@@ -24,6 +24,8 @@ export interface PanenKetukProps {
   jumlahGiliran?: number
   modeSatuKetukan?: boolean
   disabled?: boolean
+  /** Jeda: bekukan timer giliran (dijadwalkan ulang dengan sisa waktu saat lanjut). */
+  terjeda?: boolean
   onSelesai: (skor: number) => void
 }
 
@@ -40,6 +42,7 @@ export function PanenKetuk({
   jumlahGiliran = 8,
   modeSatuKetukan = false,
   disabled = false,
+  terjeda = false,
   onSelesai,
 }: PanenKetukProps) {
   const durasi = modeSatuKetukan ? giliranMs * 2 : giliranMs
@@ -62,6 +65,13 @@ export function PanenKetuk({
   const matangRef = useRef(0)
   const timerRef = useRef<number | null>(null)
   const timerPesanRef = useRef<number | null>(null)
+  const terjedaRef = useRef(terjeda)
+  useEffect(() => {
+    terjedaRef.current = terjeda
+  }, [terjeda])
+  // Sisa waktu giliran yang sedang berjalan (untuk dibekukan saat jeda).
+  const giliranMulaiRef = useRef(0)
+  const giliranSisaRef = useRef(durasi)
 
   const bersihkanTimer = () => {
     if (timerRef.current) {
@@ -93,6 +103,13 @@ export function PanenKetuk({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [objek, jumlahGiliran])
 
+  // Akhir giliran tanpa ketukan (dipakai timer giliran & saat lanjut dari jeda).
+  const akhiriGiliran = () => {
+    if (aktifRef.current?.objek.matang) setTerlewat((t) => t + 1)
+    setAktif(null)
+    setRonde((r) => r + 1)
+  }
+
   // Tiap giliran: munculkan satu objek di petak acak.
   useEffect(() => {
     if (selesaiRef.current || objek.length === 0) return
@@ -110,15 +127,31 @@ export function PanenKetuk({
     const petak = Math.floor(Math.random() * JUMLAH_PETAK)
     if (pilihObjek.matang) matangRef.current += 1
     setAktif({ objek: pilihObjek, petak })
-    timerRef.current = window.setTimeout(() => {
-      // Giliran berakhir tanpa ketukan.
-      if (aktifRef.current?.objek.matang) setTerlewat((t) => t + 1)
-      setAktif(null)
-      setRonde((r) => r + 1)
-    }, durasi)
+    giliranSisaRef.current = durasi
+    giliranMulaiRef.current = performance.now()
+    // Bila sedang terjeda, jangan jalankan timer; dijadwalkan ulang
+    // dengan sisa waktu saat jeda selesai.
+    if (terjedaRef.current) return bersihkanTimer
+    timerRef.current = window.setTimeout(akhiriGiliran, durasi)
     return bersihkanTimer
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ronde, total, durasi])
+
+  // Jeda: bekukan timer giliran — simpan sisa waktu saat jeda mulai,
+  // jadwalkan ulang dengan sisa itu saat lanjut.
+  useEffect(() => {
+    if (terjeda) {
+      if (timerRef.current) {
+        const berlalu = performance.now() - giliranMulaiRef.current
+        giliranSisaRef.current = Math.max(0, durasi - berlalu)
+        bersihkanTimer()
+      }
+    } else if (aktifRef.current && !selesaiRef.current && !timerRef.current) {
+      giliranMulaiRef.current = performance.now()
+      timerRef.current = window.setTimeout(akhiriGiliran, giliranSisaRef.current)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [terjeda])
 
   const ketukPetak = (petak: number) => {
     if (disabled || selesaiRef.current) return

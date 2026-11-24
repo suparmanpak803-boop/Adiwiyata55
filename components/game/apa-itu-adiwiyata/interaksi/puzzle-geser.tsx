@@ -26,6 +26,9 @@ export interface PuzzleGeserProps {
   potongan: PotonganPuzzle[]
   modeSatuKetukan?: boolean
   disabled?: boolean
+  /** Bila true, permainan dijeda. Komponen ini tidak punya jam sendiri,
+   *  jadi prop diterima saja. */
+  terjeda?: boolean
   onSelesai: (skor: number) => void
 }
 

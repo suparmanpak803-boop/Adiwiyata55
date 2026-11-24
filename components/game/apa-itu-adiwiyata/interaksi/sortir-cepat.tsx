@@ -30,6 +30,8 @@ export interface SortirCepatProps {
   waktuPerItemMs?: number
   modeSatuKetukan?: boolean
   disabled?: boolean
+  /** Jeda: bekukan hitung mundur waktu per item. */
+  terjeda?: boolean
   onSelesai: (skor: number) => void
 }
 
@@ -39,6 +41,7 @@ export function SortirCepat({
   waktuPerItemMs = 4000,
   modeSatuKetukan = false,
   disabled = false,
+  terjeda = false,
   onSelesai,
 }: SortirCepatProps) {
   const kurangi = useKurangiAnimasi()
@@ -56,6 +59,10 @@ export function SortirCepat({
   const benarRef = useRef(0)
   const idxRef = useRef(0)
   idxRef.current = idx
+  const terjedaRef = useRef(terjeda)
+  useEffect(() => {
+    terjedaRef.current = terjeda
+  }, [terjeda])
 
   useEffect(
     () => () => {
@@ -96,7 +103,11 @@ export function SortirCepat({
   // Hitung mundur per item.
   useEffect(() => {
     if (selesai || item.length === 0) return
-    const id = window.setInterval(() => setSisaMs((s) => Math.max(0, s - 100)), 100)
+    const id = window.setInterval(() => {
+      // Jeda: lewati tick supaya sisa waktu tidak berkurang selama jeda.
+      if (terjedaRef.current) return
+      setSisaMs((s) => Math.max(0, s - 100))
+    }, 100)
     return () => window.clearInterval(id)
   }, [idx, selesai, item.length])
 

@@ -27,6 +27,8 @@ export interface TugasMiniGameSlotProps {
   onStageComplete: (score: number) => void
   /** Bila true, tampilkan versi tombol lama (mode alternatif satu-ketukan). */
   modeSatuKetukan?: boolean
+  /** True saat misi dijeda dari shell: mini-game membekukan timer/interval/rAF-nya. */
+  terjeda?: boolean
 }
 
 const NYAWA_AWAL = 3
@@ -89,10 +91,12 @@ function PilahGestur({
   tahap,
   spec,
   onStageComplete,
+  terjeda = false,
 }: {
   tahap: TahapPilah
   spec: SpesifikasiInteraksi
   onStageComplete: (score: number) => void
+  terjeda?: boolean
 }) {
   const [skorAkhir, setSkorAkhir] = useState<number | null>(null)
   const [tunjuk, setTunjuk] = useState(spec.tutorial)
@@ -164,6 +168,7 @@ function PilahGestur({
       <SortirCepat
         item={item}
         target={target}
+        terjeda={terjeda}
         onSelesai={(skor) => {
           setTunjuk(false)
           setSkorAkhir(skor)
@@ -183,10 +188,12 @@ function CatatGestur({
   tahap,
   spec,
   onStageComplete,
+  terjeda = false,
 }: {
   tahap: TahapCatat
   spec: SpesifikasiInteraksi
   onStageComplete: (score: number) => void
+  terjeda?: boolean
 }) {
   const [pos, setPos] = useState(0)
   const [skor, setSkor] = useState(0)
@@ -201,6 +208,12 @@ function CatatGestur({
   const selesaiRef = useRef(false)
   const terkunciRef = useRef(false)
   const timerEfekRef = useRef<number | null>(null)
+  // Jeda: kemajuan ke baris berikutnya ditunda selama terjeda.
+  const terjedaRef = useRef(terjeda)
+  const timerLanjutRef = useRef<number | null>(null)
+  useEffect(() => {
+    terjedaRef.current = terjeda
+  }, [terjeda])
   const baris = tahap.tabel.baris
   const urutan = useMemo(() => acak(baris.map((_, i) => i)), [baris])
   const barisIdx = urutan[pos] ?? 0
@@ -221,6 +234,7 @@ function CatatGestur({
   useEffect(
     () => () => {
       if (timerEfekRef.current) window.clearTimeout(timerEfekRef.current)
+      if (timerLanjutRef.current) window.clearTimeout(timerLanjutRef.current)
     },
     [],
   )
@@ -250,14 +264,21 @@ function CatatGestur({
       setPesanSalah(null)
       setTunjuk(false)
       kilauBenar()
-      window.setTimeout(() => {
+      // Maju ke baris berikutnya setelah 550 ms; bila sedang dijeda,
+      // tunda sampai jeda selesai supaya tidak ada kemajuan saat jeda.
+      const maju = () => {
+        if (terjedaRef.current) {
+          timerLanjutRef.current = window.setTimeout(maju, 150)
+          return
+        }
         terkunciRef.current = false
         if (pos + 1 >= baris.length) setSelesai(true)
         else {
           setPos((p) => p + 1)
           setPercobaan(0)
         }
-      }, 550)
+      }
+      timerLanjutRef.current = window.setTimeout(maju, 550)
     } else {
       salah()
       getar([40, 40, 40])
@@ -419,10 +440,12 @@ function KuisGestur({
   tahap,
   spec,
   onStageComplete,
+  terjeda = false,
 }: {
   tahap: TahapKuis
   spec: SpesifikasiInteraksi
   onStageComplete: (score: number) => void
+  terjeda?: boolean
 }) {
   const [skorAkhir, setSkorAkhir] = useState<number | null>(null)
   const [tunjuk, setTunjuk] = useState(spec.tutorial)
@@ -486,6 +509,7 @@ function KuisGestur({
       )}
       <KuisKilat
         soal={soal}
+        terjeda={terjeda}
         onSelesai={(skor) => {
           setTunjuk(false)
           setSkorAkhir(skor)
@@ -1277,7 +1301,7 @@ function KuisTabungan({
  * modeSatuKetukan = true menampilkan versi tombol lama.
  * TIDAK disambungkan ke mana pun di sini — agen integrasi yang menyambung.
  */
-export function BankSampah({ tugasId, stageIndex, onStageComplete, modeSatuKetukan = false }: TugasMiniGameSlotProps) {
+export function BankSampah({ tugasId, stageIndex, onStageComplete, modeSatuKetukan = false, terjeda = false }: TugasMiniGameSlotProps) {
   const konten = KONTEN_TUGAS[tugasId]
   const tahap = konten?.tahapan[stageIndex]
   const spec = INTERAKSI_MISI[tugasId]?.[stageIndex]
@@ -1299,9 +1323,9 @@ export function BankSampah({ tugasId, stageIndex, onStageComplete, modeSatuKetuk
       </div>
     )
   }
-  if (tahap.jenis === 'pilah') return <PilahGestur key={kunci} tahap={tahap} spec={spec} onStageComplete={onStageComplete} />
-  if (tahap.jenis === 'catat') return <CatatGestur key={kunci} tahap={tahap} spec={spec} onStageComplete={onStageComplete} />
-  if (tahap.jenis === 'kuis') return <KuisGestur key={kunci} tahap={tahap} spec={spec} onStageComplete={onStageComplete} />
+  if (tahap.jenis === 'pilah') return <PilahGestur key={kunci} tahap={tahap} spec={spec} onStageComplete={onStageComplete} terjeda={terjeda} />
+  if (tahap.jenis === 'catat') return <CatatGestur key={kunci} tahap={tahap} spec={spec} onStageComplete={onStageComplete} terjeda={terjeda} />
+  if (tahap.jenis === 'kuis') return <KuisGestur key={kunci} tahap={tahap} spec={spec} onStageComplete={onStageComplete} terjeda={terjeda} />
   return (
     <div className="aia-card">
       <p className="aia-muted">Tahap ini belum tersedia.</p>

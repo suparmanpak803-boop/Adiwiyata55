@@ -568,11 +568,17 @@ function gambarNpc(g: CanvasRenderingContext2D, n: NpcJalan, disorot: boolean, r
 export function Jelajah({
   onPlayChapter,
   onPlayTugas,
+  onPlayTangkap,
+  onPlayKuis,
   onOpenMisi,
   onOpenPanduan,
 }: {
   onPlayChapter: (chapterId: ChapterId) => void
   onPlayTugas: (tugasId: TugasKaderId) => void
+  /** Buka game arkade Tangkap Sampah (lewat NPC Kak Yoga). */
+  onPlayTangkap: () => void
+  /** Buka game arkade Kuis Adiwiyata (lewat NPC Kak Dara). */
+  onPlayKuis: () => void
   onOpenMisi: () => void
   /** Buka panduan Cara Bermain (overlay dari runner). */
   onOpenPanduan: () => void
@@ -1231,7 +1237,7 @@ export function Jelajah({
       ) : kaderSelesai < 8 ? (
         <div className="aia-progress-row">
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-            <Flag aria-hidden="true" /> Misi Kader: {kaderSelesai}/8 selesai — temui pemberi Misi Kader di dunia
+            <Flag aria-hidden="true" /> Misi Tambahan: {kaderSelesai}/8 selesai — temui pemberi Misi Tambahan di dunia
           </span>
           <button type="button" className="aia-btn aia-btn-ghost" onClick={onOpenMisi}>
             Lihat semua misi
@@ -1348,6 +1354,28 @@ export function Jelajah({
                       </button>
                     ) : babNpc ? (
                       <p className="aia-muted">Selesaikan bab sebelumnya dulu untuk membuka bab ini.</p>
+                    ) : dialogNpc.aktivitas === 'tangkap-sampah' ? (
+                      <button
+                        type="button"
+                        className="aia-btn aia-btn-primary"
+                        onClick={() => {
+                          klik()
+                          onPlayTangkap()
+                        }}
+                      >
+                        Main Tangkap Sampah
+                      </button>
+                    ) : dialogNpc.aktivitas === 'kuis-adiwiyata' ? (
+                      <button
+                        type="button"
+                        className="aia-btn aia-btn-primary"
+                        onClick={() => {
+                          klik()
+                          onPlayKuis()
+                        }}
+                      >
+                        Main Kuis Adiwiyata
+                      </button>
                     ) : null}
                     <button type="button" className="aia-btn aia-btn-ghost" onClick={tutupDialog}>
                       Tutup
@@ -1372,7 +1400,8 @@ export function Jelajah({
       <p className="aia-muted">
         Gerakkan tokoh dengan joystick kiri bawah atau tombol WASD/panah. Dekati NPC lalu ketuk &quot;Bicara&quot; atau tekan E.
         NPC dengan tanda ! punya misi untukmu. Ketuk petak kebun untuk menyiram atau memanen, ketuk kotak maggot untuk
-        memberi makan Magi, dan pungut sampah liar yang berserakan untuk Koin Hijau.
+        memberi makan Magi, dan pungut sampah liar yang berserakan untuk Koin Hijau. Mau main santai? Temui Kak Yoga di
+        arena pojok kanan bawah untuk Tangkap Sampah, atau Kak Dara di perpustakaan untuk Kuis Adiwiyata.
       </p>
     </div>
   )

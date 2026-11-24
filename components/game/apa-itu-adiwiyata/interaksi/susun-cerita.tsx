@@ -22,10 +22,12 @@ export interface SusunCeritaProps {
   frame: FrameCerita[]
   modeSatuKetukan?: boolean
   disabled?: boolean
+  /** Bila true, permainan dijeda: panggilan selesai ditunda sampai lanjut. */
+  terjeda?: boolean
   onSelesai: (skor: number) => void
 }
 
-export function SusunCerita({ frame, modeSatuKetukan = false, disabled = false, onSelesai }: SusunCeritaProps) {
+export function SusunCerita({ frame, modeSatuKetukan = false, disabled = false, terjeda = false, onSelesai }: SusunCeritaProps) {
   const kurangi = useKurangiAnimasi()
   const [acakFrame, setAcakFrame] = useState<FrameCerita[]>(() => acak(frame))
   const [terisi, setTerisi] = useState<string[]>([])
@@ -35,6 +37,11 @@ export function SusunCerita({ frame, modeSatuKetukan = false, disabled = false, 
 
   const selesaiRef = useRef(false)
   const timerRef = useRef<number | null>(null)
+  // Jeda: panggilan selesai ditunda selama terjeda (ref supaya callback
+  // timeout membaca nilai terbaru). Timeout kosmetik (umpan balik salah
+  // 2500 ms) dibiarkan jalan — tidak memengaruhi skor.
+  const terjedaRef = useRef(false)
+  useEffect(() => { terjedaRef.current = terjeda }, [terjeda])
   const terisiRef = useRef(terisi)
   terisiRef.current = terisi
   const salahRef = useRef(jumlahSalah)
@@ -87,7 +94,14 @@ export function SusunCerita({ frame, modeSatuKetukan = false, disabled = false, 
         const dendaPerSalah = frame.length > 0 ? 100 / frame.length : 0
         const skor = clamp(Math.round(100 - salahRef.current * dendaPerSalah), 0, 100)
         if (timerRef.current) window.clearTimeout(timerRef.current)
-        timerRef.current = window.setTimeout(() => onSelesai(skor), kurangi ? 60 : 600)
+        // Selesai ditunda selama jeda (cek ulang tiap 100 ms).
+        const jadwalkanSelesai = (ms: number) => {
+          timerRef.current = window.setTimeout(() => {
+            if (terjedaRef.current) { jadwalkanSelesai(100); return }
+            onSelesai(skor)
+          }, ms)
+        }
+        jadwalkanSelesai(kurangi ? 60 : 600)
       }
     } else {
       salah()

@@ -28,6 +28,8 @@ export interface CariPerbedaanProps {
   batasWaktuMs?: number
   modeSatuKetukan?: boolean
   disabled?: boolean
+  /** Bila true, permainan dijeda: hitung mundur dibekukan. */
+  terjeda?: boolean
   onTemukan: (id: string) => void
   onSelesai: (semuaDitemukan: boolean) => void
 }
@@ -38,6 +40,7 @@ export function CariPerbedaan({
   batasWaktuMs = 0,
   modeSatuKetukan = false,
   disabled = false,
+  terjeda = false,
   onTemukan,
   onSelesai,
 }: CariPerbedaanProps) {
@@ -47,6 +50,10 @@ export function CariPerbedaan({
   const [sisaMs, setSisaMs] = useState(batasWaktuMs)
 
   const selesaiRef = useRef(false)
+  // Jeda: hitung mundur dilewati tiap tick selama terjeda (ref supaya
+  // callback interval yang sudah berjalan membaca nilai terbaru).
+  const terjedaRef = useRef(false)
+  useEffect(() => { terjedaRef.current = terjeda }, [terjeda])
   const timerPetunjukRef = useRef<number | null>(null)
   const ditemukanRef = useRef(ditemukan)
   ditemukanRef.current = ditemukan
@@ -75,10 +82,13 @@ export function CariPerbedaan({
     [],
   )
 
-  // Timer hitung mundur.
+  // Timer hitung mundur (dibekukan selama jeda).
   useEffect(() => {
     if (batasWaktuMs <= 0 || selesaiRef.current) return
-    const id = window.setInterval(() => setSisaMs((s) => Math.max(0, s - 200)), 200)
+    const id = window.setInterval(() => {
+      if (terjedaRef.current) return
+      setSisaMs((s) => Math.max(0, s - 200))
+    }, 200)
     return () => window.clearInterval(id)
   }, [batasWaktuMs])
 

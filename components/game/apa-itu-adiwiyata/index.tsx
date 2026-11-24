@@ -26,6 +26,9 @@ import { Jelajah } from './jelajah'
 import { BottomNav, type AiaTab } from './bottom-nav'
 import { MisiShell } from './misi-shell'
 import { Tamat } from './tamat'
+import { TangkapSampah } from '../tangkap-sampah'
+import { KuisAdiwiyata } from '../kuis-adiwiyata'
+import { koinArkade } from '@/lib/apa-itu-adiwiyata/arkade'
 import { Ensiklopedia } from './ensiklopedia'
 import { Leaderboard } from './leaderboard'
 import { Profil } from './profil'
@@ -34,7 +37,7 @@ import './apa-itu-adiwiyata.css'
 
 const MODE_BAB: MusicMode[] = ['bab1', 'bab2', 'bab3', 'bab4', 'bab5', 'bab6']
 
-type Screen = 'awal' | 'peta' | 'misi' | 'ensiklopedia' | 'peringkat' | 'profil' | 'bab' | 'tugas' | 'tamat'
+type Screen = 'awal' | 'peta' | 'misi' | 'ensiklopedia' | 'peringkat' | 'profil' | 'bab' | 'tugas' | 'tamat' | 'tangkap' | 'kuis'
 
 export function ApaItuAdiwiyata() {
   return (
@@ -108,6 +111,37 @@ function Shell() {
     setScreen('tugas')
   }
 
+  const mainTangkap = () => {
+    setPesanMisi(null)
+    setScreen('tangkap')
+  }
+
+  const mainKuis = () => {
+    setPesanMisi(null)
+    setScreen('kuis')
+  }
+
+  // Selesai game arkade: ubah skor jadi Koin Hijau + simpan rekor terbaik.
+  // Hanya memberi hadiah — navigasi kembali ke dunia lewat tombol "Kembali
+  // ke dunia" di layar hasil game, supaya pemain sempat melihat skornya.
+  // onFinished dipanggil tepat satu kali per permainan oleh komponen game,
+  // jadi koin tidak dobel. `save` di closure masih keadaan sebelum hadiah.
+  const selesaiTangkap = (skor: number) => {
+    const koin = koinArkade('tangkap', skor)
+    const rekorBaru = skor > (save.arkade?.tangkap ?? 0)
+    dispatch({ type: 'EARN_COINS', amount: koin })
+    dispatch({ type: 'ARKADE_TERBAIK', game: 'tangkap', skor })
+    setPesanMisi(`Tangkap Sampah selesai! Skor ${skor}, +${koin} Koin Hijau.${rekorBaru ? ' Rekor baru!' : ''}`)
+  }
+
+  const selesaiKuis = (benar: number) => {
+    const koin = koinArkade('kuis', benar)
+    const rekorBaru = benar > (save.arkade?.kuis ?? 0)
+    dispatch({ type: 'EARN_COINS', amount: koin })
+    dispatch({ type: 'ARKADE_TERBAIK', game: 'kuis', skor: benar })
+    setPesanMisi(`Kuis Adiwiyata selesai! Benar ${benar} dari 12, +${koin} Koin Hijau.${rekorBaru ? ' Rekor baru!' : ''}`)
+  }
+
   // Dari Layar Awal: masuk dunia dengan progres yang ada (atau permainan
   // baru yang masih kosong — tidak ada yang dihapus).
   const masukDunia = () => {
@@ -153,7 +187,7 @@ function Shell() {
   // Keluar dari Misi Kader: kembali ke dunia; kabar bila baru selesai.
   const keluarTugas = (baruSelesai: boolean) => {
     if (baruSelesai) {
-      setPesanMisi(`Misi Kader selesai: ${TUGAS[activeTugas].judul}!`)
+      setPesanMisi(`Misi Tambahan selesai: ${TUGAS[activeTugas].judul}!`)
     }
     setScreen('peta')
   }
@@ -258,6 +292,8 @@ function Shell() {
           <Jelajah
             onPlayChapter={mainBab}
             onPlayTugas={mainTugas}
+            onPlayTangkap={mainTangkap}
+            onPlayKuis={mainKuis}
             onOpenMisi={() => gantiTab('misi')}
             onOpenPanduan={bukaPanduan}
           />
@@ -288,9 +324,17 @@ function Shell() {
         />
       )}
       {screen === 'tamat' && <Tamat onExit={() => setScreen('peta')} />}
+      {screen === 'tangkap' && (
+        <TangkapSampah onExit={() => setScreen('peta')} onFinished={selesaiTangkap} />
+      )}
+      {screen === 'kuis' && (
+        <KuisAdiwiyata onExit={() => setScreen('peta')} onFinished={selesaiKuis} />
+      )}
       {screen !== 'bab' &&
         screen !== 'tugas' &&
         screen !== 'tamat' &&
+        screen !== 'tangkap' &&
+        screen !== 'kuis' &&
         screen !== 'awal' &&
         <BottomNav tab={screen} onChange={gantiTab} />}
     </div>

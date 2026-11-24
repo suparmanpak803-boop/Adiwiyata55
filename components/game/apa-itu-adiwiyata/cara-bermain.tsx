@@ -9,12 +9,12 @@ import { X } from 'lucide-react'
 import { klik } from './suara'
 
 const CARA_MISI: { judul: string; cara: string }[] = [
-  { judul: 'Kader Budaya Lingkungan', cara: 'Tangkap barang guna ulang yang jatuh, lalu lempar ke tas.' },
-  { judul: 'Kader Pilah', cara: 'Sortir cepat di ban berjalan, lalu lempar sampah ke 4 tong.' },
-  { judul: 'Kader Maggot', cara: 'Tangkap pakan yang aman, geser tuas kotak, tahan saringan saat panen.' },
-  { judul: 'Kader Olah Organik', cara: 'Susun lapisan kompos, siram tanaman mengikuti irama, ketuk sayur yang matang.' },
-  { judul: 'Kader Air & Energi Lestari', cara: 'Putar bor biopori, sambung pipa air hujan, cari perangkat boros.' },
-  { judul: 'Kader Hijau dan Biodiversitas', cara: 'Kuis kilat: jawab sebelum waktu habis.' },
+  { judul: 'Budaya Lingkungan', cara: 'Tangkap barang guna ulang yang jatuh, lalu lempar ke tas.' },
+  { judul: 'Pilah', cara: 'Sortir cepat di ban berjalan, lalu lempar sampah ke 4 tong.' },
+  { judul: 'Maggot', cara: 'Tangkap pakan yang aman, geser tuas kotak, tahan saringan saat panen.' },
+  { judul: 'Olah Organik', cara: 'Susun lapisan kompos, siram tanaman mengikuti irama, ketuk sayur yang matang.' },
+  { judul: 'Air & Energi Lestari', cara: 'Putar bor biopori, sambung pipa air hujan, cari perangkat boros.' },
+  { judul: 'Hijau dan Biodiversitas', cara: 'Kuis kilat: jawab sebelum waktu habis.' },
   { judul: 'Bank Sampah dan Daur Ulang', cara: 'Sortir cepat, ketuk sel tabel timbangan, hitung kilat.' },
   { judul: 'Lingkungan Sehat', cara: 'Cari perbedaan di toilet, drainase, dan taman, lalu ketuk tindakan yang benar.' },
   { judul: 'Edu-Lingkungan', cara: 'Kartu memori: pasangkan soal dengan jawaban.' },
@@ -64,7 +64,7 @@ export function CaraBermain({ onTutup }: { onTutup: () => void }) {
         </div>
         <p className="aia-muted">
           Kamu siswa baru yang ditugaskan menjadikan sekolahmu Adiwiyata. Jelajahi sekolah, temui warga sekolah,
-          dan selesaikan 6 misi utama + 8 Misi Kader bersama Magi si larva maggot. Tidak ada yang benar-benar
+          dan selesaikan 6 misi utama + 8 Misi Tambahan bersama Magi si larva maggot. Tidak ada yang benar-benar
           sampah.
         </p>
 
@@ -82,7 +82,7 @@ export function CaraBermain({ onTutup }: { onTutup: () => void }) {
 
         <h3 className="aia-section-title">Misi</h3>
         <p className="aia-muted" style={{ marginTop: 0 }}>
-          Misi utama berurutan: misi berikutnya terbuka setelah misi sebelumnya selesai. Misi Kader selalu tersedia
+          Misi utama berurutan: misi berikutnya terbuka setelah misi sebelumnya selesai. Misi Tambahan selalu tersedia
           sejak awal. Tiap misi 3 tahap — selesaikan ketiganya, lalu ketuk &quot;Selesaikan Misi&quot; di Pos Hijau.
           Cara main tiap misi beda:
         </p>

@@ -32,6 +32,8 @@ export interface NpcDunia {
   chapterId: ChapterId | null
   /** Misi Kader yang diberikan NPC ini (bila ada); NPC bab utama tidak punya. */
   tugasId?: TugasKaderId
+  /** Game arkade yang dibuka NPC ini (khusus penjaga Tangkap Sampah / Kuis). */
+  aktivitas?: 'tangkap-sampah' | 'kuis-adiwiyata'
   x: number
   y: number
   warna: string
@@ -289,6 +291,30 @@ export const NPCS: NpcDunia[] = [
     x: 400,
     y: 540,
     warna: '#546e7a',
+    gerak: false,
+  },
+  // Penjaga dua game arkade (tokoh fiktif). Statis, chapterId null, tanpa
+  // tugasId; gamenya dibuka lewat `aktivitas`.
+  {
+    id: 'npc-tangkap-sampah',
+    nama: 'Kak Yoga',
+    peran: 'Penjaga Arena Tangkap Sampah',
+    chapterId: null,
+    aktivitas: 'tangkap-sampah',
+    x: 880,
+    y: 540,
+    warna: '#ff7043',
+    gerak: false,
+  },
+  {
+    id: 'npc-kuis',
+    nama: 'Kak Dara',
+    peran: 'Penjaga Kuis Adiwiyata',
+    chapterId: null,
+    aktivitas: 'kuis-adiwiyata',
+    x: 260,
+    y: 470,
+    warna: '#6a1b9a',
     gerak: false,
   },
 ]

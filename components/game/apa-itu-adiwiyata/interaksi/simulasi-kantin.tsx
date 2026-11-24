@@ -24,6 +24,8 @@ export interface SimulasiKantinProps {
   waktuPerPesananMs?: number
   modeSatuKetukan?: boolean
   disabled?: boolean
+  /** Jeda: bekukan hitung mundur & tunda lanjut ke pesanan berikutnya. */
+  terjeda?: boolean
   onSelesai: (skor: number) => void
 }
 
@@ -32,6 +34,7 @@ export function SimulasiKantin({
   waktuPerPesananMs = 12000,
   modeSatuKetukan = false,
   disabled = false,
+  terjeda = false,
   onSelesai,
 }: SimulasiKantinProps) {
   const tanpaWaktu = modeSatuKetukan
@@ -49,6 +52,10 @@ export function SimulasiKantin({
   const hasilRef = useRef(hasil)
   hasilRef.current = hasil
   const jedaRef = useRef<number | null>(null)
+  const terjedaRef = useRef(terjeda)
+  useEffect(() => {
+    terjedaRef.current = terjeda
+  }, [terjeda])
 
   useEffect(
     () => () => {
@@ -88,15 +95,28 @@ export function SimulasiKantin({
     setHasil(null)
   }
 
+  // Lanjut ke pesanan berikutnya: bila sedang terjeda, tunda sampai jeda selesai.
+  const lanjutTertunda = () => {
+    if (terjedaRef.current) {
+      jedaRef.current = window.setTimeout(lanjutTertunda, 100)
+      return
+    }
+    lanjut()
+  }
+
   const jadwalkanLanjut = () => {
     if (jedaRef.current) window.clearTimeout(jedaRef.current)
-    jedaRef.current = window.setTimeout(lanjut, 1400)
+    jedaRef.current = window.setTimeout(lanjutTertunda, 1400)
   }
 
   // Timer hitung mundur per pesanan.
   useEffect(() => {
     if (tanpaWaktu || disabled || selesaiRef.current || hasil) return
-    const id = window.setInterval(() => setSisaMs((s) => Math.max(0, s - 100)), 100)
+    const id = window.setInterval(() => {
+      // Jeda: lewati tick supaya sisa waktu tidak berkurang selama jeda.
+      if (terjedaRef.current) return
+      setSisaMs((s) => Math.max(0, s - 100))
+    }, 100)
     return () => window.clearInterval(id)
   }, [tanpaWaktu, disabled, hasil, idx])
 

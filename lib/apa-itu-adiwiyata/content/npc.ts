@@ -93,6 +93,25 @@ export const DIALOG_NPC: Record<string, DialogNpc> = {
     ],
     tips: 'Sedotan plastik sekali pakai itu gampang banget diganti: bawa sedotan sendiri atau minum langsung.',
   },
+  // Penjaga dua game arkade di dunia.
+  'npc-tangkap-sampah': {
+    sapaan: 'Halo, aku Kak Yoga!',
+    baris: [
+      'Ini arena Tangkap Sampah. Sampah berjatuhan dari langit, tangkap yang benar lalu lempar ke bak yang tepat.',
+      'Satu menit, tiga nyawa. Tangkap beruntun biar skor makin besar.',
+      'Hati-hati, ada sampah nyasar yang bukan sampah sekolah. Yang itu jangan ditangkap!',
+    ],
+    tips: 'Ingat lima bak kita: Organik, Anorganik, Kertas, Residu, dan B3. Satu bak benar, sepuluh poin.',
+  },
+  'npc-kuis': {
+    sapaan: 'Kak Dara di sini!',
+    baris: [
+      'Aku penjaga Kuis Adiwiyata. Di sini kita uji seberapa jauh kamu kenal sekolah hijau ini.',
+      'Dua belas soal, dua puluh detik per soal. Jawab yang benar, kumpulkan Koin Hijau.',
+      'Tenang, salah jawab juga tidak apa-apa. Setiap soal ada penjelasannya, jadi main sambil belajar.',
+    ],
+    tips: 'Kamu bisa main kuis berkali-kali. Rekor terbaikmu tersimpan, jadi coba kalahkan skor sendiri!',
+  },
   // Pemberi Misi Kader (dialog dari DIALOG_TUGAS, lihat atas).
   ...DIALOG_TUGAS_NPC,
 }

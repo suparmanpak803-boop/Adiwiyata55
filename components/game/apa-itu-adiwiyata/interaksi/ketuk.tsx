@@ -16,6 +16,9 @@ export interface TapSpamProps {
   /** Bila true, jumlah ketukan yang dibutuhkan menjadi setengah. */
   modeSatuKetukan?: boolean
   disabled?: boolean
+  /** Bila true, permainan dijeda. Komponen ini tidak punya jam sendiri,
+   *  jadi prop diterima saja. */
+  terjeda?: boolean
   onSelesai: () => void
   onKetuk?: (sisa: number) => void
 }

@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, type ComponentType } from 'react'
-import { ArrowLeft, Check, Flag, RotateCcw } from 'lucide-react'
+import { ArrowLeft, Check, Flag, LogOut, Pause, Play, RotateCcw } from 'lucide-react'
 import { CHAPTERS, CHAPTER_ORDER } from '@/lib/apa-itu-adiwiyata/chapters'
 import { TUGAS } from '@/lib/apa-itu-adiwiyata/tugas'
 import { kunciCerita, PILIHAN_CERITA, pilihEpilog } from '@/lib/apa-itu-adiwiyata/content/cerita'
@@ -30,7 +30,7 @@ import { KantinHijau } from './minigames/kantin-hijau'
 import { DataHijau } from './minigames/data-hijau'
 import { EcoCommunication } from './minigames/eco-communication'
 import { JejaringHijau } from './minigames/jejaring-hijau'
-import { bendera, lencana, playMenang, playPop, startMusic, type MusicMode } from './suara'
+import { bendera, klik, lencana, playMenang, playPop, startMusic, type MusicMode } from './suara'
 
 /**
  * Props yang dipakai mini-game bab: tiap mini-game menerima chapterId,
@@ -42,6 +42,8 @@ export interface MiniGameSlotProps {
   chapterId: ChapterId
   stageIndex: number
   onStageComplete: (score: number) => void
+  /** True saat misi dijeda dari shell: mini-game membekukan timer/interval/rAF-nya. */
+  terjeda?: boolean
 }
 
 /**
@@ -52,6 +54,8 @@ export interface TugasMiniGameSlotProps {
   tugasId: TugasKaderId
   stageIndex: number
   onStageComplete: (score: number) => void
+  /** True saat misi dijeda dari shell: mini-game membekukan timer/interval/rAF-nya. */
+  terjeda?: boolean
 }
 
 const MODE_BAB: MusicMode[] = ['bab1', 'bab2', 'bab3', 'bab4', 'bab5', 'bab6']
@@ -133,6 +137,11 @@ export function MisiShell({
   const [showEvent, setShowEvent] = useState(false)
   const [eventDone, setEventDone] = useState(false)
   const [pesanSukses, setPesanSukses] = useState<string | null>(null)
+  // Gerbang judul + jeda: misi tidak langsung memainkan tahap pertama —
+  // pemain menekan "Mulai Misi" dulu; "Main lagi" langsung ke tahap itu
+  // tanpa layar judul lagi. Jeda membekukan permainan lewat prop terjeda.
+  const [sudahMulai, setSudahMulai] = useState(false)
+  const [terjeda, setTerjeda] = useState(false)
 
   const chapterId = kind === 'bab' ? (id as ChapterId) : null
   const tugasId = kind === 'tugas' ? (id as TugasKaderId) : null
@@ -169,7 +178,7 @@ export function MisiShell({
       : false
   const namaLencanaTugas =
     kind === 'tugas' && tugasId
-      ? LENCANA.find((l) => l.id === TUGAS_BADGE[tugasId])?.nama ?? 'Lencana Misi Kader'
+      ? LENCANA.find((l) => l.id === TUGAS_BADGE[tugasId])?.nama ?? 'Lencana Misi Tambahan'
       : ''
 
   // Reset status kunjungan saat pindah misi.
@@ -178,6 +187,8 @@ export function MisiShell({
     setShowEvent(false)
     setEventDone(false)
     setPesanSukses(null)
+    setSudahMulai(false)
+    setTerjeda(false)
   }, [kind, id])
 
   // Musik: bab memakai musik babnya, tugas memakai mode 'menu'.
@@ -310,8 +321,26 @@ export function MisiShell({
               <span aria-hidden="true">?</span>
             </button>
           )}
+          {sudahMulai && tampilkanGame && !showEvent && (
+            <>
+              <button
+                type="button"
+                className="aia-icon-btn"
+                onClick={() => {
+                  klik()
+                  setTerjeda(true)
+                }}
+                aria-label="Jeda permainan"
+              >
+                <Pause aria-hidden="true" />
+              </button>
+              <button type="button" className="aia-icon-btn" onClick={onExit} aria-label="Keluar dari misi">
+                <LogOut aria-hidden="true" />
+              </button>
+            </>
+          )}
         </div>
-        {tahapTerakhirSelesai >= 0 && replayStage === null && (
+        {sudahMulai && tahapTerakhirSelesai >= 0 && replayStage === null && (
           <div style={{ marginTop: 10 }}>
             <button
               type="button"
@@ -354,7 +383,7 @@ export function MisiShell({
         </div>
       )}
 
-      {tampilkanGame && (
+      {sudahMulai && tampilkanGame && (
         <div className="aia-card" role="status" aria-label="Petunjuk Magi">
           <span className="aia-kicker">Magi</span>
           <p style={{ margin: 0 }}>{petunjukMagi}</p>
@@ -373,7 +402,34 @@ export function MisiShell({
         </section>
       )}
 
-      {tampilkanGame && !showEvent && (
+      {!sudahMulai && (
+        <section className="aia-card" aria-label="Mulai misi">
+          <h3 className="aia-section-title" style={{ marginTop: 0 }}>
+            Siap main?
+          </h3>
+          <p className="aia-muted" style={{ marginTop: 0 }}>
+            Tiga tahap, satu misi. Selesaikan semuanya untuk membuka Pos Hijau.
+          </p>
+          <div className="aia-actions">
+            <button
+              type="button"
+              className="aia-btn aia-btn-primary"
+              style={{ minHeight: 44 }}
+              onClick={() => {
+                klik()
+                setSudahMulai(true)
+              }}
+            >
+              <Play aria-hidden="true" /> Mulai Misi
+            </button>
+            <button type="button" className="aia-btn aia-btn-ghost" style={{ minHeight: 44 }} onClick={onExit}>
+              <LogOut aria-hidden="true" /> Keluar
+            </button>
+          </div>
+        </section>
+      )}
+
+      {sudahMulai && tampilkanGame && !showEvent && (
         <section className="aia-slot" aria-label="Permainan misi">
           {tampilkanPilihan2 && titikPilihan2 && kunciPilihan2 ? (
             <PilihanCerita
@@ -395,6 +451,7 @@ export function MisiShell({
                   stageIndex={tahapBerjalan}
                   onStageComplete={(score) => selesaikanTahap(tahapBerjalan, score)}
                   modeSatuKetukan={modeSatuKetukan}
+                  terjeda={terjeda}
                 />
               )}
               {kind === 'tugas' && tugasId && MiniGameTugas && (
@@ -403,6 +460,7 @@ export function MisiShell({
                   stageIndex={tahapBerjalan}
                   onStageComplete={(score) => selesaikanTahap(tahapBerjalan, score)}
                   modeSatuKetukan={modeSatuKetukan}
+                  terjeda={terjeda}
                 />
               )}
             </>
@@ -410,7 +468,7 @@ export function MisiShell({
         </section>
       )}
 
-      {semuaSelesai && replayStage === null && (
+      {sudahMulai && semuaSelesai && replayStage === null && (
         <section className="aia-card aia-pos-hijau" aria-label="Pos Hijau">
           <h3>
             <Flag aria-hidden="true" /> Pos Hijau
@@ -442,7 +500,7 @@ export function MisiShell({
           ) : (
             <p>
               Ketiga tahap selesai! Kamu mendapat lencana {namaLencanaTugas}.
-              {lengkapiKader ? ' Ini misi kader terakhir — kamu juga mendapat lencana Kader Lengkap!' : ''}
+              {lengkapiKader ? ' Ini misi tambahan terakhir — kamu juga mendapat lencana Tim Lengkap!' : ''}
             </p>
           )}
           <button
@@ -461,6 +519,47 @@ export function MisiShell({
           <ArrowLeft aria-hidden="true" /> Kembali ke dunia
         </button>
       </div>
+
+      {terjeda && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Jeda"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 50,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 16,
+            background: 'rgba(0,0,0,0.5)',
+          }}
+        >
+          <section className="aia-card" style={{ width: '100%', maxWidth: 420 }}>
+            <h3 className="aia-section-title" style={{ marginTop: 0 }}>
+              Jeda
+            </h3>
+            <p className="aia-muted">Permainan dibekukan. Progres tahap yang sudah selesai tetap tersimpan.</p>
+            <div className="aia-actions">
+              <button
+                type="button"
+                className="aia-btn aia-btn-primary"
+                style={{ minHeight: 44 }}
+                onClick={() => {
+                  klik()
+                  setTerjeda(false)
+                }}
+              >
+                <Play aria-hidden="true" /> Lanjutkan
+              </button>
+              <button type="button" className="aia-btn aia-btn-ghost" style={{ minHeight: 44 }} onClick={onExit}>
+                <LogOut aria-hidden="true" /> Keluar
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
     </div>
   )
 }

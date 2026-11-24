@@ -32,7 +32,7 @@ export const CHAPTER_ORDER: ChapterId[] = ['gerbang', 'kantin', 'maggot', 'kompo
 export const CHAPTERS: Record<ChapterId, ChapterMeta> = {
   gerbang: {
     id: 'gerbang',
-    judul: 'Kader Budaya Lingkungan',
+    judul: 'Budaya Lingkungan',
     deskripsi: 'Membiasakan warga sekolah membawa tumbler dan lunch box sendiri dari rumah.',
     menit: 8,
     zona: ['Gerbang'],
@@ -40,7 +40,7 @@ export const CHAPTERS: Record<ChapterId, ChapterMeta> = {
   },
   kantin: {
     id: 'kantin',
-    judul: 'Kader Pilah',
+    judul: 'Pilah',
     deskripsi: 'Mengumpulkan dan memilah sampah harian dari seluruh titik ke TPS/Bank Sampah Sekolah.',
     menit: 10,
     zona: ['Kantin'],
@@ -48,7 +48,7 @@ export const CHAPTERS: Record<ChapterId, ChapterMeta> = {
   },
   maggot: {
     id: 'maggot',
-    judul: 'Kader Maggot',
+    judul: 'Maggot',
     deskripsi: 'Mengolah sampah dapur/kantin menjadi pakan larva maggot (BSF).',
     menit: 10,
     zona: ['Pos Maggot'],
@@ -56,7 +56,7 @@ export const CHAPTERS: Record<ChapterId, ChapterMeta> = {
   },
   kompos: {
     id: 'kompos',
-    judul: 'Kader Olah Organik',
+    judul: 'Olah Organik',
     deskripsi: 'Mengolah sampah organik menjadi kompos, pupuk organik cair, dan Eco Enzyme.',
     menit: 10,
     zona: ['Kompos', 'Kebun'],
@@ -64,7 +64,7 @@ export const CHAPTERS: Record<ChapterId, ChapterMeta> = {
   },
   'air-energi': {
     id: 'air-energi',
-    judul: 'Kader Air & Energi Lestari',
+    judul: 'Air & Energi Lestari',
     deskripsi: 'Mengawal penghematan air dan listrik di sekolah.',
     menit: 10,
     zona: ['Taman Air', 'Panel Surya'],
@@ -72,7 +72,7 @@ export const CHAPTERS: Record<ChapterId, ChapterMeta> = {
   },
   biodiversitas: {
     id: 'biodiversitas',
-    judul: 'Kader Hijau dan Biodiversitas',
+    judul: 'Hijau dan Biodiversitas',
     deskripsi: 'Merawat tanaman TOGA dan hidroponik serta keanekaragaman hayati sekolah.',
     menit: 12,
     zona: ['Pohon'],

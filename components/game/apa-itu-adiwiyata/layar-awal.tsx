@@ -56,7 +56,7 @@ export function LayarAwal({
       </p>
       {progres && (
         <p className="aia-muted" role="status">
-          Progresmu: Misi utama {misiUtama}/6 selesai · Misi Kader {misiKader}/8 selesai · {save.coins} Koin Hijau
+          Progresmu: Misi utama {misiUtama}/6 selesai · Misi Tambahan {misiKader}/8 selesai · {save.coins} Koin Hijau
         </p>
       )}
       <div className="aia-actions" style={{ flexDirection: 'column', alignItems: 'stretch' }}>

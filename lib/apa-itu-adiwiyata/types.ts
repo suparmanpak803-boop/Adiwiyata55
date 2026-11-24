@@ -109,6 +109,8 @@ export interface CampaignSave {
   cerita: Record<string, string>
   /** Status Pak Plastik dalam alur Cerita Bercabang. */
   pakPlastik: PakPlastikStatus
+  /** Skor terbaik dua game arkade di dunia (Tangkap Sampah, Kuis Adiwiyata). */
+  arkade: { tangkap: number; kuis: number }
   completedAt: string | null
   updatedAt: string
 }

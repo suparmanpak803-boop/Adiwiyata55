@@ -108,6 +108,7 @@ export function PilahSampah({
   stageIndex,
   onStageComplete,
   modeSatuKetukan = false,
+  terjeda = false,
 }: MiniGameSlotProps & { modeSatuKetukan?: boolean }) {
   const { dispatch } = useCampaign()
   const tahap = Math.min(stageIndex, 2)
@@ -147,6 +148,15 @@ export function PilahSampah({
   const advanceTimer = useRef<number | null>(null)
   const terbangTimer = useRef<number | null>(null)
   const hasilRef = useRef<{ benarPilihan: boolean; nyawaBaru: number } | null>(null)
+  // Jeda: bekukan jam. Tiap setTimeout dicatat deadline-nya (Date.now() +
+  // durasi); saat terjeda, timeout dibersihkan dan sisa waktunya disimpan,
+  // lalu dijadwalkan ulang dengan sisa itu saat lanjut — jam tidak maju
+  // selama jeda. File ini tidak punya setInterval/rAF sendiri.
+  const terjedaRef = useRef(terjeda)
+  const advanceDeadlineRef = useRef<number | null>(null)
+  const advanceSisaRef = useRef<number | null>(null)
+  const terbangDeadlineRef = useRef<number | null>(null)
+  const terbangSisaRef = useRef<number | null>(null)
   const idsSalahRef = useRef<string[]>([])
   const itemRef = useRef<HTMLButtonElement | null>(null)
   const binRefs = useRef<Partial<Record<TongSampah, HTMLButtonElement | null>>>({})
@@ -203,6 +213,9 @@ export function PilahSampah({
     if (lanjutRef.current) return
     lanjutRef.current = true
     if (advanceTimer.current) window.clearTimeout(advanceTimer.current)
+    advanceTimer.current = null
+    advanceDeadlineRef.current = null
+    advanceSisaRef.current = null
     const hasil = hasilRef.current
     setUmpan(null)
     setDipilih(false)
@@ -248,6 +261,18 @@ export function PilahSampah({
     koin()
   }
 
+  /** Jadwalkan lanjutkan setelah ms, sambil mencatat deadline untuk jeda. */
+  const jadwalkanLanjut = (ms: number) => {
+    if (advanceTimer.current) window.clearTimeout(advanceTimer.current)
+    advanceDeadlineRef.current = Date.now() + ms
+    advanceSisaRef.current = null
+    advanceTimer.current = window.setTimeout(() => {
+      advanceTimer.current = null
+      advanceDeadlineRef.current = null
+      lanjutkan()
+    }, ms)
+  }
+
   /** Penilaian benar — tanpa SFX (komponen gestur sudah memutarnya sendiri). */
   const resolveBenar = () => {
     if (dijawabRef.current === idx) return
@@ -264,7 +289,7 @@ export function PilahSampah({
       teks: `Benar! ${item.nama} memang masuk tong ${namaTong(item.tong)}.`,
       poin: 10,
     })
-    advanceTimer.current = window.setTimeout(lanjutkan, 1400)
+    jadwalkanLanjut(1400)
   }
 
   /** Penilaian salah — tanpa SFX (pemanggil yang memutarnya). */
@@ -279,7 +304,7 @@ export function PilahSampah({
     lanjutRef.current = false
     hasilRef.current = { benarPilihan: false, nyawaBaru }
     setUmpan({ jenis: 'salah', teks })
-    advanceTimer.current = window.setTimeout(lanjutkan, 3200)
+    jadwalkanLanjut(3200)
   }
 
   /** Hasil lari SortirCepat (tahap 1-2 gestur): skor akhir 0-100 dari pustaka. */
@@ -334,6 +359,9 @@ export function PilahSampah({
     if (!item || !lemparAktifRef.current) return
     lemparAktifRef.current = false
     if (terbangTimer.current) window.clearTimeout(terbangTimer.current)
+    terbangTimer.current = null
+    terbangDeadlineRef.current = null
+    terbangSisaRef.current = null
     setTerbang(null)
     const benarPilihan = tong === item.tong
     plop()
@@ -371,8 +399,49 @@ export function PilahSampah({
     lemparAktifRef.current = true
     setTerbang({ x: a.left, y: a.top, dx, dy, tong, nama: item.nama, kunci: `${item.id}-${idx}` })
     // Pengaman: kalau animationend tidak jalan, tetap selesaikan.
+    terbangDeadlineRef.current = Date.now() + 800
+    terbangSisaRef.current = null
     terbangTimer.current = window.setTimeout(() => selesaikanLempar(tong), 800)
   }
+
+  // Bekukan jam saat terjeda: bersihkan timeout yang sedang berjalan dan
+  // simpan sisa waktunya; saat lanjut, jadwalkan ulang dengan sisa itu.
+  // Jam internal SortirCepat/ThrowAim dibekukan lewat prop terjeda yang
+  // diteruskan ke mereka; animasi terbang CSS dijeda via animationPlayState.
+  useEffect(() => {
+    terjedaRef.current = terjeda
+    if (terjeda) {
+      if (advanceTimer.current !== null && advanceDeadlineRef.current !== null) {
+        window.clearTimeout(advanceTimer.current)
+        advanceTimer.current = null
+        advanceSisaRef.current = Math.max(0, advanceDeadlineRef.current - Date.now())
+      }
+      if (terbangTimer.current !== null && terbangDeadlineRef.current !== null) {
+        window.clearTimeout(terbangTimer.current)
+        terbangTimer.current = null
+        terbangSisaRef.current = Math.max(0, terbangDeadlineRef.current - Date.now())
+      }
+      return
+    }
+    if (advanceSisaRef.current !== null && advanceTimer.current === null) {
+      const sisa = advanceSisaRef.current
+      advanceSisaRef.current = null
+      advanceDeadlineRef.current = Date.now() + sisa
+      advanceTimer.current = window.setTimeout(() => {
+        advanceTimer.current = null
+        advanceDeadlineRef.current = null
+        lanjutkan()
+      }, sisa)
+    }
+    if (terbangSisaRef.current !== null && terbangTimer.current === null && terbang) {
+      const sisa = terbangSisaRef.current
+      const tong = terbang.tong
+      terbangSisaRef.current = null
+      terbangDeadlineRef.current = Date.now() + sisa
+      terbangTimer.current = window.setTimeout(() => selesaikanLempar(tong), sisa)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [terjeda])
 
   const cobaLagi = (mudah: boolean) => {
     if (mudah) setModeMudah(true)
@@ -391,6 +460,8 @@ export function PilahSampah({
     lanjutRef.current = false
     hasilRef.current = null
     idsSalahRef.current = []
+    advanceSisaRef.current = null
+    terbangSisaRef.current = null
     setFase('main')
   }
 
@@ -427,6 +498,7 @@ export function PilahSampah({
               top: terbang.y,
               '--dx': `${terbang.dx}px`,
               '--dy': `${terbang.dy}px`,
+              animationPlayState: terjeda ? 'paused' : 'running',
             } as React.CSSProperties
           }
           onAnimationEnd={() => selesaikanLempar(terbang.tong)}
@@ -451,6 +523,7 @@ export function PilahSampah({
             // Di SortirCepat, prop ini berarti waktu per item 2× lipat —
             // dipakai sebagai mode mudah, bukan mode satu-ketukan.
             modeSatuKetukan={modeMudah}
+            terjeda={terjeda}
             onSelesai={sortirSelesai}
           />
           {modeMudah && (
@@ -558,6 +631,7 @@ export function PilahSampah({
                   ikon={<Package aria-hidden="true" style={{ width: 28, height: 28 }} />}
                   targetLabel={aim ? namaTong(aim) : namaTong(tongTersedia[0])}
                   disabled={aim === null || resolving}
+                  terjeda={terjeda}
                   onLempar={(kekuatan) => lemparHasil(kekuatan)}
                 />
               </>

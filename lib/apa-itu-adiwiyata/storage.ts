@@ -68,6 +68,7 @@ export function freshSave(nickname = ''): CampaignSave {
     dunia: freshDunia(),
     cerita: {},
     pakPlastik: 'netral',
+    arkade: { tangkap: 0, kuis: 0 },
     completedAt: null,
     updatedAt: new Date().toISOString(),
   }
@@ -156,6 +157,14 @@ export function loadSave(): CampaignSave {
       merged.pakPlastik !== 'dijebak'
     ) {
       merged.pakPlastik = 'netral'
+    }
+    if (
+      typeof merged.arkade !== 'object' ||
+      merged.arkade === null ||
+      typeof merged.arkade.tangkap !== 'number' ||
+      typeof merged.arkade.kuis !== 'number'
+    ) {
+      merged.arkade = { tangkap: 0, kuis: 0 }
     }
     return merged
   } catch {

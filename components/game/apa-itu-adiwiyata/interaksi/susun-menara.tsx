@@ -23,6 +23,8 @@ export interface SusunMenaraProps {
   lapisan: LapisanMenara[]
   modeSatuKetukan?: boolean
   disabled?: boolean
+  /** Bila true, permainan dijeda: panggilan selesai ditunda sampai lanjut. */
+  terjeda?: boolean
   onSelesai: (skor: number) => void
 }
 
@@ -31,7 +33,7 @@ const WARNA_LAPISAN: Record<LapisanMenara['jenis'], string> = {
   hijau: '#2f7d4f',
 }
 
-export function SusunMenara({ lapisan, modeSatuKetukan = false, disabled = false, onSelesai }: SusunMenaraProps) {
+export function SusunMenara({ lapisan, modeSatuKetukan = false, disabled = false, terjeda = false, onSelesai }: SusunMenaraProps) {
   const kurangi = useKurangiAnimasi()
   const [tertumpuk, setTertumpuk] = useState(0)
   const [kandidat, setKandidat] = useState<LapisanMenara[]>([])
@@ -41,6 +43,11 @@ export function SusunMenara({ lapisan, modeSatuKetukan = false, disabled = false
 
   const selesaiRef = useRef(false)
   const timerRef = useRef<number | null>(null)
+  // Jeda: panggilan selesai ditunda selama terjeda (ref supaya callback
+  // timeout membaca nilai terbaru). Timeout kosmetik (umpan balik salah
+  // 2500 ms) dibiarkan jalan — tidak memengaruhi skor.
+  const terjedaRef = useRef(false)
+  useEffect(() => { terjedaRef.current = terjeda }, [terjeda])
   const tertumpukRef = useRef(tertumpuk)
   tertumpukRef.current = tertumpuk
   const salahRef = useRef(jumlahSalah)
@@ -92,7 +99,14 @@ export function SusunMenara({ lapisan, modeSatuKetukan = false, disabled = false
         const dendaPerSalah = lapisan.length > 0 ? 100 / lapisan.length : 0
         const skor = clamp(Math.round(100 - salahRef.current * dendaPerSalah), 0, 100)
         if (timerRef.current) window.clearTimeout(timerRef.current)
-        timerRef.current = window.setTimeout(() => onSelesai(skor), kurangi ? 60 : 600)
+        // Selesai ditunda selama jeda (cek ulang tiap 100 ms).
+        const jadwalkanSelesai = (ms: number) => {
+          timerRef.current = window.setTimeout(() => {
+            if (terjedaRef.current) { jadwalkanSelesai(100); return }
+            onSelesai(skor)
+          }, ms)
+        }
+        jadwalkanSelesai(kurangi ? 60 : 600)
       } else {
         setKandidat(buatKandidat(baru))
       }

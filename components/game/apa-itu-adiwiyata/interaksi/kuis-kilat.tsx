@@ -27,6 +27,8 @@ export interface KuisKilatProps {
   waktuPerSoalMs?: number
   modeSatuKetukan?: boolean
   disabled?: boolean
+  /** Jeda: bekukan hitung mundur waktu per soal. */
+  terjeda?: boolean
   onSelesai: (skor: number) => void
 }
 
@@ -35,6 +37,7 @@ export function KuisKilat({
   waktuPerSoalMs = 10000,
   modeSatuKetukan = false,
   disabled = false,
+  terjeda = false,
   onSelesai,
 }: KuisKilatProps) {
   const kurangi = useKurangiAnimasi()
@@ -57,6 +60,10 @@ export function KuisKilat({
   const dijawabRef = useRef(false)
   const onSelesaiRef = useRef(onSelesai)
   onSelesaiRef.current = onSelesai
+  const terjedaRef = useRef(terjeda)
+  useEffect(() => {
+    terjedaRef.current = terjeda
+  }, [terjeda])
 
   const poinMaks = soal.reduce((total, _, i) => total + 10 + 2 * i, 0)
 
@@ -117,7 +124,11 @@ export function KuisKilat({
   // Hitung mundur per soal (tidak jalan di mode satu-ketukan).
   useEffect(() => {
     if (tanpaWaktu || selesai || soal.length === 0) return
-    const id = window.setInterval(() => setSisaMs((s) => Math.max(0, s - 100)), 100)
+    const id = window.setInterval(() => {
+      // Jeda: lewati tick supaya sisa waktu tidak berkurang selama jeda.
+      if (terjedaRef.current) return
+      setSisaMs((s) => Math.max(0, s - 100))
+    }, 100)
     return () => window.clearInterval(id)
   }, [idx, selesai, tanpaWaktu, soal.length])
 

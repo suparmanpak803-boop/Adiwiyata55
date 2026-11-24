@@ -17,6 +17,8 @@ export interface HoldActionProps {
   /** Bila true, tahan diganti ketuk sekali (isi otomatis). */
   modeSatuKetukan?: boolean
   disabled?: boolean
+  /** Bila true, permainan dijeda: progres tahan dibekukan. */
+  terjeda?: boolean
   onSelesai: () => void
   onBatal?: () => void
 }
@@ -30,6 +32,7 @@ export function HoldAction({
   ikon,
   modeSatuKetukan = false,
   disabled = false,
+  terjeda = false,
   onSelesai,
   onBatal,
 }: HoldActionProps) {
@@ -42,6 +45,11 @@ export function HoldAction({
   const rafRef = useRef<number | null>(null)
   const selesaiRef = useRef(false)
   const menahanRef = useRef(false)
+  // Jeda: rAF dilewati selama terjeda dengan menggeser baseline sebesar
+  // waktu yang berlalu, supaya progres tidak maju selama jeda.
+  const terjedaRef = useRef(false)
+  const terakhirRef = useRef(0)
+  useEffect(() => { terjedaRef.current = terjeda }, [terjeda])
 
   useEffect(
     () => () => {
@@ -67,7 +75,16 @@ export function HoldAction({
     setMenahan(true)
     // Lanjutkan dari progres saat ini (untuk mode ketuk yang dijeda).
     mulaiRef.current = performance.now() - progressRef.current * durasiMs
+    terakhirRef.current = performance.now()
     const langkah = (waktu: number) => {
+      if (terjedaRef.current) {
+        // Jeda: bekukan progres (geser baseline sebesar waktu yang berlalu).
+        mulaiRef.current += waktu - terakhirRef.current
+        terakhirRef.current = waktu
+        rafRef.current = requestAnimationFrame(langkah)
+        return
+      }
+      terakhirRef.current = waktu
       const p = clamp((waktu - mulaiRef.current) / durasiMs, 0, 1)
       progressRef.current = p
       setProgress(p)

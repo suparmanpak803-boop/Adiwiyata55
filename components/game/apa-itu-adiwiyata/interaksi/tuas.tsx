@@ -20,6 +20,9 @@ export interface SliderLeverProps {
   /** Bila true, tampil tombol kurang/tambah per langkah. */
   modeSatuKetukan?: boolean
   disabled?: boolean
+  /** Bila true, permainan dijeda. Komponen ini tidak punya jam sendiri,
+   *  jadi prop diterima saja. */
+  terjeda?: boolean
   onUbah: (nilai: number) => void
   onSelesai?: (nilai: number) => void
 }

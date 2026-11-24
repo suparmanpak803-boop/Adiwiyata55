@@ -33,6 +33,8 @@ export interface PipePuzzleProps {
   /** Bila true, sorotan petunjuk muncul lebih cepat (setelah 1 putaran gagal). */
   modeSatuKetukan?: boolean
   disabled?: boolean
+  /** Bila true, permainan dijeda: panggilan selesai ditunda sampai lanjut. */
+  terjeda?: boolean
   onSelesai: () => void
   onPutar?: (id: string, rotasiBaru: RotasiPipa) => void
 }
@@ -146,6 +148,7 @@ export function PipePuzzle({
   akhir,
   modeSatuKetukan = false,
   disabled = false,
+  terjeda = false,
   onSelesai,
   onPutar,
 }: PipePuzzleProps) {
@@ -154,6 +157,10 @@ export function PipePuzzle({
   const selesaiRef = useRef(false)
   const basahHitungRef = useRef(-1)
   const timerRef = useRef<number | null>(null)
+  // Jeda: panggilan selesai ditunda selama terjeda (ref supaya callback
+  // timeout membaca nilai terbaru).
+  const terjedaRef = useRef(false)
+  useEffect(() => { terjedaRef.current = terjeda }, [terjeda])
 
   useEffect(() => {
     setDaftar(potongan)
@@ -180,7 +187,15 @@ export function PipePuzzle({
       siram()
       benar()
       koin()
-      timerRef.current = window.setTimeout(() => onSelesai(), 700)
+      // Selesai ditunda selama jeda: bila jeda aktif saat timer habis,
+      // jadwalkan ulang tiap 100 ms sampai jeda selesai.
+      const jadwalkan = (ms: number) => {
+        timerRef.current = window.setTimeout(() => {
+          if (terjedaRef.current) { jadwalkan(100); return }
+          onSelesai()
+        }, ms)
+      }
+      jadwalkan(700)
     }
   }, [terhubung, onSelesai])
 

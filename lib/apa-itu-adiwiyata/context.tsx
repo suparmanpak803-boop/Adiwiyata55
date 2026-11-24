@@ -55,6 +55,8 @@ export type CampaignAction =
       sekarang: number
     }
   | { type: 'PILIH_CERITA'; kunci: string; opsi: string; pakPlastik?: PakPlastikStatus }
+  /** Skor terbaik game arkade: hanya naik, tidak pernah turun. */
+  | { type: 'ARKADE_TERBAIK'; game: 'tangkap' | 'kuis'; skor: number }
 
 function touch(save: CampaignSave, patch: Partial<CampaignSave> = {}): CampaignSave {
   return { ...save, ...patch, updatedAt: new Date().toISOString() }
@@ -273,6 +275,12 @@ function reducer(save: CampaignSave, action: CampaignAction): CampaignSave {
       return touch(save, {
         cerita,
         ...(action.pakPlastik ? { pakPlastik: action.pakPlastik } : {}),
+      })
+    }
+    case 'ARKADE_TERBAIK': {
+      const arkade = save.arkade ?? { tangkap: 0, kuis: 0 }
+      return touch(save, {
+        arkade: { ...arkade, [action.game]: Math.max(arkade[action.game], Math.max(0, action.skor)) },
       })
     }
     default:

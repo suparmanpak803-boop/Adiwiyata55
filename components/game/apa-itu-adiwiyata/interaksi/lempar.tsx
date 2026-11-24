@@ -17,6 +17,9 @@ export interface ThrowAimProps {
   /** Bila true, tarik diganti ketuk target untuk melempar. */
   modeSatuKetukan?: boolean
   disabled?: boolean
+  /** Bila true, permainan dijeda. Komponen ini tidak punya jam sendiri,
+   *  jadi prop diterima saja. */
+  terjeda?: boolean
   /** kekuatan 0..1, arah derajat (0 = kanan, -90 = lurus ke atas). */
   onLempar: (kekuatan: number, arahDerajat: number) => void
 }

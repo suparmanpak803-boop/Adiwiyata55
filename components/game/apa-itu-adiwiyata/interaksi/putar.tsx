@@ -17,6 +17,9 @@ export interface RotateDialProps {
   /** Bila true, putar diganti ketuk dua kali (= 90°). */
   modeSatuKetukan?: boolean
   disabled?: boolean
+  /** Bila true, permainan dijeda. Komponen ini tidak punya jam sendiri
+   *  (Date.now hanya untuk deteksi ketuk ganda), jadi prop diterima saja. */
+  terjeda?: boolean
   onSelesai: () => void
   onPutar?: (sudutTotal: number) => void
 }
