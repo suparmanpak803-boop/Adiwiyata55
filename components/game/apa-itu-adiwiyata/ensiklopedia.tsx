@@ -36,7 +36,7 @@ export function Ensiklopedia() {
                 </span>
                 <div className="aia-bab-body">
                   <strong>{kartu.judul}</strong>
-                  <p>Mainkan bab {CHAPTERS[kartu.babTerkait].judul} untuk membuka kartu ini.</p>
+                  <p>Mainkan misi {CHAPTERS[kartu.babTerkait].judul} untuk membuka kartu ini.</p>
                   <span className="aia-chip">Terkunci</span>
                 </div>
               </div>

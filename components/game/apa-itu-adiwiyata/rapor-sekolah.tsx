@@ -54,7 +54,7 @@ export function RaporSekolah() {
             {terkunci && (
               <p className="aia-muted" style={{ margin: '8px 0 0' }}>
                 <Lock aria-hidden="true" style={{ width: 14, height: 14, verticalAlign: -2 }} /> Selesaikan
-                bab {CHAPTERS[baris.bab].judul} untuk membuka indikator ini.
+                misi {CHAPTERS[baris.bab].judul} untuk membuka indikator ini.
               </p>
             )}
           </article>

@@ -21,7 +21,7 @@ export function KoleksiSpesies() {
       <h3 className="aia-section-title">Koleksi Spesies</h3>
       <p className="aia-muted">
         {terbuka === 0
-          ? 'Selesaikan Bab 6 untuk membuka koleksi spesies halaman sekolah.'
+          ? 'Selesaikan Misi 6 untuk membuka koleksi spesies halaman sekolah.'
           : `${terbuka} dari ${SPESIES.length} spesies sudah datang ke halaman sekolah.`}
       </p>
       <div className="aia-stack">
@@ -39,7 +39,7 @@ export function KoleksiSpesies() {
                   <p>
                     {sudah
                       ? sp.deskripsi
-                      : 'Spesies ini belum datang. Selesaikan Bab 6 untuk mengundangnya.'}
+                      : 'Spesies ini belum datang. Selesaikan Misi 6 untuk mengundangnya.'}
                   </p>
                 </div>
               </div>

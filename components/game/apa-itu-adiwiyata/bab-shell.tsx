@@ -128,7 +128,7 @@ export function BabShell({
   return (
     <div className="aia-stack">
       <section className="aia-card" aria-labelledby="aia-bab-title">
-        <span className="aia-kicker">Bab · ±{meta.menit} menit</span>
+        <span className="aia-kicker">Misi · ±{meta.menit} menit</span>
         <h2 id="aia-bab-title" className="aia-section-title">
           {meta.judul}
         </h2>
