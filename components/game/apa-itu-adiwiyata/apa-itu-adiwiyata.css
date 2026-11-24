@@ -1,0 +1,575 @@
+/* Gaya kampanye "Apa itu Adiwiyata". Semua kelas berprefix .aia- supaya tidak
+   bentrok dengan game.css atau gaya situs lain. Mobile-first (360px), container
+   max-width 720px di tengah, tombol minimal 44px, focus ring jelas, kontras AA.
+   Warna memakai variabel tema situs (globals.css) supaya ikut mode terang/gelap. */
+
+.aia-root {
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0 16px calc(88px + env(safe-area-inset-bottom));
+  color: var(--foreground);
+}
+
+.aia-root button,
+.aia-root input {
+  font: inherit;
+}
+
+.aia-root button:focus-visible,
+.aia-root a:focus-visible,
+.aia-root input:focus-visible {
+  outline: 3px solid var(--green);
+  outline-offset: 2px;
+}
+
+/* --- Header kampanye --- */
+.aia-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 0 4px;
+}
+
+.aia-header-title {
+  flex: 1;
+  min-width: 0;
+}
+
+.aia-header-title h1 {
+  margin: 0;
+  font-size: 20px;
+  line-height: 1.25;
+}
+
+.aia-header-title p {
+  margin: 2px 0 0;
+  color: var(--ink-soft);
+  font-size: 12px;
+}
+
+.aia-icon-btn {
+  display: inline-grid;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+  color: var(--foreground);
+  cursor: pointer;
+}
+
+.aia-icon-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* --- Kartu & teks umum --- */
+.aia-card {
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--card);
+}
+
+.aia-kicker {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--ink-soft);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.aia-section-title {
+  margin: 24px 0 10px;
+  font-size: 17px;
+  line-height: 1.3;
+}
+
+.aia-section-title:first-child {
+  margin-top: 8px;
+}
+
+.aia-muted {
+  color: var(--ink-soft);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.aia-stack {
+  display: grid;
+  gap: 12px;
+}
+
+/* --- Tombol --- */
+.aia-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 10px 18px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--foreground);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.aia-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.aia-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.aia-btn-primary {
+  border-color: #236b4d;
+  background: #236b4d;
+  color: #fff;
+}
+
+.aia-btn-ghost {
+  background: transparent;
+  color: var(--green);
+  border-color: var(--line);
+}
+
+.aia-btn-block {
+  width: 100%;
+}
+
+.aia-btn-danger {
+  border-color: #b83232;
+  background: transparent;
+  color: #b83232;
+}
+
+.aia-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+/* --- Input --- */
+.aia-input {
+  width: 100%;
+  min-height: 48px;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+  color: var(--foreground);
+  font-size: 15px;
+}
+
+.aia-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+/* --- Statistik (koin, streak) --- */
+.aia-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.aia-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: var(--muted);
+  color: var(--foreground);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.aia-stat svg {
+  width: 16px;
+  height: 16px;
+  color: var(--green);
+}
+
+/* --- Bar progres --- */
+.aia-progress {
+  height: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--muted);
+}
+
+.aia-progress > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--green);
+}
+
+.aia-progress-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+.aia-progress-row .aia-progress {
+  flex: 1;
+}
+
+/* --- Chip status --- */
+.aia-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--muted);
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.aia-chip.done {
+  background: #2f7d4f;
+  color: #fff;
+}
+
+.aia-chip.open {
+  background: var(--sage);
+  color: var(--foreground);
+}
+
+/* --- Grid bab --- */
+.aia-bab-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.aia-bab-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: 100%;
+  min-height: 44px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--card);
+  color: var(--foreground);
+  text-align: left;
+  cursor: pointer;
+}
+
+.aia-bab-card.locked {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.aia-bab-icon {
+  display: grid;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border-radius: 12px;
+  background: var(--sage);
+  color: var(--green);
+}
+
+.aia-bab-icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.aia-bab-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.aia-bab-body strong {
+  display: block;
+  font-size: 15px;
+}
+
+.aia-bab-body p {
+  margin: 3px 0 6px;
+  color: var(--ink-soft);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.aia-bab-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.aia-bab-meta svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* --- Dialog Magi --- */
+.aia-dialog {
+  padding: 14px 16px;
+  border-left: 4px solid var(--green);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--sage) 55%, var(--card));
+}
+
+.aia-dialog strong {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 13px;
+}
+
+.aia-dialog p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* --- Slot placeholder --- */
+.aia-slot {
+  padding: 22px 16px;
+  border: 2px dashed var(--line);
+  border-radius: 14px;
+  color: var(--ink-soft);
+  text-align: center;
+}
+
+.aia-slot strong {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--foreground);
+  font-size: 15px;
+}
+
+.aia-slot p {
+  margin: 0 0 12px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+/* --- Daftar tahap --- */
+.aia-stage-list {
+  display: grid;
+  gap: 10px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.aia-stage-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+}
+
+.aia-stage-row > div {
+  flex: 1;
+  min-width: 0;
+}
+
+.aia-stage-row strong {
+  display: block;
+  font-size: 14px;
+}
+
+.aia-stage-row small {
+  color: var(--ink-soft);
+  font-size: 12px;
+}
+
+/* --- Pos Hijau --- */
+.aia-pos-hijau {
+  border-color: #2f7d4f;
+  background: color-mix(in srgb, #2f7d4f 10%, var(--card));
+}
+
+.aia-pos-hijau h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 6px;
+  font-size: 16px;
+}
+
+.aia-pos-hijau h3 svg {
+  width: 18px;
+  height: 18px;
+  color: #2f7d4f;
+}
+
+.aia-pos-hijau p {
+  margin: 0 0 12px;
+  color: var(--ink-soft);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+/* --- Peta sekolah --- */
+.aia-zone-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.aia-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-height: 96px;
+  padding: 16px 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--card);
+  color: var(--foreground);
+  text-align: center;
+  cursor: pointer;
+}
+
+.aia-zone svg {
+  width: 24px;
+  height: 24px;
+  color: var(--green);
+}
+
+.aia-zone strong {
+  font-size: 14px;
+}
+
+.aia-zone small {
+  color: var(--ink-soft);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.aia-zone.locked {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.aia-zone.locked svg {
+  color: var(--ink-soft);
+}
+
+/* --- Bottom nav --- */
+.aia-bottom-nav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 30;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  padding: 6px 8px calc(8px + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--line);
+  background: var(--card);
+}
+
+.aia-nav-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  min-height: 52px;
+  padding: 6px 2px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.aia-nav-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+.aia-nav-btn.active {
+  color: var(--green);
+  font-weight: 700;
+}
+
+/* --- Layar "segera hadir" --- */
+.aia-coming {
+  padding: 32px 20px;
+  text-align: center;
+}
+
+.aia-coming svg {
+  width: 36px;
+  height: 36px;
+  margin-bottom: 10px;
+  color: var(--green);
+}
+
+.aia-coming h2 {
+  margin: 0 0 6px;
+  font-size: 18px;
+}
+
+.aia-coming p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+/* --- Tema gelap: tombol utama memakai hijau terang + teks gelap --- */
+:root[data-theme='dark'] .aia-btn-primary {
+  border-color: #9fd2ae;
+  background: #9fd2ae;
+  color: #102219;
+}
+
+:root[data-theme='dark'] .aia-chip.done {
+  background: #2f7d4f;
+  color: #fff;
+}
+
+@media (min-width: 560px) {
+  .aia-bab-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .aia-zone-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aia-root * {
+    transition: none !important;
+  }
+}

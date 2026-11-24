@@ -6,6 +6,7 @@ import { Gamepad2, Lock, Play, Trophy } from 'lucide-react'
 import { WordReveal, fadeUpChild, staggerParent } from '@/components/animations'
 import { TangkapSampah } from '@/components/game/tangkap-sampah'
 import { KuisAdiwiyata } from '@/components/game/kuis-adiwiyata'
+import { ApaItuAdiwiyata } from '@/components/game/apa-itu-adiwiyata'
 import '@/components/leaderboard/leaderboard.css'
 import './game.css'
 
@@ -13,11 +14,13 @@ type Runner = (props: { onExit: () => void; onFinished: (score: number) => void 
 const RUNNERS: Record<string, Runner> = {
   tangkap_sampah: TangkapSampah,
   kuis_adiwiyata: KuisAdiwiyata,
+  apa_itu_adiwiyata: ApaItuAdiwiyata,
 }
 
 const GAMES = [
   { key: 'tangkap_sampah', title: 'Tangkap Sampah', description: 'Tangkap sampah yang jatuh sebelum mengotori taman.', ready: true },
   { key: 'kuis_adiwiyata', title: 'Kuis Adiwiyata', description: 'Uji pengetahuanmu tentang lingkungan sekolah.', ready: true },
+  { key: 'apa_itu_adiwiyata', title: 'Apa itu Adiwiyata', description: 'Kampanye 6 bab: jadikan sekolahmu Adiwiyata Mandiri.', ready: true },
 ] as const
 
 export function GameHub({ active, best }: { active: Record<string, boolean>; best: Record<string, number> }) {

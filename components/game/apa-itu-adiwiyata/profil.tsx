@@ -1,0 +1,136 @@
+'use client'
+
+// Profil pemain: nama panggilan, Koin Hijau, streak, janji aktif,
+// dan pengaturan suara (slider Musik/Efek + Mute semua).
+// Pengaturan suara tersimpan di save kampanye; provider sudah memanggil
+// syncSettings otomatis setiap pengaturan berubah.
+import { useState } from 'react'
+import { CalendarCheck, Coins, Flame, Volume2, VolumeX } from 'lucide-react'
+import { useCampaign } from '@/lib/apa-itu-adiwiyata/context'
+import { klik } from './suara'
+
+export function Profil() {
+  const { save, dispatch } = useCampaign()
+  const [nama, setNama] = useState(save.nickname)
+  const [pesan, setPesan] = useState<string | null>(null)
+
+  const janjiAktif = save.promises.filter((p) => !p.done)
+
+  return (
+    <div className="aia-stack">
+      <div className="aia-stats">
+        <span className="aia-stat">
+          <Coins aria-hidden="true" /> {save.coins} Koin Hijau
+        </span>
+        <span className="aia-stat">
+          <Flame aria-hidden="true" /> Streak {save.streak.count} hari
+        </span>
+        {save.streak.multiplierActive && <span className="aia-chip done">Pengali x2 aktif</span>}
+      </div>
+
+      <section className="aia-card">
+        <h3 className="aia-section-title" style={{ marginTop: 0 }}>
+          Nama panggilan
+        </h3>
+        <label className="aia-label" htmlFor="aia-nama-panggilan">
+          Nama yang tampil di leaderboard dan kartu bagikan
+        </label>
+        <input
+          id="aia-nama-panggilan"
+          className="aia-input"
+          type="text"
+          value={nama}
+          maxLength={20}
+          placeholder="Tulis nama panggilanmu"
+          onChange={(e) => setNama(e.target.value)}
+        />
+        <div className="aia-actions">
+          <button
+            type="button"
+            className="aia-btn aia-btn-primary"
+            disabled={nama.trim() === '' || nama.trim() === save.nickname}
+            onClick={() => {
+              klik()
+              dispatch({ type: 'SET_NICKNAME', nickname: nama })
+              setPesan('Nama panggilan disimpan.')
+            }}
+          >
+            Simpan nama
+          </button>
+        </div>
+        {pesan && (
+          <p className="aia-muted" role="status" style={{ marginTop: 8 }}>
+            {pesan}
+          </p>
+        )}
+      </section>
+
+      <section className="aia-card">
+        <h3 className="aia-section-title" style={{ marginTop: 0 }}>
+          Janji aktif
+        </h3>
+        {janjiAktif.length === 0 ? (
+          <p className="aia-muted">Belum ada janji aktif. Pilih janji di menu Janji Harian.</p>
+        ) : (
+          <div className="aia-stack">
+            {janjiAktif.map((janji) => (
+              <p key={janji.id} className="aia-muted" style={{ margin: 0 }}>
+                <CalendarCheck aria-hidden="true" style={{ width: 16, height: 16, verticalAlign: -3 }} />{' '}
+                {janji.text}
+              </p>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section className="aia-card">
+        <h3 className="aia-section-title" style={{ marginTop: 0 }}>
+          Pengaturan suara
+        </h3>
+        <label className="aia-label" htmlFor="aia-volume-musik">
+          Volume musik: {Math.round(save.volumeMusik * 100)}%
+        </label>
+        <input
+          id="aia-volume-musik"
+          type="range"
+          min={0}
+          max={100}
+          step={5}
+          value={Math.round(save.volumeMusik * 100)}
+          onChange={(e) => dispatch({ type: 'SET_VOLUME_MUSIK', value: Number(e.target.value) / 100 })}
+          style={{ width: '100%', minHeight: 44 }}
+        />
+        <label className="aia-label" htmlFor="aia-volume-efek" style={{ marginTop: 12 }}>
+          Volume efek: {Math.round(save.volumeEfek * 100)}%
+        </label>
+        <input
+          id="aia-volume-efek"
+          type="range"
+          min={0}
+          max={100}
+          step={5}
+          value={Math.round(save.volumeEfek * 100)}
+          onChange={(e) => dispatch({ type: 'SET_VOLUME_EFEK', value: Number(e.target.value) / 100 })}
+          style={{ width: '100%', minHeight: 44 }}
+        />
+        <div className="aia-actions">
+          <button
+            type="button"
+            className="aia-btn"
+            aria-pressed={save.muted}
+            onClick={() => {
+              klik()
+              dispatch({ type: 'SET_MUTED', muted: !save.muted })
+            }}
+          >
+            {save.muted ? <VolumeX aria-hidden="true" /> : <Volume2 aria-hidden="true" />}
+            {save.muted ? 'Suara dimatikan — ketuk untuk menyalakan' : 'Mute semua'}
+          </button>
+        </div>
+        <p className="aia-muted" style={{ marginTop: 8 }}>
+          Musik dijeda otomatis saat tab tidak aktif dan lanjut saat kamu kembali.
+        </p>
+      </section>
+    </div>
+  )
+}
