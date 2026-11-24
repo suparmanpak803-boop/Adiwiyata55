@@ -63,7 +63,7 @@ export function KaderReportForm({ staffName, className }: KaderReportFormProps) 
     params.set(entries.category, selectedKader.name)
     params.set(entries.notes, values.notes)
     params.set(entries.evidenceUrl, values.evidenceUrl)
-    values.tasks.forEach((task) => params.append(entries.tasks, task))
+    params.set(entries.tasks, values.tasks.join('\n'))
     return `${googleFormUrl}?${params.toString()}`
   }
 
@@ -79,7 +79,7 @@ export function KaderReportForm({ staffName, className }: KaderReportFormProps) 
     body.set(entries.staffName, staffName)
     body.set(entries.className, className)
     body.set(entries.category, selectedKader.name)
-    values.tasks.forEach((task) => body.append(entries.tasks, task))
+    body.set(entries.tasks, values.tasks.join('\n'))
     body.set(entries.notes, values.notes)
     body.set(entries.evidenceUrl, values.evidenceUrl)
 

@@ -1,11 +1,8 @@
 // Konfigurasi Google Form laporan kinerja kader.
-// PERINGATAN: formId dan ID entry di bawah ini KOSONG karena nilai
-// aslinya tidak tersisa di repo mana pun (lihat PERBAIKAN.md).
-// Isi dari Google Form asli: buka Form > kirim > salin ID form
-// (bagian /d/e/<formId>/) dan ID tiap kolom (entry.XXXXXXXXX,
-// lihat dari URL pre-filled). Selama kosong, form laporan kader
-// menampilkan catatan "Google Form belum dikonfigurasi" dan tombol
-// kirim nonaktif — itu perilaku yang disengaja, bukan bug.
+// Form "Laporan Kinerja Kader Adiwiyata" dibuat via Google Forms API
+// pada 2026-11-24 (akun Google pengguna). formId adalah ID /d/e/ dari
+// URL viewform; entry ID adalah questionId dari Forms API — sudah
+// diverifikasi lewat link pre-filled (nilai tes muncul di HTML form).
 export const KADER_REPORT_GFORM: {
   formId: string
   entries: {
@@ -18,15 +15,15 @@ export const KADER_REPORT_GFORM: {
     evidenceUrl: string
   }
 } = {
-  formId: '',
+  formId: '1FAIpQLSeDkHFdrHeeL7oLlf6Svyq3q6euQhPdSxZHKYPxzUdOZc8UuA',
   entries: {
-    date: '',
-    staffName: '',
-    className: '',
-    category: '',
-    tasks: '',
-    notes: '',
-    evidenceUrl: '',
+    date: 'entry.6bd61b2d',
+    staffName: 'entry.39b71239',
+    className: 'entry.60093476',
+    category: 'entry.2d2f8c2e',
+    tasks: 'entry.71a5351a',
+    notes: 'entry.03a77e72',
+    evidenceUrl: 'entry.3240965f',
   },
 }
 
