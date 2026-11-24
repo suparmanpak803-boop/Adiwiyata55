@@ -285,6 +285,10 @@
   opacity: 0.65;
 }
 
+.aia-bab-card.statis {
+  cursor: default;
+}
+
 .aia-bab-icon {
   display: grid;
   flex: none;

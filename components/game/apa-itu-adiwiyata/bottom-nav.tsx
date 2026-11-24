@@ -1,12 +1,12 @@
 'use client'
 
-import { BookOpen, Home, Map, Trophy, User } from 'lucide-react'
+import { BookOpen, Flag, Map, Trophy, User } from 'lucide-react'
 
-export type AiaTab = 'menu' | 'peta' | 'ensiklopedia' | 'peringkat' | 'profil'
+export type AiaTab = 'peta' | 'misi' | 'ensiklopedia' | 'peringkat' | 'profil'
 
-const TABS: { id: AiaTab; label: string; Icon: typeof Home }[] = [
-  { id: 'menu', label: 'Main', Icon: Home },
+const TABS: { id: AiaTab; label: string; Icon: typeof Map }[] = [
   { id: 'peta', label: 'Jelajah', Icon: Map },
+  { id: 'misi', label: 'Misi', Icon: Flag },
   { id: 'ensiklopedia', label: 'Ensiklopedia', Icon: BookOpen },
   { id: 'peringkat', label: 'Peringkat', Icon: Trophy },
   { id: 'profil', label: 'Profil', Icon: User },

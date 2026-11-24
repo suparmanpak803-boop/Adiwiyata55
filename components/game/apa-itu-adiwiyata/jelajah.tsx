@@ -8,8 +8,9 @@
 // mengikuti kontrak di lib/apa-itu-adiwiyata/dunia.ts dan content/npc.ts.
 
 import { useEffect, useRef, useState } from 'react'
-import { Coins, MessageCircle, Volume2, VolumeX, X } from 'lucide-react'
-import { CHAPTERS } from '@/lib/apa-itu-adiwiyata/chapters'
+import { Coins, Flag, MessageCircle, Volume2, VolumeX, X } from 'lucide-react'
+import { CHAPTERS, CHAPTER_ORDER } from '@/lib/apa-itu-adiwiyata/chapters'
+import { LOKASI_PEMBERI, misiSaatIni, pemberiMisi } from '@/lib/apa-itu-adiwiyata/misi'
 import { selectChapterUnlocked, useCampaign } from '@/lib/apa-itu-adiwiyata/context'
 import { DIALOG_NPC } from '@/lib/apa-itu-adiwiyata/content/npc'
 import { DUNIA, NPCS, type NpcDunia } from '@/lib/apa-itu-adiwiyata/dunia'
@@ -257,7 +258,7 @@ function gambarPemain(g: CanvasRenderingContext2D, p: PemainState, reduced: bool
   g.restore()
 }
 
-function gambarNpc(g: CanvasRenderingContext2D, n: NpcJalan, disorot: boolean, reduced: boolean) {
+function gambarNpc(g: CanvasRenderingContext2D, n: NpcJalan, disorot: boolean, reduced: boolean, adaMisi = false) {
   const bob = reduced ? 0 : Math.sin(n.fase) * 1.5
   g.fillStyle = 'rgba(0,0,0,0.25)'
   g.beginPath()
@@ -372,13 +373,30 @@ function gambarNpc(g: CanvasRenderingContext2D, n: NpcJalan, disorot: boolean, r
   g.strokeText(n.nama, 0, -24)
   g.fillStyle = '#ffffff'
   g.fillText(n.nama, 0, -24)
+  // Tanda "!" di atas NPC yang punya misi tersedia.
+  if (adaMisi) {
+    g.fillStyle = '#ffd54a'
+    g.beginPath()
+    g.arc(0, -42, 9, 0, Math.PI * 2)
+    g.fill()
+    g.strokeStyle = '#8d6e00'
+    g.lineWidth = 1.5
+    g.stroke()
+    g.fillStyle = '#4e342e'
+    g.font = 'bold 12px system-ui, sans-serif'
+    g.textAlign = 'center'
+    g.textBaseline = 'middle'
+    g.fillText('!', 0, -42)
+  }
   g.restore()
 }
 
 // ---------------------------------------------------------------- komponen ----
 
-export function Jelajah({ onPlayChapter }: { onPlayChapter: (chapterId: ChapterId) => void }) {
+export function Jelajah({ onPlayChapter, onOpenMisi }: { onPlayChapter: (chapterId: ChapterId) => void; onOpenMisi: () => void }) {
   const { save, dispatch } = useCampaign()
+  const misiAktif = misiSaatIni(save)
+  const pemberiAktif = misiAktif ? pemberiMisi(misiAktif) : undefined
   const [terkumpul, setTerkumpul] = useState(0)
   const [toast, setToast] = useState<string | null>(null)
   const [dialogNpc, setDialogNpc] = useState<NpcDunia | null>(null)
@@ -670,7 +688,11 @@ export function Jelajah({ onPlayChapter }: { onPlayChapter: (chapterId: ChapterI
       const reduced = reducedRef.current
       const aktor: { y: number; gambar: () => void }[] = []
       for (const n of npcsRef.current) {
-        aktor.push({ y: n.y, gambar: () => gambarNpc(ctx, n, n.id === dekatId, reduced) })
+        const adaMisi =
+          n.chapterId !== null &&
+          selectChapterUnlocked(saveSekarang, n.chapterId) &&
+          !saveSekarang.chapters[n.chapterId].done
+        aktor.push({ y: n.y, gambar: () => gambarNpc(ctx, n, n.id === dekatId, reduced, adaMisi) })
       }
       aktor.push({ y: p.y, gambar: () => gambarPemain(ctx, p, reduced) })
       aktor.sort((a, b) => a.y - b.y)
@@ -860,6 +882,7 @@ export function Jelajah({ onPlayChapter }: { onPlayChapter: (chapterId: ChapterI
     : []
   const babNpc: ChapterId | null = dialogNpc?.chapterId ?? null
   const babTerbuka = babNpc ? selectChapterUnlocked(save, babNpc) : false
+  const babSelesai = babNpc ? save.chapters[babNpc].done : false
   const diAkhir = dialogIdx >= barisDialog.length - 1
 
   return (
@@ -881,6 +904,22 @@ export function Jelajah({ onPlayChapter }: { onPlayChapter: (chapterId: ChapterI
           {save.muted ? <VolumeX aria-hidden="true" /> : <Volume2 aria-hidden="true" />}
         </button>
       </div>
+
+      {misiAktif && pemberiAktif ? (
+        <div className="aia-progress-row">
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <Flag aria-hidden="true" /> Misi {CHAPTER_ORDER.indexOf(misiAktif) + 1}/6: {CHAPTERS[misiAktif].judul} — temui{' '}
+            {pemberiAktif.nama} di {LOKASI_PEMBERI[pemberiAktif.id] ?? 'sekolah'}
+          </span>
+          <button type="button" className="aia-btn aia-btn-ghost" onClick={onOpenMisi}>
+            Lihat semua misi
+          </button>
+        </div>
+      ) : (
+        <p className="aia-muted" style={{ margin: 0 }}>
+          Semua misi selesai! Kamu Pahlawan Adiwiyata!
+        </p>
+      )}
 
       <div
         ref={wrapRef}
@@ -959,7 +998,7 @@ export function Jelajah({ onPlayChapter }: { onPlayChapter: (chapterId: ChapterI
                           onPlayChapter(babNpc)
                         }}
                       >
-                        Main bab: {CHAPTERS[babNpc].judul}
+                        {babSelesai ? 'Main lagi' : 'Mulai misi'}: {CHAPTERS[babNpc].judul}
                       </button>
                     ) : babNpc ? (
                       <p className="aia-muted">Selesaikan bab sebelumnya dulu untuk membuka bab ini.</p>
@@ -986,7 +1025,7 @@ export function Jelajah({ onPlayChapter }: { onPlayChapter: (chapterId: ChapterI
 
       <p className="aia-muted">
         Gerakkan tokoh dengan joystick kiri bawah atau tombol WASD/panah. Dekati NPC lalu ketuk "Bicara" atau tekan E.
-        Pungut sampah yang berserakan untuk Koin Hijau.
+        NPC dengan tanda ! punya misi untukmu. Pungut sampah yang berserakan untuk Koin Hijau.
       </p>
     </div>
   )
