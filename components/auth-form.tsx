@@ -1,10 +1,11 @@
 'use client'
 
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ArrowRight, Eye, EyeOff, LoaderCircle } from 'lucide-react'
 import { AdiwiyataLogoMark } from '@/components/adiwiyata/logo-mark'
+import { TurnstileWidget, type TurnstileStatus, type TurnstileWidgetHandle } from '@/components/turnstile-widget'
 import { authClient } from '@/lib/auth/client'
 
 type AuthFormProps = {
@@ -45,6 +46,45 @@ export function AuthForm({ mode }: AuthFormProps) {
   // M-04: jeda kirim ulang OTP agar tombol tidak bisa ditekan berulang
   // (spam OTP ke inbox korban / kuras kuota email).
   const [resendCooldown, setResendCooldown] = useState(0)
+  // Cloudflare Turnstile: token sekali pakai dari widget; diverifikasi
+  // server sebelum sign-in/sign-up. Bila widget gagal dimuat, alur
+  // tetap jalan (fail-open) — proteksi penuh aktif saat token ada.
+  const turnstileRef = useRef<TurnstileWidgetHandle>(null)
+  const turnstileTokenRef = useRef<string | null>(null)
+  const [turnstileStatus, setTurnstileStatus] = useState<TurnstileStatus>('loading')
+
+  function handleTurnstileToken(token: string | null) {
+    turnstileTokenRef.current = token
+  }
+
+  async function verifyTurnstile(): Promise<boolean> {
+    if (turnstileStatus === 'error') return true
+    let token = turnstileTokenRef.current
+    if (!token) {
+      // Widget Managed menerbitkan token otomatis setelah render;
+      // tunggu sebentar sebelum menyerah (fail-open bila tak kunjung ada).
+      const deadline = Date.now() + 5000
+      while (!turnstileTokenRef.current && Date.now() < deadline) {
+        await new Promise((resolve) => setTimeout(resolve, 200))
+      }
+      token = turnstileTokenRef.current
+      if (!token) return true
+    }
+    try {
+      const res = await fetch('/api/auth/turnstile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token }),
+      })
+      const data = (await res.json()) as { ok?: boolean }
+      if (res.ok && data.ok) return true
+    } catch {
+      return true
+    }
+    setError('Verifikasi keamanan gagal. Silakan coba lagi.')
+    turnstileRef.current?.reset()
+    return false
+  }
 
   useEffect(() => {
     if (resendCooldown <= 0) return
@@ -107,6 +147,7 @@ export function AuthForm({ mode }: AuthFormProps) {
     setError('')
 
     try {
+      if (!(await verifyTurnstile())) return
       const result = await authClient.signIn.social({ provider: 'google', callbackURL: '/' })
       if (result.error) setError(getAuthErrorMessage(result.error, mode))
     } catch (authError) {
@@ -129,11 +170,14 @@ export function AuthForm({ mode }: AuthFormProps) {
     setError('')
 
     try {
+      if (!(await verifyTurnstile())) return
       const result = isSignUp
         ? await authClient.signUp.email({ name, email, password })
         : await authClient.signIn.email({ email, password })
 
       if (result.error) {
+        // Token Turnstile sekali pakai: segarkan untuk percobaan berikut.
+        turnstileRef.current?.reset()
         setError(getAuthErrorMessage(result.error, mode))
         return
       }
@@ -261,6 +305,8 @@ export function AuthForm({ mode }: AuthFormProps) {
           </label>
           {!isSignUp && <p className="auth-recovery-link"><Link href="/forgot-password">Lupa kata sandi?</Link></p>}
           {error && <p className="auth-error" role="alert">{error}</p>}
+          <TurnstileWidget ref={turnstileRef} onToken={handleTurnstileToken} onStatus={setTurnstileStatus} />
+          <p className="auth-turnstile-note">Dilindungi Cloudflare Turnstile.</p>
           <button className="auth-submit" disabled={pending || googlePending} type="submit">
             {pending ? <LoaderCircle aria-hidden="true" className="auth-spinner" /> : <>{isSignUp ? 'Buat akun' : 'Masuk'} <ArrowRight aria-hidden="true" /></>}
           </button>
