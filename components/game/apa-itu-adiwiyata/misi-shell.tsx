@@ -459,6 +459,11 @@ export function MisiShell({
 
       {sudahMulai && tampilkanGame && !showEvent && (
         <section className="aia-slot" aria-label="Permainan misi">
+          {/* JANGAN hapus key di bawah: tanpa key, mini-game yang sama tetap
+              terpasang saat stageIndex berubah, sehingga state dalamnya
+              (layar hasil + pengaman sekali-panggil) ikut terbawa dari tahap
+              sebelumnya — tombol "Selesai" tahap itu jadi mati total.
+              Key memaksa mini-game dipasang ulang segar tiap tahap. */}
           {tampilkanPilihan2 && titikPilihan2 && kunciPilihan2 ? (
             <PilihanCerita
               titik={titikPilihan2}
@@ -475,6 +480,7 @@ export function MisiShell({
             <>
               {kind === 'bab' && chapterId && MiniGameBab && (
                 <MiniGameBab
+                  key={`${kind}-${id}-${tahapBerjalan}`}
                   chapterId={chapterId}
                   stageIndex={tahapBerjalan}
                   onStageComplete={(score) => selesaikanTahap(tahapBerjalan, score)}
@@ -484,6 +490,7 @@ export function MisiShell({
               )}
               {kind === 'tugas' && tugasId && MiniGameTugas && (
                 <MiniGameTugas
+                  key={`${kind}-${id}-${tahapBerjalan}`}
                   tugasId={tugasId}
                   stageIndex={tahapBerjalan}
                   onStageComplete={(score) => selesaikanTahap(tahapBerjalan, score)}
