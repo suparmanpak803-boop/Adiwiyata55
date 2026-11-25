@@ -230,7 +230,7 @@ function InspeksiGestur({
           </p>
           <div className="aia-actions" style={{ justifyContent: 'center' }}>
             <button type="button" className="aia-btn aia-btn-primary" onClick={() => selesaikan(skor)}>
-              <Check aria-hidden="true" /> Lanjutkan
+              <Check aria-hidden="true" /> {stageIndex === 2 ? 'Ke Pos Hijau' : 'Level Selanjutnya'}
             </button>
           </div>
         </section>
@@ -547,7 +547,7 @@ function InspeksiSehat({
           </p>
           <div className="aia-actions" style={{ justifyContent: 'center' }}>
             <button type="button" className="aia-btn aia-btn-primary" onClick={() => selesai(skor)}>
-              <Check aria-hidden="true" /> Lanjutkan
+              <Check aria-hidden="true" /> {stageIndex === 2 ? 'Ke Pos Hijau' : 'Level Selanjutnya'}
             </button>
           </div>
         </section>

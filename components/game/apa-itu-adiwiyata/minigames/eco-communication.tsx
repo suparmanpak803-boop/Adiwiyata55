@@ -272,7 +272,7 @@ function EcoCommunicationGestur({ tugasId, stageIndex, onStageComplete, terjeda 
           </p>
           <div className="aia-actions" style={{ justifyContent: 'center' }}>
             <button type="button" className="aia-btn aia-btn-primary" onClick={lanjutkan}>
-              <Check aria-hidden="true" /> Lanjutkan · +{skor} poin
+              <Check aria-hidden="true" /> {stageIndex === 2 ? 'Ke Pos Hijau' : 'Level Selanjutnya'} · +{skor} Koin Hijau
             </button>
           </div>
         </div>
@@ -452,7 +452,7 @@ function EcoCommunicationTombol({ tugasId, stageIndex, onStageComplete }: MiniGa
           </p>
           <div className="aia-actions" style={{ justifyContent: 'center' }}>
             <button type="button" className="aia-btn aia-btn-primary" onClick={lanjutkan}>
-              <Check aria-hidden="true" /> Lanjutkan · +{skor} poin
+              <Check aria-hidden="true" /> {stageIndex === 2 ? 'Ke Pos Hijau' : 'Level Selanjutnya'} · +{skor} Koin Hijau
             </button>
           </div>
         </div>

@@ -60,11 +60,14 @@ function EduLingkunganGestur({
   tahap,
   spec,
   onStageComplete,
+  tahapTerakhir = false,
   terjeda = false,
 }: {
   tahap: TahapKuis
   spec: SpesifikasiInteraksi
   onStageComplete: (score: number) => void
+  /** True bila ini tahap terakhir (stageIndex 2): tombol akhir berbunyi "Ke Pos Hijau". */
+  tahapTerakhir?: boolean
   terjeda?: boolean
 }) {
   const soal = tahap.soal
@@ -143,7 +146,7 @@ function EduLingkunganGestur({
             Skor tahap ini: <strong>{skorAkhir}</strong>
           </p>
           <button type="button" className="aia-btn aia-btn-primary" onClick={() => selesaikan(skorAkhir)}>
-            Selesai · +{skorAkhir} Koin Hijau
+            {tahapTerakhir ? 'Ke Pos Hijau' : 'Level Selanjutnya'} · +{skorAkhir} Koin Hijau
           </button>
         </div>
       </div>
@@ -348,7 +351,7 @@ function EduLingkunganTombol({ tugasId, stageIndex, onStageComplete }: TugasMini
             Skor tahap ini: <strong>{skor}</strong>
           </p>
           <button type="button" className="aia-btn aia-btn-primary" onClick={selesai}>
-            Selesai · +{skor} Koin Hijau
+            {stageIndex === 2 ? 'Ke Pos Hijau' : 'Level Selanjutnya'} · +{skor} Koin Hijau
           </button>
         </div>
       )}
@@ -380,5 +383,5 @@ export function EduLingkungan({ tugasId, stageIndex, onStageComplete, modeSatuKe
   if (modeSatuKetukan) {
     return <EduLingkunganTombol key={kunci} tugasId={tugasId} stageIndex={stageIndex} onStageComplete={onStageComplete} />
   }
-  return <EduLingkunganGestur key={kunci} tahap={tahap} spec={spec} onStageComplete={onStageComplete} terjeda={terjeda} />
+  return <EduLingkunganGestur key={kunci} tahap={tahap} spec={spec} onStageComplete={onStageComplete} tahapTerakhir={stageIndex === 2} terjeda={terjeda} />
 }

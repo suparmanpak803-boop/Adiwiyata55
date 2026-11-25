@@ -926,9 +926,10 @@ function FasePanenSayur({
             <strong>Sayur ini kembali ke kantin — siklus tertutup selesai satu putaran!</strong> Sisa makanan jadi
             maggot, maggot jadi pupuk, pupuk jadi sayur, dan sayur kembali ke piring kita.
           </p>
+            {/* Fase panen hanya dirender untuk tahap terakhir (stageIndex 2), jadi tombol akhir tahap di sini selalu "Ke Pos Hijau". */}
           <div className="aia-actions">
             <button type="button" className="aia-btn aia-btn-primary aia-btn-block" onClick={onSelesai}>
-              <Check aria-hidden="true" /> Selesai
+              <Check aria-hidden="true" /> Ke Pos Hijau
             </button>
           </div>
         </>
@@ -1001,9 +1002,10 @@ function FasePanenGestur({ tambahSkor, onSelesai, perbesarTarget, terjeda = fals
             <strong>Sayur ini kembali ke kantin — siklus tertutup selesai satu putaran!</strong> Sisa makanan jadi
             maggot, maggot jadi pupuk, pupuk jadi sayur, dan sayur kembali ke piring kita.
           </p>
+            {/* Fase panen hanya dirender untuk tahap terakhir (stageIndex 2), jadi tombol akhir tahap di sini selalu "Ke Pos Hijau". */}
           <div className="aia-actions">
             <button type="button" className="aia-btn aia-btn-primary aia-btn-block" onClick={onSelesai}>
-              <Check aria-hidden="true" /> Selesai
+              <Check aria-hidden="true" /> Ke Pos Hijau
             </button>
           </div>
         </>

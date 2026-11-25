@@ -91,11 +91,14 @@ function PilahGestur({
   tahap,
   spec,
   onStageComplete,
+  tahapTerakhir = false,
   terjeda = false,
 }: {
   tahap: TahapPilah
   spec: SpesifikasiInteraksi
   onStageComplete: (score: number) => void
+  /** True bila ini tahap terakhir (stageIndex 2): tombol akhir berbunyi "Ke Pos Hijau". */
+  tahapTerakhir?: boolean
   terjeda?: boolean
 }) {
   const [skorAkhir, setSkorAkhir] = useState<number | null>(null)
@@ -144,7 +147,7 @@ function PilahGestur({
           </p>
           <div className="aia-actions" style={{ justifyContent: 'center' }}>
             <button type="button" className="aia-btn aia-btn-primary" onClick={() => selesaikan(skorAkhir)}>
-              <Check aria-hidden="true" /> Lanjutkan
+              <Check aria-hidden="true" /> {tahapTerakhir ? 'Ke Pos Hijau' : 'Level Selanjutnya'}
             </button>
           </div>
         </section>
@@ -188,11 +191,14 @@ function CatatGestur({
   tahap,
   spec,
   onStageComplete,
+  tahapTerakhir = false,
   terjeda = false,
 }: {
   tahap: TahapCatat
   spec: SpesifikasiInteraksi
   onStageComplete: (score: number) => void
+  /** True bila ini tahap terakhir (stageIndex 2): tombol akhir berbunyi "Ke Pos Hijau". */
+  tahapTerakhir?: boolean
   terjeda?: boolean
 }) {
   const [pos, setPos] = useState(0)
@@ -302,7 +308,7 @@ function CatatGestur({
           </p>
           <div className="aia-actions" style={{ justifyContent: 'center' }}>
             <button type="button" className="aia-btn aia-btn-primary" onClick={() => selesaikan(skor)}>
-              <Check aria-hidden="true" /> Lanjutkan
+              <Check aria-hidden="true" /> {tahapTerakhir ? 'Ke Pos Hijau' : 'Level Selanjutnya'}
             </button>
           </div>
         </section>
@@ -440,11 +446,14 @@ function KuisGestur({
   tahap,
   spec,
   onStageComplete,
+  tahapTerakhir = false,
   terjeda = false,
 }: {
   tahap: TahapKuis
   spec: SpesifikasiInteraksi
   onStageComplete: (score: number) => void
+  /** True bila ini tahap terakhir (stageIndex 2): tombol akhir berbunyi "Ke Pos Hijau". */
+  tahapTerakhir?: boolean
   terjeda?: boolean
 }) {
   const [skorAkhir, setSkorAkhir] = useState<number | null>(null)
@@ -486,7 +495,7 @@ function KuisGestur({
           </p>
           <div className="aia-actions" style={{ justifyContent: 'center' }}>
             <button type="button" className="aia-btn aia-btn-primary" onClick={() => selesaikan(skorAkhir)}>
-              <Check aria-hidden="true" /> Lanjutkan
+              <Check aria-hidden="true" /> {tahapTerakhir ? 'Ke Pos Hijau' : 'Level Selanjutnya'}
             </button>
           </div>
         </section>
@@ -525,9 +534,12 @@ function KuisGestur({
 function PilahAnorganik({
   tahap,
   onStageComplete,
+  tahapTerakhir = false,
 }: {
   tahap: TahapPilah
   onStageComplete: (score: number) => void
+  /** True bila ini tahap terakhir (stageIndex 2): tombol akhir berbunyi "Ke Pos Hijau". */
+  tahapTerakhir?: boolean
 }) {
   const [fase, setFase] = useState<Fase>('main')
   const [ronde, setRonde] = useState(0)
@@ -720,7 +732,7 @@ function PilahAnorganik({
           </p>
           <div className="aia-actions" style={{ justifyContent: 'center' }}>
             <button type="button" className="aia-btn aia-btn-primary" onClick={() => selesai(skor)}>
-              <Check aria-hidden="true" /> Lanjutkan
+              <Check aria-hidden="true" /> {tahapTerakhir ? 'Ke Pos Hijau' : 'Level Selanjutnya'}
             </button>
           </div>
         </section>
@@ -757,9 +769,12 @@ function PilahAnorganik({
 function CatatTimbangan({
   tahap,
   onStageComplete,
+  tahapTerakhir = false,
 }: {
   tahap: TahapCatat
   onStageComplete: (score: number) => void
+  /** True bila ini tahap terakhir (stageIndex 2): tombol akhir berbunyi "Ke Pos Hijau". */
+  tahapTerakhir?: boolean
 }) {
   const [fase, setFase] = useState<Fase>('main')
   const [ronde, setRonde] = useState(0)
@@ -1016,7 +1031,7 @@ function CatatTimbangan({
           </p>
           <div className="aia-actions" style={{ justifyContent: 'center' }}>
             <button type="button" className="aia-btn aia-btn-primary" onClick={() => selesai(skor)}>
-              <Check aria-hidden="true" /> Lanjutkan
+              <Check aria-hidden="true" /> {tahapTerakhir ? 'Ke Pos Hijau' : 'Level Selanjutnya'}
             </button>
           </div>
         </section>
@@ -1053,9 +1068,12 @@ function CatatTimbangan({
 function KuisTabungan({
   tahap,
   onStageComplete,
+  tahapTerakhir = false,
 }: {
   tahap: TahapKuis
   onStageComplete: (score: number) => void
+  /** True bila ini tahap terakhir (stageIndex 2): tombol akhir berbunyi "Ke Pos Hijau". */
+  tahapTerakhir?: boolean
 }) {
   const soal = tahap.soal
   const [fase, setFase] = useState<Fase>('main')
@@ -1261,7 +1279,7 @@ function KuisTabungan({
           </p>
           <div className="aia-actions" style={{ justifyContent: 'center' }}>
             <button type="button" className="aia-btn aia-btn-primary" onClick={() => selesai(skor)}>
-              <Check aria-hidden="true" /> Lanjutkan
+              <Check aria-hidden="true" /> {tahapTerakhir ? 'Ke Pos Hijau' : 'Level Selanjutnya'}
             </button>
           </div>
         </section>
@@ -1314,18 +1332,18 @@ export function BankSampah({ tugasId, stageIndex, onStageComplete, modeSatuKetuk
   }
   const kunci = `${tugasId}-${stageIndex}`
   if (modeSatuKetukan) {
-    if (tahap.jenis === 'pilah') return <PilahAnorganik key={kunci} tahap={tahap} onStageComplete={onStageComplete} />
-    if (tahap.jenis === 'catat') return <CatatTimbangan key={kunci} tahap={tahap} onStageComplete={onStageComplete} />
-    if (tahap.jenis === 'kuis') return <KuisTabungan key={kunci} tahap={tahap} onStageComplete={onStageComplete} />
+    if (tahap.jenis === 'pilah') return <PilahAnorganik key={kunci} tahap={tahap} onStageComplete={onStageComplete} tahapTerakhir={stageIndex === 2} />
+    if (tahap.jenis === 'catat') return <CatatTimbangan key={kunci} tahap={tahap} onStageComplete={onStageComplete} tahapTerakhir={stageIndex === 2} />
+    if (tahap.jenis === 'kuis') return <KuisTabungan key={kunci} tahap={tahap} onStageComplete={onStageComplete} tahapTerakhir={stageIndex === 2} />
     return (
       <div className="aia-card">
         <p className="aia-muted">Tahap ini belum tersedia.</p>
       </div>
     )
   }
-  if (tahap.jenis === 'pilah') return <PilahGestur key={kunci} tahap={tahap} spec={spec} onStageComplete={onStageComplete} terjeda={terjeda} />
-  if (tahap.jenis === 'catat') return <CatatGestur key={kunci} tahap={tahap} spec={spec} onStageComplete={onStageComplete} terjeda={terjeda} />
-  if (tahap.jenis === 'kuis') return <KuisGestur key={kunci} tahap={tahap} spec={spec} onStageComplete={onStageComplete} terjeda={terjeda} />
+  if (tahap.jenis === 'pilah') return <PilahGestur key={kunci} tahap={tahap} spec={spec} onStageComplete={onStageComplete} tahapTerakhir={stageIndex === 2} terjeda={terjeda} />
+  if (tahap.jenis === 'catat') return <CatatGestur key={kunci} tahap={tahap} spec={spec} onStageComplete={onStageComplete} tahapTerakhir={stageIndex === 2} terjeda={terjeda} />
+  if (tahap.jenis === 'kuis') return <KuisGestur key={kunci} tahap={tahap} spec={spec} onStageComplete={onStageComplete} tahapTerakhir={stageIndex === 2} terjeda={terjeda} />
   return (
     <div className="aia-card">
       <p className="aia-muted">Tahap ini belum tersedia.</p>

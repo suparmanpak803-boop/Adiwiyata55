@@ -313,7 +313,7 @@ function InspeksiTombol({ stageIndex, onStageComplete, terjeda = false }: MiniGa
             Skor tahap ini: <strong>{skor} Koin Hijau</strong>
           </p>
           <button type="button" className="aia-btn aia-btn-primary" onClick={() => selesai(skor)}>
-            Selesai · +{skor} Koin Hijau
+            {stageIndex === 2 ? 'Ke Pos Hijau' : 'Level Selanjutnya'} · +{skor} Koin Hijau
           </button>
         </div>
       )}
@@ -432,7 +432,7 @@ function InspeksiGestur({
             Skor tahap ini: <strong>{skor} Koin Hijau</strong>
           </p>
           <button type="button" className="aia-btn aia-btn-primary" onClick={() => onSelesai(skor)}>
-            Selesai · +{skor} Koin Hijau
+            {stageIndex === 2 ? 'Ke Pos Hijau' : 'Level Selanjutnya'} · +{skor} Koin Hijau
           </button>
         </div>
       )}

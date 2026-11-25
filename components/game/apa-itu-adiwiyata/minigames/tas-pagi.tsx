@@ -831,7 +831,7 @@ export function TasPagi({
           </p>
           <div className="aia-actions" style={{ justifyContent: 'center' }}>
             <button type="button" className="aia-btn aia-btn-primary" onClick={selesaikan}>
-              <Check aria-hidden="true" /> Lanjutkan
+              <Check aria-hidden="true" /> {stageIndex === 2 ? 'Ke Pos Hijau' : 'Level Selanjutnya'}
             </button>
           </div>
         </section>

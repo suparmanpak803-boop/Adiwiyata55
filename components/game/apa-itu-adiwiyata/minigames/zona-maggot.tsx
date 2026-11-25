@@ -881,9 +881,10 @@ function FasePanen({
             <h4 className="aia-section-title">{fakta.judul}</h4>
             <p className="aia-muted">{fakta.isi}</p>
           </div>
+            {/* Fase panen hanya dirender untuk tahap terakhir (stageIndex 2), jadi tombol akhir tahap di sini selalu "Ke Pos Hijau". */}
           <div className="aia-actions">
             <button type="button" className="aia-btn aia-btn-primary aia-btn-block" onClick={onSelesai}>
-              <Check aria-hidden="true" /> Selesai
+              <Check aria-hidden="true" /> Ke Pos Hijau
             </button>
           </div>
         </>
@@ -996,9 +997,10 @@ function FasePanenGestur({
             <h4 className="aia-section-title">{fakta.judul}</h4>
             <p className="aia-muted">{fakta.isi}</p>
           </div>
+            {/* Fase panen hanya dirender untuk tahap terakhir (stageIndex 2), jadi tombol akhir tahap di sini selalu "Ke Pos Hijau". */}
           <div className="aia-actions">
             <button type="button" className="aia-btn aia-btn-primary aia-btn-block" onClick={onSelesai}>
-              <Check aria-hidden="true" /> Selesai
+              <Check aria-hidden="true" /> Ke Pos Hijau
             </button>
           </div>
         </>

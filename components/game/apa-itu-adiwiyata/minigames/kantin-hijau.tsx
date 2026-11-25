@@ -196,7 +196,7 @@ function VersiGestur({
             Skor tahap ini: <strong>{skor} Koin Hijau</strong>
           </p>
           <button type="button" className="aia-btn aia-btn-primary" onClick={() => selesai(skor)}>
-            Selesai · +{skor} Koin Hijau
+            {stageIndex === 2 ? 'Ke Pos Hijau' : 'Level Selanjutnya'} · +{skor} Koin Hijau
           </button>
         </div>
       )}
@@ -394,7 +394,7 @@ function VersiTombol({ stageIndex, onStageComplete }: TugasMiniGameSlotProps) {
             Skor tahap ini: <strong>{skor} Koin Hijau</strong>
           </p>
           <button type="button" className="aia-btn aia-btn-primary" onClick={() => selesai(skor)}>
-            Selesai · +{skor} Koin Hijau
+            {stageIndex === 2 ? 'Ke Pos Hijau' : 'Level Selanjutnya'} · +{skor} Koin Hijau
           </button>
         </div>
       )}

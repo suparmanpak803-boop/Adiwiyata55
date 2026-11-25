@@ -47,7 +47,14 @@ function teksMagi(s: string): string {
 const JUMLAH_LUBANG = 5
 const KETUKAN_PER_LUBANG = 3
 
-function Biopori({ onSelesai }: { onSelesai: (score: number) => void }) {
+function Biopori({
+  onSelesai,
+  tahapTerakhir = false,
+}: {
+  onSelesai: (score: number) => void
+  /** True bila ini tahap terakhir (stageIndex 2): tombol akhir berbunyi "Ke Pos Hijau". */
+  tahapTerakhir?: boolean
+}) {
   const [lubang, setLubang] = useState<number[]>(() => Array(JUMLAH_LUBANG).fill(0))
   const [pesan, setPesan] = useState('Ketuk lubang untuk mengebor. Tiap lubang butuh 3 ketukan.')
   const selesai = lubang.filter((n) => n >= KETUKAN_PER_LUBANG).length
@@ -171,7 +178,7 @@ function Biopori({ onSelesai }: { onSelesai: (score: number) => void }) {
             sekarang meresap dan mengisi air tanah.
           </p>
           <button type="button" className="aia-btn aia-btn-primary" onClick={() => onSelesai(skor)}>
-            Selesai · +{skor} Koin Hijau
+            {tahapTerakhir ? 'Ke Pos Hijau' : 'Level Selanjutnya'} · +{skor} Koin Hijau
           </button>
         </div>
       )}
@@ -195,9 +202,12 @@ const WAKTU_MUDAH = 40
 
 function TampungHujan({
   onSelesai,
+  tahapTerakhir = false,
   terjeda = false,
 }: {
   onSelesai: (score: number) => void
+  /** True bila ini tahap terakhir (stageIndex 2): tombol akhir berbunyi "Ke Pos Hijau". */
+  tahapTerakhir?: boolean
   terjeda?: boolean
 }) {
   const [fase, setFase] = useState<'main' | 'selesai' | 'gagal'>('main')
@@ -483,7 +493,7 @@ function TampungHujan({
             membuka keran!
           </p>
           <button type="button" className="aia-btn aia-btn-primary" onClick={() => onSelesai(skor)}>
-            Selesai · +{skor} Koin Hijau
+            {tahapTerakhir ? 'Ke Pos Hijau' : 'Level Selanjutnya'} · +{skor} Koin Hijau
           </button>
         </div>
       )}
@@ -612,7 +622,14 @@ function ikonPerangkat(ikon: IkonPerangkat) {
   }
 }
 
-function CariBoros({ onSelesai }: { onSelesai: (score: number) => void }) {
+function CariBoros({
+  onSelesai,
+  tahapTerakhir = false,
+}: {
+  onSelesai: (score: number) => void
+  /** True bila ini tahap terakhir (stageIndex 2): tombol akhir berbunyi "Ke Pos Hijau". */
+  tahapTerakhir?: boolean
+}) {
   const [ditemukan, setDitemukan] = useState<ReadonlySet<string>>(new Set())
   const [salahKetuk, setSalahKetuk] = useState<ReadonlySet<string>>(new Set())
   const [pesan, setPesan] = useState<{ teks: string; ok: boolean } | null>({
@@ -715,7 +732,7 @@ function CariBoros({ onSelesai }: { onSelesai: (score: number) => void }) {
             hemat energi dan air.
           </p>
           <button type="button" className="aia-btn aia-btn-primary" onClick={() => onSelesai(skor)}>
-            Selesai · +{skor} Koin Hijau
+            {tahapTerakhir ? 'Ke Pos Hijau' : 'Level Selanjutnya'} · +{skor} Koin Hijau
           </button>
         </div>
       )}
@@ -727,10 +744,13 @@ function CariBoros({ onSelesai }: { onSelesai: (score: number) => void }) {
 
 function BioporiGestur({
   onSelesai,
+  tahapTerakhir = false,
   modeSatuKetukan,
   terjeda = false,
 }: {
   onSelesai: (score: number) => void
+  /** True bila ini tahap terakhir (stageIndex 2): tombol akhir berbunyi "Ke Pos Hijau". */
+  tahapTerakhir?: boolean
   modeSatuKetukan?: boolean
   terjeda?: boolean
 }) {
@@ -807,7 +827,7 @@ function BioporiGestur({
             sekarang meresap dan mengisi air tanah.
           </p>
           <button type="button" className="aia-btn aia-btn-primary" onClick={() => onSelesai(skor)}>
-            Selesai · +{skor} Koin Hijau
+            {tahapTerakhir ? 'Ke Pos Hijau' : 'Level Selanjutnya'} · +{skor} Koin Hijau
           </button>
         </div>
       )}
@@ -848,10 +868,13 @@ function skorPipa(totalPutaran: number): number {
 
 function TampungHujanGestur({
   onSelesai,
+  tahapTerakhir = false,
   modeSatuKetukan,
   terjeda = false,
 }: {
   onSelesai: (score: number) => void
+  /** True bila ini tahap terakhir (stageIndex 2): tombol akhir berbunyi "Ke Pos Hijau". */
+  tahapTerakhir?: boolean
   modeSatuKetukan?: boolean
   terjeda?: boolean
 }) {
@@ -908,7 +931,7 @@ function TampungHujanGestur({
             Putaran dipakai: {putaran} (minimal {PUTARAN_MINIMAL}).
           </p>
           <button type="button" className="aia-btn aia-btn-primary" onClick={() => onSelesai(skor)}>
-            Selesai · +{skor} Koin Hijau
+            {tahapTerakhir ? 'Ke Pos Hijau' : 'Level Selanjutnya'} · +{skor} Koin Hijau
           </button>
         </div>
       )}
@@ -934,9 +957,12 @@ const LABEL_PENDEK: Record<string, string> = {
 
 function CariBorosGestur({
   onSelesai,
+  tahapTerakhir = false,
   terjeda = false,
 }: {
   onSelesai: (score: number) => void
+  /** True bila ini tahap terakhir (stageIndex 2): tombol akhir berbunyi "Ke Pos Hijau". */
+  tahapTerakhir?: boolean
   terjeda?: boolean
 }) {
   const [ditemukan, setDitemukan] = useState<ReadonlySet<string>>(new Set())
@@ -1027,7 +1053,7 @@ function CariBorosGestur({
             hemat energi dan air.
           </p>
           <button type="button" className="aia-btn aia-btn-primary" onClick={() => onSelesai(skor)}>
-            Selesai · +{skor} Koin Hijau
+            {tahapTerakhir ? 'Ke Pos Hijau' : 'Level Selanjutnya'} · +{skor} Koin Hijau
           </button>
         </div>
       )}
@@ -1053,16 +1079,19 @@ export function AirEnergi({
     [onStageComplete],
   )
 
+  // tahapTerakhir diisi literal (bukan `stageIndex === 2`): setelah guard
+  // `if (stageIndex === 0/1) return`, TS mempersempit tipe stageIndex
+  // sehingga perbandingan itu ditandai error TS2367.
   if (modeSatuKetukan) {
-    if (stageIndex === 0) return <Biopori onSelesai={selesai} />
-    if (stageIndex === 1) return <TampungHujan onSelesai={selesai} terjeda={terjeda} />
-    if (stageIndex === 2) return <CariBoros onSelesai={selesai} />
+    if (stageIndex === 0) return <Biopori onSelesai={selesai} tahapTerakhir={false} />
+    if (stageIndex === 1) return <TampungHujan onSelesai={selesai} tahapTerakhir={false} terjeda={terjeda} />
+    if (stageIndex === 2) return <CariBoros onSelesai={selesai} tahapTerakhir />
   } else {
     if (stageIndex === 0)
-      return <BioporiGestur onSelesai={selesai} modeSatuKetukan={modeSatuKetukan} terjeda={terjeda} />
+      return <BioporiGestur onSelesai={selesai} tahapTerakhir={false} modeSatuKetukan={modeSatuKetukan} terjeda={terjeda} />
     if (stageIndex === 1)
-      return <TampungHujanGestur onSelesai={selesai} modeSatuKetukan={modeSatuKetukan} terjeda={terjeda} />
-    if (stageIndex === 2) return <CariBorosGestur onSelesai={selesai} terjeda={terjeda} />
+      return <TampungHujanGestur onSelesai={selesai} tahapTerakhir={false} modeSatuKetukan={modeSatuKetukan} terjeda={terjeda} />
+    if (stageIndex === 2) return <CariBorosGestur onSelesai={selesai} tahapTerakhir terjeda={terjeda} />
   }
   return (
     <div className="aia-card">
