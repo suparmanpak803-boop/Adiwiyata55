@@ -9,9 +9,11 @@
 import { useState } from 'react'
 import { BookOpen, Play, RotateCcw } from 'lucide-react'
 import { CHAPTER_ORDER } from '@/lib/apa-itu-adiwiyata/chapters'
+import { hadiahBerikutnya, hariIniLokal } from '@/lib/apa-itu-adiwiyata/content/hadiah-harian'
 import { useCampaign } from '@/lib/apa-itu-adiwiyata/context'
 import { hasProgress } from '@/lib/apa-itu-adiwiyata/storage'
 import { TUGAS_ORDER } from '@/lib/apa-itu-adiwiyata/types'
+import { HadiahHarian } from './hadiah-harian'
 import { klik, playPop } from './suara'
 
 export function LayarAwal({
@@ -28,6 +30,13 @@ export function LayarAwal({
 }) {
   const { save } = useCampaign()
   const [tanyaBaru, setTanyaBaru] = useState(false)
+  // Hadiah Harian di Layar Awal: tampil bila belum diklaim hari ini, di
+  // bawah tombol Lanjutkan/Mulai. Klaim bersifat opsional — tombol "Lewati"
+  // selalu ada, dan kartu tetap menampilkan hasil bila baru saja diklaim
+  // (supaya pesan "Kamu mendapat ..." tidak hilang sebelum pemain masuk).
+  const [tampilkanHadiah, setTampilkanHadiah] = useState(true)
+  const [klaimSelesai, setKlaimSelesai] = useState(false)
+  const { bisaKlaim } = hadiahBerikutnya(save.hadiahTerakhir ?? null, save.hadiahSiklus ?? 1, hariIniLokal())
   const progres = hasProgress(save)
   const misiUtama = CHAPTER_ORDER.filter((id) => save.chapters[id].done).length
   const misiKader = TUGAS_ORDER.filter((id) => save.tugas[id].done).length
@@ -110,6 +119,12 @@ export function LayarAwal({
           <BookOpen aria-hidden="true" /> Cara Bermain
         </button>
       </div>
+
+      {tampilkanHadiah && (bisaKlaim || klaimSelesai) && (
+        <div style={{ marginTop: 12 }}>
+          <HadiahHarian onLewati={() => setTampilkanHadiah(false)} onKlaim={() => setKlaimSelesai(true)} />
+        </div>
+      )}
 
       {tanyaBaru && (
         <div

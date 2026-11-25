@@ -32,6 +32,7 @@ import {
   MINUMAN,
   POHON_HIJAU,
 } from './content/toko'
+import { HADIAH_HARIAN, hadiahBerikutnya } from './content/hadiah-harian'
 import type { CampaignSave, Carryover, ChapterId, Checkpoint, PakPlastikStatus, PromiseItem, Report, StageProgress, TugasKaderId } from './types'
 
 export type CampaignAction =
@@ -82,6 +83,9 @@ export type CampaignAction =
   | { type: 'PAKAI_KOSTUM'; id: string | null }
   /** Makan bekal gratis harian (jatah 1x/hari, 2x/hari bila punya Lunch Box). */
   | { type: 'PAKAI_BEKAL' }
+  /** Klaim Hadiah Harian (atomik, 1x sehari — lihat content/hadiah-harian.ts).
+   * Bila sudah klaim di hari yang sama, tidak mengubah apa pun. */
+  | { type: 'KLAIM_HADIAH_HARIAN'; hariIni: string }
 
 function touch(save: CampaignSave, patch: Partial<CampaignSave> = {}): CampaignSave {
   return { ...save, ...patch, updatedAt: new Date().toISOString() }
@@ -412,6 +416,28 @@ function reducer(save: CampaignSave, action: CampaignAction): CampaignSave {
     case 'PAKAI_KOSTUM': {
       if (action.id !== null && !(save.inventaris ?? []).includes(action.id)) return save
       return touch(save, { kostumDipakai: action.id })
+    }
+    case 'KLAIM_HADIAH_HARIAN': {
+      // Satu aksi atomik: cek klaim ganda + terapkan hadiah + catat tanggal
+      // dalam satu langkah, supaya hadiah tidak bisa diklaim dua kali.
+      // DAILY_CHECKIN (streak) tidak diutak-atik — sistem ini berdiri sendiri.
+      const { siklus, bisaKlaim } = hadiahBerikutnya(
+        save.hadiahTerakhir ?? null,
+        save.hadiahSiklus ?? 1,
+        action.hariIni,
+      )
+      if (!bisaKlaim) return save
+      const hadiah = HADIAH_HARIAN[siklus - 1]
+      if (!hadiah) return save
+      return touch(save, {
+        coins: save.coins + (hadiah.koinHijau ?? 0),
+        uang: (save.uang ?? 0) + (hadiah.uang ?? 0),
+        koinDaun: (save.koinDaun ?? 0) + (hadiah.koinDaun ?? 0),
+        lapar: hadiah.pulihkan ? 100 : save.lapar,
+        haus: hadiah.pulihkan ? 100 : save.haus,
+        hadiahTerakhir: action.hariIni,
+        hadiahSiklus: siklus,
+      })
     }
     case 'PAKAI_BEKAL': {
       // Jatah bekal harian: 1x/hari, 2x/hari bila punya Lunch Box.

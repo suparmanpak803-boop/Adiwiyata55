@@ -8,6 +8,7 @@ import { useState } from 'react'
 import { Banknote, BookOpen, CalendarCheck, Coins, Flame, Leaf, Store, TreePine, Volume2, VolumeX } from 'lucide-react'
 import { useCampaign } from '@/lib/apa-itu-adiwiyata/context'
 import { GEAR, KOSTUM } from '@/lib/apa-itu-adiwiyata/content/toko'
+import { HadiahHarian } from './hadiah-harian'
 import { klik } from './suara'
 
 export function Profil({
@@ -126,6 +127,8 @@ export function Profil({
           </p>
         )}
       </section>
+
+      <HadiahHarian />
 
       <section className="aia-card">
         <h3 className="aia-section-title" style={{ marginTop: 0 }}>

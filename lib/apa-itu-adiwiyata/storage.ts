@@ -78,6 +78,8 @@ export function freshSave(nickname = ''): CampaignSave {
     pohonDitanam: 0,
     bekalTanggal: null,
     bekalDipakai: 0,
+    hadiahTerakhir: null,
+    hadiahSiklus: 1,
     completedAt: null,
     updatedAt: new Date().toISOString(),
   }
@@ -111,6 +113,7 @@ export function hasProgress(save: CampaignSave): boolean {
   if ((save.uang ?? 0) > 0 || (save.koinDaun ?? 0) > 0) return true
   if ((save.inventaris?.length ?? 0) > 0 || (save.pohonDitanam ?? 0) > 0) return true
   if ((save.lapar ?? 100) < 100 || (save.haus ?? 100) < 100) return true
+  if ((save.hadiahTerakhir ?? null) !== null) return true
   if (save.completedAt !== null) return true
   if (save.checkpoint !== null) return true
   if (Object.keys(save.cerita ?? {}).length > 0 || save.pakPlastik !== 'netral') return true
@@ -192,6 +195,17 @@ export function loadSave(): CampaignSave {
     if (!Array.isArray(merged.inventaris)) merged.inventaris = []
     if (typeof merged.kostumDipakai !== 'string' && merged.kostumDipakai !== null) merged.kostumDipakai = null
     if (typeof merged.bekalTanggal !== 'string' && merged.bekalTanggal !== null) merged.bekalTanggal = null
+    // Pengaman Hadiah Harian: save lama tanpa field ini mendapat default
+    // dari gabungan di atas; bila bentuknya rusak, kembalikan ke awal siklus.
+    if (typeof merged.hadiahTerakhir !== 'string' && merged.hadiahTerakhir !== null) merged.hadiahTerakhir = null
+    if (
+      typeof merged.hadiahSiklus !== 'number' ||
+      !Number.isInteger(merged.hadiahSiklus) ||
+      merged.hadiahSiklus < 1 ||
+      merged.hadiahSiklus > 7
+    ) {
+      merged.hadiahSiklus = 1
+    }
     return merged
   } catch {
     // JSON rusak, storage tidak bisa dibaca, atau mode privat yang menolak akses.

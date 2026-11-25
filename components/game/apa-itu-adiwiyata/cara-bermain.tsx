@@ -141,6 +141,14 @@ export function CaraBermain({ onTutup }: { onTutup: () => void }) {
           <li>Koin Daun ditukar di kantin untuk gear (tumbler, tas kain, lunch box — efeknya permanen), menanam 1 pohon di kebun (100 Koin Daun, rapor hijau +5), dan kostum untuk tokohmu.</li>
         </ul>
 
+        <h3 className="aia-section-title">Hadiah Harian</h3>
+        <ul style={{ margin: '0 0 12px', paddingLeft: 20 }}>
+          <li>Setiap hari kamu bisa klaim 1 hadiah — dari Layar Awal saat masuk game, atau dari Profil.</li>
+          <li>Hadiahnya bersiklus 7 hari: Koin Hijau, uang, Koin Daun, makan siang gratis (lapar &amp; haus pulih penuh di Hari 4), sampai hadiah besar di Hari 7.</li>
+          <li>Klaim bersifat opsional — boleh dilewati, tidak menghalangi masuk game.</li>
+          <li>Terlewat sehari? Siklus mengulang dari Hari 1. Tidak ada yang hilang, hanya mulai lagi dari awal.</li>
+        </ul>
+
         <h3 className="aia-section-title">Keluar dari game</h3>
         <p className="aia-muted" style={{ marginTop: 0 }}>
           Tombol &quot;Keluar&quot; ada di atas layar. Progresmu tersimpan otomatis — lanjutkan lagi kapan saja dari

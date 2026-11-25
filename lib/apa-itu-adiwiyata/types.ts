@@ -131,6 +131,12 @@ export interface CampaignSave {
    * kali diambil hari itu (jatah 1x/hari, 2x/hari bila punya Lunch Box). */
   bekalTanggal: string | null
   bekalDipakai: number
+  /** Hadiah Harian: tanggal lokal (YYYY-MM-DD) klaim terakhir + hari
+   * terakhir yang diklaim dalam siklus 1-7 (hari berikutnya = siklus % 7 + 1).
+   * Terpisah dari streak harian: terlewat sehari hanya mengulang siklus
+   * dari hari 1, tidak ada yang hilang. */
+  hadiahTerakhir: string | null
+  hadiahSiklus: number
   completedAt: string | null
   updatedAt: string
 }
