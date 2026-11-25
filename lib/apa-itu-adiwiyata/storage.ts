@@ -69,6 +69,15 @@ export function freshSave(nickname = ''): CampaignSave {
     cerita: {},
     pakPlastik: 'netral',
     arkade: { tangkap: 0, kuis: 0 },
+    lapar: 100,
+    haus: 100,
+    uang: 0,
+    koinDaun: 0,
+    inventaris: [],
+    kostumDipakai: null,
+    pohonDitanam: 0,
+    bekalTanggal: null,
+    bekalDipakai: 0,
     completedAt: null,
     updatedAt: new Date().toISOString(),
   }
@@ -99,6 +108,9 @@ export function hasProgress(save: CampaignSave): boolean {
     return true
   }
   if (save.streak.count > 0) return true
+  if ((save.uang ?? 0) > 0 || (save.koinDaun ?? 0) > 0) return true
+  if ((save.inventaris?.length ?? 0) > 0 || (save.pohonDitanam ?? 0) > 0) return true
+  if ((save.lapar ?? 100) < 100 || (save.haus ?? 100) < 100) return true
   if (save.completedAt !== null) return true
   if (save.checkpoint !== null) return true
   if (Object.keys(save.cerita ?? {}).length > 0 || save.pakPlastik !== 'netral') return true
@@ -166,6 +178,20 @@ export function loadSave(): CampaignSave {
     ) {
       merged.arkade = { tangkap: 0, kuis: 0 }
     }
+    // Pengaman field kantin (lapar/haus/uang/Koin Daun/inventaris/kostum/
+    // pohon/bekal): save lama tanpa field ini mendapat default dari
+    // gabungan di atas; bila bentuknya rusak, ganti bagian itu saja.
+    const angka = (v: unknown, def: number): number =>
+      typeof v === 'number' && !Number.isNaN(v) ? v : def
+    merged.lapar = Math.max(0, Math.min(100, Math.round(angka(merged.lapar, 100))))
+    merged.haus = Math.max(0, Math.min(100, Math.round(angka(merged.haus, 100))))
+    merged.uang = Math.max(0, Math.round(angka(merged.uang, 0)))
+    merged.koinDaun = Math.max(0, Math.round(angka(merged.koinDaun, 0)))
+    merged.pohonDitanam = Math.max(0, Math.round(angka(merged.pohonDitanam, 0)))
+    merged.bekalDipakai = Math.max(0, Math.round(angka(merged.bekalDipakai, 0)))
+    if (!Array.isArray(merged.inventaris)) merged.inventaris = []
+    if (typeof merged.kostumDipakai !== 'string' && merged.kostumDipakai !== null) merged.kostumDipakai = null
+    if (typeof merged.bekalTanggal !== 'string' && merged.bekalTanggal !== null) merged.bekalTanggal = null
     return merged
   } catch {
     // JSON rusak, storage tidak bisa dibaca, atau mode privat yang menolak akses.

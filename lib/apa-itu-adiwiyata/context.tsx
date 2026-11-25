@@ -20,6 +20,18 @@ import {
   type PetakId,
 } from './dunia-hidup'
 import { freshSave, loadSave, saveSave } from './storage'
+import {
+  BEKAL_JATAH,
+  BEKAL_JATAH_LUNCH_BOX,
+  BEKAL_LAPAR,
+  BEKAL_LAPAR_LUNCH_BOX,
+  GEAR,
+  HARGA_POHON_KOIN_DAUN,
+  KOSTUM,
+  MAKANAN,
+  MINUMAN,
+  POHON_HIJAU,
+} from './content/toko'
 import type { CampaignSave, Carryover, ChapterId, Checkpoint, PakPlastikStatus, PromiseItem, Report, StageProgress, TugasKaderId } from './types'
 
 export type CampaignAction =
@@ -57,6 +69,19 @@ export type CampaignAction =
   | { type: 'PILIH_CERITA'; kunci: string; opsi: string; pakPlastik?: PakPlastikStatus }
   /** Skor terbaik game arkade: hanya naik, tidak pernah turun. */
   | { type: 'ARKADE_TERBAIK'; game: 'tangkap' | 'kuis'; skor: number }
+  /** Kantin: uang (Rp) dan Koin Daun. */
+  | { type: 'EARN_UANG'; amount: number }
+  | { type: 'EARN_KOIN_DAUN'; amount: number }
+  /** Pulihkan bar lapar/haus (dijepit 0-100). Dipakai air keran dan bekal darurat. */
+  | { type: 'PULIHKAN'; lapar?: number; haus?: number }
+  /** Beli barang toko (validasi dana + kepemilikan ganda di dalam reducer). */
+  | { type: 'BELI'; jenis: 'makanan' | 'minuman' | 'gear' | 'kostum'; id: string }
+  /** Tanam 1 pohon (100 Koin Daun): pohon +1, rapor hijau +5. */
+  | { type: 'TANAM_POHON' }
+  /** Pakai kostum yang dimiliki (null = lepas, kembali ke seragam biasa). */
+  | { type: 'PAKAI_KOSTUM'; id: string | null }
+  /** Makan bekal gratis harian (jatah 1x/hari, 2x/hari bila punya Lunch Box). */
+  | { type: 'PAKAI_BEKAL' }
 
 function touch(save: CampaignSave, patch: Partial<CampaignSave> = {}): CampaignSave {
   return { ...save, ...patch, updatedAt: new Date().toISOString() }
@@ -64,6 +89,37 @@ function touch(save: CampaignSave, patch: Partial<CampaignSave> = {}): CampaignS
 
 function clampReport(value: number): number {
   return Math.max(0, Math.min(100, Math.round(value)))
+}
+
+/** Jepit bar lapar/haus ke 0-100. */
+function clampBar(value: number): number {
+  if (Number.isNaN(value)) return 0
+  return Math.max(0, Math.min(100, Math.round(value)))
+}
+
+/** Selisih hari kalender (tanggal lokal YYYY-MM-DD), 0 bila tanggal rusak. */
+function selisihHariKalender(dari: string, sampai: string): number {
+  const a = new Date(`${dari}T00:00:00`).getTime()
+  const b = new Date(`${sampai}T00:00:00`).getTime()
+  if (Number.isNaN(a) || Number.isNaN(b)) return 0
+  return Math.max(0, Math.round((b - a) / 86_400_000))
+}
+
+/**
+ * Drain lapar/haus tiap tahap selesai: lapar -10, haus -8 — atau -4 bila
+ * punya Tumbler (drain haus dibagi 2, dibulatkan ke bawah: floor(8/2) = 4).
+ */
+function drainTahap(save: CampaignSave): { lapar: number; haus: number } {
+  const punyaTumbler = (save.inventaris ?? []).includes('tumbler')
+  return {
+    lapar: clampBar((save.lapar ?? 100) - 10),
+    haus: clampBar((save.haus ?? 100) - (punyaTumbler ? 4 : 8)),
+  }
+}
+
+/** Bonus Tas Kain: +5 Koin Hijau tiap tahap selesai (di luar pengali streak). */
+function bonusTasKain(save: CampaignSave): number {
+  return (save.inventaris ?? []).includes('tas-kain') ? 5 : 0
 }
 
 function clamp01(value: number): number {
@@ -108,10 +164,14 @@ function reducer(save: CampaignSave, action: CampaignAction): CampaignSave {
       }) as [StageProgress, StageProgress, StageProgress]
       const isLastStage = action.stageIndex >= 2
       const key = `${action.chapterId}:${action.stageIndex}`
+      const drain = drainTahap(save)
       return touch(save, {
         // Pengali streak: hari ke-5 berturut-turut menggandakan Koin Hijau
         // tahap ini (skor terbaik tetap memakai skor mentah).
-        coins: save.coins + Math.max(0, action.score) * (save.streak.multiplierActive ? 2 : 1),
+        coins:
+          save.coins + Math.max(0, action.score) * (save.streak.multiplierActive ? 2 : 1) + bonusTasKain(save),
+        lapar: drain.lapar,
+        haus: drain.haus,
         chapters: { ...save.chapters, [action.chapterId]: { ...chapter, stages } },
         bestScores: { ...save.bestScores, [key]: Math.max(save.bestScores[key] ?? 0, action.score) },
         checkpoint: isLastStage
@@ -145,8 +205,12 @@ function reducer(save: CampaignSave, action: CampaignAction): CampaignSave {
         return stage
       }) as [StageProgress, StageProgress, StageProgress]
       const key = `tugas:${action.tugasId}:${action.stageIndex}`
+      const drain = drainTahap(save)
       return touch(save, {
-        coins: save.coins + Math.max(0, action.score) * (save.streak.multiplierActive ? 2 : 1),
+        coins:
+          save.coins + Math.max(0, action.score) * (save.streak.multiplierActive ? 2 : 1) + bonusTasKain(save),
+        lapar: drain.lapar,
+        haus: drain.haus,
         tugas: { ...save.tugas, [action.tugasId]: { ...tugas, stages } },
         bestScores: { ...save.bestScores, [key]: Math.max(save.bestScores[key] ?? 0, action.score) },
       })
@@ -232,7 +296,18 @@ function reducer(save: CampaignSave, action: CampaignAction): CampaignSave {
       const duniaLama = save.dunia ?? freshDunia()
       const hasil = majukanDunia(duniaLama, action.sekarang, action.adaMisiBelumSelesai)
       if (hasil.dunia === duniaLama) return save
-      return touch(save, { dunia: hasil.dunia })
+      // Drain harian: tiap hari berlalu lapar -5 dan haus -5 (maks 30 hari,
+      // sama seperti majukanDunia). Hanya bar yang berkurang — tidak ada
+      // progres atau koin yang hilang.
+      const hariBerlalu = Math.min(
+        30,
+        selisihHariKalender(duniaLama.hariTerakhirKunjung, hariLokal(new Date(action.sekarang))),
+      )
+      return touch(save, {
+        dunia: hasil.dunia,
+        lapar: clampBar((save.lapar ?? 100) - 5 * hariBerlalu),
+        haus: clampBar((save.haus ?? 100) - 5 * hariBerlalu),
+      })
     }
     case 'PERAWATAN_DUNIA': {
       // Satu dispatch: fungsi murni + koin hasilnya ditambahkan di sini.
@@ -281,6 +356,76 @@ function reducer(save: CampaignSave, action: CampaignAction): CampaignSave {
       const arkade = save.arkade ?? { tangkap: 0, kuis: 0 }
       return touch(save, {
         arkade: { ...arkade, [action.game]: Math.max(arkade[action.game], Math.max(0, action.skor)) },
+      })
+    }
+    case 'EARN_UANG':
+      return touch(save, { uang: (save.uang ?? 0) + Math.max(0, action.amount) })
+    case 'EARN_KOIN_DAUN':
+      return touch(save, { koinDaun: (save.koinDaun ?? 0) + Math.max(0, action.amount) })
+    case 'PULIHKAN':
+      return touch(save, {
+        lapar: clampBar((save.lapar ?? 100) + (action.lapar ?? 0)),
+        haus: clampBar((save.haus ?? 100) + (action.haus ?? 0)),
+      })
+    case 'BELI': {
+      // Validasi di dalam reducer: dana kurang atau sudah dimiliki -> no-op.
+      const inventaris = save.inventaris ?? []
+      if (action.jenis === 'makanan') {
+        const item = MAKANAN.find((m) => m.id === action.id)
+        if (!item || (save.uang ?? 0) < item.harga) return save
+        return touch(save, {
+          uang: (save.uang ?? 0) - item.harga,
+          lapar: clampBar((save.lapar ?? 100) + item.lapar),
+        })
+      }
+      if (action.jenis === 'minuman') {
+        const item = MINUMAN.find((m) => m.id === action.id)
+        if (!item || (save.uang ?? 0) < item.harga) return save
+        return touch(save, {
+          uang: (save.uang ?? 0) - item.harga,
+          haus: clampBar((save.haus ?? 100) + item.haus),
+        })
+      }
+      if (action.jenis === 'gear') {
+        const item = GEAR.find((g) => g.id === action.id)
+        if (!item || inventaris.includes(item.id) || (save.koinDaun ?? 0) < item.hargaKoinDaun) return save
+        return touch(save, {
+          koinDaun: (save.koinDaun ?? 0) - item.hargaKoinDaun,
+          inventaris: [...inventaris, item.id],
+        })
+      }
+      const item = KOSTUM.find((k) => k.id === action.id)
+      if (!item || inventaris.includes(item.id) || (save.koinDaun ?? 0) < item.hargaKoinDaun) return save
+      return touch(save, {
+        koinDaun: (save.koinDaun ?? 0) - item.hargaKoinDaun,
+        inventaris: [...inventaris, item.id],
+      })
+    }
+    case 'TANAM_POHON': {
+      if ((save.koinDaun ?? 0) < HARGA_POHON_KOIN_DAUN) return save
+      return touch(save, {
+        koinDaun: (save.koinDaun ?? 0) - HARGA_POHON_KOIN_DAUN,
+        pohonDitanam: (save.pohonDitanam ?? 0) + 1,
+        report: { ...save.report, hijau: clampReport(save.report.hijau + POHON_HIJAU) },
+      })
+    }
+    case 'PAKAI_KOSTUM': {
+      if (action.id !== null && !(save.inventaris ?? []).includes(action.id)) return save
+      return touch(save, { kostumDipakai: action.id })
+    }
+    case 'PAKAI_BEKAL': {
+      // Jatah bekal harian: 1x/hari, 2x/hari bila punya Lunch Box.
+      // Tanggal berganti -> hitungan hari itu mulai dari 0 lagi.
+      const hariIni = hariLokal(new Date())
+      const punyaLunchBox = (save.inventaris ?? []).includes('lunch-box')
+      const jatah = punyaLunchBox ? BEKAL_JATAH_LUNCH_BOX : BEKAL_JATAH
+      const dipakaiHariIni = save.bekalTanggal === hariIni ? (save.bekalDipakai ?? 0) : 0
+      if (dipakaiHariIni >= jatah) return save
+      const pulih = punyaLunchBox ? BEKAL_LAPAR_LUNCH_BOX : BEKAL_LAPAR
+      return touch(save, {
+        lapar: clampBar((save.lapar ?? 100) + pulih),
+        bekalTanggal: hariIni,
+        bekalDipakai: dipakaiHariIni + 1,
       })
     }
     default:

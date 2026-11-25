@@ -1,10 +1,11 @@
 'use client'
 
 import { useEffect, useState, type ComponentType } from 'react'
-import { ArrowLeft, Check, Flag, LogOut, Pause, Play, RotateCcw } from 'lucide-react'
+import { ArrowLeft, Banknote, Check, Droplets, Flag, Leaf, LogOut, Pause, Play, RotateCcw, Store, UtensilsCrossed } from 'lucide-react'
 import { CHAPTERS, CHAPTER_ORDER } from '@/lib/apa-itu-adiwiyata/chapters'
 import { TUGAS } from '@/lib/apa-itu-adiwiyata/tugas'
 import { kunciCerita, PILIHAN_CERITA, pilihEpilog } from '@/lib/apa-itu-adiwiyata/content/cerita'
+import { AIR_KERAN_HAUS } from '@/lib/apa-itu-adiwiyata/content/toko'
 import { dialogAwalUntuk } from '@/lib/apa-itu-adiwiyata/content/dialog'
 import { INTERAKSI_MISI } from '@/lib/apa-itu-adiwiyata/content/interaksi'
 import { useCampaign } from '@/lib/apa-itu-adiwiyata/context'
@@ -161,6 +162,10 @@ export function MisiShell({
   // Misi ini pertama kali diselesaikan bila progress.done masih false
   // (dipakai render epilog + pemberian bonus sekali di selesaikanMisi).
   const pertamaKali = !progress.done
+  // Lemas: lapar atau haus habis -> tidak bisa mulai tahap baru. Gate ini
+  // hanya menahan tombol "Mulai Misi" (misi yang sedang berjalan dan
+  // Pos Hijau tidak diblokir, supaya tidak ada jalan buntu).
+  const lemas = (save.lapar ?? 100) <= 0 || (save.haus ?? 100) <= 0
   // Titik pilihan 2 (Cerita Bercabang, hanya bab utama): tampil sebelum
   // tahap ke-3, menggantikan slot mini-game sampai pemain memilih.
   const titikPilihan2 = kind === 'bab' && chapterId ? PILIHAN_CERITA[chapterId][1] : null
@@ -253,7 +258,12 @@ export function MisiShell({
       dispatch({ type: 'COMPLETE_TUGAS_STAGE', tugasId, stageIndex, score })
     }
     setReplayStage(null)
-    setPesanSukses(`Tahap ${stageIndex + 1} selesai! +${score} Koin Hijau.`)
+    // Jumlah Koin Hijau sama seperti di reducer (pengali streak + bonus
+    // Tas Kain), supaya pesan suksesnya cocok dengan saldo yang masuk.
+    const koinTahap =
+      Math.max(0, score) * (save.streak.multiplierActive ? 2 : 1) +
+      ((save.inventaris ?? []).includes('tas-kain') ? 5 : 0)
+    setPesanSukses(`Tahap ${stageIndex + 1} selesai! +${koinTahap} Koin Hijau.`)
     bendera()
     // Satu kejadian acak per kunjungan bab, muncul setelah tahap pertama
     // yang diselesaikan di kunjungan ini (sama seperti bab-shell).
@@ -262,6 +272,10 @@ export function MisiShell({
 
   const selesaikanMisi = () => {
     playMenang()
+    // Hadiah misi (di atas Koin Hijau dari skor tahap): pertama kali
+    // +Rp5.000 dan +20 Koin Daun, ulangan +Rp2.000 dan +5 Koin Daun.
+    dispatch({ type: 'EARN_UANG', amount: pertamaKali ? 5000 : 2000 })
+    dispatch({ type: 'EARN_KOIN_DAUN', amount: pertamaKali ? 20 : 5 })
     if (kind === 'bab' && chapterId) {
       dispatch({ type: 'COMPLETE_CHAPTER', chapterId })
       dispatch({ type: 'EARN_BADGE', badgeId: BAB_BADGE[chapterId] })
@@ -380,6 +394,44 @@ export function MisiShell({
             </>
           )}
         </div>
+        <div className="aia-progress-row" style={{ marginTop: 10 }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <span>
+              Lapar {save.lapar ?? 100}
+            </span>
+            <span
+              style={{ display: 'inline-block', width: 48, height: 8, borderRadius: 4, background: '#e0e0e0', overflow: 'hidden' }}
+              role="progressbar"
+              aria-label="Lapar"
+              aria-valuenow={save.lapar ?? 100}
+              aria-valuemin={0}
+              aria-valuemax={100}
+            >
+              <span style={{ display: 'block', width: `${save.lapar ?? 100}%`, height: '100%', background: '#e65100' }} />
+            </span>
+          </span>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <span>
+              Haus {save.haus ?? 100}
+            </span>
+            <span
+              style={{ display: 'inline-block', width: 48, height: 8, borderRadius: 4, background: '#e0e0e0', overflow: 'hidden' }}
+              role="progressbar"
+              aria-label="Haus"
+              aria-valuenow={save.haus ?? 100}
+              aria-valuemin={0}
+              aria-valuemax={100}
+            >
+              <span style={{ display: 'block', width: `${save.haus ?? 100}%`, height: '100%', background: '#1e88e5' }} />
+            </span>
+          </span>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <Banknote aria-hidden="true" /> Rp{(save.uang ?? 0).toLocaleString('id-ID')}
+          </span>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <Leaf aria-hidden="true" /> {save.koinDaun ?? 0} Koin Daun
+          </span>
+        </div>
         {sudahMulai && tahapTerakhirSelesai >= 0 && replayStage === null && (
           <div style={{ marginTop: 10 }}>
             <button
@@ -442,7 +494,51 @@ export function MisiShell({
         </section>
       )}
 
-      {!sudahMulai && (
+      {!sudahMulai && lemas && tampilkanGame && (
+        <section className="aia-card" aria-label="Kamu lemas">
+          <h3 className="aia-section-title" style={{ marginTop: 0 }}>
+            Kamu lemas!
+          </h3>
+          <p className="aia-muted" style={{ marginTop: 0 }}>
+            {(save.lapar ?? 100) <= 0 ? 'Laparmu habis. ' : ''}
+            {(save.haus ?? 100) <= 0 ? 'Hausmu habis. ' : ''}
+            Makan atau minum dulu di Kantin sebelum mulai misi. Tidak ada yang hilang — cukup isi perutmu.
+          </p>
+          <div className="aia-actions">
+            <button type="button" className="aia-btn aia-btn-primary" style={{ minHeight: 44 }} onClick={onExit}>
+              <Store aria-hidden="true" /> Ke Kantin
+            </button>
+            <button
+              type="button"
+              className="aia-btn"
+              style={{ minHeight: 44 }}
+              onClick={() => {
+                klik()
+                dispatch({ type: 'PULIHKAN', haus: AIR_KERAN_HAUS })
+                setPesanSukses(`Kamu minum air keran. Haus +${AIR_KERAN_HAUS}.`)
+              }}
+            >
+              <Droplets aria-hidden="true" /> Air keran gratis
+            </button>
+            {(save.lapar ?? 100) <= 0 && (
+              <button
+                type="button"
+                className="aia-btn"
+                style={{ minHeight: 44 }}
+                onClick={() => {
+                  klik()
+                  dispatch({ type: 'PULIHKAN', lapar: 20 })
+                  setPesanSukses('Bekal darurat dimakan. Lapar +20.')
+                }}
+              >
+                <UtensilsCrossed aria-hidden="true" /> Bekal darurat
+              </button>
+            )}
+          </div>
+        </section>
+      )}
+
+      {!sudahMulai && !(lemas && tampilkanGame) && (
         <section className="aia-card" aria-label="Mulai misi">
           <h3 className="aia-section-title" style={{ marginTop: 0 }}>
             Siap main?
@@ -585,6 +681,10 @@ export function MisiShell({
                 Ketiga tahap selesai! Di Pos Hijau progresmu disimpan, rapor sekolah diperbarui, dan kamu mendapat
                 lencana misi ini.
               </p>
+              <p className="aia-muted">
+                Hadiah misi ini: +Rp{(pertamaKali ? 5000 : 2000).toLocaleString('id-ID')} dan +
+                {pertamaKali ? 20 : 5} Koin Daun.
+              </p>
               <RaporSekolah />
               <p>
                 <strong>Refleksi:</strong> {REFLEKSI[chapterId]}
@@ -604,10 +704,16 @@ export function MisiShell({
               <JanjiHarian />
             </>
           ) : (
-            <p>
-              Ketiga tahap selesai! Kamu mendapat lencana {namaLencanaTugas}.
-              {lengkapiKader ? ' Ini misi tambahan terakhir — kamu juga mendapat lencana Tim Lengkap!' : ''}
-            </p>
+            <>
+              <p>
+                Ketiga tahap selesai! Kamu mendapat lencana {namaLencanaTugas}.
+                {lengkapiKader ? ' Ini misi tambahan terakhir — kamu juga mendapat lencana Tim Lengkap!' : ''}
+              </p>
+              <p className="aia-muted">
+                Hadiah misi ini: +Rp{(pertamaKali ? 5000 : 2000).toLocaleString('id-ID')} dan +
+                {pertamaKali ? 20 : 5} Koin Daun.
+              </p>
+            </>
           )}
           <button
             type="button"

@@ -132,6 +132,15 @@ export function CaraBermain({ onTutup }: { onTutup: () => void }) {
           <li>Main 5 hari berturut-turut: Koin Hijau dari tahap misi jadi 2× lipat.</li>
         </ul>
 
+        <h3 className="aia-section-title">Lapar, Haus &amp; Kantin</h3>
+        <ul style={{ margin: '0 0 12px', paddingLeft: 20 }}>
+          <li>Bar lapar dan haus berkurang setiap tahap selesai dan setiap hari berlalu. Kalau salah satunya habis, kamu jadi lemas dan tidak bisa mulai tahap baru — tapi tidak ada progres yang hilang.</li>
+          <li>Bicara dengan Kang Kantin atau Mbak Dewi, lalu ketuk &quot;Buka Kantin&quot; untuk membuka Toko Kantin.</li>
+          <li>Di kantin: beli makanan dan minuman pakai uang (Rp). Air keran gratis (+15 haus), bekal dari rumah gratis 1x sehari (+30 lapar).</li>
+          <li>Tiap misi yang selesai memberi uang dan Koin Daun (pertama kali: Rp5.000 + 20 Koin Daun).</li>
+          <li>Koin Daun ditukar di kantin untuk gear (tumbler, tas kain, lunch box — efeknya permanen), menanam 1 pohon di kebun (100 Koin Daun, rapor hijau +5), dan kostum untuk tokohmu.</li>
+        </ul>
+
         <h3 className="aia-section-title">Keluar dari game</h3>
         <p className="aia-muted" style={{ marginTop: 0 }}>
           Tombol &quot;Keluar&quot; ada di atas layar. Progresmu tersimpan otomatis — lanjutkan lagi kapan saja dari

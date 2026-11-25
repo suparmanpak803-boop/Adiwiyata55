@@ -32,12 +32,13 @@ import { koinArkade } from '@/lib/apa-itu-adiwiyata/arkade'
 import { Ensiklopedia } from './ensiklopedia'
 import { Leaderboard } from './leaderboard'
 import { Profil } from './profil'
+import { TokoKantin } from './toko-kantin'
 import { klik, setSuaraMuted, startMusic, stopMusic, type MusicMode } from './suara'
 import './apa-itu-adiwiyata.css'
 
 const MODE_BAB: MusicMode[] = ['bab1', 'bab2', 'bab3', 'bab4', 'bab5', 'bab6']
 
-type Screen = 'awal' | 'peta' | 'misi' | 'ensiklopedia' | 'peringkat' | 'profil' | 'bab' | 'tugas' | 'tamat' | 'tangkap' | 'kuis'
+type Screen = 'awal' | 'peta' | 'misi' | 'ensiklopedia' | 'peringkat' | 'profil' | 'bab' | 'tugas' | 'tamat' | 'tangkap' | 'kuis' | 'toko'
 
 export function ApaItuAdiwiyata() {
   return (
@@ -328,13 +329,15 @@ function Shell() {
             onPlayKuis={mainKuis}
             onOpenMisi={() => gantiTab('misi')}
             onOpenPanduan={bukaPanduan}
+            onOpenToko={() => setScreen('toko')}
           />
         </>
       )}
       {screen === 'misi' && <Misi />}
       {screen === 'ensiklopedia' && <Ensiklopedia />}
       {screen === 'peringkat' && <Leaderboard />}
-      {screen === 'profil' && <Profil onOpenPanduan={bukaPanduan} />}
+      {screen === 'profil' && <Profil onOpenPanduan={bukaPanduan} onOpenToko={() => setScreen('toko')} />}
+      {screen === 'toko' && <TokoKantin onExit={() => setScreen('peta')} />}
       {screen === 'bab' && (
         <MisiShell
           kind="bab"
@@ -367,6 +370,7 @@ function Shell() {
         screen !== 'tamat' &&
         screen !== 'tangkap' &&
         screen !== 'kuis' &&
+        screen !== 'toko' &&
         screen !== 'awal' &&
         <BottomNav tab={screen} onChange={gantiTab} />}
     </div>

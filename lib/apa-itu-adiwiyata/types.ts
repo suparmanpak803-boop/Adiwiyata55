@@ -111,6 +111,26 @@ export interface CampaignSave {
   pakPlastik: PakPlastikStatus
   /** Skor terbaik dua game arkade di dunia (Tangkap Sampah, Kuis Adiwiyata). */
   arkade: { tangkap: number; kuis: number }
+  /** Bar lapar & haus (0-100). Berkurang tiap tahap selesai dan tiap hari
+   * berlalu di Dunia Hidup; dipulihkan lewat Kantin / bekal / air keran.
+   * Bila salah satunya 0, pemain "lemas" dan tidak bisa mulai tahap baru
+   * (bukan hukuman: tidak ada progres/koin yang hilang). */
+  lapar: number
+  haus: number
+  /** Uang (Rp) untuk belanja makanan/minuman di Kantin. */
+  uang: number
+  /** Koin Daun: mata uang hadiah untuk gear, pohon, dan kostum. */
+  koinDaun: number
+  /** Id gear/kostum yang sudah dibeli di Toko Kantin. */
+  inventaris: string[]
+  /** Kostum yang sedang dipakai tokoh pemain (null = seragam biasa). */
+  kostumDipakai: string | null
+  /** Jumlah pohon yang ditanam lewat Toko Kantin (100 Koin Daun/pohon). */
+  pohonDitanam: number
+  /** Bekal gratis harian: tanggal lokal terakhir bekal diambil + berapa
+   * kali diambil hari itu (jatah 1x/hari, 2x/hari bila punya Lunch Box). */
+  bekalTanggal: string | null
+  bekalDipakai: number
   completedAt: string | null
   updatedAt: string
 }

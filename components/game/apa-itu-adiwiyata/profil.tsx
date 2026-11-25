@@ -5,16 +5,29 @@
 // Pengaturan suara tersimpan di save kampanye; provider sudah memanggil
 // syncSettings otomatis setiap pengaturan berubah.
 import { useState } from 'react'
-import { BookOpen, CalendarCheck, Coins, Flame, Volume2, VolumeX } from 'lucide-react'
+import { Banknote, BookOpen, CalendarCheck, Coins, Flame, Leaf, Store, TreePine, Volume2, VolumeX } from 'lucide-react'
 import { useCampaign } from '@/lib/apa-itu-adiwiyata/context'
+import { GEAR, KOSTUM } from '@/lib/apa-itu-adiwiyata/content/toko'
 import { klik } from './suara'
 
-export function Profil({ onOpenPanduan }: { /** Buka panduan Cara Bermain (overlay dari runner). */ onOpenPanduan: () => void }) {
+export function Profil({
+  onOpenPanduan,
+  onOpenToko,
+}: {
+  /** Buka panduan Cara Bermain (overlay dari runner). */
+  onOpenPanduan: () => void
+  /** Buka Toko Kantin (bila diisi, tombol toko tampil). */
+  onOpenToko?: () => void
+}) {
   const { save, dispatch } = useCampaign()
   const [nama, setNama] = useState(save.nickname)
   const [pesan, setPesan] = useState<string | null>(null)
+  const [pesanKoleksi, setPesanKoleksi] = useState<string | null>(null)
 
   const janjiAktif = save.promises.filter((p) => !p.done)
+  const inventaris = save.inventaris ?? []
+  const gearDimiliki = GEAR.filter((g) => inventaris.includes(g.id))
+  const kostumDimiliki = KOSTUM.filter((k) => inventaris.includes(k.id))
 
   return (
     <div className="aia-stack">
@@ -27,6 +40,92 @@ export function Profil({ onOpenPanduan }: { /** Buka panduan Cara Bermain (overl
         </span>
         {save.streak.multiplierActive && <span className="aia-chip done">Pengali x2 aktif</span>}
       </div>
+
+      <section className="aia-card">
+        <h3 className="aia-section-title" style={{ marginTop: 0 }}>
+          Kantong &amp; Koleksi
+        </h3>
+        <div className="aia-stats">
+          <span className="aia-stat">
+            <Banknote aria-hidden="true" /> Rp{(save.uang ?? 0).toLocaleString('id-ID')}
+          </span>
+          <span className="aia-stat">
+            <Leaf aria-hidden="true" /> {save.koinDaun ?? 0} Koin Daun
+          </span>
+          <span className="aia-stat">
+            <TreePine aria-hidden="true" /> {save.pohonDitanam ?? 0} pohon ditanam
+          </span>
+        </div>
+        <p className="aia-muted" style={{ marginTop: 8 }}>
+          Gear yang dimiliki
+        </p>
+        {gearDimiliki.length === 0 ? (
+          <p className="aia-muted">Belum punya gear. Beli di Toko Kantin pakai Koin Daun.</p>
+        ) : (
+          <div className="aia-stack">
+            {gearDimiliki.map((gear) => (
+              <p key={gear.id} className="aia-muted" style={{ margin: 0 }}>
+                <strong>{gear.nama}</strong> — {gear.efek}
+              </p>
+            ))}
+          </div>
+        )}
+        <p className="aia-muted" style={{ marginTop: 12 }}>
+          Kostum yang dimiliki
+        </p>
+        {kostumDimiliki.length === 0 ? (
+          <p className="aia-muted">Belum punya kostum. Beli di Toko Kantin pakai Koin Daun.</p>
+        ) : (
+          <div className="aia-stack">
+            {kostumDimiliki.map((kostum) => {
+              const dipakai = save.kostumDipakai === kostum.id
+              return (
+                <div
+                  key={kostum.id}
+                  style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}
+                >
+                  <p className="aia-muted" style={{ margin: 0 }}>
+                    <strong>{kostum.nama}</strong>
+                    {dipakai && <span className="aia-chip done"> Dipakai</span>}
+                  </p>
+                  <button
+                    type="button"
+                    className="aia-btn"
+                    style={{ minHeight: 44, whiteSpace: 'nowrap' }}
+                    onClick={() => {
+                      klik()
+                      dispatch({ type: 'PAKAI_KOSTUM', id: dipakai ? null : kostum.id })
+                      setPesanKoleksi(dipakai ? 'Kostum dilepas, kembali ke seragam biasa.' : `Kamu memakai ${kostum.nama}.`)
+                    }}
+                  >
+                    {dipakai ? 'Lepas' : 'Pakai'}
+                  </button>
+                </div>
+              )
+            })}
+          </div>
+        )}
+        {onOpenToko && (
+          <div className="aia-actions">
+            <button
+              type="button"
+              className="aia-btn"
+              style={{ minHeight: 44 }}
+              onClick={() => {
+                klik()
+                onOpenToko()
+              }}
+            >
+              <Store aria-hidden="true" /> Buka Toko Kantin
+            </button>
+          </div>
+        )}
+        {pesanKoleksi && (
+          <p className="aia-muted" role="status" style={{ marginTop: 8 }}>
+            {pesanKoleksi}
+          </p>
+        )}
+      </section>
 
       <section className="aia-card">
         <h3 className="aia-section-title" style={{ marginTop: 0 }}>

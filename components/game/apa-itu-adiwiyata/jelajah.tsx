@@ -9,13 +9,14 @@
 // mengikuti kontrak di lib/apa-itu-adiwiyata/dunia.ts dan content/npc.ts.
 
 import { useEffect, useRef, useState } from 'react'
-import { Coins, Flag, MessageCircle, Volume2, VolumeX, X } from 'lucide-react'
+import { Banknote, Coins, Flag, Leaf, MessageCircle, Store, Volume2, VolumeX, X } from 'lucide-react'
 import { CHAPTERS, CHAPTER_ORDER } from '@/lib/apa-itu-adiwiyata/chapters'
 import { TUGAS } from '@/lib/apa-itu-adiwiyata/tugas'
 import { jumlahTugasSelesai, LOKASI_PEMBERI, misiSaatIni, pemberiMisi } from '@/lib/apa-itu-adiwiyata/misi'
 import { selectChapterUnlocked, useCampaign } from '@/lib/apa-itu-adiwiyata/context'
 import { kunciCerita, PILIHAN_CERITA } from '@/lib/apa-itu-adiwiyata/content/cerita'
 import { dialogDenganIngatan } from '@/lib/apa-itu-adiwiyata/content/npc'
+import { warnaKostum, type WarnaKostum } from '@/lib/apa-itu-adiwiyata/content/toko'
 import { DUNIA, NPCS, type NpcDunia } from '@/lib/apa-itu-adiwiyata/dunia'
 import {
   beriMakanMaggot,
@@ -397,7 +398,7 @@ function warnaTintWaktu(): string {
   return 'rgba(20,40,90,0.18)'
 }
 
-function gambarPemain(g: CanvasRenderingContext2D, p: PemainState, reduced: boolean) {
+function gambarPemain(g: CanvasRenderingContext2D, p: PemainState, reduced: boolean, warna: WarnaKostum) {
   const bob = p.bergerak && !reduced ? Math.sin(p.fase) * 2 : 0
   g.fillStyle = 'rgba(0,0,0,0.25)'
   g.beginPath()
@@ -410,21 +411,21 @@ function gambarPemain(g: CanvasRenderingContext2D, p: PemainState, reduced: bool
   g.fillStyle = '#37474f'
   g.fillRect(-7, 8 + langkah * 0.3, 5, 8)
   g.fillRect(2, 8 - langkah * 0.3, 5, 8)
-  // Badan (seragam putih, kerah hijau).
-  g.fillStyle = '#f5f5f5'
+  // Badan (warna baju/kerah mengikuti kostum yang dipakai).
+  g.fillStyle = warna.baju
   rr(g, -10, -4, 20, 15, 6)
   g.fill()
-  g.fillStyle = '#2e7d32'
+  g.fillStyle = warna.kerah
   g.fillRect(-10, -4, 20, 4)
-  g.fillStyle = '#f5f5f5'
+  g.fillStyle = warna.baju
   g.fillRect(-13, -2, 4, 10)
   g.fillRect(9, -2, 4, 10)
-  // Kepala + rambut.
+  // Kepala + rambut/topi (warna rambut mengikuti kostum Topi Magi).
   g.fillStyle = '#ffd9b3'
   g.beginPath()
   g.arc(0, -13, 10, 0, Math.PI * 2)
   g.fill()
-  g.fillStyle = '#4e342e'
+  g.fillStyle = warna.rambut
   g.beginPath()
   g.arc(0, -14, 10, Math.PI, 0)
   g.fill()
@@ -584,6 +585,7 @@ export function Jelajah({
   onPlayKuis,
   onOpenMisi,
   onOpenPanduan,
+  onOpenToko,
 }: {
   onPlayChapter: (chapterId: ChapterId) => void
   onPlayTugas: (tugasId: TugasKaderId) => void
@@ -594,6 +596,8 @@ export function Jelajah({
   onOpenMisi: () => void
   /** Buka panduan Cara Bermain (overlay dari runner). */
   onOpenPanduan: () => void
+  /** Buka Toko Kantin (lewat dialog Kang Kantin / Mbak Dewi). */
+  onOpenToko: () => void
 }) {
   const { save, dispatch } = useCampaign()
   const misiAktif = misiSaatIni(save)
@@ -1001,7 +1005,7 @@ export function Jelajah({
         const adaMisi = adaMisiBab || adaMisiTugas
         aktor.push({ y: n.y, gambar: () => gambarNpc(ctx, n, n.id === dekatId, reduced, adaMisi) })
       }
-      aktor.push({ y: p.y, gambar: () => gambarPemain(ctx, p, reduced) })
+      aktor.push({ y: p.y, gambar: () => gambarPemain(ctx, p, reduced, warnaKostum(saveSekarang.kostumDipakai)) })
       aktor.sort((a, b) => a.y - b.y)
       for (const a of aktor) a.gambar()
       ctx.restore()
@@ -1367,6 +1371,45 @@ export function Jelajah({
         </button>
       </div>
 
+      <div className="aia-progress-row">
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+          <span>
+            Lapar {save.lapar ?? 100}
+          </span>
+          <span
+            style={{ display: 'inline-block', width: 48, height: 8, borderRadius: 4, background: '#e0e0e0', overflow: 'hidden' }}
+            role="progressbar"
+            aria-label="Lapar"
+            aria-valuenow={save.lapar ?? 100}
+            aria-valuemin={0}
+            aria-valuemax={100}
+          >
+            <span style={{ display: 'block', width: `${save.lapar ?? 100}%`, height: '100%', background: '#e65100' }} />
+          </span>
+        </span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+          <span>
+            Haus {save.haus ?? 100}
+          </span>
+          <span
+            style={{ display: 'inline-block', width: 48, height: 8, borderRadius: 4, background: '#e0e0e0', overflow: 'hidden' }}
+            role="progressbar"
+            aria-label="Haus"
+            aria-valuenow={save.haus ?? 100}
+            aria-valuemin={0}
+            aria-valuemax={100}
+          >
+            <span style={{ display: 'block', width: `${save.haus ?? 100}%`, height: '100%', background: '#1e88e5' }} />
+          </span>
+        </span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+          <Banknote aria-hidden="true" /> Rp{(save.uang ?? 0).toLocaleString('id-ID')}
+        </span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+          <Leaf aria-hidden="true" /> {save.koinDaun ?? 0} Koin Daun
+        </span>
+      </div>
+
       {misiAktif && pemberiAktif ? (
         <div className="aia-progress-row">
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
@@ -1528,6 +1571,18 @@ export function Jelajah({
                         Main Kuis Adiwiyata
                       </button>
                     ) : null}
+                    {(dialogNpc.id === 'kang-kantin' || dialogNpc.id === 'npc-kantin-hijau') && (
+                      <button
+                        type="button"
+                        className="aia-btn"
+                        onClick={() => {
+                          klik()
+                          onOpenToko()
+                        }}
+                      >
+                        <Store aria-hidden="true" /> Buka Kantin
+                      </button>
+                    )}
                     <button type="button" className="aia-btn aia-btn-ghost" onClick={tutupDialog}>
                       Tutup
                     </button>
