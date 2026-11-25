@@ -35,6 +35,19 @@ const settings: AudioSettings = { musik: 0.7, efek: 0.9, muted: false }
 let audioCtx: AudioContext | null = null
 let musicBus: GainNode | null = null
 let sfxBus: GainNode | null = null
+/** Gain khusus ducking di antara musicBus dan destination: musik turun
+ * −12 dB saat dialog terbuka tanpa menyentuh slider musik pemain dan
+ * tanpa mengubah volume SFX (sfxBus langsung ke destination). */
+let duckGain: GainNode | null = null
+/** Berapa banyak peminta ducking yang sedang aktif (refcount): dialog NPC
+ * di Jelajah, dialog pembuka di MisiShell, overlay di runner, dialog di
+ * Rumah — masing-masing memanggil duckMusik()/unduckMusik() berpasangan,
+ * jadi yang satu menutup tidak membatalkan ducking yang lain. */
+let jumlahDuck = 0
+/** Level duck saat ini (1 = normal, FAKTOR_DUCK = −12 dB). */
+let levelDuck = 1
+const FAKTOR_DUCK = Math.pow(10, -12 / 20)
+const DURASI_DUCK = 0.25
 let noiseBuf: AudioBuffer | null = null
 
 function applyGains(): void {
@@ -60,7 +73,10 @@ function ensureCtx(): AudioContext | null {
       audioCtx = new AC()
       musicBus = audioCtx.createGain()
       sfxBus = audioCtx.createGain()
-      musicBus.connect(audioCtx.destination)
+      duckGain = audioCtx.createGain()
+      duckGain.gain.value = levelDuck
+      musicBus.connect(duckGain)
+      duckGain.connect(audioCtx.destination)
       sfxBus.connect(audioCtx.destination)
       applyGains()
     }
@@ -79,6 +95,43 @@ export function syncSettings(next: Partial<AudioSettings>): void {
   } catch {
     // Diam saja: audio tidak tersedia.
   }
+}
+
+/**
+ * Terapkan level ducking ke duckGain dengan transisi 0,25 detik (ramp
+ * linear = ease yang halus). Dipanggil tiap refcount berubah; bila
+ * AudioContext belum dibuat, level tersimpan dan diterapkan saat
+ * ensureCtx() membuat node-nya.
+ */
+function terapkanDuck(): void {
+  const target = jumlahDuck > 0 ? FAKTOR_DUCK : 1
+  levelDuck = target
+  try {
+    if (!audioCtx || !duckGain) return
+    const t0 = audioCtx.currentTime
+    duckGain.gain.cancelScheduledValues(t0)
+    duckGain.gain.setValueAtTime(duckGain.gain.value, t0)
+    duckGain.gain.linearRampToValueAtTime(target, t0 + DURASI_DUCK)
+  } catch {
+    // Diam saja: gain tidak bisa diatur di perangkat ini.
+  }
+}
+
+/**
+ * Ducking musik: turunkan musik −12 dB selagi dialog terbuka. Satu
+ * peminta = satu hitungan; unduckMusik() yang berpasangan menurunkannya
+ * lagi. Tidak menyentuh slider musik pemain (musicBus) maupun SFX.
+ * Tidak pernah throw; aman dipanggil sebelum audio dibuat.
+ */
+export function duckMusik(): void {
+  jumlahDuck += 1
+  terapkanDuck()
+}
+
+/** Kembalikan musik ke volume normal (pasangan duckMusik()). */
+export function unduckMusik(): void {
+  jumlahDuck = Math.max(0, jumlahDuck - 1)
+  terapkanDuck()
 }
 
 // Jeda musik saat tab tidak aktif, lanjut saat kembali (listener milik manager).
@@ -103,6 +156,41 @@ interface ToneOpts {
   volume?: number
   slideTo?: number
   bus?: GainNode | null
+  /** Detune dalam semitone (diterapkan ke frekuensi awal dan slideTo). */
+  detune?: number
+  /** Penguatan tambahan dalam dB (diterapkan ke volume). */
+  gainDb?: number
+}
+
+/**
+ * Variasi SFX yang berulang (ketuk, koin, pilah, ...): tiap pemanggilan
+ * memilih satu dari 5 varian (detune ±1 semitone, gain ±2 dB) dan tidak
+ * pernah mengulang varian yang sama dua kali berturut-turut per grup —
+ * supaya bunyi yang sama tidak terasa mekanis. Volume dasar / mute tidak
+ * berubah: variasi hanya menggeser nada dan gain di sekitar nilai dasar.
+ */
+interface VarianSfx {
+  detune: number
+  gainDb: number
+}
+
+const VARIAN_SFX: VarianSfx[] = [
+  { detune: -1, gainDb: -2 },
+  { detune: -0.5, gainDb: 2 },
+  { detune: 0, gainDb: 0 },
+  { detune: 0.5, gainDb: -2 },
+  { detune: 1, gainDb: 2 },
+]
+
+const varianTerakhir = new Map<string, number>()
+
+function varianSfx(grup: string): VarianSfx {
+  let idx = Math.floor(Math.random() * VARIAN_SFX.length)
+  if (VARIAN_SFX.length > 1 && idx === varianTerakhir.get(grup)) {
+    idx = (idx + 1) % VARIAN_SFX.length
+  }
+  varianTerakhir.set(grup, idx)
+  return VARIAN_SFX[idx]
 }
 
 function tone(freq: number, dur: number, opts: ToneOpts = {}): void {
@@ -113,11 +201,14 @@ function tone(freq: number, dur: number, opts: ToneOpts = {}): void {
     const t0 = ac.currentTime + (opts.delay ?? 0)
     const osc = ac.createOscillator()
     const gain = ac.createGain()
+    const faktorNada = Math.pow(2, (opts.detune ?? 0) / 12)
+    const faktorGain = Math.pow(10, (opts.gainDb ?? 0) / 20)
     osc.type = opts.type ?? 'sine'
-    osc.frequency.setValueAtTime(Math.max(1, freq), t0)
-    if (opts.slideTo) osc.frequency.exponentialRampToValueAtTime(Math.max(1, opts.slideTo), t0 + dur)
+    osc.frequency.setValueAtTime(Math.max(1, freq * faktorNada), t0)
+    if (opts.slideTo)
+      osc.frequency.exponentialRampToValueAtTime(Math.max(1, opts.slideTo * faktorNada), t0 + dur)
     gain.gain.setValueAtTime(0.0001, t0)
-    gain.gain.exponentialRampToValueAtTime(opts.volume ?? 0.15, t0 + 0.01)
+    gain.gain.exponentialRampToValueAtTime((opts.volume ?? 0.15) * faktorGain, t0 + 0.01)
     gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur)
     osc.connect(gain)
     gain.connect(dest)
@@ -145,6 +236,10 @@ interface NoiseOpts {
   q?: number
   delay?: number
   volume?: number
+  /** Detune dalam semitone (diterapkan ke frekuensi filter). */
+  detune?: number
+  /** Penguatan tambahan dalam dB (diterapkan ke volume). */
+  gainDb?: number
 }
 
 function noise(dur: number, opts: NoiseOpts = {}): void {
@@ -157,12 +252,14 @@ function noise(dur: number, opts: NoiseOpts = {}): void {
     src.loop = true
     const filter = ac.createBiquadFilter()
     filter.type = opts.type ?? 'bandpass'
-    filter.frequency.setValueAtTime(opts.freq ?? 1000, t0)
-    if (opts.freqEnd) filter.frequency.exponentialRampToValueAtTime(opts.freqEnd, t0 + dur)
+    const faktorNada = Math.pow(2, (opts.detune ?? 0) / 12)
+    const faktorGain = Math.pow(10, (opts.gainDb ?? 0) / 20)
+    filter.frequency.setValueAtTime((opts.freq ?? 1000) * faktorNada, t0)
+    if (opts.freqEnd) filter.frequency.exponentialRampToValueAtTime(opts.freqEnd * faktorNada, t0 + dur)
     filter.Q.value = opts.q ?? 1
     const gain = ac.createGain()
     gain.gain.setValueAtTime(0.0001, t0)
-    gain.gain.exponentialRampToValueAtTime(opts.volume ?? 0.1, t0 + 0.02)
+    gain.gain.exponentialRampToValueAtTime((opts.volume ?? 0.1) * faktorGain, t0 + 0.02)
     gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur)
     src.connect(filter)
     filter.connect(gain)
@@ -187,7 +284,7 @@ export function getar(pola: number | number[] = 20): void {
 
 /** Ketukan tombol / aksi kecil. */
 export function klik(): void {
-  tone(700, 0.05, { volume: 0.1 })
+  tone(700, 0.05, { volume: 0.1, ...varianSfx('ketuk') })
 }
 
 /** Pindah halaman / pindah tab. */
@@ -197,21 +294,23 @@ export function pindah(): void {
 
 /** Mengambil barang. */
 export function ambil(): void {
-  tone(600, 0.07)
-  tone(900, 0.09, { delay: 0.05 })
+  const v = varianSfx('ambil')
+  tone(600, 0.07, { ...v })
+  tone(900, 0.09, { delay: 0.05, ...v })
 }
 
 /** Melepas barang. */
 export function lepas(): void {
-  tone(400, 0.08, { type: 'triangle', volume: 0.12 })
+  tone(400, 0.08, { type: 'triangle', volume: 0.12, ...varianSfx('lepas') })
 }
 
 /** Jawaban / aksi benar. Nada makin tinggi saat combo naik. */
 export function benar(combo = 0): void {
   const naik = Math.min(Math.max(combo, 0), 10)
   const f = 660 * (1 + naik * 0.03)
-  tone(f, 0.1)
-  tone(f * 1.335, 0.14, { delay: 0.08 })
+  const v = varianSfx('benar')
+  tone(f, 0.1, { ...v })
+  tone(f * 1.335, 0.14, { delay: 0.08, ...v })
   getar(20)
 }
 
@@ -224,18 +323,19 @@ export function salah(): void {
 
 /** Melempar sampah: whoosh (noise sweep naik). */
 export function lempar(): void {
-  noise(0.25, { freq: 400, freqEnd: 1800, volume: 0.12 })
+  noise(0.25, { freq: 400, freqEnd: 1800, volume: 0.12, ...varianSfx('lempar') })
 }
 
 /** Sampah masuk tong: plop (nada turun cepat). */
 export function plop(): void {
-  tone(300, 0.15, { slideTo: 120, volume: 0.15 })
+  tone(300, 0.15, { slideTo: 120, volume: 0.15, ...varianSfx('pilah') })
 }
 
 /** Dapat Koin Hijau. */
 export function koin(): void {
-  tone(988, 0.07)
-  tone(1319, 0.18, { delay: 0.07 })
+  const v = varianSfx('koin')
+  tone(988, 0.07, { ...v })
+  tone(1319, 0.18, { delay: 0.07, ...v })
   getar(15)
 }
 
@@ -316,7 +416,10 @@ export function sertifikat(): void {
 
 /** Detak timer. Makin cepat (nada lebih tinggi) bila cepat=true. */
 export function tik(cepat = false): void {
-  tone(cepat ? 1200 : 1000, cepat ? 0.03 : 0.04, { volume: cepat ? 0.12 : 0.09 })
+  tone(cepat ? 1200 : 1000, cepat ? 0.03 : 0.04, {
+    volume: cepat ? 0.12 : 0.09,
+    ...varianSfx('tik'),
+  })
 }
 
 /**
@@ -335,7 +438,7 @@ export function playMumble(karakter: 'Magi' | 'Pak Plastik'): void {
 
 /** Bunyi pop pendek (wrapper klik). */
 export function playPop(): void {
-  tone(880, 0.08, { volume: 0.12 })
+  tone(880, 0.08, { volume: 0.12, ...varianSfx('ketuk') })
 }
 
 /** Wrapper benar(). */

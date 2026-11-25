@@ -117,6 +117,10 @@ export interface PetaDunia {
   nama: string
   lebar: number
   tinggi: number
+  /** true bila peta ini ruang luar (halaman sekolah): ada langit pagi,
+   * awan, dan daun melayang (V3). Kantin dianggap dalam ruang (gedung
+   * beratap); Rumah tidak memakai registry ini dan tidak punya atmosfer. */
+  luarRuang: boolean
   /** Titik muncul bila masuk tanpa titik portal (mis. dari Rumah). */
   spawn: { x: number; y: number }
   zona: ZonaDunia[]
@@ -172,6 +176,7 @@ export const PETA: Record<PetaId, PetaDunia> = {
     nama: 'Gerbang',
     lebar: 720,
     tinggi: 480,
+    luarRuang: true,
     spawn: { x: 360, y: 420 },
     zona: [
       { id: 'gerbang', nama: 'Gerbang', chapterId: 'gerbang', x: 240, y: 360, w: 240, h: 100, warna: '#f4d35e' },
@@ -274,6 +279,7 @@ export const PETA: Record<PetaId, PetaDunia> = {
     nama: 'Kantin',
     lebar: 640,
     tinggi: 480,
+    luarRuang: false,
     spawn: { x: 320, y: 400 },
     zona: [
       { id: 'kantin', nama: 'Kantin', chapterId: 'kantin', x: 80, y: 60, w: 480, h: 220, warna: '#ee964b' },
@@ -320,6 +326,7 @@ export const PETA: Record<PetaId, PetaDunia> = {
     nama: 'Kebun',
     lebar: 720,
     tinggi: 480,
+    luarRuang: true,
     spawn: { x: 360, y: 400 },
     zona: [
       { id: 'kebun', nama: 'Kebun', chapterId: 'kompos', x: 60, y: 40, w: 300, h: 180, warna: '#6a994e' },
@@ -395,6 +402,7 @@ export const PETA: Record<PetaId, PetaDunia> = {
     nama: 'Pos Maggot',
     lebar: 640,
     tinggi: 480,
+    luarRuang: true,
     spawn: { x: 320, y: 400 },
     zona: [
       { id: 'pos-maggot', nama: 'Pos Maggot', chapterId: 'maggot', x: 80, y: 60, w: 480, h: 200, warna: '#4d8a4f' },
@@ -429,6 +437,7 @@ export const PETA: Record<PetaId, PetaDunia> = {
     nama: 'Taman',
     lebar: 720,
     tinggi: 480,
+    luarRuang: true,
     spawn: { x: 360, y: 420 },
     zona: [
       { id: 'taman-air', nama: 'Taman Air', chapterId: 'air-energi', x: 60, y: 40, w: 220, h: 160, warna: '#3b7ea1' },

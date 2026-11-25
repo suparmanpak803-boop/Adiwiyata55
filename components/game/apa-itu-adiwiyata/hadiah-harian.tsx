@@ -11,6 +11,7 @@ import { Banknote, Check, Coins, Gift, Leaf, UtensilsCrossed, type LucideIcon } 
 import { HADIAH_HARIAN, hadiahBerikutnya, hariIniLokal, teksHadiah, type HadiahHarian } from '@/lib/apa-itu-adiwiyata/content/hadiah-harian'
 import { useCampaign } from '@/lib/apa-itu-adiwiyata/context'
 import { klik, koin } from './suara'
+import { RayakanMisi } from './rayakan-misi'
 
 function ikonHadiah(hadiah: HadiahHarian): LucideIcon {
   if (hadiah.hari === 7) return Gift
@@ -51,7 +52,9 @@ export function HadiahHarian({
   }
 
   return (
-    <section className="aia-card" aria-label="Hadiah Harian">
+    <section className="aia-card" aria-label="Hadiah Harian" style={{ position: 'relative', overflow: 'hidden' }}>
+      {/* Tier besar (F1): ledakan kecil saat hadiah berhasil diklaim. */}
+      {pesan && <RayakanMisi />}
       <span className="aia-kicker">Hadiah Harian</span>
       <h3 className="aia-section-title" style={{ marginTop: 0 }}>
         Hadiah Harian

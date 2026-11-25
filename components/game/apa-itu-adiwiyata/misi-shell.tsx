@@ -31,7 +31,8 @@ import { KantinHijau } from './minigames/kantin-hijau'
 import { DataHijau } from './minigames/data-hijau'
 import { EcoCommunication } from './minigames/eco-communication'
 import { JejaringHijau } from './minigames/jejaring-hijau'
-import { bendera, klik, lencana, playMenang, playPop, startMusic, type MusicMode } from './suara'
+import { bendera, duckMusik, klik, lencana, playMenang, playPop, startMusic, unduckMusik, type MusicMode } from './suara'
+import { RayakanMisi } from './rayakan-misi'
 
 /**
  * Props yang dipakai mini-game bab: tiap mini-game menerima chapterId,
@@ -222,6 +223,15 @@ export function MisiShell({
     const t = setTimeout(() => setPesanSukses(null), 3000)
     return () => clearTimeout(t)
   }, [pesanSukses])
+
+  // Ducking musik (A2): selagi dialog pembuka misi, kejadian acak, atau
+  // overlay jeda terbuka, musik turun −12 dB; kembali normal sesudahnya.
+  const dialogShellTerbuka = introAktif || showEvent || terjeda
+  useEffect(() => {
+    if (!dialogShellTerbuka) return
+    duckMusik()
+    return () => unduckMusik()
+  }, [dialogShellTerbuka])
 
   // Shortcut keyboard P: jeda/lanjutkan misi (sama seperti tombol Jeda di
   // atas — hanya aktif saat permainan sedang berjalan). Esc saat jeda =
@@ -670,7 +680,13 @@ export function MisiShell({
       )}
 
       {sudahMulai && semuaSelesai && replayStage === null && (
-        <section className="aia-card aia-pos-hijau" aria-label="Pos Hijau">
+        <section
+          className="aia-card aia-pos-hijau"
+          aria-label="Pos Hijau"
+          style={{ position: 'relative', overflow: 'hidden' }}
+        >
+          {/* Tier besar (F1): ledakan daun + bintang saat misi selesai. */}
+          <RayakanMisi />
           <h3>
             <Flag aria-hidden="true" /> Pos Hijau
           </h3>

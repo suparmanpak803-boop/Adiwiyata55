@@ -279,15 +279,89 @@
   flex: none;
 }
 
-/* Trek bar Lapar/Haus di HUD (dulu inline width 48px, tidak bisa mengecil). */
+/* Trek bar Lapar/Haus di HUD (dulu inline width 48px, tidak bisa mengecil).
+   Trek memakai var(--muted) supaya tetap terlihat di mode terang dan gelap. */
 .aia-hud-bar {
   display: inline-block;
   width: 48px;
   height: 8px;
   border-radius: 4px;
-  background: #e0e0e0;
+  background: var(--muted);
   overflow: hidden;
   flex: none;
+}
+
+/* Isi bar Lapar/Haus beranimasi saat nilai berubah (bukan lompat). */
+.aia-hud-bar > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  transition:
+    width 0.5s ease,
+    background-color 0.3s ease;
+}
+
+/* Peringatan lembut Lapar/Haus rendah: teks + ikon, bukan warna saja.
+   Ikon segitiga: #b45309 di mode terang, #fbbf24 di mode gelap. */
+.aia-hud-peringatan {
+  color: var(--foreground);
+  font-weight: 700;
+}
+
+.aia-hud-peringatan svg {
+  color: #b45309;
+}
+
+:root[data-theme='dark'] .aia-hud-peringatan svg {
+  color: #fbbf24;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .aia-hud-peringatan svg {
+    color: #fbbf24;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aia-hud-bar > span {
+    transition: none;
+  }
+}
+
+/* Ledakan perayaan (tier besar, RayakanMisi): 28 titik beterbangan dari
+   tengah kartu, sekali jalan 0,9 detik. Kartu induk wajib position:
+   relative + overflow: hidden. Reduced motion: tidak tampil sama sekali. */
+.aia-ledakan {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.aia-ledakan-dot {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  border-radius: 50%;
+  animation: aia-ledakan 0.9s ease-out forwards;
+}
+
+@keyframes aia-ledakan {
+  from {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: translate(calc(-50% + var(--dx, 0px)), calc(-50% + var(--dy, 0px))) scale(0.4);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aia-ledakan {
+    display: none;
+  }
 }
 
 /* Toast di atas canvas boleh membungkus (chip dasar white-space: nowrap). */

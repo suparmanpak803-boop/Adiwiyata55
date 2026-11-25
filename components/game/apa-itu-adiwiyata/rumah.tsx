@@ -12,11 +12,9 @@
 import { useEffect, useRef, useState } from 'react'
 import {
   Award,
-  Banknote,
   BedDouble,
   Coins,
   DoorOpen,
-  Leaf,
   MessageCircle,
   Refrigerator,
   UtensilsCrossed,
@@ -27,8 +25,10 @@ import {
 import { hariIniLokal } from '@/lib/apa-itu-adiwiyata/content/hadiah-harian'
 import { warnaKostum } from '@/lib/apa-itu-adiwiyata/content/toko'
 import { useCampaign } from '@/lib/apa-itu-adiwiyata/context'
-import { gambarPemain, rr, type PemainState } from '@/lib/apa-itu-adiwiyata/gambar-pemain'
-import { klik, koin, pindah, setSuaraMuted } from './suara'
+import { gambarBayangan, gambarPemain, rr, type PemainState } from '@/lib/apa-itu-adiwiyata/gambar-pemain'
+import { buatKamera, perbaruiKamera } from '@/lib/apa-itu-adiwiyata/kamera'
+import { AngkaAnimasi, HudStatus } from './hud-dunia'
+import { duckMusik, klik, koin, pindah, setSuaraMuted, unduckMusik } from './suara'
 
 const KECEPATAN = 160 // unit dunia per detik
 const JARAK_INTERAKSI = 56
@@ -107,11 +107,6 @@ function tabrakan(x: number, y: number, r: number): boolean {
   return false
 }
 
-function jepitKamera(nilai: number, pandang: number, dunia: number): number {
-  if (pandang >= dunia) return (dunia - pandang) / 2
-  return Math.max(0, Math.min(nilai, dunia - pandang))
-}
-
 /** true bila lebar pandang canvas < 480px (HP sempit) — dipakai untuk
  * mengecilkan label interior supaya tidak bertumpuk. */
 function pandangSempit(viewW: number): boolean {
@@ -119,8 +114,19 @@ function pandangSempit(viewW: number): boolean {
   return w < 480
 }
 
-/** Lapisan statis interior rumah — digambar sekali. `sempit` = lebar
- * pandang < 480px: label objek diperkecil. */
+/** Lapisan statis interior rumah (P2) — digambar SEKALI ke offscreen
+ * canvas saat rumah dibuka, lalu tiap frame tinggal `drawImage`.
+ *
+ * STATIS (masuk prerender): lantai kayu, karpet, dinding + jendela, kasur,
+ * lemari, kulkas, meja makan (+ bayangannya), pintu, dan Ibu — Ibu tidak
+ * pernah berpindah tempat, jadi ia bagian dari latar, bukan aktor.
+ * DINAMIS (tetap digambar tiap frame, TIDAK masuk prerender): pemain,
+ * cincin sorot emas di objek terdekat, dan joystick virtual.
+ * Satu-satunya isi statis yang bisa berubah adalah tanda "!" di atas Ibu
+ * (`sudahDiberi` — hilang setelah uang saku hari ini diterima); lapisan
+ * dibangun ulang bila nilai itu berubah (lihat efek di bawah). `sempit` =
+ * lebar pandang < 480px: label objek diperkecil; dibangun ulang bila lebar
+ * melewati ambang 480px (di atur()). */
 function bangunStatis(sudahDiberi: boolean, sempit = false): HTMLCanvasElement {
   const c = document.createElement('canvas')
   c.width = RUMAH.lebar
@@ -176,6 +182,8 @@ function bangunStatis(sudahDiberi: boolean, sempit = false): HTMLCanvasElement {
   }
 
   // Kasur: rangka + kasur + bantal + selimut.
+  // Bayangan alas di bawah kasur supaya kasur "menapak" di lantai.
+  gambarBayangan(g, 100, 122, 56, 5)
   g.fillStyle = '#8d6e63'
   rr(g, 40, 48, 120, 72, 8)
   g.fill()
@@ -191,6 +199,8 @@ function bangunStatis(sudahDiberi: boolean, sempit = false): HTMLCanvasElement {
   label('Kasur', 100, 136)
 
   // Lemari: badan + dua pintu + kenop.
+  // Bayangan alas di bawah lemari.
+  gambarBayangan(g, 242, 98, 42, 5)
   g.fillStyle = '#6d4c41'
   rr(g, 200, 40, 84, 56, 6)
   g.fill()
@@ -209,6 +219,8 @@ function bangunStatis(sudahDiberi: boolean, sempit = false): HTMLCanvasElement {
   g.fill()
 
   // Kulkas: badan + dua pintu + gagang.
+  // Bayangan alas di bawah kulkas.
+  gambarBayangan(g, 552, 126, 32, 4)
   g.fillStyle = '#cfd8dc'
   rr(g, 520, 40, 64, 84, 8)
   g.fill()
@@ -226,6 +238,8 @@ function bangunStatis(sudahDiberi: boolean, sempit = false): HTMLCanvasElement {
   label('Kulkas', 552, 140)
 
   // Meja makan: meja + piring.
+  // Bayangan alas di bawah meja.
+  gambarBayangan(g, 325, 284, 56, 7)
   g.fillStyle = '#8d6e63'
   rr(g, 270, 210, 110, 72, 10)
   g.fill()
@@ -314,11 +328,14 @@ function bangunStatis(sudahDiberi: boolean, sempit = false): HTMLCanvasElement {
 export function Rumah({
   onBerangkat,
   onOpenPanduan,
+  onKeKantin,
 }: {
   /** Berangkat ke sekolah (pindah peta, lewat pintu). */
   onBerangkat: () => void
   /** Buka panduan Cara Bermain (overlay dari runner). */
   onOpenPanduan: () => void
+  /** Jalan pintas ke Kantin dari peringatan Lapar/Haus rendah. */
+  onKeKantin: () => void
 }) {
   const { save, dispatch } = useCampaign()
   const [toast, setToast] = useState<string | null>(null)
@@ -329,6 +346,10 @@ export function Rumah({
   const wrapRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const staticRef = useRef<HTMLCanvasElement | null>(null)
+  /** Varian lebar terakhir yang dipakai lapisan statis (null = belum ada
+   * lapisan): dipakai atur() untuk membangun ulang hanya bila lebar
+   * melewati ambang 480px. */
+  const sempitRef = useRef<boolean | null>(null)
   const viewRef = useRef({ w: 0, h: 0 })
   const dprRef = useRef(1)
   const playerRef = useRef<PemainState>({
@@ -346,6 +367,9 @@ export function Rumah({
   const [isDesktop, setIsDesktop] = useState(false)
   const rafRef = useRef(0)
   const lastRef = useRef(0)
+  /** Kamera halus (smoothing + deadzone + look-ahead); baru dibuat tiap
+   * komponen dipasang, jadi frame pertama langsung hard-cut ke pemain. */
+  const camRef = useRef(buatKamera())
   const dialogRef = useRef<{ id: ObjekId; baris: string[] } | null>(null)
   const dialogIdxRef = useRef(0)
   const dekatRef = useRef<ObjekId | null>(null)
@@ -436,6 +460,15 @@ export function Rumah({
     if (!next) klik()
   }
 
+  // Ducking musik (A2): selagi dialog Ibu / meja terbuka, musik turun
+  // −12 dB; kembali normal saat ditutup.
+  const dialogTerbuka = dialog !== null
+  useEffect(() => {
+    if (!dialogTerbuka) return
+    duckMusik()
+    return () => unduckMusik()
+  }, [dialogTerbuka])
+
   // Ukuran canvas mengikuti lebar layar (devicePixelRatio).
   useEffect(() => {
     const wrap = wrapRef.current
@@ -449,6 +482,14 @@ export function Rumah({
       canvas.width = Math.max(1, Math.round(w * dpr))
       canvas.height = Math.max(1, Math.round(h * dpr))
       viewRef.current = { w, h }
+      // Prerender (P2): label statis digambar dalam dua varian (sempit /
+      // lega, ambang 480px). Bila lebar melewati ambang saat resize/rotasi,
+      // bangun ulang sekali supaya label tidak tertahan di varian lama.
+      const sempit = pandangSempit(w)
+      if (staticRef.current && sempitRef.current !== null && sempit !== sempitRef.current) {
+        staticRef.current = bangunStatis(saveRef.current.ibuTanggal === hariIniLokal(), sempit)
+      }
+      sempitRef.current = sempit
     }
     atur()
     const ro = new ResizeObserver(atur)
@@ -488,11 +529,13 @@ export function Rumah({
   // Lapisan statis digambar ulang bila status uang saku berubah (tanda "!").
   useEffect(() => {
     staticRef.current = bangunStatis(sudahDiberi, pandangSempit(viewRef.current.w))
+    sempitRef.current = pandangSempit(viewRef.current.w)
   }, [sudahDiberi])
 
   // Loop utama: update + gambar + keyboard + jeda saat tab disembunyikan.
   useEffect(() => {
     staticRef.current = bangunStatis(saveRef.current.ibuTanggal === hariIniLokal(), pandangSempit(viewRef.current.w))
+    sempitRef.current = pandangSempit(viewRef.current.w)
 
     const update = (dt: number) => {
       const p = playerRef.current
@@ -548,6 +591,12 @@ export function Rumah({
       }
       p.bergerak = bergerak
 
+      // Kamera halus: kejar pemain dengan smoothing eksponensial,
+      // deadzone ±24px, dan look-ahead searah gerak (lihat kamera.ts).
+      const gerak = bergerak ? { x: vx, y: vy } : { x: 0, y: 0 }
+      const view = viewRef.current
+      perbaruiKamera(camRef.current, p.x, p.y, view.w, view.h, RUMAH.lebar, RUMAH.tinggi, dt, gerak.x, gerak.y)
+
       // Click-to-move macet (mis. target di balik furnitur): batalkan supaya
       // tokoh tidak mendorong dinding selamanya.
       const tujuan = tujuanRef.current
@@ -589,8 +638,9 @@ export function Rumah({
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
       ctx.clearRect(0, 0, view.w, view.h)
       const p = playerRef.current
-      const camX = jepitKamera(p.x - view.w / 2, view.w, RUMAH.lebar)
-      const camY = jepitKamera(p.y - view.h / 2, view.h, RUMAH.tinggi)
+      // Kamera halus (diperbarui tiap frame di update).
+      const camX = camRef.current.x
+      const camY = camRef.current.y
       ctx.save()
       ctx.translate(-camX, -camY)
       const statis = staticRef.current
@@ -610,7 +660,16 @@ export function Rumah({
         }
       }
       void t
-      gambarPemain(ctx, p, reducedRef.current, warnaKostum(saveRef.current.kostumDipakai), saveRef.current.jenisKelamin, saveRef.current.pinDuta)
+      gambarPemain(
+        ctx,
+        p,
+        reducedRef.current,
+        warnaKostum(saveRef.current.kostumDipakai),
+        saveRef.current.jenisKelamin,
+        saveRef.current.pinDuta,
+        // Kecepatan gerak saat ini: bayangan mengecil sedikit saat cepat.
+        p.bergerak ? KECEPATAN * (saveRef.current.sepatuEco ? 1.35 : 1) : 0,
+      )
       ctx.restore()
 
       // Joystick virtual hanya untuk perangkat sentuh (pointer: coarse).
@@ -767,10 +826,8 @@ export function Rumah({
       const canvas = canvasRef.current
       if (canvas) {
         const pos = posisiPointer(e)
-        const p = playerRef.current
-        const view = viewRef.current
-        const camX = jepitKamera(p.x - view.w / 2, view.w, RUMAH.lebar)
-        const camY = jepitKamera(p.y - view.h / 2, view.h, RUMAH.tinggi)
+        const camX = camRef.current.x
+        const camY = camRef.current.y
         const wx = pos.x + camX
         const wy = pos.y + camY
         const diAtasInteraktif = OBJEK.some((o) => Math.hypot(o.x - wx, o.y - wy) < 40)
@@ -792,9 +849,8 @@ export function Rumah({
     const pos = posisiPointer(e)
     if (performance.now() - tap.t > 350 || Math.hypot(pos.x - tap.x, pos.y - tap.y) > 14) return
     const p = playerRef.current
-    const view = viewRef.current
-    const camX = jepitKamera(p.x - view.w / 2, view.w, RUMAH.lebar)
-    const camY = jepitKamera(p.y - view.h / 2, view.h, RUMAH.tinggi)
+    const camX = camRef.current.x
+    const camY = camRef.current.y
     const wx = pos.x + camX
     const wy = pos.y + camY
     const objek = OBJEK.find((o) => Math.hypot(o.x - wx, o.y - wy) < 40)
@@ -837,10 +893,10 @@ export function Rumah({
     <div className="aia-stack">
       <div className="aia-hud">
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-          <Coins aria-hidden="true" /> {save.coins} Koin Hijau
+          <Coins aria-hidden="true" /> <AngkaAnimasi nilai={save.coins} /> Koin Hijau
         </span>
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-          <Award aria-hidden="true" /> Skor Adiwiyata: {save.skorAdiwiyata ?? 0}
+          <Award aria-hidden="true" /> Skor Adiwiyata: <AngkaAnimasi nilai={save.skorAdiwiyata ?? 0} />
         </span>
         <span>Rumah</span>
         <button
@@ -863,44 +919,13 @@ export function Rumah({
         </button>
       </div>
 
-      <div className="aia-hud">
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-          <span>
-            Lapar {save.lapar ?? 100}
-          </span>
-          <span
-            className="aia-hud-bar"
-            role="progressbar"
-            aria-label="Lapar"
-            aria-valuenow={save.lapar ?? 100}
-            aria-valuemin={0}
-            aria-valuemax={100}
-          >
-            <span style={{ display: 'block', width: `${save.lapar ?? 100}%`, height: '100%', background: '#e65100' }} />
-          </span>
-        </span>
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-          <span>
-            Haus {save.haus ?? 100}
-          </span>
-          <span
-            className="aia-hud-bar"
-            role="progressbar"
-            aria-label="Haus"
-            aria-valuenow={save.haus ?? 100}
-            aria-valuemin={0}
-            aria-valuemax={100}
-          >
-            <span style={{ display: 'block', width: `${save.haus ?? 100}%`, height: '100%', background: '#1e88e5' }} />
-          </span>
-        </span>
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-          <Banknote aria-hidden="true" /> Rp{(save.uang ?? 0).toLocaleString('id-ID')}
-        </span>
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-          <Leaf aria-hidden="true" /> {save.koinDaun ?? 0} Koin Daun
-        </span>
-      </div>
+      <HudStatus
+        lapar={save.lapar ?? 100}
+        haus={save.haus ?? 100}
+        uang={save.uang ?? 0}
+        koinDaun={save.koinDaun ?? 0}
+        onKeKantin={onKeKantin}
+      />
 
       {isDesktop && (
         <p className="aia-muted" style={{ margin: 0, fontSize: 12 }}>

@@ -35,7 +35,7 @@ import { Ensiklopedia } from './ensiklopedia'
 import { Leaderboard } from './leaderboard'
 import { Profil } from './profil'
 import { TokoKantin } from './toko-kantin'
-import { klik, setSuaraMuted, startMusic, stopMusic, type MusicMode } from './suara'
+import { duckMusik, klik, setSuaraMuted, startMusic, stopMusic, unduckMusik, type MusicMode } from './suara'
 import './apa-itu-adiwiyata.css'
 
 const MODE_BAB: MusicMode[] = ['bab1', 'bab2', 'bab3', 'bab4', 'bab5', 'bab6']
@@ -102,6 +102,17 @@ function Shell() {
   }, [screen, activeChapter, hydrated])
 
   useEffect(() => stopMusic, [])
+
+  // Ducking musik (A2): selagi overlay dialog runner terbuka (panduan
+  // Cara Bermain, konfirmasi Keluar, Laporan Pagi), musik turun −12 dB;
+  // kembali normal saat semua tertutup. Dialog di Jelajah / MisiShell /
+  // Rumah mengatur ducking-nya sendiri (refcount yang sama).
+  const dialogRunnerTerbuka = panduanTerbuka || tanyaKeluar || (laporan !== null && laporan.length > 0)
+  useEffect(() => {
+    if (!dialogRunnerTerbuka) return
+    duckMusik()
+    return () => unduckMusik()
+  }, [dialogRunnerTerbuka])
 
   // Shortcut global M: bisukan/nyalakan semua suara (disimpan di save,
   // sama seperti tombol bisu di HUD dunia dan Profil). Tidak bentrok:
@@ -335,7 +346,16 @@ function Shell() {
         <LaporanPagi peristiwa={laporan} onTutup={() => setLaporan(null)} />
       )}
       {screen === 'peta' && save.petaAktif === 'rumah' && (
-        <Rumah onBerangkat={berangkatKeSekolah} onOpenPanduan={bukaPanduan} />
+        <Rumah
+          onBerangkat={berangkatKeSekolah}
+          onOpenPanduan={bukaPanduan}
+          onKeKantin={() => {
+            // Jalan pintas dari peringatan Lapar/Haus rendah di Rumah:
+            // langsung ke peta Kantin (titik masuk portal gerbang).
+            setTitikMasuk({ ...PETA.kantin.spawn })
+            dispatch({ type: 'SET_PETA_AKTIF', peta: 'kantin' })
+          }}
+        />
       )}
       {screen === 'peta' && save.petaAktif !== 'rumah' && (
         <>

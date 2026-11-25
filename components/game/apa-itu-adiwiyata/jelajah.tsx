@@ -9,7 +9,7 @@
 // mengikuti kontrak di lib/apa-itu-adiwiyata/content/peta.ts dan content/npc.ts.
 
 import { useEffect, useRef, useState } from 'react'
-import { Award, Banknote, Coins, DoorOpen, Flag, Leaf, MessageCircle, Store, Trash2, Volume2, VolumeX, X } from 'lucide-react'
+import { Award, Banknote, Coins, DoorOpen, Flag, MessageCircle, Store, Trash2, Volume2, VolumeX, X } from 'lucide-react'
 import { CHAPTERS, CHAPTER_ORDER } from '@/lib/apa-itu-adiwiyata/chapters'
 import { TUGAS } from '@/lib/apa-itu-adiwiyata/tugas'
 import { BAK, HADIAH_PILAH_KOIN, HADIAH_PILAH_UANG, NAMA_BAK } from '@/lib/apa-itu-adiwiyata/content/bak'
@@ -19,7 +19,21 @@ import { selectChapterUnlocked, useCampaign } from '@/lib/apa-itu-adiwiyata/cont
 import { kunciCerita, PILIHAN_CERITA } from '@/lib/apa-itu-adiwiyata/content/cerita'
 import { dialogDenganIngatan } from '@/lib/apa-itu-adiwiyata/content/npc'
 import { warnaKostum } from '@/lib/apa-itu-adiwiyata/content/toko'
-import { gambarPemain, rr, type PemainState } from '@/lib/apa-itu-adiwiyata/gambar-pemain'
+import { gambarBayangan, gambarPemain, rr, type PemainState } from '@/lib/apa-itu-adiwiyata/gambar-pemain'
+import { buatKamera, perbaruiKamera, resetKamera } from '@/lib/apa-itu-adiwiyata/kamera'
+import {
+  buatAwan,
+  buatPartikel,
+  feedback,
+  gambarAwan,
+  gambarLangitPagi,
+  gambarPartikel,
+  perbaruiAwan,
+  perbaruiPartikel,
+  resetPartikel,
+  spawnDaun,
+} from '@/lib/apa-itu-adiwiyata/partikel'
+import { AngkaAnimasi, HudStatus } from './hud-dunia'
 import { type NpcDunia } from '@/lib/apa-itu-adiwiyata/dunia'
 import { PETA, cariTitik, type PetaDunia, type PetaId, type PortalPeta } from '@/lib/apa-itu-adiwiyata/content/peta'
 import {
@@ -33,7 +47,7 @@ import {
 } from '@/lib/apa-itu-adiwiyata/dunia-hidup'
 import type { ChapterId, TongSampah, TugasKaderId } from '@/lib/apa-itu-adiwiyata/types'
 import { PilihanCerita } from './pilihan-cerita'
-import { benar, klik, koin, maggot as sfxMaggot, panen, pindah, playMumble, salah, setSuaraMuted, siram } from './suara'
+import { benar, duckMusik, klik, koin, maggot as sfxMaggot, panen, pindah, playMumble, salah, setSuaraMuted, siram, unduckMusik } from './suara'
 
 const KECEPATAN = 160 // unit dunia per detik
 const JARAK_BICARA = 56
@@ -80,11 +94,6 @@ function tabrakan(peta: PetaDunia, x: number, y: number, r: number): boolean {
   return false
 }
 
-function jepitKamera(nilai: number, pandang: number, dunia: number): number {
-  if (pandang >= dunia) return (dunia - pandang) / 2
-  return Math.max(0, Math.min(nilai, dunia - pandang))
-}
-
 function posisiPohon(peta: PetaDunia, benih: number): { x: number; y: number; r: number }[] {
   const acak = mulberry32(benih)
   const pohon: { x: number; y: number; r: number }[] = []
@@ -117,11 +126,27 @@ function pandangSempit(viewW: number): boolean {
   return w < 480
 }
 
-/** Lapisan statis satu peta (rumput, jalan, zona, bangunan, portal,
- * pohon) — digambar sekali tiap peta berganti. `sempit` = lebar pandang
- * < 480px: label zona dekoratif (tanpa misi) disembunyikan supaya peta
- * terasa lega, label lain diperkecil. */
-function bangunStatis(peta: PetaDunia, sempit = false): HTMLCanvasElement {
+/** Lapisan statis satu peta (P2) — digambar SEKALI ke offscreen canvas
+ * saat peta dibuka, lalu tiap frame tinggal `drawImage` (lihat draw()).
+ *
+ * STATIS (masuk prerender): rumput, jalan, zona, dinding/bangunan, portal,
+ * pohon hias (+ bayangannya), dan Panel Surya bila sudah dibeli
+ * (`panelSurya` — panel biru di atap zona Panel Surya, Taman).
+ * DINAMIS (tetap digambar tiap frame, TIDAK masuk prerender): pemain, NPC,
+ * sampah liar (+ kilau berdenyut), petak kebun + kotak maggot (tahap/lapar
+ * berubah), Tempat Pilah / Bank Sampah / Booth Eco-Shop (sorot emas saat
+ * pemain dekat), overlay zona "Terkunci" (ikut status buka bab), tint waktu
+ * (ikut jam nyata), awan + daun (bergerak), langit pagi, partikel + angka
+ * melayang.
+ *
+ * `sempit` = lebar pandang < 480px: label zona dekoratif (tanpa misi)
+ * disembunyikan supaya peta terasa lega, label lain diperkecil.
+ * Prerender dibangun ulang bila isi statis berubah: pindah peta, Panel
+ * Surya baru dibeli (dirty-flag di update(), via panelStatisRef), atau
+ * lebar pandang melewati ambang 480px (di atur()). Pohon yang ditanam
+ * (TANAM_POHON) TIDAK mengubah gambar peta apa pun — hanya penghitung +
+ * skor — jadi tidak ada yang di-invalidasi untuknya. */
+function bangunStatis(peta: PetaDunia, sempit = false, panelSurya = false): HTMLCanvasElement {
   const c = document.createElement('canvas')
   c.width = peta.lebar
   c.height = peta.tinggi
@@ -184,6 +209,16 @@ function bangunStatis(peta: PetaDunia, sempit = false): HTMLCanvasElement {
     g.stroke()
   }
 
+  // Panel Surya (statis setelah dibeli): panel biru di atap gedung zona
+  // Panel Surya (Taman), di atas dinding deret panel. Masuk prerender
+  // supaya tidak digambar ulang tiap frame; dibangun ulang bila
+  // `panelSurya` berubah (lihat panelStatisRef). Di peta selain Taman
+  // titik 'panel-surya' tidak ada, jadi tidak terjadi apa-apa.
+  if (panelSurya) {
+    const panel = cariTitik(peta, 'panel-surya')
+    if (panel) gambarPanelSurya(g, panel)
+  }
+
   // Portal: rect putus-putus + label. Jalan Pulang (tujuan 'rumah') tetap
   // berwarna tanah; portal antar peta berwarna kuning. Label ditaruh di
   // dalam rect bila muat, kalau tidak di samping rect (portal di tepi).
@@ -226,6 +261,8 @@ function bangunStatis(peta: PetaDunia, sempit = false): HTMLCanvasElement {
   // Pohon hias di tepi peta (benih dari id peta supaya tiap peta beda).
   const benihPohon = 20261124 + [...peta.id].reduce((a, ch) => a + ch.charCodeAt(0), 0)
   for (const t of posisiPohon(peta, benihPohon)) {
+    // Bayangan alas di bawah pohon supaya pohon "menapak" di rumput.
+    gambarBayangan(g, t.x, t.y + 16, t.r * 0.9, t.r * 0.28)
     g.fillStyle = '#6d4c41'
     g.fillRect(t.x - 3, t.y + 4, 6, 12)
     g.fillStyle = '#4e9a3d'
@@ -279,6 +316,8 @@ function gambarSampah(g: CanvasRenderingContext2D, x: number, y: number, i: numb
 function gambarPetak(g: CanvasRenderingContext2D, petak: PetakKebun, pos: { x: number; y: number }, kecil = false) {
   const cx = pos.x
   const cy = pos.y - 2
+  // Bayangan alas di bawah bedeng.
+  gambarBayangan(g, pos.x, pos.y + 12, 22, 5)
   // Bedeng tanah.
   g.fillStyle = '#8b5a2b'
   rr(g, pos.x - 20, pos.y - 10, 40, 22, 6)
@@ -370,6 +409,8 @@ function gambarPetak(g: CanvasRenderingContext2D, petak: PetakKebun, pos: { x: n
 
 /** Kotak maggot: kotak cokelat + larva + bar lapar + "!" bila sangat lapar. */
 function gambarKotakMaggot(g: CanvasRenderingContext2D, maggot: Maggot, pos: { x: number; y: number }) {
+  // Bayangan alas di bawah kotak.
+  gambarBayangan(g, pos.x, pos.y + 14, 22, 5)
   // Kotak.
   g.fillStyle = '#8d6e63'
   rr(g, pos.x - 20, pos.y - 12, 40, 26, 5)
@@ -453,6 +494,8 @@ function gambarTempatPilah(g: CanvasRenderingContext2D, disorot: boolean, pos: {
   // 5 bak + singkatan di bawah tiap bak.
   let x = x0
   for (const bak of BAK) {
+    // Bayangan alas di bawah tiap bak supaya bak "menapak".
+    gambarBayangan(g, x + lebarBak / 2, cy + 15, 14, 4)
     g.fillStyle = bak.warna
     rr(g, x, cy - 16, lebarBak, 30, 5)
     g.fill()
@@ -500,6 +543,8 @@ function gambarBankSampah(g: CanvasRenderingContext2D, disorot: boolean, pos: { 
     g.fill()
     g.stroke()
   }
+  // Bayangan alas di bawah meja.
+  gambarBayangan(g, cx, cy + h / 2 + 3, w / 2, 7)
   // Meja hijau + label.
   g.fillStyle = '#43a047'
   rr(g, cx - w / 2, cy - h / 2, w, h, 6)
@@ -541,6 +586,8 @@ function gambarBoothEco(g: CanvasRenderingContext2D, disorot: boolean, pos: { x:
   for (const dx of [-36, -12, 12, 36]) {
     g.fillRect(cx + dx - 6, cy - h / 2 - 10, 12, 10)
   }
+  // Bayangan alas di bawah stan.
+  gambarBayangan(g, cx, cy + h / 2 + 3, w / 2, 6)
   // Stan hijau + label.
   g.fillStyle = '#66bb6a'
   rr(g, cx - w / 2, cy - h / 2, w, h, 6)
@@ -557,9 +604,10 @@ function gambarBoothEco(g: CanvasRenderingContext2D, disorot: boolean, pos: { x:
 }
 
 /** Panel Surya di atap gedung zona Panel Surya (peta Taman): deret panel
- * biru dengan garis grid, digambar tiap frame di draw() bila pemain sudah
- * membeli Panel Surya di Eco-Shop. `pos` = titik 'panel-surya' registry
- * (sudut strip panel, 168x20 di atas dinding deret panel). */
+ * biru dengan garis grid. Digambar ke LAPISAN STATIS (bangunStatis) bila
+ * pemain sudah membeli Panel Surya di Eco-Shop — bukan tiap frame di
+ * draw(). `pos` = titik 'panel-surya' registry (sudut strip panel,
+ * 168x20 di atas dinding deret panel). */
 function gambarPanelSurya(g: CanvasRenderingContext2D, pos: { x: number; y: number }) {
   const x = pos.x
   const y = pos.y
@@ -597,10 +645,7 @@ function warnaTintWaktu(): string {
 
 function gambarNpc(g: CanvasRenderingContext2D, n: NpcJalan, disorot: boolean, reduced: boolean, adaMisi = false, kecil = false) {
   const bob = reduced ? 0 : Math.sin(n.fase) * 1.5
-  g.fillStyle = 'rgba(0,0,0,0.25)'
-  g.beginPath()
-  g.ellipse(n.x, n.y + 13, 12, 4, 0, 0, Math.PI * 2)
-  g.fill()
+  gambarBayangan(g, n.x, n.y + 13, 12, 4)
   if (disorot) {
     g.strokeStyle = '#ffd54a'
     g.lineWidth = 3
@@ -808,6 +853,14 @@ export function Jelajah({
   const wrapRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const staticRef = useRef<HTMLCanvasElement | null>(null)
+  /** Nilai `panelSurya` yang dipakai saat lapisan statis terakhir dibangun
+   * (dirty-flag P2): bila save berubah, update() membangun ulang statis
+   * sekali supaya panel baru langsung muncul tanpa pindah peta. */
+  const panelStatisRef = useRef(false)
+  /** Varian lebar terakhir yang dipakai lapisan statis (null = belum ada
+   * lapisan): dipakai atur() untuk membangun ulang hanya bila lebar
+   * melewati ambang 480px. */
+  const sempitRef = useRef<boolean | null>(null)
   const viewRef = useRef({ w: 0, h: 0 })
   const dprRef = useRef(1)
   const playerRef = useRef<PemainState>({
@@ -844,6 +897,15 @@ export function Jelajah({
   const popsRef = useRef<{ x: number; y: number; t: number; teks: string }[]>([])
   const rafRef = useRef(0)
   const lastRef = useRef(0)
+  /** Kamera halus (smoothing + deadzone + look-ahead); di-reset (hard-cut)
+   * tiap pindah peta supaya tidak "terbang" menyeberang peta. */
+  const camRef = useRef(buatKamera())
+  /** Sistem partikel terpadu (F1): pool tetap, dipakai ulang tiap hadiah. */
+  const partikelRef = useRef(buatPartikel())
+  /** Awan peta aktif (V3): dibuat ulang tiap pindah peta. */
+  const awanRef = useRef(buatAwan(peta.id, peta.lebar, peta.tinggi))
+  /** Timer spawn daun melayang (V3): ~1 daun per 1,1 detik di peta luar. */
+  const daunTimerRef = useRef(0)
   const dialogRef = useRef<NpcDunia | null>(null)
   const dialogIdxRef = useRef(0)
   const nearbyRef = useRef<string | null>(null)
@@ -924,6 +986,18 @@ export function Jelajah({
     onOpenEcoShop()
   }
 
+  /** Jalan pintas "Ke Kantin" dari peringatan Lapar/Haus rendah: bila
+   * sudah di peta Kantin, langsung buka Toko Kantin; bila di peta lain,
+   * pindah ke peta Kantin (titik masuk portal gerbang). Bukan hukuman. */
+  const keKantin = () => {
+    klik()
+    if (petaId === 'kantin') {
+      onOpenToko()
+    } else {
+      onPindahPeta('kantin', { ...PETA.kantin.spawn })
+    }
+  }
+
   /** Setor semua sampah yang dibawa: satu aksi reducer atomik
    * SETOR_BANK_SAMPAH (hitung total -> tambah uang + koin -> kosongkan
    * inventaris); inventaris kosong -> tidak terjadi apa-apa. */
@@ -933,6 +1007,15 @@ export function Jelajah({
     dispatch({ type: 'SETOR_BANK_SAMPAH' })
     benar()
     koin()
+    // Tier sedang: daun + cincin hijau + angka hadiah di posisi pemain.
+    feedback(
+      partikelRef.current,
+      'sedang',
+      playerRef.current.x,
+      playerRef.current.y - 20,
+      [`+Rp${ringkasan.uang.toLocaleString('id-ID')}`, `+${ringkasan.koin} Koin Hijau`],
+      { reduced: reducedRef.current },
+    )
     tutupBank()
     showToast(
       `Kamu menyetor ${ringkasan.jumlah} sampah: +Rp${ringkasan.uang.toLocaleString('id-ID')} + ${ringkasan.koin} Koin Hijau`,
@@ -953,6 +1036,18 @@ export function Jelajah({
       dispatch({ type: 'PILAH_SAMPAH', jenis, bak })
       benar()
       koin()
+      // Tier sedang: daun + cincin hijau + angka hadiah di posisi pemain.
+      feedback(
+        partikelRef.current,
+        'sedang',
+        playerRef.current.x,
+        playerRef.current.y - 20,
+        [
+          `+${jumlah * HADIAH_PILAH_KOIN} Koin Hijau`,
+          `+Rp${(jumlah * HADIAH_PILAH_UANG).toLocaleString('id-ID')}`,
+        ],
+        { reduced: reducedRef.current },
+      )
       setPesanPilah({
         jenis: 'benar',
         teks: `Benar! ${jumlah} sampah ${NAMA_BAK[jenis]} jadi +${jumlah * HADIAH_PILAH_KOIN} Koin Hijau dan +Rp${(jumlah * HADIAH_PILAH_UANG).toLocaleString('id-ID')}.`,
@@ -1015,6 +1110,16 @@ export function Jelajah({
     if (!next) klik()
   }
 
+  // Ducking musik (A2): selagi dialog apa pun terbuka di dunia (NPC,
+  // pilah, Bank Sampah), musik turun −12 dB; kembali normal saat semua
+  // tertutup. Refcount di suara.ts menjaga bila dialog lain juga ducking.
+  const dialogTerbuka = dialogNpc !== null || dialogPilah || dialogBank
+  useEffect(() => {
+    if (!dialogTerbuka) return
+    duckMusik()
+    return () => unduckMusik()
+  }, [dialogTerbuka])
+
   // Ukuran canvas mengikuti lebar layar (devicePixelRatio).
   useEffect(() => {
     const wrap = wrapRef.current
@@ -1028,6 +1133,16 @@ export function Jelajah({
       canvas.width = Math.max(1, Math.round(w * dpr))
       canvas.height = Math.max(1, Math.round(h * dpr))
       viewRef.current = { w, h }
+      // Prerender (P2): label statis digambar dalam dua varian (sempit /
+      // lega, ambang 480px). Bila lebar melewati ambang saat resize/rotasi,
+      // bangun ulang sekali supaya label tidak tertahan di varian lama.
+      // Perubahan lebar di dalam satu varian tidak membangun ulang.
+      const sempit = pandangSempit(w)
+      if (staticRef.current && sempitRef.current !== null && sempit !== sempitRef.current) {
+        staticRef.current = bangunStatis(petaRef.current, sempit, saveRef.current.panelSurya)
+        panelStatisRef.current = saveRef.current.panelSurya
+      }
+      sempitRef.current = sempit
     }
     atur()
     const ro = new ResizeObserver(atur)
@@ -1104,17 +1219,39 @@ export function Jelajah({
     setDialogPilah(false)
     bankRef.current = false
     setDialogBank(false)
-    staticRef.current = bangunStatis(peta, pandangSempit(viewRef.current.w))
+    // Pindah peta: kamera hard-cut ke posisi baru (tanpa smoothing).
+    resetKamera(camRef.current)
+    // Pindah peta: partikel + angka lama dibuang, awan dibuat baru.
+    resetPartikel(partikelRef.current)
+    awanRef.current = buatAwan(peta.id, peta.lebar, peta.tinggi)
+    daunTimerRef.current = 0
+    staticRef.current = bangunStatis(peta, pandangSempit(viewRef.current.w), saveRef.current.panelSurya)
+    panelStatisRef.current = saveRef.current.panelSurya
+    sempitRef.current = pandangSempit(viewRef.current.w)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [petaId, masuk])
 
   // Loop utama: update + gambar + keyboard + jeda saat tab disembunyikan.
   useEffect(() => {
-    staticRef.current = bangunStatis(petaRef.current, pandangSempit(viewRef.current.w))
+    staticRef.current = bangunStatis(petaRef.current, pandangSempit(viewRef.current.w), saveRef.current.panelSurya)
+    panelStatisRef.current = saveRef.current.panelSurya
+    sempitRef.current = pandangSempit(viewRef.current.w)
 
     const update = (dt: number) => {
       const p = playerRef.current
       const peta = petaRef.current
+      // Prerender (P2) — invalidasi Panel Surya: pembelian Panel Surya
+      // (BELI_ECO di Eco-Shop, Kebun) mengubah save.panelSurya dari false
+      // ke true. Bila peta Taman sedang terbuka, lapisan statis dibangun
+      // ulang SEKALI di frame ini supaya panel biru langsung muncul di
+      // atap — pemain tidak perlu pindah peta dulu. Di peta lain pun aman:
+      // bangunStatis hanya menggambar panel bila titik 'panel-surya' ada
+      // (hanya Taman). Satu banding boolean per frame; tidak ada alokasi.
+      if (panelStatisRef.current !== saveRef.current.panelSurya) {
+        panelStatisRef.current = saveRef.current.panelSurya
+        staticRef.current = bangunStatis(peta, pandangSempit(viewRef.current.w), saveRef.current.panelSurya)
+        sempitRef.current = pandangSempit(viewRef.current.w)
+      }
       const dialogTerbuka = dialogRef.current !== null || pilahRef.current || bankRef.current
       if (dialogTerbuka) tujuanRef.current = null
       let vx = 0
@@ -1180,6 +1317,24 @@ export function Jelajah({
       }
       p.bergerak = bergerak
 
+      // Kamera halus: kejar pemain dengan smoothing eksponensial,
+      // deadzone ±24px, dan look-ahead searah gerak (lihat kamera.ts).
+      const gerak = bergerak ? { x: vx, y: vy } : { x: 0, y: 0 }
+      const view = viewRef.current
+      perbaruiKamera(camRef.current, p.x, p.y, view.w, view.h, peta.lebar, peta.tinggi, dt, gerak.x, gerak.y)
+
+      // Partikel (F1): majukan tiap frame; atmosfer (V3) hanya di peta
+      // luar dan dimatikan saat prefers-reduced-motion.
+      perbaruiPartikel(partikelRef.current, dt)
+      if (peta.luarRuang && !reducedRef.current) {
+        perbaruiAwan(awanRef.current, peta.lebar, dt)
+        daunTimerRef.current += dt
+        if (daunTimerRef.current >= 1.1) {
+          daunTimerRef.current = 0
+          spawnDaun(partikelRef.current, camRef.current.x, camRef.current.y, view.w)
+        }
+      }
+
       // Click-to-move macet (mis. target di balik dinding): batalkan supaya
       // tokoh tidak mendorong dinding selamanya.
       const tujuan = tujuanRef.current
@@ -1238,6 +1393,9 @@ export function Jelajah({
           if (Math.hypot(s.x - p.x, s.y - p.y) < 26) {
             trashRef.current[i] = true
             popsRef.current.push({ x: s.x, y: s.y, t: 0, teks: s.nama })
+            // Tier kecil: 3-4 partikel di titik sampah (tanpa angka —
+            // nama sampah sudah tampil lewat pop yang sudah ada).
+            feedback(partikelRef.current, 'kecil', s.x, s.y, [], { reduced: reducedRef.current })
             dispatch({ type: 'PUNGUT_SAMPAH', jenis: s.jenis })
             klik()
           }
@@ -1326,13 +1484,20 @@ export function Jelajah({
       ctx.clearRect(0, 0, view.w, view.h)
       const p = playerRef.current
       const peta = petaRef.current
-      const camX = jepitKamera(p.x - view.w / 2, view.w, peta.lebar)
-      const camY = jepitKamera(p.y - view.h / 2, view.h, peta.tinggi)
+      // Kamera halus (diperbarui tiap frame di update); frame pertama
+      // setelah pindah peta sudah hard-cut lewat resetKamera.
+      const camX = camRef.current.x
+      const camY = camRef.current.y
       ctx.save()
       ctx.translate(-camX, -camY)
       const statis = staticRef.current
       if (statis) {
         ctx.drawImage(statis, camX, camY, view.w, view.h, camX, camY, view.w, view.h)
+      }
+      // Atmosfer (V3): awan bergerak pelan di atas tanah, di bawah aktor.
+      // Hanya di peta luar; di dalam (Kantin) langit tidak ada.
+      if (peta.luarRuang) {
+        gambarAwan(ctx, awanRef.current, camX, camY, view.w, view.h)
       }
       // Zona bab yang masih terkunci tampil pudar.
       const saveSekarang = saveRef.current
@@ -1400,12 +1565,9 @@ export function Jelajah({
       // Booth Eco-Shop: stan di Kebun.
       const eco = cariTitik(peta, 'eco-shop')
       if (eco) gambarBoothEco(ctx, ecoDekatRef.current, eco, sempit)
-      // Panel Surya: panel biru di atap gedung zona Panel Surya (Taman),
-      // bila sudah dibeli.
-      if (saveRef.current.panelSurya) {
-        const panel = cariTitik(peta, 'panel-surya')
-        if (panel) gambarPanelSurya(ctx, panel)
-      }
+      // Panel Surya TIDAK digambar di sini lagi: panel biru sudah masuk
+      // lapisan statis (bangunStatis) bila sudah dibeli, dan dibangun ulang
+      // sekali saat save.panelSurya berubah (dirty-flag di update()).
       // Tint waktu nyata: satu fillRect transparan setelah dunia digambar,
       // sebelum aktor digambar. Statis, jadi aman untuk reduced motion.
       ctx.fillStyle = warnaTintWaktu()
@@ -1425,10 +1587,32 @@ export function Jelajah({
         const adaMisi = adaMisiBab || adaMisiTugas
         aktor.push({ y: n.y, gambar: () => gambarNpc(ctx, n, n.id === dekatId, reduced, adaMisi, sempit) })
       }
-      aktor.push({ y: p.y, gambar: () => gambarPemain(ctx, p, reduced, warnaKostum(saveSekarang.kostumDipakai), saveSekarang.jenisKelamin, saveSekarang.pinDuta) })
+      aktor.push({
+        y: p.y,
+        gambar: () =>
+          gambarPemain(
+            ctx,
+            p,
+            reduced,
+            warnaKostum(saveSekarang.kostumDipakai),
+            saveSekarang.jenisKelamin,
+            saveSekarang.pinDuta,
+            // Kecepatan gerak saat ini: bayangan mengecil sedikit saat cepat.
+            p.bergerak ? KECEPATAN * (saveSekarang.sepatuEco ? 1.35 : 1) : 0,
+          ),
+      })
       aktor.sort((a, b) => a.y - b.y)
       for (const a of aktor) a.gambar()
+      // Partikel + angka melayang (F1): koordinat dunia, di atas aktor,
+      // mengikuti kamera (sudah di dalam translate(-camX, -camY)).
+      gambarPartikel(ctx, partikelRef.current, camX, camY, view.w, view.h)
       ctx.restore()
+
+      // Langit pagi + sinar matahari (V3): overlay ruang layar yang SANGAT
+      // tipis (alpha maks 0,10), hanya di peta luar.
+      if (peta.luarRuang) {
+        gambarLangitPagi(ctx, view.w, view.h)
+      }
 
       // Joystick virtual hanya untuk perangkat sentuh (pointer: coarse);
       // di laptop (pointer: fine) tidak digambar sama sekali.
@@ -1605,10 +1789,8 @@ export function Jelajah({
       const canvas = canvasRef.current
       if (canvas) {
         const pos = posisiPointer(e)
-        const p = playerRef.current
-        const view = viewRef.current
-        const camX = jepitKamera(p.x - view.w / 2, view.w, peta.lebar)
-        const camY = jepitKamera(p.y - view.h / 2, view.h, peta.tinggi)
+        const camX = camRef.current.x
+        const camY = camRef.current.y
         const wx = pos.x + camX
         const wy = pos.y + camY
         const dunia = saveRef.current.dunia
@@ -1650,9 +1832,8 @@ export function Jelajah({
     if (performance.now() - tap.t > 350 || Math.hypot(pos.x - tap.x, pos.y - tap.y) > 14) return
     // Ketuk NPC di canvas.
     const p = playerRef.current
-    const view = viewRef.current
-    const camX = jepitKamera(p.x - view.w / 2, view.w, peta.lebar)
-    const camY = jepitKamera(p.y - view.h / 2, view.h, peta.tinggi)
+    const camX = camRef.current.x
+    const camY = camRef.current.y
     const wx = pos.x + camX
     const wy = pos.y + camY
     const npc = npcsRef.current.find((n) => Math.hypot(n.x - wx, n.y - wy) < 46)
@@ -1776,11 +1957,19 @@ export function Jelajah({
         showToast(hasil.pesan)
         panen()
         koin()
+        // Tier sedang: daun + cincin hijau + angka hadiah di petak.
+        feedback(partikelRef.current, 'sedang', posPetak.x, posPetak.y - 10, [`+${hasil.koin} Koin Hijau`], {
+          reduced: reducedRef.current,
+        })
         dispatch({ type: 'PERAWATAN_DUNIA', aksi: 'panen', petakId: petak.id, sekarang })
       } else {
         const hasil = siramTanaman(dunia, petak.id, sekarang)
         showToast(hasil.pesan)
         siram()
+        // Tier kecil: percik hijau + angka hadiah di petak.
+        feedback(partikelRef.current, 'kecil', posPetak.x, posPetak.y - 10, [`+${hasil.koin} Koin Hijau`], {
+          reduced: reducedRef.current,
+        })
         dispatch({ type: 'PERAWATAN_DUNIA', aksi: 'siram', petakId: petak.id, sekarang })
       }
       return
@@ -1808,11 +1997,19 @@ export function Jelajah({
         }
         showToast(hasil.pesan)
         panen()
+        // Tier sedang: daun + cincin hijau + angka hadiah di kotak maggot.
+        feedback(partikelRef.current, 'sedang', kotakPos.x, kotakPos.y - 10, [`+${hasil.koin} Koin Hijau`], {
+          reduced: reducedRef.current,
+        })
         dispatch({ type: 'PERAWATAN_DUNIA', aksi: 'panenKasgot', petakId: target.id, sekarang })
       } else {
         const hasil = beriMakanMaggot(dunia, sekarang)
         showToast(hasil.pesan)
         sfxMaggot()
+        // Tier kecil: percik hijau + angka hadiah di kotak maggot.
+        feedback(partikelRef.current, 'kecil', kotakPos.x, kotakPos.y - 10, [`+${hasil.koin} Koin Hijau`], {
+          reduced: reducedRef.current,
+        })
         dispatch({ type: 'PERAWATAN_DUNIA', aksi: 'beriMakan', sekarang })
       }
       return
@@ -1834,6 +2031,9 @@ export function Jelajah({
       }
       trashRef.current[i] = true
       popsRef.current.push({ x: s.x, y: s.y, t: 0, teks: s.nama })
+      // Tier kecil: 3-4 partikel di titik sampah (tanpa angka — nama
+      // sampah sudah tampil lewat pop yang sudah ada).
+      feedback(partikelRef.current, 'kecil', s.x, s.y, [], { reduced: reducedRef.current })
       klik()
       dispatch({ type: 'PUNGUT_SAMPAH', jenis: s.jenis })
       return
@@ -1874,10 +2074,10 @@ export function Jelajah({
     <div className="aia-stack">
       <div className="aia-hud">
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-          <Coins aria-hidden="true" /> {save.coins} Koin Hijau
+          <Coins aria-hidden="true" /> <AngkaAnimasi nilai={save.coins} /> Koin Hijau
         </span>
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-          <Award aria-hidden="true" /> Skor Adiwiyata: {save.skorAdiwiyata ?? 0}
+          <Award aria-hidden="true" /> Skor Adiwiyata: <AngkaAnimasi nilai={save.skorAdiwiyata ?? 0} />
         </span>
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
           <Trash2 aria-hidden="true" /> {totalDibawa} sampah dibawa
@@ -1905,44 +2105,13 @@ export function Jelajah({
         </button>
       </div>
 
-      <div className="aia-hud">
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-          <span>
-            Lapar {save.lapar ?? 100}
-          </span>
-          <span
-            className="aia-hud-bar"
-            role="progressbar"
-            aria-label="Lapar"
-            aria-valuenow={save.lapar ?? 100}
-            aria-valuemin={0}
-            aria-valuemax={100}
-          >
-            <span style={{ display: 'block', width: `${save.lapar ?? 100}%`, height: '100%', background: '#e65100' }} />
-          </span>
-        </span>
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-          <span>
-            Haus {save.haus ?? 100}
-          </span>
-          <span
-            className="aia-hud-bar"
-            role="progressbar"
-            aria-label="Haus"
-            aria-valuenow={save.haus ?? 100}
-            aria-valuemin={0}
-            aria-valuemax={100}
-          >
-            <span style={{ display: 'block', width: `${save.haus ?? 100}%`, height: '100%', background: '#1e88e5' }} />
-          </span>
-        </span>
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-          <Banknote aria-hidden="true" /> Rp{(save.uang ?? 0).toLocaleString('id-ID')}
-        </span>
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-          <Leaf aria-hidden="true" /> {save.koinDaun ?? 0} Koin Daun
-        </span>
-      </div>
+      <HudStatus
+        lapar={save.lapar ?? 100}
+        haus={save.haus ?? 100}
+        uang={save.uang ?? 0}
+        koinDaun={save.koinDaun ?? 0}
+        onKeKantin={keKantin}
+      />
 
       {misiAktif && pemberiAktif ? (
         <div className="aia-hud">

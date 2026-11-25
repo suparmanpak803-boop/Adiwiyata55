@@ -17,6 +17,16 @@ export interface PemainState {
   fase: number
 }
 
+/** Bayangan alas: elips gelap transparan di bawah tokoh atau benda, supaya
+ * terlihat "menapak" di tanah, bukan tempelan. Dipakai pemain, NPC, pohon,
+ * meja, dan bak di semua peta. */
+export function gambarBayangan(g: CanvasRenderingContext2D, x: number, y: number, rx: number, ry: number) {
+  g.fillStyle = 'rgba(0,0,0,0.25)'
+  g.beginPath()
+  g.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2)
+  g.fill()
+}
+
 /** Persegi bersudut membulat (path saja, belum fill/stroke). */
 export function rr(g: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
   const rad = Math.min(r, w / 2, h / 2)
@@ -38,6 +48,10 @@ export function gambarPemain(
   /** Bila true (punya Pin Duta Adiwiyata): lingkaran glow hijau di
    * sekitar tokoh — digambar sebelum bayangan supaya tetap di belakang. */
   pinDuta = false,
+  /** Kecepatan gerak pemain saat ini (unit dunia/detik, 0 bila diam).
+   * Bayangan alas mengecil sedikit saat bergerak cepat, supaya tokoh
+   * terasa menapak dan tidak melayang. */
+  kecepatanGerak = 0,
 ) {
   const siswi = jenisKelamin === 'siswi'
   const bob = p.bergerak && !reduced ? Math.sin(p.fase) * 2 : 0
@@ -55,10 +69,10 @@ export function gambarPemain(
     g.arc(p.x, p.y, 26, 0, Math.PI * 2)
     g.stroke()
   }
-  g.fillStyle = 'rgba(0,0,0,0.25)'
-  g.beginPath()
-  g.ellipse(p.x, p.y + 13, 12, 4, 0, 0, Math.PI * 2)
-  g.fill()
+  // Bayangan alas: mengecil sampai ~15% pada kecepatan penuh (216 unit/detik
+  // dengan Sepatu Eco-Runner), kembali penuh saat diam.
+  const skalaBayang = 1 - 0.15 * Math.min(1, Math.max(0, kecepatanGerak) / 216)
+  gambarBayangan(g, p.x, p.y + 13, 12 * skalaBayang, 4 * skalaBayang)
   g.save()
   g.translate(p.x, p.y + bob)
   const langkah = p.bergerak && !reduced ? Math.sin(p.fase) * 3 : 0
