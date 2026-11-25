@@ -1,7 +1,7 @@
 // Dialog pembuka singkat tiap bab. Magi ramah dan membantu, Pak Plastik
 // pengacau lucu yang suka membuang sampah sembarangan tapi bisa diajak
 // berubah, Narator memberi konteks. Nada santai, tidak menggurui.
-import type { ChapterId } from '../types'
+import type { ChapterId, PakPlastikStatus } from '../types'
 
 export interface DialogLine {
   tokoh: 'Magi' | 'Pak Plastik' | 'Narator'
@@ -117,4 +117,60 @@ export const DIALOG_AWAL: Record<ChapterId, DialogLine[]> = {
       teks: 'Hari ini tim Adiwiyata datang menilai sekolah. Buktikan semua yang kamu pelajari dari bab pertama sampai sekarang.',
     },
   ],
+}
+
+// ------------------------------------------------- Varian per status ----
+//
+// DIALOG_AWAL di atas adalah versi NETRAL. Dua baris Pak Plastik diganti
+// mengikuti statusnya, karena kalau tidak, dialognya bertentangan dengan
+// pilihan yang baru saja dibuat pemain:
+//
+// - Gerbang: titik-1 dipilih di dialog NPC BARU SAJA sebelum misi dimulai.
+//   Pak Plastik yang baru dibujuk/ditantang lalu berkata "Buang saja, nanti
+//   juga ada yang beresin" adalah kontradiksi langsung.
+// - Biodiversitas (Bab 6): baris ini adalah klaim penebusan — payoff dari
+//   seluruh alur Pak Plastik — jadi harus mengingat bagaimana ia sampai
+//   di sini (dibujuk / dilawan / dijebak).
+//
+// Misi 2-5 SENGAJA tidak diubah: Pak Plastik di sana tetap usil, dan Magi
+// langsung membetulkan usul salahnya di baris berikutnya. Itu momen
+// belajarnya — dibujuk bukan berarti langsung sempurna, ia masih belajar
+// pelan-pelan. Dialog ingatan NPC (DIALOG_PAK_PLASTIK) yang mencatat
+// perubahan sikapnya; intro misi mencatat kebiasaan lamanya yang kambuh.
+
+/** Baris Pak Plastik di Gerbang per status (indeks 2 dari DIALOG_AWAL.gerbang). */
+const GERBANG_PAK_PLASTIK: Record<PakPlastikStatus, string> = {
+  netral: 'Hehehe, aku Pak Plastik! Botolku ada di mana-mana. Buang saja, nanti juga ada yang beresin. Eh, kok pada melotot?',
+  dibujuk: 'Hehehe, aku Pak Plastik! Kamu ajak aku memilah, ya? Baiklah... botolku ada di mana-mana, ayo beresin bareng.',
+  dilawan: 'Hehehe, aku Pak Plastik! Kamu tantang aku lomba pilah? Siap-siap kalah, ya!',
+  dijebak: 'Hehehe, aku Pak Plastik! Botolku ada di mana-mana. Buang saja, nanti juga ada yang beresin. Eh, kok pada melotot?',
+}
+
+/** Baris Pak Plastik di Biodiversitas per status (indeks 2 dari DIALOG_AWAL.biodiversitas). */
+const BAB6_PAK_PLASTIK: Record<PakPlastikStatus, string> = {
+  netral: 'Aku janji tidak buang sampah sembarangan lagi. Boleh ikut inspeksi, kan? Aku sudah belajar memilah.',
+  dibujuk: 'Aku janji tidak buang sampah sembarangan lagi. Boleh ikut inspeksi, kan? Sejak kamu ajak memilah, aku sudah belajar.',
+  dilawan: 'Aku janji tidak buang sampah sembarangan lagi. Boleh ikut inspeksi, kan? Lomba pilah kemarin bikin aku latihan tiap pagi.',
+  dijebak: 'Aku janji tidak buang sampah sembarangan lagi. Boleh ikut inspeksi, kan? Sejak keluar dari tong itu, aku jadi mikir sebelum mengacau.',
+}
+
+/**
+ * Dialog pembuka misi dengan ingatan status Pak Plastik. Dipakai MisiShell
+ * sebagai intro sebelum tahap pertama. Mengembalikan salinan (DIALOG_AWAL
+ * tidak diubah). Status 'dijebak' tidak mungkin ada di Gerbang (jebakan
+ * baru terjadi di misi 2), jadi baris Gerbang-nya sama dengan netral.
+ */
+export function dialogAwalUntuk(misi: ChapterId, pakPlastik: PakPlastikStatus): DialogLine[] {
+  const dasar = DIALOG_AWAL[misi]
+  if (misi === 'gerbang' && pakPlastik !== 'netral') {
+    return dasar.map((baris, i) =>
+      i === 2 && baris.tokoh === 'Pak Plastik' ? { ...baris, teks: GERBANG_PAK_PLASTIK[pakPlastik] } : baris,
+    )
+  }
+  if (misi === 'biodiversitas' && pakPlastik !== 'netral') {
+    return dasar.map((baris, i) =>
+      i === 2 && baris.tokoh === 'Pak Plastik' ? { ...baris, teks: BAB6_PAK_PLASTIK[pakPlastik] } : baris,
+    )
+  }
+  return [...dasar]
 }

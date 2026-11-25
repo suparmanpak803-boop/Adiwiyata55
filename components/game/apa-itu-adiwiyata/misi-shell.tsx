@@ -5,6 +5,7 @@ import { ArrowLeft, Check, Flag, LogOut, Pause, Play, RotateCcw } from 'lucide-r
 import { CHAPTERS, CHAPTER_ORDER } from '@/lib/apa-itu-adiwiyata/chapters'
 import { TUGAS } from '@/lib/apa-itu-adiwiyata/tugas'
 import { kunciCerita, PILIHAN_CERITA, pilihEpilog } from '@/lib/apa-itu-adiwiyata/content/cerita'
+import { dialogAwalUntuk } from '@/lib/apa-itu-adiwiyata/content/dialog'
 import { INTERAKSI_MISI } from '@/lib/apa-itu-adiwiyata/content/interaksi'
 import { useCampaign } from '@/lib/apa-itu-adiwiyata/context'
 import { KARTU_ENSIKLOPEDIA } from '@/lib/apa-itu-adiwiyata/content/ensiklopedia'
@@ -142,6 +143,12 @@ export function MisiShell({
   // tanpa layar judul lagi. Jeda membekukan permainan lewat prop terjeda.
   const [sudahMulai, setSudahMulai] = useState(false)
   const [terjeda, setTerjeda] = useState(false)
+  // Intro dialog pembuka (A-01): indeks baris DIALOG_AWAL yang sedang tampil,
+  // null bila tidak sedang intro. Satu baris di satu waktu, selalu bisa dilewati
+  // — bukan kartu dialog panjang seperti BabShell lama yang ditolak user.
+  // Hanya misi utama; Misi Tambahan tidak punya dialog pembuka.
+  const [introIdx, setIntroIdx] = useState<number | null>(null)
+  const introAktif = introIdx !== null
 
   const chapterId = kind === 'bab' ? (id as ChapterId) : null
   const tugasId = kind === 'tugas' ? (id as TugasKaderId) : null
@@ -171,6 +178,10 @@ export function MisiShell({
     : ''
   const MiniGameBab = chapterId ? MINI_GAME_BAB[chapterId] : null
   const MiniGameTugas = tugasId ? MINI_GAME_TUGAS[tugasId] : null
+  // Dialog pembuka misi utama, dengan baris Pak Plastik yang mengingat
+  // statusnya (lihat dialogAwalUntuk). Null untuk Misi Tambahan.
+  const dialogAwal = kind === 'bab' && chapterId ? dialogAwalUntuk(chapterId, save.pakPlastik) : null
+  const barisIntro = dialogAwal && introIdx !== null ? dialogAwal[introIdx] : null
   // Apakah misi tugas ini akan melengkapi semua 8 Misi Kader bila diselesaikan.
   const lengkapiKader =
     kind === 'tugas' && tugasId
@@ -189,6 +200,7 @@ export function MisiShell({
     setPesanSukses(null)
     setSudahMulai(false)
     setTerjeda(false)
+    setIntroIdx(null)
   }, [kind, id])
 
   // Musik: bab memakai musik babnya, tugas memakai mode 'menu'.
@@ -213,7 +225,7 @@ export function MisiShell({
   // mini-game yang memakai tombol P, dan Esc belum dipakai di shell ini.
   // Diabaikan saat mengetik di input atau bersama Ctrl/Cmd/Alt.
   useEffect(() => {
-    const bisaJeda = sudahMulai && tampilkanGame && !showEvent
+    const bisaJeda = sudahMulai && tampilkanGame && !showEvent && !introAktif
     const onKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null
       const tag = target?.tagName
@@ -232,7 +244,7 @@ export function MisiShell({
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [sudahMulai, tampilkanGame, showEvent, terjeda])
+  }, [sudahMulai, tampilkanGame, showEvent, terjeda, introAktif])
 
   const selesaikanTahap = (stageIndex: number, score: number) => {
     if (kind === 'bab' && chapterId) {
@@ -348,7 +360,7 @@ export function MisiShell({
               <span aria-hidden="true">?</span>
             </button>
           )}
-          {sudahMulai && tampilkanGame && !showEvent && (
+          {sudahMulai && tampilkanGame && !showEvent && !introAktif && (
             <>
               <button
                 type="button"
@@ -411,7 +423,7 @@ export function MisiShell({
         </div>
       )}
 
-      {sudahMulai && tampilkanGame && (
+      {sudahMulai && tampilkanGame && !introAktif && (
         <div className="aia-card" role="status" aria-label="Petunjuk Magi">
           <span className="aia-kicker">Magi</span>
           <p style={{ margin: 0 }}>{petunjukMagi}</p>
@@ -446,6 +458,9 @@ export function MisiShell({
               onClick={() => {
                 klik()
                 setSudahMulai(true)
+                // Misi utama: tampilkan dulu dialog pembuka (satu baris di
+                // satu waktu, bisa dilewati). Misi Tambahan langsung main.
+                if (dialogAwal) setIntroIdx(0)
               }}
             >
               <Play aria-hidden="true" /> Mulai Misi
@@ -457,7 +472,63 @@ export function MisiShell({
         </section>
       )}
 
-      {sudahMulai && tampilkanGame && !showEvent && (
+      {sudahMulai && introAktif && dialogAwal && barisIntro && (
+        <section className="aia-card" aria-label="Dialog pembuka misi">
+          <span className="aia-kicker">{barisIntro.tokoh}</span>
+          <p style={{ margin: '8px 0 12px', fontSize: 17, lineHeight: 1.5 }}>{barisIntro.teks}</p>
+          <div
+            style={{ display: 'inline-flex', gap: 8, alignItems: 'center', marginBottom: 12 }}
+            aria-label={`Baris ${introIdx! + 1} dari ${dialogAwal.length}`}
+          >
+            {dialogAwal.map((_, i) => (
+              <span
+                key={i}
+                style={{
+                  width: 10,
+                  height: 10,
+                  borderRadius: '50%',
+                  background: i === introIdx ? '#2f7d4f' : 'transparent',
+                  border: '2px solid #2f7d4f',
+                  opacity: i === introIdx ? 1 : 0.4,
+                }}
+              />
+            ))}
+            <span className="aia-muted">
+              {introIdx! + 1} dari {dialogAwal.length}
+            </span>
+          </div>
+          <div className="aia-actions">
+            <button
+              type="button"
+              className="aia-btn aia-btn-primary"
+              style={{ minHeight: 44 }}
+              onClick={() => {
+                klik()
+                if (introIdx! + 1 < dialogAwal.length) {
+                  setIntroIdx(introIdx! + 1)
+                } else {
+                  setIntroIdx(null)
+                }
+              }}
+            >
+              {introIdx! + 1 < dialogAwal.length ? 'Lanjut' : 'Mulai main'}
+            </button>
+            <button
+              type="button"
+              className="aia-btn aia-btn-ghost"
+              style={{ minHeight: 44 }}
+              onClick={() => {
+                klik()
+                setIntroIdx(null)
+              }}
+            >
+              Lewati
+            </button>
+          </div>
+        </section>
+      )}
+
+      {sudahMulai && tampilkanGame && !showEvent && !introAktif && (
         <section className="aia-slot" aria-label="Permainan misi">
           {/* JANGAN hapus key di bawah: tanpa key, mini-game yang sama tetap
               terpasang saat stageIndex berubah, sehingga state dalamnya
