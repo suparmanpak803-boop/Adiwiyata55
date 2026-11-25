@@ -5,7 +5,7 @@
 // Koordinat dalam satuan dunia; y=0 di atas, y=640 di bawah.
 // Zona Misi Kader (Bank Sampah, Perpustakaan, Taman & Toilet, Pos Data,
 // Plaza) menempati ruang kosong bawah/tengah yang tidak dipakai zona bab.
-import type { ChapterId, TugasKaderId } from './types'
+import type { ChapterId, TongSampah, TugasKaderId } from './types'
 
 export interface ZonaDunia {
   id: string
@@ -44,6 +44,12 @@ export interface NpcDunia {
 export interface SampahJatuh {
   x: number
   y: number
+  /** Nama yang tampil saat dipungut. */
+  nama: string
+  /** Jenis baknya (sistem 5 bak SMAN 55): organik, anorganik, kertas,
+   * residu, atau b3. Dipungut -> masuk inventaris `sampahDibawa`, lalu
+   * dipilah di Tempat Sampah Terpilah (bukan langsung jadi koin). */
+  jenis: TongSampah
 }
 
 export const DUNIA: {
@@ -104,20 +110,49 @@ export const DUNIA: {
     { x: 20, y: 560, w: 24, h: 24 },
   ],
   sampah: [
-    { x: 480, y: 545 }, // jalur tengah, di atas Gerbang
-    { x: 480, y: 300 }, // tengah taman Pohon
-    { x: 480, y: 210 }, // koridor horizontal tengah
-    { x: 300, y: 460 }, // koridor kiri bawah
-    { x: 300, y: 210 }, // koridor kiri atas
-    { x: 660, y: 460 }, // koridor kanan bawah
-    { x: 660, y: 210 }, // koridor kanan atas
-    { x: 150, y: 460 }, // halaman kiri bawah
-    { x: 810, y: 460 }, // halaman kanan bawah
-    { x: 150, y: 210 }, // koridor horizontal kiri
-    { x: 810, y: 210 }, // koridor horizontal kanan
-    { x: 420, y: 460 }, // halaman tengah bawah
+    { x: 480, y: 545, nama: 'Daun kering', jenis: 'organik' }, // jalur tengah, di atas Gerbang
+    { x: 480, y: 300, nama: 'Sisa buah', jenis: 'organik' }, // tengah taman Pohon
+    { x: 480, y: 210, nama: 'Botol plastik', jenis: 'anorganik' }, // koridor horizontal tengah
+    { x: 300, y: 460, nama: 'Koran bekas', jenis: 'kertas' }, // koridor kiri bawah
+    { x: 300, y: 210, nama: 'Baterai bekas', jenis: 'b3' }, // koridor kiri atas
+    { x: 660, y: 460, nama: 'Styrofoam', jenis: 'residu' }, // koridor kanan bawah
+    { x: 660, y: 210, nama: 'Kaleng bekas', jenis: 'anorganik' }, // koridor kanan atas
+    { x: 150, y: 460, nama: 'Kardus', jenis: 'kertas' }, // halaman kiri bawah
+    { x: 810, y: 460, nama: 'Puntung rokok', jenis: 'residu' }, // halaman kanan bawah
+    { x: 150, y: 210, nama: 'Lampu bekas', jenis: 'b3' }, // koridor horizontal kiri
+    { x: 810, y: 210, nama: 'Botol kaca', jenis: 'anorganik' }, // koridor horizontal kanan
+    { x: 420, y: 460, nama: 'Ranting kecil', jenis: 'organik' }, // halaman tengah bawah
   ],
 }
+
+/** Portal "Jalan Pulang": rect di tepi selatan peta, di bawah Gerbang
+ * (zona Gerbang x370-590 y500-610, spawn 480,580). Di luar semua dinding:
+ * tiang gerbang ada di y500, dinding tepi bawah mulai y628. Pemain bisa
+ * mencapai y tengah 600-626 (batas jalan y maks 640-14). Interaksi
+ * eksplisit (tombol/E/ketuk), bukan jalan-masuk otomatis — supaya pemain
+ * yang mampir ke Gerbang tidak langsung terlempar pulang. */
+export const JALAN_PULANG = { x: 440, y: 600, w: 80, h: 28 }
+
+/** "Tempat Sampah Terpilah": 5 bak warna-warni di koridor tepat di atas
+ * Gerbang (pusat barisan bak). Pemain mendekat (radius 70) lalu membuka
+ * dialog pilah untuk memilah sampah yang dibawanya. Bukan dinding: pemain
+ * bisa berjalan melewatinya. */
+export const TEMPAT_PILAH = { x: 480, y: 479 }
+
+/** "Bank Sampah": meja setor di Kebun (zona Kebun x270-470 y40-180).
+ * Pusat (400,175) di jalur bawah kebun, di luar kedua bedeng (bedeng 2
+ * berakhir di y160) dan di luar petak (petak-2 di (450,140) berjarak 61,
+ * petak-3 di (320,170) berjarak 80). Bukan dinding: pemain bisa berdiri
+ * di dekatnya (radius 70) dari koridor bawah kebun. */
+export const BANK_SAMPAH = { x: 400, y: 175 }
+
+/** "Booth Eco-Shop": stan kecil di Kebun, di celah antara kedua bedeng
+ * (bedeng 1 berakhir y100, bedeng 2 mulai y120 — stan 96x24 di y98-122).
+ * Pusat (350,110): di luar tap-radius petak-3 (320,170, jarak 67) dan
+ * rect Bank Sampah (x352-448, y160-190); pemain mendekat dari koridor
+ * bawah kebun (y174, jarak 64, dalam radius 70). Bukan dinding.
+ * Membuka layar Toko Kantin langsung di seksi Eco-Shop. */
+export const ECO_SHOP = { x: 350, y: 110 }
 
 export const NPCS: NpcDunia[] = [
   {

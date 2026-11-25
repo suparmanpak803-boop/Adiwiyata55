@@ -22,7 +22,7 @@ export const LENCANA: Lencana[] = [
   {
     id: 'master-pilah',
     nama: 'Master Pilah',
-    deskripsi: 'Kamu memilah sampah ke tong yang benar, termasuk kasus abu-abu yang menjebak.',
+    deskripsi: 'Kamu memilah sampah ke bak yang benar, termasuk kasus abu-abu yang menjebak.',
     syarat: 'Selesaikan Misi 2: Pilah',
   },
   {

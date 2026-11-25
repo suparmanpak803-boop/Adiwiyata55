@@ -9,18 +9,20 @@
 // mengikuti kontrak di lib/apa-itu-adiwiyata/dunia.ts dan content/npc.ts.
 
 import { useEffect, useRef, useState } from 'react'
-import { Banknote, Coins, Flag, Leaf, MessageCircle, Store, Volume2, VolumeX, X } from 'lucide-react'
+import { Award, Banknote, Coins, DoorOpen, Flag, Leaf, MessageCircle, Store, Trash2, Volume2, VolumeX, X } from 'lucide-react'
 import { CHAPTERS, CHAPTER_ORDER } from '@/lib/apa-itu-adiwiyata/chapters'
 import { TUGAS } from '@/lib/apa-itu-adiwiyata/tugas'
+import { BAK, HADIAH_PILAH_KOIN, HADIAH_PILAH_UANG, NAMA_BAK } from '@/lib/apa-itu-adiwiyata/content/bak'
+import { HADIAH_BANK_KOIN, HADIAH_BANK_UANG, hitungSetoran } from '@/lib/apa-itu-adiwiyata/content/bank-sampah'
 import { jumlahTugasSelesai, LOKASI_PEMBERI, misiSaatIni, pemberiMisi } from '@/lib/apa-itu-adiwiyata/misi'
 import { selectChapterUnlocked, useCampaign } from '@/lib/apa-itu-adiwiyata/context'
 import { kunciCerita, PILIHAN_CERITA } from '@/lib/apa-itu-adiwiyata/content/cerita'
 import { dialogDenganIngatan } from '@/lib/apa-itu-adiwiyata/content/npc'
-import { warnaKostum, type WarnaKostum } from '@/lib/apa-itu-adiwiyata/content/toko'
-import { DUNIA, NPCS, type NpcDunia } from '@/lib/apa-itu-adiwiyata/dunia'
+import { warnaKostum } from '@/lib/apa-itu-adiwiyata/content/toko'
+import { gambarPemain, rr, type PemainState } from '@/lib/apa-itu-adiwiyata/gambar-pemain'
+import { DUNIA, BANK_SAMPAH, ECO_SHOP, JALAN_PULANG, NPCS, TEMPAT_PILAH, type NpcDunia } from '@/lib/apa-itu-adiwiyata/dunia'
 import {
   beriMakanMaggot,
-  bersihkanSampah,
   NAMA_TANAMAN,
   panenKasgot,
   panenTanaman,
@@ -30,24 +32,14 @@ import {
   type Maggot,
   type PetakKebun,
 } from '@/lib/apa-itu-adiwiyata/dunia-hidup'
-import type { ChapterId, TugasKaderId } from '@/lib/apa-itu-adiwiyata/types'
+import type { ChapterId, TongSampah, TugasKaderId } from '@/lib/apa-itu-adiwiyata/types'
 import { PilihanCerita } from './pilihan-cerita'
-import { klik, koin, maggot as sfxMaggot, panen, pindah, playMumble, setSuaraMuted, siram } from './suara'
+import { benar, klik, koin, maggot as sfxMaggot, panen, pindah, playMumble, salah, setSuaraMuted, siram } from './suara'
 
 const KECEPATAN = 160 // unit dunia per detik
 const JARAK_BICARA = 56
 const RADIUS_PEMAIN = 14
 const JARI_JOYSTICK = 52
-
-type Arah = 'atas' | 'bawah' | 'kiri' | 'kanan'
-
-interface PemainState {
-  x: number
-  y: number
-  arah: Arah
-  bergerak: boolean
-  fase: number
-}
 
 /** Target click-to-move (mouse): titik dunia + NPC yang dituju (bila ada). */
 interface TujuanJalan {
@@ -79,18 +71,6 @@ function mulberry32(benih: number): () => number {
     t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296
   }
-}
-
-/** Persegi bersudut membulat (path saja, belum fill/stroke). */
-function rr(g: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
-  const rad = Math.min(r, w / 2, h / 2)
-  g.beginPath()
-  g.moveTo(x + rad, y)
-  g.arcTo(x + w, y, x + w, y + h, rad)
-  g.arcTo(x + w, y + h, x, y + h, rad)
-  g.arcTo(x, y + h, x, y, rad)
-  g.arcTo(x, y, x + w, y, rad)
-  g.closePath()
 }
 
 function tabrakan(x: number, y: number, r: number): boolean {
@@ -191,6 +171,22 @@ function bangunStatis(): HTMLCanvasElement {
     rr(g, d.x, d.y, d.w, d.h, 6)
     g.stroke()
   }
+
+  // Portal Jalan Pulang: jalan setapak + label di tepi selatan, di bawah Gerbang.
+  g.fillStyle = '#d9c49a'
+  rr(g, JALAN_PULANG.x, JALAN_PULANG.y, JALAN_PULANG.w, JALAN_PULANG.h, 8)
+  g.fill()
+  g.strokeStyle = '#8d6e63'
+  g.lineWidth = 2
+  g.setLineDash([6, 4])
+  rr(g, JALAN_PULANG.x, JALAN_PULANG.y, JALAN_PULANG.w, JALAN_PULANG.h, 8)
+  g.stroke()
+  g.setLineDash([])
+  g.font = 'bold 11px system-ui, sans-serif'
+  g.fillStyle = '#4e342e'
+  g.textAlign = 'center'
+  g.textBaseline = 'middle'
+  g.fillText('Jalan Pulang', JALAN_PULANG.x + JALAN_PULANG.w / 2, JALAN_PULANG.y + JALAN_PULANG.h / 2 + 1)
 
   // Pohon di tepi dunia.
   for (const t of posisiPohon()) {
@@ -389,6 +385,172 @@ function gambarKotakMaggot(g: CanvasRenderingContext2D, maggot: Maggot, pos: { x
   }
 }
 
+/** Tempat Sampah Terpilah: papan nama + 5 bak warna-warni (sistem SMAN 55).
+ * Digambar tiap frame di draw() supaya bisa disorot saat pemain dekat. */
+function gambarTempatPilah(g: CanvasRenderingContext2D, disorot: boolean) {
+  const cx = TEMPAT_PILAH.x
+  const cy = TEMPAT_PILAH.y
+  const lebarBak = 32
+  const gap = 6
+  const total = BAK.length * lebarBak + (BAK.length - 1) * gap
+  const x0 = cx - total / 2
+  // Papan nama di atas barisan bak.
+  g.font = 'bold 12px system-ui, sans-serif'
+  const label = 'Tempat Sampah Terpilah'
+  const lw = g.measureText(label).width
+  g.fillStyle = 'rgba(0,0,0,0.55)'
+  rr(g, cx - lw / 2 - 10, cy - 46, lw + 20, 22, 11)
+  g.fill()
+  g.fillStyle = '#ffffff'
+  g.textAlign = 'center'
+  g.textBaseline = 'middle'
+  g.fillText(label, cx, cy - 35)
+  // Sorot emas bila pemain dekat (tanda bisa dibuka).
+  if (disorot) {
+    g.strokeStyle = '#ffd54a'
+    g.lineWidth = 3
+    g.setLineDash([8, 5])
+    rr(g, x0 - 8, cy - 52, total + 16, 88, 12)
+    g.stroke()
+    g.setLineDash([])
+  }
+  // 5 bak + singkatan di bawah tiap bak.
+  let x = x0
+  for (const bak of BAK) {
+    g.fillStyle = bak.warna
+    rr(g, x, cy - 16, lebarBak, 30, 5)
+    g.fill()
+    g.strokeStyle = 'rgba(0,0,0,0.35)'
+    g.lineWidth = 2
+    rr(g, x, cy - 16, lebarBak, 30, 5)
+    g.stroke()
+    // Tutup bak.
+    g.fillStyle = 'rgba(0,0,0,0.25)'
+    g.fillRect(x + 2, cy - 16, lebarBak - 4, 6)
+    g.font = 'bold 9px system-ui, sans-serif'
+    g.fillStyle = '#ffffff'
+    g.textAlign = 'center'
+    g.textBaseline = 'middle'
+    g.fillText(bak.singkatan, x + lebarBak / 2, cy + 24)
+    x += lebarBak + gap
+  }
+}
+
+/** Bank Sampah di Kebun: meja hijau berlabel "Bank Sampah" + koin di atasnya.
+ * Digambar tiap frame di draw() supaya bisa disorot saat pemain dekat
+ * (pola yang sama dengan gambarTempatPilah). Meja 96x30 di (400,175):
+ * x352-448, y160-190 — di luar bedeng 2 (berakhir y160) dan petak. */
+function gambarBankSampah(g: CanvasRenderingContext2D, disorot: boolean) {
+  const cx = BANK_SAMPAH.x
+  const cy = BANK_SAMPAH.y
+  const w = 96
+  const h = 30
+  // Sorot emas bila pemain dekat (tanda bisa dibuka).
+  if (disorot) {
+    g.strokeStyle = '#ffd54a'
+    g.lineWidth = 3
+    g.setLineDash([8, 5])
+    rr(g, cx - w / 2 - 8, cy - h / 2 - 14, w + 16, h + 28, 12)
+    g.stroke()
+    g.setLineDash([])
+  }
+  // Koin di atas meja.
+  g.fillStyle = '#ffd54a'
+  g.strokeStyle = '#8d6e00'
+  g.lineWidth = 1.5
+  for (const dx of [-18, 18]) {
+    g.beginPath()
+    g.arc(cx + dx, cy - h / 2 - 4, 7, 0, Math.PI * 2)
+    g.fill()
+    g.stroke()
+  }
+  // Meja hijau + label.
+  g.fillStyle = '#43a047'
+  rr(g, cx - w / 2, cy - h / 2, w, h, 6)
+  g.fill()
+  g.strokeStyle = 'rgba(0,0,0,0.35)'
+  g.lineWidth = 2
+  rr(g, cx - w / 2, cy - h / 2, w, h, 6)
+  g.stroke()
+  g.fillStyle = '#ffffff'
+  g.font = 'bold 12px system-ui, sans-serif'
+  g.textAlign = 'center'
+  g.textBaseline = 'middle'
+  g.fillText('Bank Sampah', cx, cy + 1)
+}
+
+/** Booth Eco-Shop di Kebun: stan hijau berlabel "Eco-Shop" di celah
+ * antara kedua bedeng. Digambar tiap frame di draw() supaya bisa disorot
+ * saat pemain dekat (pola yang sama dengan gambarBankSampah). Stan
+ * 96x24 di (350,110): x302-398, y98-122. */
+function gambarBoothEco(g: CanvasRenderingContext2D, disorot: boolean) {
+  const cx = ECO_SHOP.x
+  const cy = ECO_SHOP.y
+  const w = 96
+  const h = 24
+  // Sorot emas bila pemain dekat (tanda bisa dibuka).
+  if (disorot) {
+    g.strokeStyle = '#ffd54a'
+    g.lineWidth = 3
+    g.setLineDash([8, 5])
+    rr(g, cx - w / 2 - 8, cy - h / 2 - 12, w + 16, h + 24, 12)
+    g.stroke()
+    g.setLineDash([])
+  }
+  // Atap bergaris hijau-putih di atas stan.
+  g.fillStyle = '#2e7d32'
+  rr(g, cx - w / 2, cy - h / 2 - 10, w, 10, 5)
+  g.fill()
+  g.fillStyle = '#ffffff'
+  for (const dx of [-36, -12, 12, 36]) {
+    g.fillRect(cx + dx - 6, cy - h / 2 - 10, 12, 10)
+  }
+  // Stan hijau + label.
+  g.fillStyle = '#66bb6a'
+  rr(g, cx - w / 2, cy - h / 2, w, h, 6)
+  g.fill()
+  g.strokeStyle = 'rgba(0,0,0,0.35)'
+  g.lineWidth = 2
+  rr(g, cx - w / 2, cy - h / 2, w, h, 6)
+  g.stroke()
+  g.fillStyle = '#ffffff'
+  g.font = 'bold 12px system-ui, sans-serif'
+  g.textAlign = 'center'
+  g.textBaseline = 'middle'
+  g.fillText('Eco-Shop', cx, cy + 1)
+}
+
+/** Panel Surya di atap gedung zona Panel Surya: deret panel biru dengan
+ * garis grid, digambar tiap frame di draw() bila pemain sudah membeli
+ * Panel Surya di Eco-Shop. Atap bangunan (740,60,140,60): panel di strip
+ * atasnya (746,64,128,20). Peta tidak punya satu "gedung sekolah" khusus
+ * — bangunan di zona Panel Surya adalah atap yang paling masuk akal. */
+function gambarPanelSurya(g: CanvasRenderingContext2D) {
+  const x = 746
+  const y = 64
+  const w = 128
+  const h = 20
+  g.fillStyle = '#1e88e5'
+  rr(g, x, y, w, h, 4)
+  g.fill()
+  g.strokeStyle = '#0d47a1'
+  g.lineWidth = 1.5
+  rr(g, x, y, w, h, 4)
+  g.stroke()
+  g.strokeStyle = 'rgba(255,255,255,0.7)'
+  g.lineWidth = 1
+  for (let i = 1; i < 4; i++) {
+    g.beginPath()
+    g.moveTo(x + (w / 4) * i, y + 2)
+    g.lineTo(x + (w / 4) * i, y + h - 2)
+    g.stroke()
+  }
+  g.beginPath()
+  g.moveTo(x + 2, y + h / 2)
+  g.lineTo(x + w - 2, y + h / 2)
+  g.stroke()
+}
+
 /** Warna tint waktu nyata: pagi hangat, siang netral, sore jingga, malam biru gelap. */
 function warnaTintWaktu(): string {
   const jam = new Date().getHours()
@@ -396,51 +558,6 @@ function warnaTintWaktu(): string {
   if (jam >= 10 && jam < 15) return 'rgba(255,255,255,0.02)'
   if (jam >= 15 && jam < 18) return 'rgba(255,140,60,0.12)'
   return 'rgba(20,40,90,0.18)'
-}
-
-function gambarPemain(g: CanvasRenderingContext2D, p: PemainState, reduced: boolean, warna: WarnaKostum) {
-  const bob = p.bergerak && !reduced ? Math.sin(p.fase) * 2 : 0
-  g.fillStyle = 'rgba(0,0,0,0.25)'
-  g.beginPath()
-  g.ellipse(p.x, p.y + 13, 12, 4, 0, 0, Math.PI * 2)
-  g.fill()
-  g.save()
-  g.translate(p.x, p.y + bob)
-  const langkah = p.bergerak && !reduced ? Math.sin(p.fase) * 3 : 0
-  // Kaki.
-  g.fillStyle = '#37474f'
-  g.fillRect(-7, 8 + langkah * 0.3, 5, 8)
-  g.fillRect(2, 8 - langkah * 0.3, 5, 8)
-  // Badan (warna baju/kerah mengikuti kostum yang dipakai).
-  g.fillStyle = warna.baju
-  rr(g, -10, -4, 20, 15, 6)
-  g.fill()
-  g.fillStyle = warna.kerah
-  g.fillRect(-10, -4, 20, 4)
-  g.fillStyle = warna.baju
-  g.fillRect(-13, -2, 4, 10)
-  g.fillRect(9, -2, 4, 10)
-  // Kepala + rambut/topi (warna rambut mengikuti kostum Topi Magi).
-  g.fillStyle = '#ffd9b3'
-  g.beginPath()
-  g.arc(0, -13, 10, 0, Math.PI * 2)
-  g.fill()
-  g.fillStyle = warna.rambut
-  g.beginPath()
-  g.arc(0, -14, 10, Math.PI, 0)
-  g.fill()
-  // Mata (tidak terlihat saat menghadap ke atas).
-  if (p.arah !== 'atas') {
-    const ex = p.arah === 'kiri' ? -2 : p.arah === 'kanan' ? 2 : 0
-    g.fillStyle = '#212121'
-    g.beginPath()
-    g.arc(-3.5 + ex, -12, 1.4, 0, Math.PI * 2)
-    g.fill()
-    g.beginPath()
-    g.arc(3.5 + ex, -12, 1.4, 0, Math.PI * 2)
-    g.fill()
-  }
-  g.restore()
 }
 
 function gambarNpc(g: CanvasRenderingContext2D, n: NpcJalan, disorot: boolean, reduced: boolean, adaMisi = false) {
@@ -586,6 +703,8 @@ export function Jelajah({
   onOpenMisi,
   onOpenPanduan,
   onOpenToko,
+  onOpenEcoShop,
+  onPulang,
 }: {
   onPlayChapter: (chapterId: ChapterId) => void
   onPlayTugas: (tugasId: TugasKaderId) => void
@@ -598,6 +717,11 @@ export function Jelajah({
   onOpenPanduan: () => void
   /** Buka Toko Kantin (lewat dialog Kang Kantin / Mbak Dewi). */
   onOpenToko: () => void
+  /** Buka Toko Kantin langsung di seksi Eco-Shop (lewat Booth Eco-Shop
+   * di Kebun). */
+  onOpenEcoShop: () => void
+  /** Kembali ke Rumah lewat portal Jalan Pulang. */
+  onPulang: () => void
 }) {
   const { save, dispatch } = useCampaign()
   const misiAktif = misiSaatIni(save)
@@ -607,6 +731,22 @@ export function Jelajah({
   const [dialogNpc, setDialogNpc] = useState<NpcDunia | null>(null)
   const [dialogIdx, setDialogIdx] = useState(0)
   const [nearby, setNearby] = useState<NpcDunia | null>(null)
+  /** true bila pemain berdiri di portal Jalan Pulang. */
+  const [dekatPulang, setDekatPulang] = useState(false)
+  /** Dialog pilah di Tempat Sampah Terpilah (bukan dialog NPC). */
+  const [dialogPilah, setDialogPilah] = useState(false)
+  /** Jenis sampah yang dipilih di dialog pilah (null = belum pilih). */
+  const [jenisDipilih, setJenisDipilih] = useState<TongSampah | null>(null)
+  /** Umpan balik Magi 1 kalimat setelah pilah benar/salah (null = belum ada). */
+  const [pesanPilah, setPesanPilah] = useState<{ jenis: 'benar' | 'salah'; teks: string } | null>(null)
+  /** true bila pemain berdiri dekat Tempat Sampah Terpilah. */
+  const [dekatPilah, setDekatPilah] = useState(false)
+  /** Dialog Bank Sampah di Kebun (bukan dialog NPC). */
+  const [dialogBank, setDialogBank] = useState(false)
+  /** true bila pemain berdiri dekat Bank Sampah. */
+  const [dekatBank, setDekatBank] = useState(false)
+  /** true bila pemain berdiri dekat Booth Eco-Shop di Kebun. */
+  const [dekatEco, setDekatEco] = useState(false)
 
   const wrapRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -644,12 +784,26 @@ export function Jelajah({
   /** true bila laptop/desktop berlayar lebar — canvas dunia boleh lebih tinggi. */
   const [isDesktopLebar, setIsDesktopLebar] = useState(false)
   const trashRef = useRef<boolean[]>(DUNIA.sampah.map(() => false))
-  const popsRef = useRef<{ x: number; y: number; t: number }[]>([])
+  const popsRef = useRef<{ x: number; y: number; t: number; teks: string }[]>([])
   const rafRef = useRef(0)
   const lastRef = useRef(0)
   const dialogRef = useRef<NpcDunia | null>(null)
   const dialogIdxRef = useRef(0)
   const nearbyRef = useRef<string | null>(null)
+  /** true bila pemain berdiri di portal Jalan Pulang (cermin state dekatPulang). */
+  const pulangRef = useRef(false)
+  /** true bila dialog pilah terbuka (cermin state dialogPilah) — dipakai
+   * loop utama untuk menjeda gerak seperti dialog NPC. */
+  const pilahRef = useRef(false)
+  /** true bila pemain berdiri dekat Tempat Sampah Terpilah (cermin dekatPilah). */
+  const pilahDekatRef = useRef(false)
+  /** true bila dialog Bank Sampah terbuka (cermin state dialogBank) — dipakai
+   * loop utama untuk menjeda gerak seperti dialog NPC. */
+  const bankRef = useRef(false)
+  /** true bila pemain berdiri dekat Bank Sampah (cermin dekatBank). */
+  const bankDekatRef = useRef(false)
+  /** true bila pemain berdiri dekat Booth Eco-Shop (cermin dekatEco). */
+  const ecoDekatRef = useRef(false)
   const zoneRef = useRef<string | null>(null)
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const reducedRef = useRef(false)
@@ -678,6 +832,81 @@ export function Jelajah({
     setDialogIdx(0)
   }
 
+  /** Buka dialog pilah (dipakai tombol, keyboard, dan ketuk bak). */
+  const bukaPilah = () => {
+    klik()
+    pilahRef.current = true
+    setJenisDipilih(null)
+    setPesanPilah(null)
+    setDialogPilah(true)
+  }
+
+  const tutupPilah = () => {
+    pilahRef.current = false
+    setDialogPilah(false)
+    setJenisDipilih(null)
+    setPesanPilah(null)
+  }
+
+  /** Buka dialog Bank Sampah (dipakai tombol, keyboard, dan ketuk meja). */
+  const bukaBank = () => {
+    klik()
+    bankRef.current = true
+    setDialogBank(true)
+  }
+
+  const tutupBank = () => {
+    bankRef.current = false
+    setDialogBank(false)
+  }
+
+  /** Buka Toko Kantin langsung di seksi Eco-Shop (lewat Booth Eco-Shop
+   * di Kebun). Tidak ada dialog — langsung ke layar toko. */
+  const bukaEco = () => {
+    klik()
+    onOpenEcoShop()
+  }
+
+  /** Setor semua sampah yang dibawa: satu aksi reducer atomik
+   * SETOR_BANK_SAMPAH (hitung total -> tambah uang + koin -> kosongkan
+   * inventaris); inventaris kosong -> tidak terjadi apa-apa. */
+  const setorBank = () => {
+    const ringkasan = hitungSetoran(saveRef.current.sampahDibawa ?? {})
+    if (ringkasan.jumlah <= 0) return
+    dispatch({ type: 'SETOR_BANK_SAMPAH' })
+    benar()
+    koin()
+    tutupBank()
+    showToast(
+      `Kamu menyetor ${ringkasan.jumlah} sampah: +Rp${ringkasan.uang.toLocaleString('id-ID')} + ${ringkasan.koin} Koin Hijau`,
+    )
+  }
+
+  /** Pilah jenis yang dipilih ke bak: benar -> hadiah (reducer atomik
+   * PILAH_SAMPAH), salah -> Magi 1 kalimat, tanpa hukuman, bisa coba lagi. */
+  const pilahKeBak = (bak: TongSampah) => {
+    const jenis = jenisDipilih
+    if (!jenis) return
+    const jumlah = saveRef.current.sampahDibawa?.[jenis] ?? 0
+    if (jumlah <= 0) {
+      setJenisDipilih(null)
+      return
+    }
+    if (bak === jenis) {
+      dispatch({ type: 'PILAH_SAMPAH', jenis, bak })
+      benar()
+      koin()
+      setPesanPilah({
+        jenis: 'benar',
+        teks: `Benar! ${jumlah} sampah ${NAMA_BAK[jenis]} jadi +${jumlah * HADIAH_PILAH_KOIN} Koin Hijau dan +Rp${(jumlah * HADIAH_PILAH_UANG).toLocaleString('id-ID')}.`,
+      })
+      setJenisDipilih(null)
+    } else {
+      salah()
+      setPesanPilah({ jenis: 'salah', teks: `Itu masuk bak ${NAMA_BAK[jenis]}, coba lagi ya!` })
+    }
+  }
+
   const lanjutDialog = () => {
     const npc = dialogRef.current
     if (!npc) return
@@ -697,6 +926,24 @@ export function Jelajah({
   bukaDialogRef.current = bukaDialog
   tutupDialogRef.current = tutupDialog
   lanjutDialogRef.current = lanjutDialog
+  const bukaPilahRef = useRef(bukaPilah)
+  const tutupPilahRef = useRef(tutupPilah)
+  bukaPilahRef.current = bukaPilah
+  tutupPilahRef.current = tutupPilah
+  const bukaBankRef = useRef(bukaBank)
+  const tutupBankRef = useRef(tutupBank)
+  bukaBankRef.current = bukaBank
+  tutupBankRef.current = tutupBank
+  const bukaEcoRef = useRef(bukaEco)
+  bukaEcoRef.current = bukaEco
+  const onPulangRef = useRef(onPulang)
+  onPulangRef.current = onPulang
+
+  /** Pulang ke Rumah lewat portal (dipakai tombol, keyboard, dan ketuk). */
+  const pulangKeRumah = () => {
+    klik()
+    onPulang()
+  }
 
   const toggleBisukan = () => {
     const next = !save.muted
@@ -765,7 +1012,7 @@ export function Jelajah({
 
     const update = (dt: number) => {
       const p = playerRef.current
-      const dialogTerbuka = dialogRef.current !== null
+      const dialogTerbuka = dialogRef.current !== null || pilahRef.current || bankRef.current
       if (dialogTerbuka) tujuanRef.current = null
       let vx = 0
       let vy = 0
@@ -815,8 +1062,12 @@ export function Jelajah({
       if (bergerak) {
         vx /= Math.max(1, panjang)
         vy /= Math.max(1, panjang)
-        const nx = p.x + vx * KECEPATAN * dt
-        const ny = p.y + vy * KECEPATAN * dt
+        // Sepatu Eco-Runner: kecepatan gerak +35% permanen. Hanya gerak
+        // pemain yang dikali — animasi jalan (p.fase) dan timer misi tidak
+        // ikut berubah.
+        const kecepatan = KECEPATAN * (saveRef.current.sepatuEco ? 1.35 : 1)
+        const nx = p.x + vx * kecepatan * dt
+        const ny = p.y + vy * kecepatan * dt
         // Pindah per sumbu supaya bisa geser di sepanjang dinding.
         if (!tabrakan(nx, p.y, RADIUS_PEMAIN)) p.x = nx
         if (!tabrakan(p.x, ny, RADIUS_PEMAIN)) p.y = ny
@@ -872,20 +1123,19 @@ export function Jelajah({
 
       // Pungut sampah liar dengan berjalan mendekat (dijeda saat dialog
       // terbuka). Hanya titik yang tampil (indeks < sampahLiar, belum
-      // dipungut sesi ini) yang bisa dipungut; koin +5 datang dari
-      // PERAWATAN_DUNIA 'bersihkan', bukan EARN_COINS, supaya tidak dobel.
+      // dipungut sesi ini) yang bisa dipungut; sampah masuk inventaris
+      // `sampahDibawa` (PUNGUT_SAMPAH, sampahLiar tetap -1 seperti dulu)
+      // dan baru jadi koin setelah dipilah di Tempat Sampah Terpilah.
       if (!dialogTerbuka) {
         const dunia = saveRef.current.dunia
         for (let i = 0; i < DUNIA.sampah.length; i++) {
           if (i >= dunia.sampahLiar || trashRef.current[i]) continue
           const s = DUNIA.sampah[i]
           if (Math.hypot(s.x - p.x, s.y - p.y) < 26) {
-            const hasil = bersihkanSampah(dunia)
-            if (hasil.koin === 0) continue
             trashRef.current[i] = true
-            popsRef.current.push({ x: s.x, y: s.y, t: 0 })
-            dispatch({ type: 'PERAWATAN_DUNIA', aksi: 'bersihkan', sekarang: Date.now() })
-            koin()
+            popsRef.current.push({ x: s.x, y: s.y, t: 0, teks: s.nama })
+            dispatch({ type: 'PUNGUT_SAMPAH', jenis: s.jenis })
+            klik()
           }
         }
       }
@@ -905,6 +1155,43 @@ export function Jelajah({
       if (idTerdekat !== nearbyRef.current) {
         nearbyRef.current = idTerdekat
         setNearby(terdekat)
+      }
+
+      // Portal Jalan Pulang: pemain di dalam rect (dilonggarkan 10 unit)
+      // -> tombol "Pulang" tampil. Sengaja BUKAN jalan-masuk otomatis:
+      // pemain yang mampir ke Gerbang tidak boleh langsung terlempar pulang.
+      const diPortal =
+        p.x >= JALAN_PULANG.x - 10 &&
+        p.x <= JALAN_PULANG.x + JALAN_PULANG.w + 10 &&
+        p.y >= JALAN_PULANG.y - 10 &&
+        p.y <= JALAN_PULANG.y + JALAN_PULANG.h + 10
+      if (diPortal !== pulangRef.current) {
+        pulangRef.current = diPortal
+        setDekatPulang(diPortal)
+      }
+
+      // Tempat Sampah Terpilah: pemain dalam radius 70 dari pusat bak
+      // -> tombol "Pilah Sampah" tampil.
+      const diPilah = Math.hypot(p.x - TEMPAT_PILAH.x, p.y - TEMPAT_PILAH.y) <= 70
+      if (diPilah !== pilahDekatRef.current) {
+        pilahDekatRef.current = diPilah
+        setDekatPilah(diPilah)
+      }
+
+      // Bank Sampah di Kebun: pemain dalam radius 70 dari meja
+      // -> tombol "Setor Sampah" tampil.
+      const diBank = Math.hypot(p.x - BANK_SAMPAH.x, p.y - BANK_SAMPAH.y) <= 70
+      if (diBank !== bankDekatRef.current) {
+        bankDekatRef.current = diBank
+        setDekatBank(diBank)
+      }
+
+      // Booth Eco-Shop di Kebun: pemain dalam radius 70 dari stan
+      // -> tombol "Eco-Shop" tampil.
+      const diEco = Math.hypot(p.x - ECO_SHOP.x, p.y - ECO_SHOP.y) <= 70
+      if (diEco !== ecoDekatRef.current) {
+        ecoDekatRef.current = diEco
+        setDekatEco(diEco)
       }
 
       // Toast saat masuk zona baru.
@@ -965,7 +1252,7 @@ export function Jelajah({
         ctx.globalAlpha = 1
         gambarSampah(ctx, s.x, s.y, i)
       })
-      // Efek pop saat memungut.
+      // Efek pop saat memungut: nama sampah yang masuk tas.
       for (const pp of popsRef.current) {
         const k = pp.t / 0.6
         ctx.globalAlpha = Math.max(0, 1 - k)
@@ -978,7 +1265,7 @@ export function Jelajah({
         ctx.font = 'bold 13px system-ui, sans-serif'
         ctx.textAlign = 'center'
         ctx.textBaseline = 'middle'
-        ctx.fillText('+5', pp.x, pp.y - 16 - k * 16)
+        ctx.fillText(pp.teks, pp.x, pp.y - 16 - k * 16)
         ctx.globalAlpha = 1
       }
       // Dunia Hidup: 3 petak kebun + kotak maggot (digambar sebelum tint).
@@ -986,6 +1273,14 @@ export function Jelajah({
         gambarPetak(ctx, petak, POSISI_PETAK[petak.id])
       }
       gambarKotakMaggot(ctx, dunia.maggot, POSISI_KOTAK_MAGGOT)
+      // Tempat Sampah Terpilah: 5 bak di koridor atas Gerbang.
+      gambarTempatPilah(ctx, pilahDekatRef.current)
+      // Bank Sampah: meja setor di Kebun.
+      gambarBankSampah(ctx, bankDekatRef.current)
+      // Booth Eco-Shop: stan di Kebun (antara kedua bedeng).
+      gambarBoothEco(ctx, ecoDekatRef.current)
+      // Panel Surya: panel biru di atap gedung zona Panel Surya, bila sudah dibeli.
+      if (saveRef.current.panelSurya) gambarPanelSurya(ctx)
       // Tint waktu nyata: satu fillRect transparan setelah dunia digambar,
       // sebelum aktor digambar. Statis, jadi aman untuk reduced motion.
       ctx.fillStyle = warnaTintWaktu()
@@ -1005,7 +1300,7 @@ export function Jelajah({
         const adaMisi = adaMisiBab || adaMisiTugas
         aktor.push({ y: n.y, gambar: () => gambarNpc(ctx, n, n.id === dekatId, reduced, adaMisi) })
       }
-      aktor.push({ y: p.y, gambar: () => gambarPemain(ctx, p, reduced, warnaKostum(saveSekarang.kostumDipakai)) })
+      aktor.push({ y: p.y, gambar: () => gambarPemain(ctx, p, reduced, warnaKostum(saveSekarang.kostumDipakai), saveSekarang.jenisKelamin, saveSekarang.pinDuta) })
       aktor.sort((a, b) => a.y - b.y)
       for (const a of aktor) a.gambar()
       ctx.restore()
@@ -1052,7 +1347,9 @@ export function Jelajah({
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return
       const key = e.key.toLowerCase()
       if (key === 'escape') {
-        tutupDialogRef.current()
+        if (bankRef.current) tutupBankRef.current()
+        else if (pilahRef.current) tutupPilahRef.current()
+        else tutupDialogRef.current()
         return
       }
       const diTombol = tag === 'BUTTON'
@@ -1068,8 +1365,14 @@ export function Jelajah({
           lanjutDialogRef.current()
           return
         }
+        if (pilahRef.current) return
+        if (bankRef.current) return
         const dekat = npcsRef.current.find((n) => n.id === nearbyRef.current)
         if (dekat) bukaDialogRef.current(dekat)
+        else if (pilahDekatRef.current) bukaPilahRef.current()
+        else if (bankDekatRef.current) bukaBankRef.current()
+        else if (ecoDekatRef.current) bukaEcoRef.current()
+        else if (pulangRef.current) onPulangRef.current()
         return
       }
       if (key === 'w' || key === 'a' || key === 's' || key === 'd') {
@@ -1081,9 +1384,15 @@ export function Jelajah({
         if (key === 'e' || key === 'enter') lanjutDialogRef.current()
         return
       }
+      if (pilahRef.current) return
+      if (bankRef.current) return
       if (key === 'e' || key === 'enter') {
         const dekat = npcsRef.current.find((n) => n.id === nearbyRef.current)
         if (dekat) bukaDialogRef.current(dekat)
+        else if (pilahDekatRef.current) bukaPilahRef.current()
+        else if (bankDekatRef.current) bukaBankRef.current()
+        else if (ecoDekatRef.current) bukaEcoRef.current()
+        else if (pulangRef.current) onPulangRef.current()
       }
     }
     const onKeyUp = (e: KeyboardEvent) => {
@@ -1130,7 +1439,7 @@ export function Jelajah({
   }
 
   const onPointerDown = (e: React.PointerEvent) => {
-    if (dialogRef.current) return
+    if (dialogRef.current || pilahRef.current || bankRef.current) return
     if ((e.target as HTMLElement).closest('button')) return
     // Klik mouse membatalkan click-to-move yang sedang berjalan; klik baru
     // (tap) akan menetapkan target baru di onPointerUp.
@@ -1180,6 +1489,10 @@ export function Jelajah({
         const dunia = saveRef.current.dunia
         const diAtasInteraktif =
           npcsRef.current.some((n) => Math.hypot(n.x - wx, n.y - wy) < 46) ||
+          Math.hypot(JALAN_PULANG.x + JALAN_PULANG.w / 2 - wx, JALAN_PULANG.y + JALAN_PULANG.h / 2 - wy) < 46 ||
+          Math.hypot(TEMPAT_PILAH.x - wx, TEMPAT_PILAH.y - wy) < 70 ||
+          Math.hypot(BANK_SAMPAH.x - wx, BANK_SAMPAH.y - wy) < 46 ||
+          Math.hypot(ECO_SHOP.x - wx, ECO_SHOP.y - wy) < 46 ||
           DUNIA.sampah.some(
             (s, i) =>
               i < dunia.sampahLiar && !trashRef.current[i] && Math.hypot(s.x - wx, s.y - wy) < 30,
@@ -1203,7 +1516,7 @@ export function Jelajah({
     const tap = tapRef.current
     if (!tap || tap.id !== e.pointerId) return
     tapRef.current = null
-    if (dialogRef.current) return
+    if (dialogRef.current || pilahRef.current || bankRef.current) return
     const pos = posisiPointer(e)
     if (performance.now() - tap.t > 350 || Math.hypot(pos.x - tap.x, pos.y - tap.y) > 14) return
     // Ketuk NPC di canvas.
@@ -1223,11 +1536,80 @@ export function Jelajah({
       return
     }
 
+    // Portal Jalan Pulang: ketuk untuk pulang bila sudah dekat; klik mouse
+    // dari jauh berjalan mendekat dulu (tombol "Pulang" muncul saat sampai).
+    const portalCx = JALAN_PULANG.x + JALAN_PULANG.w / 2
+    const portalCy = JALAN_PULANG.y + JALAN_PULANG.h / 2
+    if (Math.hypot(portalCx - wx, portalCy - wy) < 46) {
+      if (Math.hypot(portalCx - p.x, portalCy - p.y) <= 70) {
+        pulangKeRumah()
+      } else if (e.pointerType === 'mouse') {
+        tujuanRef.current = { x: portalCx, y: portalCy, macet: 0, terakhirX: p.x, terakhirY: p.y }
+      } else {
+        showToast('Dekati Jalan Pulang dulu untuk pulang ke rumah')
+      }
+      return
+    }
+
     // --- Perawatan Dunia Hidup (ketuk sederhana, bukan gestur) ---
     // Ketuk hanya berlaku bila pemain dalam jarak 70 unit dunia dari objek.
     const dunia = save.dunia
     const sekarang = Date.now()
     const dekatObjek = (x: number, y: number) => Math.hypot(x - p.x, y - p.y) <= 70
+
+    // Tempat Sampah Terpilah: ketuk untuk membuka dialog pilah.
+    if (
+      wx >= TEMPAT_PILAH.x - 110 &&
+      wx <= TEMPAT_PILAH.x + 110 &&
+      wy >= TEMPAT_PILAH.y - 56 &&
+      wy <= TEMPAT_PILAH.y + 36
+    ) {
+      if (!dekatObjek(TEMPAT_PILAH.x, TEMPAT_PILAH.y)) {
+        if (e.pointerType === 'mouse') {
+          // Click-to-move: jalan mendekat dulu, lalu ketuk lagi untuk membuka.
+          tujuanRef.current = { x: TEMPAT_PILAH.x, y: TEMPAT_PILAH.y + 46, macet: 0, terakhirX: p.x, terakhirY: p.y }
+        } else {
+          showToast('Dekati Tempat Sampah Terpilah dulu untuk memilah')
+        }
+        return
+      }
+      bukaPilah()
+      return
+    }
+
+    // Bank Sampah di Kebun: ketuk meja untuk membuka dialog setor.
+    // Rect persis meja (x352-448, y160-190): petak-2 (bedeng x430-470,
+    // y130-152) tidak tertelan — ketukan di bedeng petak tetap merawat petak.
+    if (wx >= BANK_SAMPAH.x - 48 && wx <= BANK_SAMPAH.x + 48 && wy >= BANK_SAMPAH.y - 15 && wy <= BANK_SAMPAH.y + 15) {
+      if (!dekatObjek(BANK_SAMPAH.x, BANK_SAMPAH.y)) {
+        if (e.pointerType === 'mouse') {
+          // Click-to-move: jalan mendekat dulu, lalu ketuk lagi untuk membuka.
+          tujuanRef.current = { x: BANK_SAMPAH.x, y: BANK_SAMPAH.y + 46, macet: 0, terakhirX: p.x, terakhirY: p.y }
+        } else {
+          showToast('Dekati Bank Sampah dulu untuk menyetor')
+        }
+        return
+      }
+      bukaBank()
+      return
+    }
+
+    // Booth Eco-Shop di Kebun: ketuk stan untuk membuka Toko Kantin di
+    // seksi Eco-Shop. Rect persis stan (x302-398, y95-125): di luar
+    // tap-radius petak dan rect Bank Sampah.
+    if (wx >= ECO_SHOP.x - 48 && wx <= ECO_SHOP.x + 48 && wy >= ECO_SHOP.y - 15 && wy <= ECO_SHOP.y + 15) {
+      if (!dekatObjek(ECO_SHOP.x, ECO_SHOP.y)) {
+        if (e.pointerType === 'mouse') {
+          // Click-to-move: jalan mendekat dulu, lalu ketuk lagi untuk membuka.
+          tujuanRef.current = { x: ECO_SHOP.x, y: ECO_SHOP.y + 64, macet: 0, terakhirX: p.x, terakhirY: p.y }
+        } else {
+          showToast('Dekati Booth Eco-Shop dulu untuk berbelanja')
+        }
+        return
+      }
+      bukaEco()
+      return
+    }
 
     // Petak kebun: tahap 3 dipanen, selain itu disiram.
     for (const petak of dunia.petak) {
@@ -1288,7 +1670,7 @@ export function Jelajah({
       return
     }
 
-    // Sampah liar: ketuk untuk membersihkan (sama seperti berjalan mendekat).
+    // Sampah liar: ketuk untuk memungut (sama seperti berjalan mendekat).
     for (let i = 0; i < DUNIA.sampah.length; i++) {
       if (i >= dunia.sampahLiar || trashRef.current[i]) continue
       const s = DUNIA.sampah[i]
@@ -1298,20 +1680,14 @@ export function Jelajah({
           // Click-to-move: pungut otomatis begitu sampai (radius 26 di update).
           tujuanRef.current = { x: s.x, y: s.y, macet: 0, terakhirX: p.x, terakhirY: p.y }
         } else {
-          showToast('Dekati sampahnya dulu untuk membersihkannya')
+          showToast('Dekati sampahnya dulu untuk memungutnya')
         }
         return
       }
-      const hasil = bersihkanSampah(dunia)
-      if (hasil.koin === 0) {
-        showToast(hasil.pesan)
-        return
-      }
       trashRef.current[i] = true
-      popsRef.current.push({ x: s.x, y: s.y, t: 0 })
-      showToast(hasil.pesan)
-      koin()
-      dispatch({ type: 'PERAWATAN_DUNIA', aksi: 'bersihkan', sekarang })
+      popsRef.current.push({ x: s.x, y: s.y, t: 0, teks: s.nama })
+      klik()
+      dispatch({ type: 'PUNGUT_SAMPAH', jenis: s.jenis })
       return
     }
 
@@ -1341,12 +1717,22 @@ export function Jelajah({
   const kunciPilihan1 = titikPilihan1 && babNpc ? kunciCerita(babNpc, titikPilihan1.id) : null
   const sudahPilih1 = kunciPilihan1 ? save.cerita?.[kunciPilihan1] !== undefined : false
   const tampilkanPilihan1 = diAkhir && !!titikPilihan1 && babTerbuka && !sudahPilih1
+  /** Jumlah sampah liar yang dibawa (semua jenis) — tampil di HUD. */
+  const totalDibawa = Object.values(save.sampahDibawa ?? {}).reduce((a, b) => a + b, 0)
+  /** Ringkasan setor Bank Sampah dari inventaris saat ini. */
+  const ringkasanBank = hitungSetoran(save.sampahDibawa ?? {})
 
   return (
     <div className="aia-stack">
       <div className="aia-progress-row">
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
           <Coins aria-hidden="true" /> {save.coins} Koin Hijau
+        </span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+          <Award aria-hidden="true" /> Skor Adiwiyata: {save.skorAdiwiyata ?? 0}
+        </span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+          <Trash2 aria-hidden="true" /> {totalDibawa} sampah dibawa
         </span>
         <span>
           Sampah liar: {save.dunia.sampahLiar}
@@ -1437,7 +1823,7 @@ export function Jelajah({
 
       {isDesktop && (
         <p className="aia-muted" style={{ margin: 0, fontSize: 12 }}>
-          Keyboard: WASD / panah gerak · E bicara · Spasi lanjut dialog · Esc tutup · Klik peta untuk berjalan
+          Keyboard: WASD / panah gerak · E bicara, pilah, atau setor · Spasi lanjut dialog · Esc tutup · Klik peta untuk berjalan
         </p>
       )}
 
@@ -1475,15 +1861,71 @@ export function Jelajah({
           </div>
         )}
 
-        {nearby && !dialogNpc && (
+        {(nearby || dekatPilah || dekatBank || dekatEco) && !dialogNpc && !dialogPilah && !dialogBank && (
+          <div
+            style={{
+              position: 'absolute',
+              right: 12,
+              bottom: 12,
+              zIndex: 4,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 8,
+              alignItems: 'flex-end',
+            }}
+          >
+            {nearby && (
+              <button
+                type="button"
+                className="aia-btn aia-btn-primary"
+                onClick={() => bukaDialog(nearby)}
+                aria-label={`Bicara dengan ${nearby.nama}`}
+              >
+                <MessageCircle aria-hidden="true" /> Bicara
+              </button>
+            )}
+            {dekatPilah && (
+              <button
+                type="button"
+                className="aia-btn aia-btn-primary"
+                onClick={bukaPilah}
+                aria-label="Buka Tempat Sampah Terpilah"
+              >
+                <Trash2 aria-hidden="true" /> Pilah Sampah
+              </button>
+            )}
+            {dekatBank && (
+              <button
+                type="button"
+                className="aia-btn aia-btn-primary"
+                onClick={bukaBank}
+                aria-label="Buka Bank Sampah"
+              >
+                <Banknote aria-hidden="true" /> Setor Sampah
+              </button>
+            )}
+            {dekatEco && (
+              <button
+                type="button"
+                className="aia-btn aia-btn-primary"
+                onClick={bukaEco}
+                aria-label="Buka Booth Eco-Shop"
+              >
+                <Store aria-hidden="true" /> Eco-Shop
+              </button>
+            )}
+          </div>
+        )}
+
+        {dekatPulang && !dialogNpc && !dialogPilah && !dialogBank && (
           <button
             type="button"
             className="aia-btn aia-btn-primary"
-            style={{ position: 'absolute', right: 12, bottom: 12, zIndex: 4 }}
-            onClick={() => bukaDialog(nearby)}
-            aria-label={`Bicara dengan ${nearby.nama}`}
+            style={{ position: 'absolute', left: 12, bottom: 12, zIndex: 4 }}
+            onClick={pulangKeRumah}
+            aria-label="Pulang ke rumah"
           >
-            <MessageCircle aria-hidden="true" /> Bicara
+            <DoorOpen aria-hidden="true" /> Pulang
           </button>
         )}
 
@@ -1601,6 +2043,161 @@ export function Jelajah({
             </section>
           </div>
         )}
+        {dialogPilah && (
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Tempat Sampah Terpilah"
+            style={{ position: 'absolute', left: 8, right: 8, bottom: 8, zIndex: 5 }}
+          >
+            <section className="aia-card">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
+                <div>
+                  <span className="aia-kicker">Pilah 5 Bak</span>
+                  <h3 className="aia-section-title" style={{ margin: 0 }}>
+                    Tempat Sampah Terpilah
+                  </h3>
+                </div>
+                <button type="button" className="aia-icon-btn" onClick={tutupPilah} aria-label="Tutup dialog pilah">
+                  <X aria-hidden="true" />
+                </button>
+              </div>
+              {totalDibawa === 0 ? (
+                <p>
+                  Kamu belum membawa sampah. Pungut sampah liar di sekitar sekolah dulu, lalu bawa ke sini untuk
+                  dipilah.
+                </p>
+              ) : (
+                <>
+                  <p className="aia-muted">
+                    Magi: pilih sampah yang kamu bawa, lalu ketuk bak yang benar.
+                  </p>
+                  <div
+                    style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}
+                    role="group"
+                    aria-label="Sampah yang dibawa"
+                  >
+                    {BAK.filter((b) => (save.sampahDibawa?.[b.id] ?? 0) > 0).map((b) => (
+                      <button
+                        key={b.id}
+                        type="button"
+                        className="aia-btn"
+                        aria-pressed={jenisDipilih === b.id}
+                        style={
+                          jenisDipilih === b.id
+                            ? { outline: '3px solid var(--green)', outlineOffset: 2 }
+                            : undefined
+                        }
+                        onClick={() => {
+                          klik()
+                          setJenisDipilih(b.id)
+                          setPesanPilah(null)
+                        }}
+                      >
+                        {b.nama} ×{save.sampahDibawa?.[b.id] ?? 0}
+                      </button>
+                    ))}
+                  </div>
+                  <div
+                    style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8, marginTop: 12 }}
+                  >
+                    {BAK.map((b) => (
+                      <button
+                        key={b.id}
+                        type="button"
+                        disabled={!jenisDipilih}
+                        aria-label={`Bak ${b.nama}`}
+                        onClick={() => pilahKeBak(b.id)}
+                        style={{
+                          minHeight: 56,
+                          padding: '10px 4px',
+                          border: '1px solid var(--line)',
+                          borderRadius: 12,
+                          background: b.warna,
+                          color: b.teks,
+                          fontSize: 13,
+                          fontWeight: 700,
+                          cursor: jenisDipilih ? 'pointer' : 'default',
+                          opacity: jenisDipilih ? 1 : 0.55,
+                        }}
+                      >
+                        {b.nama}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="aia-muted" style={{ marginBottom: 0 }}>
+                    Bak benar: +5 Koin Hijau dan +Rp200 per sampah. Salah bak tidak apa-apa — coba lagi.
+                  </p>
+                </>
+              )}
+              {pesanPilah && (
+                <p
+                  role="status"
+                  aria-live="polite"
+                  style={{
+                    fontWeight: 700,
+                    color: pesanPilah.jenis === 'benar' ? '#2f7d4f' : '#b83232',
+                  }}
+                >
+                  {pesanPilah.teks}
+                </p>
+              )}
+              <div className="aia-actions">
+                <button type="button" className="aia-btn aia-btn-ghost" onClick={tutupPilah}>
+                  Tutup
+                </button>
+              </div>
+            </section>
+          </div>
+        )}
+        {dialogBank && (
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Bank Sampah"
+            style={{ position: 'absolute', left: 8, right: 8, bottom: 8, zIndex: 5 }}
+          >
+            <section className="aia-card">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
+                <div>
+                  <span className="aia-kicker">Kebun</span>
+                  <h3 className="aia-section-title" style={{ margin: 0 }}>
+                    Bank Sampah
+                  </h3>
+                </div>
+                <button type="button" className="aia-icon-btn" onClick={tutupBank} aria-label="Tutup dialog Bank Sampah">
+                  <X aria-hidden="true" />
+                </button>
+              </div>
+              {totalDibawa === 0 ? (
+                <p>
+                  Kamu belum membawa sampah. Pungut dulu sampah liar di sekitar sekolah, lalu setor ke sini.
+                </p>
+              ) : (
+                <>
+                  <p>
+                    Kamu membawa {totalDibawa} sampah. Setor semuanya sekaligus — setiap sampah jadi +Rp
+                    {HADIAH_BANK_UANG.toLocaleString('id-ID')} dan +{HADIAH_BANK_KOIN} Koin Hijau. Total: +Rp
+                    {ringkasanBank.uang.toLocaleString('id-ID')} dan +{ringkasanBank.koin} Koin Hijau.
+                  </p>
+                  <p className="aia-muted">
+                    Magi: sampah yang disetor di sini ditimbang lalu dibeli, jadi dapat uang dan Koin Hijau.
+                  </p>
+                </>
+              )}
+              <div className="aia-actions">
+                {totalDibawa > 0 && (
+                  <button type="button" className="aia-btn aia-btn-primary" onClick={setorBank}>
+                    Setor semua sampah ({totalDibawa})
+                  </button>
+                )}
+                <button type="button" className="aia-btn aia-btn-ghost" onClick={tutupBank}>
+                  Tutup
+                </button>
+              </div>
+            </section>
+          </div>
+        )}
       </div>
 
       <p className="aia-muted">
@@ -1608,8 +2205,10 @@ export function Jelajah({
           ? 'Gerakkan tokoh dengan tombol WASD/panah, atau klik peta untuk berjalan ke titik itu. Dekati NPC lalu klik NPC-nya atau tekan E untuk bicara.'
           : 'Gerakkan tokoh dengan joystick kiri bawah atau tombol WASD/panah. Dekati NPC lalu ketuk "Bicara" atau tekan E.'}{' '}
         NPC dengan tanda ! punya misi untukmu. Ketuk petak kebun untuk menyiram atau memanen, ketuk kotak maggot untuk
-        memberi makan Magi, dan pungut sampah liar yang berserakan untuk Koin Hijau. Mau main santai? Temui Kak Yoga di
-        arena pojok kanan bawah untuk Tangkap Sampah, atau Kak Dara di perpustakaan untuk Kuis Adiwiyata.
+        memberi makan Magi, dan pungut sampah liar yang berserakan, lalu pilah di Tempat Sampah Terpilah dekat Gerbang
+        atau setor sekaligus ke Bank Sampah di Kebun untuk Koin Hijau dan uang. Booth Eco-Shop di antara bedeng kebun
+        menjual Sepatu Eco-Runner, Pin Duta, dan Panel Surya pakai Koin Hijau. Mau main santai? Temui Kak Yoga di arena pojok kanan bawah untuk Tangkap Sampah,
+        atau Kak Dara di perpustakaan untuk Kuis Adiwiyata. Jalan Pulang di bawah Gerbang membawamu kembali ke rumah.
       </p>
     </div>
   )

@@ -4,16 +4,20 @@
 // tanam pohon (Koin Daun), plus yang gratis: air keran dan bekal rumah.
 // Semua pembelian divalidasi di dalam reducer (BELI / TANAM_POHON /
 // PAKAI_BEKAL): dana kurang atau sudah dimiliki berarti tidak terjadi apa-apa.
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   Apple,
   ArrowLeft,
+  Award,
   Banknote,
+  Coins,
   CupSoda,
   Droplets,
+  Footprints,
   Leaf,
   Sandwich,
   Shirt,
+  Sun,
   TreePine,
   UtensilsCrossed,
 } from 'lucide-react'
@@ -22,11 +26,15 @@ import {
   AIR_KERAN_HAUS,
   BEKAL_LAPAR,
   BEKAL_LAPAR_LUNCH_BOX,
+  ECO_SHOP,
   GEAR,
   HARGA_POHON_KOIN_DAUN,
+  hargaDiskonDuta,
   KOSTUM,
   MAKANAN,
   MINUMAN,
+  SKOR_PANEL_SURYA,
+  SKOR_POHON,
   sisaBekal,
 } from '@/lib/apa-itu-adiwiyata/content/toko'
 import { klik } from './suara'
@@ -63,24 +71,63 @@ function Bar({ label, nilai, warna }: { label: string; nilai: number; warna: str
   )
 }
 
-export function TokoKantin({ onExit }: { /** Kembali ke dunia. */ onExit: () => void }) {
+export function TokoKantin({
+  onExit,
+  fokusEco = false,
+}: {
+  /** Kembali ke dunia. */
+  onExit: () => void
+  /** Bila true (dibuka dari Booth Eco-Shop di Kebun): gulir langsung ke
+   * seksi Eco-Shop saat layar terbuka. */
+  fokusEco?: boolean
+}) {
   const { save, dispatch } = useCampaign()
   const [pesan, setPesan] = useState<string | null>(null)
+  const ecoRef = useRef<HTMLElement | null>(null)
+
+  // Dibuka dari Booth Eco-Shop: gulir ke seksi Eco-Shop supaya itemnya
+  // langsung terlihat (tanpa mengubah urutan seksi toko).
+  useEffect(() => {
+    if (fokusEco) ecoRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [fokusEco])
 
   const lapar = save.lapar ?? 100
   const haus = save.haus ?? 100
   const uang = save.uang ?? 0
   const koinDaun = save.koinDaun ?? 0
+  const koinHijau = save.coins ?? 0
+  const skorAdiwiyata = save.skorAdiwiyata ?? 0
   const inventaris = save.inventaris ?? []
   const punya = (id: string) => inventaris.includes(id)
+  const punyaPinDuta = save.pinDuta === true
+  /** Harga kantin yang berlaku: diskon Duta 25% bila punya Pin Duta. */
+  const hargaKantin = (harga: number) => (punyaPinDuta ? hargaDiskonDuta(harga) : harga)
   const punyaLunchBox = punya('lunch-box')
   const sisa = sisaBekal(save.bekalTanggal, save.bekalDipakai, hariIniLokal(), punyaLunchBox)
   const bekalPulih = punyaLunchBox ? BEKAL_LAPAR_LUNCH_BOX : BEKAL_LAPAR
+  /** Item Eco-Shop yang sudah dimiliki (flag save, bukan inventaris). */
+  const punyaEco = (id: string) =>
+    (id === 'sepatu-eco' && save.sepatuEco === true) ||
+    (id === 'pin-duta' && save.pinDuta === true) ||
+    (id === 'panel-surya' && save.panelSurya === true)
+  /** Ikon tiap item Eco-Shop (lucide, tanpa emoji). */
+  const ikonEco = (id: string) =>
+    id === 'sepatu-eco' ? <Footprints aria-hidden="true" /> : id === 'pin-duta' ? <Award aria-hidden="true" /> : <Sun aria-hidden="true" />
 
   const beli = (jenis: 'makanan' | 'minuman' | 'gear' | 'kostum', id: string, teks: string) => {
     klik()
     dispatch({ type: 'BELI', jenis, id })
     setPesan(teks)
+  }
+
+  const beliEco = (id: string, nama: string) => {
+    klik()
+    dispatch({ type: 'BELI_ECO', id })
+    setPesan(
+      id === 'panel-surya'
+        ? `Kamu membeli ${nama}! Panel biru muncul di atap sekolah. Skor Adiwiyata +${SKOR_PANEL_SURYA}.`
+        : `Kamu membeli ${nama}!`,
+    )
   }
 
   return (
@@ -91,8 +138,9 @@ export function TokoKantin({ onExit }: { /** Kembali ke dunia. */ onExit: () => 
           Toko Kantin
         </h2>
         <p className="aia-muted" style={{ marginTop: 0 }}>
-          Beli makanan dan minuman pakai uang, gear dan kostum pakai Koin Daun. Uang dan Koin Daun didapat dari
-          menyelesaikan misi.
+          Beli makanan dan minuman pakai uang, gear dan kostum pakai Koin Daun, dan item Eco-Shop pakai Koin Hijau.
+          Uang, Koin Daun, dan Koin Hijau didapat dari menyelesaikan misi.
+          {punyaPinDuta && ' Kamu punya Pin Duta — harga kantin diskon 25%.'}
         </p>
         <div className="aia-progress-row">
           <Bar label="Lapar" nilai={lapar} warna="#e65100" />
@@ -104,6 +152,12 @@ export function TokoKantin({ onExit }: { /** Kembali ke dunia. */ onExit: () => 
           </span>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
             <Leaf aria-hidden="true" /> {koinDaun} Koin Daun
+          </span>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <Coins aria-hidden="true" /> {koinHijau} Koin Hijau
+          </span>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <Award aria-hidden="true" /> Skor Adiwiyata: {skorAdiwiyata}
           </span>
         </div>
         {pesan && (
@@ -118,25 +172,38 @@ export function TokoKantin({ onExit }: { /** Kembali ke dunia. */ onExit: () => 
           <UtensilsCrossed aria-hidden="true" /> Makanan
         </h3>
         <div className="aia-stack">
-          {MAKANAN.map((item) => (
-            <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
-              <div>
-                <strong>{item.nama}</strong> — Lapar +{item.lapar}
-                <p className="aia-muted" style={{ margin: 0 }}>
-                  {item.deskripsi}
-                </p>
+          {MAKANAN.map((item) => {
+            const hargaBayar = hargaKantin(item.harga)
+            return (
+              <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
+                <div>
+                  <strong>{item.nama}</strong> — Lapar +{item.lapar}
+                  {punyaPinDuta && (
+                    <span className="aia-chip done"> Diskon Duta 25%</span>
+                  )}
+                  <p className="aia-muted" style={{ margin: 0 }}>
+                    {item.deskripsi}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="aia-btn"
+                  style={{ minHeight: 44, whiteSpace: 'nowrap' }}
+                  disabled={uang < hargaBayar}
+                  onClick={() => beli('makanan', item.id, `Kamu makan ${item.nama}. Lapar +${item.lapar}.`)}
+                >
+                  Beli{' '}
+                  {punyaPinDuta ? (
+                    <>
+                      <s>{formatRp(item.harga)}</s> {formatRp(hargaBayar)}
+                    </>
+                  ) : (
+                    formatRp(item.harga)
+                  )}
+                </button>
               </div>
-              <button
-                type="button"
-                className="aia-btn"
-                style={{ minHeight: 44, whiteSpace: 'nowrap' }}
-                disabled={uang < item.harga}
-                onClick={() => beli('makanan', item.id, `Kamu makan ${item.nama}. Lapar +${item.lapar}.`)}
-              >
-                Beli {formatRp(item.harga)}
-              </button>
-            </div>
-          ))}
+            )
+          })}
         </div>
       </section>
 
@@ -145,25 +212,38 @@ export function TokoKantin({ onExit }: { /** Kembali ke dunia. */ onExit: () => 
           <CupSoda aria-hidden="true" /> Minuman
         </h3>
         <div className="aia-stack">
-          {MINUMAN.map((item) => (
-            <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
-              <div>
-                <strong>{item.nama}</strong> — Haus +{item.haus}
-                <p className="aia-muted" style={{ margin: 0 }}>
-                  {item.deskripsi}
-                </p>
+          {MINUMAN.map((item) => {
+            const hargaBayar = hargaKantin(item.harga)
+            return (
+              <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
+                <div>
+                  <strong>{item.nama}</strong> — Haus +{item.haus}
+                  {punyaPinDuta && (
+                    <span className="aia-chip done"> Diskon Duta 25%</span>
+                  )}
+                  <p className="aia-muted" style={{ margin: 0 }}>
+                    {item.deskripsi}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="aia-btn"
+                  style={{ minHeight: 44, whiteSpace: 'nowrap' }}
+                  disabled={uang < hargaBayar}
+                  onClick={() => beli('minuman', item.id, `Kamu minum ${item.nama}. Haus +${item.haus}.`)}
+                >
+                  Beli{' '}
+                  {punyaPinDuta ? (
+                    <>
+                      <s>{formatRp(item.harga)}</s> {formatRp(hargaBayar)}
+                    </>
+                  ) : (
+                    formatRp(item.harga)
+                  )}
+                </button>
               </div>
-              <button
-                type="button"
-                className="aia-btn"
-                style={{ minHeight: 44, whiteSpace: 'nowrap' }}
-                disabled={uang < item.harga}
-                onClick={() => beli('minuman', item.id, `Kamu minum ${item.nama}. Haus +${item.haus}.`)}
-              >
-                Beli {formatRp(item.harga)}
-              </button>
-            </div>
-          ))}
+            )
+          })}
         </div>
       </section>
 
@@ -250,12 +330,47 @@ export function TokoKantin({ onExit }: { /** Kembali ke dunia. */ onExit: () => 
         </div>
       </section>
 
+      <section className="aia-card" aria-label="Eco-Shop (Koin Hijau)" ref={ecoRef}>
+        <h3 className="aia-section-title" style={{ marginTop: 0 }}>
+          <Coins aria-hidden="true" /> Eco-Shop (Koin Hijau) — sekali beli, efeknya permanen
+        </h3>
+        <p className="aia-muted" style={{ marginTop: 0 }}>
+          Bayar pakai Koin Hijau. Bisa juga dibuka dari Booth Eco-Shop di antara bedeng kebun.
+        </p>
+        <div className="aia-stack">
+          {ECO_SHOP.map((item) => (
+            <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
+              <div>
+                <strong>{item.nama}</strong> — {item.efek}
+                <p className="aia-muted" style={{ margin: 0 }}>
+                  {item.deskripsi}
+                </p>
+              </div>
+              {punyaEco(item.id) ? (
+                <span className="aia-chip done">Dimiliki</span>
+              ) : (
+                <button
+                  type="button"
+                  className="aia-btn"
+                  style={{ minHeight: 44, whiteSpace: 'nowrap' }}
+                  disabled={koinHijau < item.hargaKoinHijau}
+                  onClick={() => beliEco(item.id, item.nama)}
+                >
+                  {ikonEco(item.id)} Beli {item.hargaKoinHijau} KH
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      </section>
+
       <section className="aia-card" aria-label="Pohon">
         <h3 className="aia-section-title" style={{ marginTop: 0 }}>
           <TreePine aria-hidden="true" /> Tanam Pohon
         </h3>
         <p className="aia-muted" style={{ marginTop: 0 }}>
-          Kamu sudah menanam {save.pohonDitanam ?? 0} pohon. Setiap pohon menaikkan rapor hijau sekolah +5.
+          Kamu sudah menanam {save.pohonDitanam ?? 0} pohon. Setiap pohon menaikkan rapor hijau sekolah +5 dan Skor
+          Adiwiyata +{SKOR_POHON}.
         </p>
         <div className="aia-actions">
           <button
@@ -266,7 +381,7 @@ export function TokoKantin({ onExit }: { /** Kembali ke dunia. */ onExit: () => 
             onClick={() => {
               klik()
               dispatch({ type: 'TANAM_POHON' })
-              setPesan('Kamu menanam 1 pohon di kebun sekolah! Rapor hijau +5.')
+              setPesan(`Kamu menanam 1 pohon di kebun sekolah! Rapor hijau +5, Skor Adiwiyata +${SKOR_POHON}.`)
             }}
           >
             <TreePine aria-hidden="true" /> Tanam 1 pohon — {HARGA_POHON_KOIN_DAUN} Koin Daun

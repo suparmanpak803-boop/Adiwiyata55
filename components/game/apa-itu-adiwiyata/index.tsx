@@ -23,6 +23,7 @@ import { CaraBermain } from './cara-bermain'
 import { LaporanPagi } from './laporan-pagi'
 import { Misi } from './misi'
 import { Jelajah } from './jelajah'
+import { Rumah } from './rumah'
 import { BottomNav, type AiaTab } from './bottom-nav'
 import { MisiShell } from './misi-shell'
 import { Tamat } from './tamat'
@@ -58,6 +59,9 @@ function Shell() {
   const [laporan, setLaporan] = useState<PeristiwaDunia[] | null>(null)
   const [tanyaKeluar, setTanyaKeluar] = useState(false)
   const [panduanTerbuka, setPanduanTerbuka] = useState(false)
+  /** Bila true, layar toko dibuka dari Booth Eco-Shop dan langsung
+   * menggulir ke seksi Eco-Shop. */
+  const [tokoFokusEco, setTokoFokusEco] = useState(false)
   const laporanRef = useRef(false)
 
   // Laporan Pagi: majukan Dunia Hidup sekali per sesi, di runner (bukan di
@@ -188,6 +192,16 @@ function Shell() {
     setPanduanTerbuka(true)
   }
 
+  // Pindah peta: portal Jalan Pulang di sekolah -> Rumah; pintu di rumah ->
+  // sekolah. Dispatch langsung tersimpan (provider autosave tiap state berubah).
+  const pulangKeRumah = () => {
+    dispatch({ type: 'SET_PETA_AKTIF', peta: 'rumah' })
+  }
+
+  const berangkatKeSekolah = () => {
+    dispatch({ type: 'SET_PETA_AKTIF', peta: 'sekolah' })
+  }
+
   // Keluar dari bab: kembali ke dunia, kecuali tamat (ke layar tamat).
   // onChapterComplete hanya dipanggil saat bab selesai. `save` di closure
   // ini masih keadaan sebelum penyelesaian, jadi "baru selesai" artinya
@@ -201,8 +215,8 @@ function Shell() {
       const berikut = CHAPTER_ORDER[CHAPTER_ORDER.indexOf(activeChapter) + 1] ?? null
       setPesanMisi(
         berikut
-          ? `Misi selesai: ${CHAPTERS[activeChapter].judul}! Misi berikutnya: ${CHAPTERS[berikut].judul}.`
-          : `Misi selesai: ${CHAPTERS[activeChapter].judul}! Semua misi selesai — kamu Pahlawan Adiwiyata!`,
+          ? `Misi selesai: ${CHAPTERS[activeChapter].judul}! Skor Adiwiyata +5. Misi berikutnya: ${CHAPTERS[berikut].judul}.`
+          : `Misi selesai: ${CHAPTERS[activeChapter].judul}! Skor Adiwiyata +5. Semua misi selesai — kamu Pahlawan Adiwiyata!`,
       )
     }
     setScreen('peta')
@@ -308,7 +322,10 @@ function Shell() {
       {screen === 'peta' && laporan && laporan.length > 0 && (
         <LaporanPagi peristiwa={laporan} onTutup={() => setLaporan(null)} />
       )}
-      {screen === 'peta' && (
+      {screen === 'peta' && save.petaAktif === 'rumah' && (
+        <Rumah onBerangkat={berangkatKeSekolah} onOpenPanduan={bukaPanduan} />
+      )}
+      {screen === 'peta' && save.petaAktif !== 'rumah' && (
         <>
           {pesanMisi && (
             <div
@@ -329,15 +346,31 @@ function Shell() {
             onPlayKuis={mainKuis}
             onOpenMisi={() => gantiTab('misi')}
             onOpenPanduan={bukaPanduan}
-            onOpenToko={() => setScreen('toko')}
+            onOpenToko={() => {
+              setTokoFokusEco(false)
+              setScreen('toko')
+            }}
+            onOpenEcoShop={() => {
+              setTokoFokusEco(true)
+              setScreen('toko')
+            }}
+            onPulang={pulangKeRumah}
           />
         </>
       )}
       {screen === 'misi' && <Misi />}
       {screen === 'ensiklopedia' && <Ensiklopedia />}
       {screen === 'peringkat' && <Leaderboard />}
-      {screen === 'profil' && <Profil onOpenPanduan={bukaPanduan} onOpenToko={() => setScreen('toko')} />}
-      {screen === 'toko' && <TokoKantin onExit={() => setScreen('peta')} />}
+      {screen === 'profil' && <Profil onOpenPanduan={bukaPanduan} onOpenToko={() => { setTokoFokusEco(false); setScreen('toko') }} />}
+      {screen === 'toko' && (
+        <TokoKantin
+          fokusEco={tokoFokusEco}
+          onExit={() => {
+            setTokoFokusEco(false)
+            setScreen('peta')
+          }}
+        />
+      )}
       {screen === 'bab' && (
         <MisiShell
           kind="bab"

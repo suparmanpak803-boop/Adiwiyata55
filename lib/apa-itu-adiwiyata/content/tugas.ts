@@ -208,7 +208,7 @@ export const KONTEN_TUGAS: Record<TugasKaderId, KontenTugasKader> = {
           },
           {
             masalah: 'Sampah berserakan di taman',
-            tindakan: 'Pungut, pilah, dan buang ke tong yang benar.',
+            tindakan: 'Pungut, pilah, dan buang ke bak yang benar.',
             pilihanSalah: ['Tendang sampahnya ke balik semak.', 'Itu bukan tugasku, biar petugas saja.'],
           },
           {
@@ -234,25 +234,25 @@ export const KONTEN_TUGAS: Record<TugasKaderId, KontenTugasKader> = {
         jenis: 'kuis',
         soal: [
           {
-            pertanyaan: 'Sisa nasi dan kulit buah masuk tong apa?',
+            pertanyaan: 'Sisa nasi dan kulit buah masuk bak apa?',
             pilihan: ['Organik', 'Anorganik', 'Residu'],
             jawaban: 0,
             penjelasan: 'Sisa makanan dan kulit buah itu organik, bisa jadi kompos atau pakan maggot.',
           },
           {
-            pertanyaan: 'Botol plastik bekas yang sudah bersih masuk tong apa?',
+            pertanyaan: 'Botol plastik bekas yang sudah bersih masuk bak apa?',
             pilihan: ['Organik', 'Anorganik', 'B3'],
             jawaban: 1,
             penjelasan: 'Botol plastik bersih itu anorganik, bisa didaur ulang.',
           },
           {
-            pertanyaan: 'Bungkus makanan berminyak masuk tong apa?',
+            pertanyaan: 'Bungkus makanan berminyak masuk bak apa?',
             pilihan: ['Organik', 'Anorganik', 'Residu'],
             jawaban: 2,
             penjelasan: 'Bungkus berminyak tidak bisa didaur ulang, jadi masuk Residu.',
           },
           {
-            pertanyaan: 'Baterai bekas masuk tong apa?',
+            pertanyaan: 'Baterai bekas masuk bak apa?',
             pilihan: ['Residu', 'Anorganik', 'B3'],
             jawaban: 2,
             penjelasan: 'Baterai itu limbah berbahaya (B3), jangan dicampur dengan sampah lain.',
@@ -389,7 +389,7 @@ export const KONTEN_TUGAS: Record<TugasKaderId, KontenTugasKader> = {
             alasan: 'Keren, tapi terlalu rumit dan mahal untuk dibuat sekarang.',
           },
           {
-            teks: 'Tong sampah raksasa di tengah lapangan.',
+            teks: 'Bak sampah raksasa di tengah lapangan.',
             benar: false,
             alasan: 'Tidak menyelesaikan masalah pilah — sampah tetap tercampur.',
           },
@@ -422,8 +422,8 @@ export const KONTEN_TUGAS: Record<TugasKaderId, KontenTugasKader> = {
           },
           {
             masalah: 'Tempat sampah kantin tercampur',
-            tindakan: 'Pisahkan tong Organik dan Anorganik dan beri label yang jelas.',
-            pilihanSalah: ['Satukan saja, nanti dipilah di TPS.', 'Sembunyikan tongnya supaya tidak terlihat.'],
+            tindakan: 'Pisahkan bak Organik dan Anorganik dan beri label yang jelas.',
+            pilihanSalah: ['Satukan saja, nanti dipilah di TPS.', 'Sembunyikan baknya supaya tidak terlihat.'],
           },
         ],
       },
@@ -440,17 +440,17 @@ export const KONTEN_TUGAS: Record<TugasKaderId, KontenTugasKader> = {
           {
             masalah: 'Sedotan plastik di setiap gelas',
             tindakan: 'Ajak kantin menyediakan sedotan guna ulang atau minum langsung dari gelas.',
-            pilihanSalah: ['Minta sedotan dua supaya lebih cepat.', 'Buang sedotannya ke tong Organik.'],
+            pilihanSalah: ['Minta sedotan dua supaya lebih cepat.', 'Buang sedotannya ke bak Organik.'],
           },
           {
             masalah: 'Styrofoam untuk makanan panas',
             tindakan: 'Usulkan pengganti: wadah guna ulang atau piring yang bisa dicuci.',
-            pilihanSalah: ['Styrofoam kan praktis, biarkan saja.', 'Lipat styrofoamnya supaya muat di tong.'],
+            pilihanSalah: ['Styrofoam kan praktis, biarkan saja.', 'Lipat styrofoamnya supaya muat di bak.'],
           },
           {
-            masalah: 'Kemasan sekali pakai menumpuk di tong',
+            masalah: 'Kemasan sekali pakai menumpuk di bak',
             tindakan: 'Catat dan laporkan ke tim kantin, lalu ajak murid bawa wadah sendiri.',
-            pilihanSalah: ['Bakar kemasannya biar tidak menumpuk.', 'Pindahkan ke tong kelas lain.'],
+            pilihanSalah: ['Bakar kemasannya biar tidak menumpuk.', 'Pindahkan ke bak kelas lain.'],
           },
         ],
       },
@@ -646,7 +646,7 @@ export const KONTEN_TUGAS: Record<TugasKaderId, KontenTugasKader> = {
         brief: 'Buat kampanye ajakan memilah sampah untuk akun sekolah.',
         pilihan: [
           {
-            teks: 'Seri postingan "Pilah 10 Detik": tiap hari satu jenis sampah dan tongnya.',
+            teks: 'Seri postingan "Pilah 10 Detik": tiap hari satu jenis sampah dan baknya.',
             benar: true,
             alasan: 'Rutin, mudah diikuti, dan mengajarkan pilah sedikit demi sedikit.',
           },
@@ -656,7 +656,7 @@ export const KONTEN_TUGAS: Record<TugasKaderId, KontenTugasKader> = {
             alasan: 'Sekali baca langsung lupa — lebih baik dibagi jadi seri.',
           },
           {
-            teks: 'Postingan foto tong sampah kosong.',
+            teks: 'Postingan foto bak sampah kosong.',
             benar: false,
             alasan: 'Tidak ada informasi dan tidak ada ajakan.',
           },
@@ -694,7 +694,7 @@ export const KONTEN_TUGAS: Record<TugasKaderId, KontenTugasKader> = {
         judul: 'Proposal ke Pelaku Usaha',
         instruksi: 'Pilih cara terbaik meminta dukungan pelaku usaha sekitar.',
         jenis: 'pilih',
-        brief: 'Sekolah butuh dana untuk menambah tong pilah. Bagaimana meminta dukungan pelaku usaha sekitar?',
+        brief: 'Sekolah butuh dana untuk menambah bak pilah. Bagaimana meminta dukungan pelaku usaha sekitar?',
         pilihan: [
           {
             teks: 'Susun proposal singkat: kebutuhan, manfaat, dan laporan penggunaan dana yang transparan.',
@@ -776,7 +776,7 @@ export const DIALOG_TUGAS: Record<TugasKaderId, DialogNpc> = {
     sapaan: 'Hai! Aku Kak Lala, yang suka ngajarin hal-hal lingkungan ke teman-teman.',
     baris: [
       'Mengajar itu bukan ceramah panjang. Satu hal kecil yang dipraktikkan lebih nempel daripada sepuluh slide.',
-      'Aku sering mulai dari pertanyaan: "Sampah ini masuk tong apa?" Dari situ diskusinya jalan sendiri.',
+      'Aku sering mulai dari pertanyaan: "Sampah ini masuk bak apa?" Dari situ diskusinya jalan sendiri.',
       'Kalau kamu bisa menjelaskan pilah sampah ke temanmu, berarti kamu sudah jadi pengajar juga.',
     ],
     tips: 'Cara paling cepat mengajar: beri contoh dulu, baru jelaskan alasannya.',
@@ -784,7 +784,7 @@ export const DIALOG_TUGAS: Record<TugasKaderId, DialogNpc> = {
   'inovasi-hijau': {
     sapaan: 'Hai! Aku Kak Raka, yang suka bikin-bikin hal baru buat lingkungan.',
     baris: [
-      'Inovasi itu tidak harus canggih. Tong pilah dari kardus bekas saja sudah inovasi kalau menyelesaikan masalah.',
+      'Inovasi itu tidak harus canggih. Bak pilah dari kardus bekas saja sudah inovasi kalau menyelesaikan masalah.',
       'Aku suka mulai dari masalah kecil: apa yang bikin sekolah ini kurang nyaman, lalu cari akalnya.',
       'Poster yang bagus itu yang dibaca orang lewat dalam tiga detik, bukan yang paling ramai.',
     ],

@@ -25,19 +25,28 @@ import {
   BEKAL_JATAH_LUNCH_BOX,
   BEKAL_LAPAR,
   BEKAL_LAPAR_LUNCH_BOX,
+  ECO_SHOP,
   GEAR,
   HARGA_POHON_KOIN_DAUN,
+  hargaDiskonDuta,
   KOSTUM,
   MAKANAN,
   MINUMAN,
   POHON_HIJAU,
+  SKOR_MISI_PERTAMA,
+  SKOR_PANEL_SURYA,
+  SKOR_POHON,
 } from './content/toko'
 import { HADIAH_HARIAN, hadiahBerikutnya } from './content/hadiah-harian'
-import type { CampaignSave, Carryover, ChapterId, Checkpoint, PakPlastikStatus, PromiseItem, Report, StageProgress, TugasKaderId } from './types'
+import { hitungSetoran } from './content/bank-sampah'
+import { HADIAH_PILAH_KOIN, HADIAH_PILAH_UANG } from './content/bak'
+import type { CampaignSave, Carryover, ChapterId, Checkpoint, JenisKelamin, PakPlastikStatus, PromiseItem, Report, StageProgress, TongSampah, TugasKaderId } from './types'
 
 export type CampaignAction =
   | { type: 'LOAD'; save: CampaignSave }
   | { type: 'SET_NICKNAME'; nickname: string }
+  /** Pilih karakter pemain (siswa/siswi). Bisa diganti kapan saja. */
+  | { type: 'PILIH_KARAKTER'; jenisKelamin: 'siswa' | 'siswi' }
   | { type: 'START_NEW' }
   | { type: 'COMPLETE_STAGE'; chapterId: ChapterId; stageIndex: number; score: number }
   | { type: 'COMPLETE_CHAPTER'; chapterId: ChapterId }
@@ -77,6 +86,10 @@ export type CampaignAction =
   | { type: 'PULIHKAN'; lapar?: number; haus?: number }
   /** Beli barang toko (validasi dana + kepemilikan ganda di dalam reducer). */
   | { type: 'BELI'; jenis: 'makanan' | 'minuman' | 'gear' | 'kostum'; id: string }
+  /** Beli item Eco-Shop (bayar Koin Hijau, sekali beli, validasi dana +
+   * kepemilikan ganda di dalam reducer). Pin Duta dan Panel Surya
+   * dicatat di flag save, bukan inventaris Koin Daun. */
+  | { type: 'BELI_ECO'; id: string }
   /** Tanam 1 pohon (100 Koin Daun): pohon +1, rapor hijau +5. */
   | { type: 'TANAM_POHON' }
   /** Pakai kostum yang dimiliki (null = lepas, kembali ke seragam biasa). */
@@ -86,6 +99,25 @@ export type CampaignAction =
   /** Klaim Hadiah Harian (atomik, 1x sehari — lihat content/hadiah-harian.ts).
    * Bila sudah klaim di hari yang sama, tidak mengubah apa pun. */
   | { type: 'KLAIM_HADIAH_HARIAN'; hariIni: string }
+  /** Pindah peta: 'rumah' (titik awal) atau 'sekolah' (dunia Jelajah).
+   * Disimpan di save (provider autosave) supaya peta terakhir terbuka lagi. */
+  | { type: 'SET_PETA_AKTIF'; peta: 'rumah' | 'sekolah' }
+  /** Uang saku Ibu (atomik, 1x per hari kalender lokal): Rp5.000 + sarapan
+   * (lapar +40). Bila sudah diberi di hari yang sama, tidak mengubah apa pun. */
+  | { type: 'TERIMA_UANG_SAKU'; hariIni: string }
+  /** Pungut 1 sampah liar: sampahLiar -1 (dihitung seperti sebelumnya)
+   * dan sampah masuk inventaris `sampahDibawa` — TANPA koin langsung.
+   * Hadiah baru didapat saat dipilah di Tempat Sampah Terpilah. */
+  | { type: 'PUNGUT_SAMPAH'; jenis: TongSampah }
+  /** Pilah 1 jenis sampah yang dibawa ke bak (atomik): bak benar dan jumlah
+   * > 0 -> jenis itu hilang dari inventaris, +5 Koin Hijau + Rp200 per
+   * sampah; bak salah atau jumlah 0 -> tidak mengubah apa pun (tanpa
+   * hukuman, pemain bisa coba lagi). */
+  | { type: 'PILAH_SAMPAH'; jenis: TongSampah; bak: TongSampah }
+  /** Setor semua sampah yang dibawa ke Bank Sampah (atomik): hitung total
+   * dari inventaris -> +Rp500 + 5 Koin Hijau per sampah -> kosongkan
+   * inventaris seluruhnya; inventaris kosong -> tidak mengubah apa pun. */
+  | { type: 'SETOR_BANK_SAMPAH' }
 
 function touch(save: CampaignSave, patch: Partial<CampaignSave> = {}): CampaignSave {
   return { ...save, ...patch, updatedAt: new Date().toISOString() }
@@ -149,11 +181,17 @@ function reducer(save: CampaignSave, action: CampaignAction): CampaignSave {
       return action.save
     case 'SET_NICKNAME':
       return touch(save, { nickname: action.nickname.trim().slice(0, 20) })
+    case 'PILIH_KARAKTER':
+      return touch(save, { jenisKelamin: action.jenisKelamin })
     case 'START_NEW': {
-      // Progres baru, tapi nama panggilan dan pengaturan (suara + mode
-      // satu-ketukan) dipertahankan.
+      // Progres baru, tapi nama panggilan, karakter, dan pengaturan (suara
+      // + mode satu-ketukan) dipertahankan.
       const fresh = freshSave(save.nickname)
-      return touch(fresh, { muted: save.muted, modeSatuKetukan: save.modeSatuKetukan })
+      return touch(fresh, {
+        muted: save.muted,
+        modeSatuKetukan: save.modeSatuKetukan,
+        jenisKelamin: save.jenisKelamin ?? null,
+      })
     }
     case 'COMPLETE_STAGE': {
       const chapter = save.chapters[action.chapterId]
@@ -190,9 +228,13 @@ function reducer(save: CampaignSave, action: CampaignAction): CampaignSave {
     }
     case 'COMPLETE_CHAPTER': {
       const chapter = save.chapters[action.chapterId]
+      // Skor Adiwiyata +5 HANYA saat pertama kali selesai: chapter.done
+      // masih false di sini; ulangan (done sudah true) tidak menambah skor.
+      const skorBaru = chapter.done ? 0 : SKOR_MISI_PERTAMA
       return touch(save, {
         chapters: { ...save.chapters, [action.chapterId]: { ...chapter, done: true, badgeEarned: true } },
         checkpoint: null,
+        skorAdiwiyata: (save.skorAdiwiyata ?? 0) + skorBaru,
       })
     }
     case 'COMPLETE_TUGAS_STAGE': {
@@ -373,20 +415,23 @@ function reducer(save: CampaignSave, action: CampaignAction): CampaignSave {
       })
     case 'BELI': {
       // Validasi di dalam reducer: dana kurang atau sudah dimiliki -> no-op.
+      // Harga makanan/minuman memakai diskon Duta 25% bila punya Pin Duta
+      // (sama seperti yang ditampilkan Toko Kantin).
       const inventaris = save.inventaris ?? []
+      const hargaKantin = (harga: number) => (save.pinDuta ? hargaDiskonDuta(harga) : harga)
       if (action.jenis === 'makanan') {
         const item = MAKANAN.find((m) => m.id === action.id)
-        if (!item || (save.uang ?? 0) < item.harga) return save
+        if (!item || (save.uang ?? 0) < hargaKantin(item.harga)) return save
         return touch(save, {
-          uang: (save.uang ?? 0) - item.harga,
+          uang: (save.uang ?? 0) - hargaKantin(item.harga),
           lapar: clampBar((save.lapar ?? 100) + item.lapar),
         })
       }
       if (action.jenis === 'minuman') {
         const item = MINUMAN.find((m) => m.id === action.id)
-        if (!item || (save.uang ?? 0) < item.harga) return save
+        if (!item || (save.uang ?? 0) < hargaKantin(item.harga)) return save
         return touch(save, {
-          uang: (save.uang ?? 0) - item.harga,
+          uang: (save.uang ?? 0) - hargaKantin(item.harga),
           haus: clampBar((save.haus ?? 100) + item.haus),
         })
       }
@@ -405,12 +450,38 @@ function reducer(save: CampaignSave, action: CampaignAction): CampaignSave {
         inventaris: [...inventaris, item.id],
       })
     }
+    case 'BELI_ECO': {
+      // Validasi di dalam reducer: item tidak dikenal, sudah dimiliki, atau
+      // Koin Hijau kurang -> no-op. Panel Surya menambah Skor Adiwiyata +20
+      // saat pembelian berhasil (bukan saat dipakai, karena efeknya langsung).
+      const item = ECO_SHOP.find((e) => e.id === action.id)
+      if (!item || (save.coins ?? 0) < item.hargaKoinHijau) return save
+      const koinSisa = save.coins - item.hargaKoinHijau
+      if (item.id === 'sepatu-eco') {
+        if (save.sepatuEco) return save
+        return touch(save, { coins: koinSisa, sepatuEco: true })
+      }
+      if (item.id === 'pin-duta') {
+        if (save.pinDuta) return save
+        return touch(save, { coins: koinSisa, pinDuta: true })
+      }
+      if (item.id === 'panel-surya') {
+        if (save.panelSurya) return save
+        return touch(save, {
+          coins: koinSisa,
+          panelSurya: true,
+          skorAdiwiyata: (save.skorAdiwiyata ?? 0) + SKOR_PANEL_SURYA,
+        })
+      }
+      return save
+    }
     case 'TANAM_POHON': {
       if ((save.koinDaun ?? 0) < HARGA_POHON_KOIN_DAUN) return save
       return touch(save, {
         koinDaun: (save.koinDaun ?? 0) - HARGA_POHON_KOIN_DAUN,
         pohonDitanam: (save.pohonDitanam ?? 0) + 1,
         report: { ...save.report, hijau: clampReport(save.report.hijau + POHON_HIJAU) },
+        skorAdiwiyata: (save.skorAdiwiyata ?? 0) + SKOR_POHON,
       })
     }
     case 'PAKAI_KOSTUM': {
@@ -437,6 +508,48 @@ function reducer(save: CampaignSave, action: CampaignAction): CampaignSave {
         haus: hadiah.pulihkan ? 100 : save.haus,
         hadiahTerakhir: action.hariIni,
         hadiahSiklus: siklus,
+      })
+    }
+    case 'SET_PETA_AKTIF':
+      return touch(save, { petaAktif: action.peta })
+    case 'TERIMA_UANG_SAKU': {
+      // Satu aksi atomik: cek tanggal + beri uang dan sarapan + catat tanggal
+      // dalam satu langkah, supaya tidak bisa diklaim dua kali di hari sama.
+      if ((save.ibuTanggal ?? null) === action.hariIni) return save
+      return touch(save, {
+        uang: (save.uang ?? 0) + 5000,
+        lapar: clampBar((save.lapar ?? 100) + 40),
+        ibuTanggal: action.hariIni,
+      })
+    }
+    case 'PUNGUT_SAMPAH': {
+      const duniaLama = save.dunia ?? freshDunia()
+      if (duniaLama.sampahLiar <= 0) return save
+      const dibawa = { ...(save.sampahDibawa ?? {}) }
+      dibawa[action.jenis] = (dibawa[action.jenis] ?? 0) + 1
+      return touch(save, {
+        dunia: { ...duniaLama, sampahLiar: duniaLama.sampahLiar - 1 },
+        sampahDibawa: dibawa,
+      })
+    }
+    case 'PILAH_SAMPAH': {
+      const dibawa = { ...(save.sampahDibawa ?? {}) }
+      const jumlah = dibawa[action.jenis] ?? 0
+      if (jumlah <= 0 || action.bak !== action.jenis) return save
+      delete dibawa[action.jenis]
+      return touch(save, {
+        sampahDibawa: dibawa,
+        coins: save.coins + HADIAH_PILAH_KOIN * jumlah,
+        uang: (save.uang ?? 0) + HADIAH_PILAH_UANG * jumlah,
+      })
+    }
+    case 'SETOR_BANK_SAMPAH': {
+      const { jumlah, uang, koin } = hitungSetoran(save.sampahDibawa ?? {})
+      if (jumlah <= 0) return save
+      return touch(save, {
+        sampahDibawa: {},
+        coins: save.coins + koin,
+        uang: (save.uang ?? 0) + uang,
       })
     }
     case 'PAKAI_BEKAL': {

@@ -191,7 +191,7 @@ export function SortirCepat({
             {kini.ikon}
             <strong style={{ fontSize: 20 }}>{kini.label}</strong>
             <small className="aia-muted">
-              {kurangi ? 'Ketuk target yang benar (tombol 1–4 juga bisa).' : 'Cepat! Masukkan ke target yang benar (tombol 1–4 juga bisa).'}
+              {kurangi ? 'Ketuk target yang benar (tombol 1–' + target.length + ' juga bisa).' : 'Cepat! Masukkan ke target yang benar (tombol 1–' + target.length + ' juga bisa).'}
             </small>
           </>
         ) : (

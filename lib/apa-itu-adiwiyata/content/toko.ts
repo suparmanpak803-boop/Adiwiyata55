@@ -88,6 +88,52 @@ export const GEAR: GearToko[] = [
 export const HARGA_POHON_KOIN_DAUN = 100
 export const POHON_HIJAU = 5
 
+/** Skor Adiwiyata: +5 per pohon ditanam, +20 saat membeli Panel Surya,
+ * +5 saat satu misi utama selesai pertama kali (bukan ulangan). */
+export const SKOR_POHON = 5
+export const SKOR_PANEL_SURYA = 20
+export const SKOR_MISI_PERTAMA = 5
+
+/** Item Eco-Shop (bayar Koin Hijau, sekali beli, efek permanen). */
+export interface ItemEcoShop {
+  id: string
+  nama: string
+  hargaKoinHijau: number
+  efek: string
+  deskripsi: string
+}
+
+export const ECO_SHOP: ItemEcoShop[] = [
+  {
+    id: 'sepatu-eco',
+    nama: 'Sepatu Eco-Runner',
+    hargaKoinHijau: 150,
+    efek: 'Kecepatan jalan +35% selamanya.',
+    deskripsi: 'Sepatu lari ringan dari bahan daur ulang. Jalanmu di rumah dan di sekolah jadi lebih cepat.',
+  },
+  {
+    id: 'pin-duta',
+    nama: 'Pin Duta Adiwiyata',
+    hargaKoinHijau: 100,
+    efek: 'Aura hijau di sekitarmu + diskon 25% di kantin.',
+    deskripsi: 'Pin hijau Duta Adiwiyata. Makanan dan minuman di kantin jadi lebih murah.',
+  },
+  {
+    id: 'panel-surya',
+    nama: 'Panel Surya',
+    hargaKoinHijau: 200,
+    efek: 'Panel biru di atap sekolah + Skor Adiwiyata +20.',
+    deskripsi: 'Panel surya di atap gedung sekolah. Sekolahmu makin hemat energi.',
+  },
+]
+
+/** Harga kantin setelah diskon Duta 25% (bila punya Pin Duta): harga
+ * dikali 0,75 lalu dibulatkan ke bawah ke kelipatan 100 terdekat supaya
+ * tetap rapi — mis. 8000 -> 6000, 5000 -> 3700, 3000 -> 2200. */
+export function hargaDiskonDuta(harga: number): number {
+  return Math.floor((harga * 0.75) / 100) * 100
+}
+
 /** Kostum (bayar Koin Daun, sekali beli, bisa dipakai bergantian). */
 export const KOSTUM: KostumToko[] = [
   {

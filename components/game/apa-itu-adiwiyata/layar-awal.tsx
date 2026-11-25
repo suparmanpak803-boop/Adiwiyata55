@@ -28,7 +28,7 @@ export function LayarAwal({
   /** Buka panduan Cara Bermain. */
   onBukaPanduan: () => void
 }) {
-  const { save } = useCampaign()
+  const { save, dispatch } = useCampaign()
   const [tanyaBaru, setTanyaBaru] = useState(false)
   // Hadiah Harian di Layar Awal: tampil bila belum diklaim hari ini, di
   // bawah tombol Lanjutkan/Mulai. Klaim bersifat opsional — tombol "Lewati"
@@ -40,6 +40,23 @@ export function LayarAwal({
   const progres = hasProgress(save)
   const misiUtama = CHAPTER_ORDER.filter((id) => save.chapters[id].done).length
   const misiKader = TUGAS_ORDER.filter((id) => save.tugas[id].done).length
+  // Pemilih karakter hanya untuk permainan baru: pemain lama (ada progres
+  // atau jenis kelamin sudah tersimpan) langsung ke tombol Lanjutkan/Mulai.
+  // Tombol Mulai terkunci sampai karakter dipilih.
+  const tampilPemilih = !progres
+  const perluPilihKarakter = !progres && save.jenisKelamin === null
+  const PILIHAN_KARAKTER = [
+    {
+      id: 'siswa' as const,
+      nama: 'Siswa',
+      deskripsi: 'Seragam putih, dasi abu-abu, celana panjang abu-abu.',
+    },
+    {
+      id: 'siswi' as const,
+      nama: 'Siswi',
+      deskripsi: 'Seragam putih, dasi abu-abu, rok abu-abu.',
+    },
+  ]
 
   return (
     <section className="aia-card aia-layar-awal" aria-labelledby="aia-awal-title">
@@ -68,6 +85,58 @@ export function LayarAwal({
           Progresmu: Misi utama {misiUtama}/6 selesai · Misi Tambahan {misiKader}/8 selesai · {save.coins} Koin Hijau
         </p>
       )}
+      {tampilPemilih && (
+        <div style={{ marginTop: 4 }}>
+          <p className="aia-label" id="aia-pilih-karakter-label" style={{ marginBottom: 8 }}>
+            Pilih karaktermu
+          </p>
+          <div
+            role="group"
+            aria-labelledby="aia-pilih-karakter-label"
+            style={{ display: 'flex', gap: 12, alignItems: 'stretch' }}
+          >
+            {PILIHAN_KARAKTER.map((pilihan) => {
+              const dipilih = save.jenisKelamin === pilihan.id
+              return (
+                <button
+                  key={pilihan.id}
+                  type="button"
+                  className="aia-btn"
+                  aria-pressed={dipilih}
+                  style={{
+                    flex: 1,
+                    flexDirection: 'column',
+                    alignItems: 'flex-start',
+                    gap: 4,
+                    minHeight: 44,
+                    textAlign: 'left',
+                    borderWidth: 2,
+                    borderColor: dipilih ? '#2e7d32' : undefined,
+                    background: dipilih ? 'rgba(46,125,50,0.08)' : undefined,
+                  }}
+                  onClick={() => {
+                    klik()
+                    dispatch({ type: 'PILIH_KARAKTER', jenisKelamin: pilihan.id })
+                  }}
+                >
+                  <strong>
+                    {pilihan.nama}
+                    {dipilih && <span className="aia-chip done"> Dipilih</span>}
+                  </strong>
+                  <span className="aia-muted" style={{ fontWeight: 400 }}>
+                    {pilihan.deskripsi}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+          {perluPilihKarakter && (
+            <p className="aia-muted" role="status" style={{ marginTop: 8 }}>
+              Pilih karakter dulu untuk mulai.
+            </p>
+          )}
+        </div>
+      )}
       <div className="aia-actions" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
         {progres ? (
           <button
@@ -86,6 +155,7 @@ export function LayarAwal({
             type="button"
             className="aia-btn aia-btn-primary aia-btn-block"
             style={{ minHeight: 48 }}
+            disabled={perluPilihKarakter}
             onClick={() => {
               playPop()
               onLanjutkan()

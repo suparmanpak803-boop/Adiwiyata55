@@ -4,7 +4,7 @@
 import type { DuniaHidup } from './dunia-hidup'
 
 export type ChapterId = 'gerbang' | 'kantin' | 'maggot' | 'kompos' | 'air-energi' | 'biodiversitas'
-export type TongSampah = 'organik' | 'anorganik' | 'residu' | 'b3'
+export type TongSampah = 'organik' | 'anorganik' | 'kertas' | 'residu' | 'b3'
 
 /** Status Pak Plastik dalam alur Cerita Bercabang (lihat content/cerita.ts). */
 export type PakPlastikStatus = 'netral' | 'dibujuk' | 'dilawan' | 'dijebak'
@@ -82,10 +82,16 @@ export interface Carryover {
   kebunLayu: boolean
 }
 
+/** Jenis kelamin karakter pemain: 'siswa' (celana panjang) atau 'siswi'
+ * (rok). null = permainan baru yang belum memilih karakter. */
+export type JenisKelamin = 'siswa' | 'siswi'
+
 export interface CampaignSave {
   version: 1
   nickname: string
   hideName: boolean
+  /** Karakter yang dipilih pemain (null = belum pilih, hanya di permainan baru). */
+  jenisKelamin: JenisKelamin | null
   coins: number
   streak: { count: number; lastDay: string | null; multiplierActive: boolean }
   chapters: Record<ChapterId, ChapterProgress>
@@ -127,6 +133,16 @@ export interface CampaignSave {
   kostumDipakai: string | null
   /** Jumlah pohon yang ditanam lewat Toko Kantin (100 Koin Daun/pohon). */
   pohonDitanam: number
+  /** Skor Adiwiyata: pohon +5 per pohon, panel surya +20, misi utama
+   * selesai pertama kali +5. Save lama tanpa field ini -> pohonDitanam*5
+   * (lihat loadSave). */
+  skorAdiwiyata: number
+  /** Eco-Shop (bayar Koin Hijau, sekali beli, flag false di save lama):
+   * sepatu = jalan +35%, pin = aura hijau + diskon kantin 25%,
+   * panel = panel biru di atap sekolah. */
+  sepatuEco: boolean
+  pinDuta: boolean
+  panelSurya: boolean
   /** Bekal gratis harian: tanggal lokal terakhir bekal diambil + berapa
    * kali diambil hari itu (jatah 1x/hari, 2x/hari bila punya Lunch Box). */
   bekalTanggal: string | null
@@ -137,6 +153,16 @@ export interface CampaignSave {
    * dari hari 1, tidak ada yang hilang. */
   hadiahTerakhir: string | null
   hadiahSiklus: number
+  /** Peta yang sedang dibuka: 'rumah' (titik awal permainan baru) atau
+   * 'sekolah' (dunia Jelajah). Save lama tanpa field ini -> 'sekolah'. */
+  petaAktif: 'rumah' | 'sekolah'
+  /** Uang saku Ibu: tanggal lokal (YYYY-MM-DD) terakhir Ibu memberi uang
+   * saku + sarapan (1x per hari kalender lokal). */
+  ibuTanggal: string | null
+  /** Sampah liar yang dipungut di dunia dan dibawa (jumlah per jenis bak).
+   * Dipilah di Tempat Sampah Terpilah dekat Gerbang: bak benar = +5 Koin
+   * Hijau + Rp200 per sampah. Save lama tanpa field ini -> {}. */
+  sampahDibawa: Record<string, number>
   completedAt: string | null
   updatedAt: string
 }

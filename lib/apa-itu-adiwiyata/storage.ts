@@ -49,6 +49,9 @@ export function freshSave(nickname = ''): CampaignSave {
     version: SAVE_VERSION,
     nickname,
     hideName: false,
+    /** Permainan baru belum memilih karakter (null) — pemilih tampil di
+     * Layar Awal sebelum tombol mulai. */
+    jenisKelamin: null,
     coins: 0,
     streak: { count: 0, lastDay: null, multiplierActive: false },
     chapters,
@@ -80,6 +83,13 @@ export function freshSave(nickname = ''): CampaignSave {
     bekalDipakai: 0,
     hadiahTerakhir: null,
     hadiahSiklus: 1,
+    skorAdiwiyata: 0,
+    sepatuEco: false,
+    pinDuta: false,
+    panelSurya: false,
+    petaAktif: 'rumah',
+    ibuTanggal: null,
+    sampahDibawa: {},
     completedAt: null,
     updatedAt: new Date().toISOString(),
   }
@@ -111,7 +121,9 @@ export function hasProgress(save: CampaignSave): boolean {
   }
   if (save.streak.count > 0) return true
   if ((save.uang ?? 0) > 0 || (save.koinDaun ?? 0) > 0) return true
+  if (Object.values(save.sampahDibawa ?? {}).some((n) => n > 0)) return true
   if ((save.inventaris?.length ?? 0) > 0 || (save.pohonDitanam ?? 0) > 0) return true
+  if ((save.skorAdiwiyata ?? 0) > 0 || save.sepatuEco || save.pinDuta || save.panelSurya) return true
   if ((save.lapar ?? 100) < 100 || (save.haus ?? 100) < 100) return true
   if ((save.hadiahTerakhir ?? null) !== null) return true
   if (save.completedAt !== null) return true
@@ -181,6 +193,18 @@ export function loadSave(): CampaignSave {
     ) {
       merged.arkade = { tangkap: 0, kuis: 0 }
     }
+    // Pengaman jenis kelamin: save lama TANPA field ini (kunci tidak ada
+    // di data tersimpan) mendapat default 'siswa' supaya pemain lama tidak
+    // dipaksa memilih; permainan baru yang tersimpan dengan null tetap null
+    // supaya pemilih karakter tetap tampil; nilai rusak juga jadi 'siswa'.
+    const jenisKelaminTersimpan = (parsed as Partial<CampaignSave>).jenisKelamin
+    if (jenisKelaminTersimpan === 'siswa' || jenisKelaminTersimpan === 'siswi') {
+      merged.jenisKelamin = jenisKelaminTersimpan
+    } else if (jenisKelaminTersimpan === null) {
+      merged.jenisKelamin = null
+    } else {
+      merged.jenisKelamin = 'siswa'
+    }
     // Pengaman field kantin (lapar/haus/uang/Koin Daun/inventaris/kostum/
     // pohon/bekal): save lama tanpa field ini mendapat default dari
     // gabungan di atas; bila bentuknya rusak, ganti bagian itu saja.
@@ -206,6 +230,44 @@ export function loadSave(): CampaignSave {
     ) {
       merged.hadiahSiklus = 1
     }
+    // Pengaman Peta Rumah: save lama tanpa field ini tetap membuka dunia
+    // sekolah (perilaku lama); nilai rusak juga jadi 'sekolah'. Permainan
+    // baru (freshSave) memakai 'rumah'.
+    const petaTersimpan = (parsed as Partial<CampaignSave>).petaAktif
+    merged.petaAktif = petaTersimpan === 'rumah' || petaTersimpan === 'sekolah' ? petaTersimpan : 'sekolah'
+    // Pengaman uang saku Ibu: hanya tanggal lokal YYYY-MM-DD atau null.
+    const ibuTersimpan = (parsed as Partial<CampaignSave>).ibuTanggal
+    merged.ibuTanggal =
+      typeof ibuTersimpan === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(ibuTersimpan) ? ibuTersimpan : null
+    // Pengaman sampah dibawa: save lama tanpa field ini -> {}; bentuk rusak
+    // atau jumlah bukan angka positif dibuang, sisanya dipertahankan.
+    const dibawaTersimpan = (parsed as Partial<CampaignSave>).sampahDibawa
+    if (
+      typeof dibawaTersimpan !== 'object' ||
+      dibawaTersimpan === null ||
+      Array.isArray(dibawaTersimpan)
+    ) {
+      merged.sampahDibawa = {}
+    } else {
+      const bersih: Record<string, number> = {}
+      for (const [k, v] of Object.entries(dibawaTersimpan)) {
+        if (typeof v === 'number' && Number.isFinite(v) && v > 0) bersih[k] = Math.floor(v)
+      }
+      merged.sampahDibawa = bersih
+    }
+    // Pengaman Eco-Shop & Skor Adiwiyata: save lama tanpa field ini
+    // mendapat skor dari pohon yang sudah ditanam (pohon*5, 0 bila belum
+    // ada pohon) dan ketiga flag false; nilai rusak juga jatuh ke default
+    // yang sama. Skor dari misi/panel lama sengaja tidak dihitung ulang —
+    // spek menghitung save lama hanya dari pohon.
+    const skorTersimpan = (parsed as Partial<CampaignSave>).skorAdiwiyata
+    merged.skorAdiwiyata =
+      typeof skorTersimpan === 'number' && Number.isFinite(skorTersimpan) && skorTersimpan >= 0
+        ? Math.floor(skorTersimpan)
+        : Math.max(0, Math.round(angka(merged.pohonDitanam, 0))) * 5
+    merged.sepatuEco = (parsed as Partial<CampaignSave>).sepatuEco === true
+    merged.pinDuta = (parsed as Partial<CampaignSave>).pinDuta === true
+    merged.panelSurya = (parsed as Partial<CampaignSave>).panelSurya === true
     return merged
   } catch {
     // JSON rusak, storage tidak bisa dibaca, atau mode privat yang menolak akses.

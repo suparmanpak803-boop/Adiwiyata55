@@ -12,7 +12,7 @@ export interface DampakBerantai {
 
 export const ATURAN_SIKLUS: DampakBerantai[] = [
   {
-    pemicu: 'Bungkus plastik berminyak salah masuk tong organik di Kantin.',
+    pemicu: 'Bungkus plastik berminyak salah masuk bak organik di Kantin.',
     dampak:
       'Minyak menempel di sisa makanan, maggot di Pos Maggot jadi rewel, bau kotak naik dan lalat datang.',
     perbaikan:
@@ -42,7 +42,7 @@ const ITEM_BERMINYAK_ATAU_PLASTIK = [
   'styrofoam',
 ]
 
-// Id sampah yang kalau salah pilah ke tong organik membuat kompos bau di Bab 4.
+// Id sampah yang kalau salah pilah ke bak organik membuat kompos bau di Bab 4.
 const ITEM_PENCEMAR_KOMPOS = [
   'bungkus-plastik-berminyak',
   'minyak-jelantah',

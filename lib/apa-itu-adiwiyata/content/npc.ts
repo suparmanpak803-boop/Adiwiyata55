@@ -34,19 +34,19 @@ export const DIALOG_NPC: Record<string, DialogNpc> = {
     sapaan: 'Hehehe, aku Pak Plastik! Ketemu lagi, ya?',
     baris: [
       'Dulu aku suka dibuang sembarangan. Sekarang aku lagi belajar berubah, pelan-pelan.',
-      'Botolku itu sebenarnya masih berguna kalau dibersihkan dan dipilah ke tong yang benar.',
+      'Botolku itu sebenarnya masih berguna kalau dibersihkan dan dipilah ke bak yang benar.',
       'Kamu sudah main Tas Pagi? Isi tasmu dengan barang yang bisa dipakai ulang, biar aku tidak nambah-nambah.',
     ],
-    tips: 'Botol plastik bersih masuk tong Anorganik, bukan tong Organik.',
+    tips: 'Botol plastik bersih masuk bak Anorganik, bukan bak Organik.',
   },
   'kang-kantin': {
     sapaan: 'Selamat datang di kantin! Makan dulu, pilah belakangan juga boleh.',
     baris: [
-      'Di sini yang paling penting: sisa makanan ke tong Organik, botol dan kardus bersih ke Anorganik.',
-      'Bungkus berminyak jangan masuk tong hijau, nanti maggot-nya Magi bisa sakit.',
-      'Kalau bingung, lihat tongnya: warnanya beda-beda, tinggal ikuti saja.',
+      'Di sini yang paling penting: sisa makanan ke bak Organik, botol bersih ke bak Anorganik, kardus dan koran ke bak Kertas.',
+      'Bungkus berminyak jangan masuk bak hijau, nanti maggot-nya Magi bisa sakit.',
+      'Kalau bingung, lihat baknya: warnanya beda-beda, tinggal ikuti saja.',
     ],
-    tips: 'Kertas basah dan masker masuk tong Residu, bukan Anorganik.',
+    tips: 'Kertas basah dan masker masuk bak Residu, bukan bak Anorganik.',
   },
   'pak-kebun': {
     sapaan: 'Halo, nak. Kebunnya lagi bagus-bagusnya ini.',

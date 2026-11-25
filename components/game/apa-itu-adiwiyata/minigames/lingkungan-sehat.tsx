@@ -67,7 +67,7 @@ function teksMagi(teks: string): string {
 
 /** Nama singkat tiap titik adegan, per tahap (toilet / drainase / taman). */
 const LABEL_TITIK: string[][] = [
-  ['Keran', 'Sabun', 'Lantai', 'Gayung', 'Tong sampah'],
+  ['Keran', 'Sabun', 'Lantai', 'Gayung', 'Bak sampah'],
   ['Selokan', 'Halaman', 'Bak air', 'Daun kering', 'Saluran air'],
   ['Tanaman', 'Bedeng', 'Taman', 'Poster', 'Wastafel'],
 ]

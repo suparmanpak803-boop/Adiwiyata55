@@ -6,11 +6,13 @@
 // dunia hidup, cerita bercabang, streak) — tidak ada fitur yang dikarang.
 
 import { X } from 'lucide-react'
+import { BAK } from '@/lib/apa-itu-adiwiyata/content/bak'
+import { ECO_SHOP, SKOR_MISI_PERTAMA, SKOR_PANEL_SURYA, SKOR_POHON } from '@/lib/apa-itu-adiwiyata/content/toko'
 import { klik } from './suara'
 
 const CARA_MISI: { judul: string; cara: string }[] = [
   { judul: 'Budaya Lingkungan', cara: 'Tangkap barang guna ulang yang jatuh, lalu lempar ke tas.' },
-  { judul: 'Pilah', cara: 'Sortir cepat di ban berjalan, lalu lempar sampah ke 4 tong.' },
+  { judul: 'Pilah', cara: 'Sortir cepat di ban berjalan, lalu lempar sampah ke 5 bak.' },
   { judul: 'Maggot', cara: 'Tangkap pakan yang aman, geser tuas kotak, tahan saringan saat panen.' },
   { judul: 'Olah Organik', cara: 'Susun lapisan kompos, siram tanaman mengikuti irama, ketuk sayur yang matang.' },
   { judul: 'Air & Energi Lestari', cara: 'Putar bor biopori, sambung pipa air hujan, cari perangkat boros.' },
@@ -87,7 +89,7 @@ export function CaraBermain({ onTutup }: { onTutup: () => void }) {
           <h3 className="aia-section-title">Kontrol keyboard (laptop)</h3>
           <ul style={{ margin: '0 0 12px', paddingLeft: 20 }}>
             <li><kbd>WASD</kbd> / <kbd>←</kbd> <kbd>↑</kbd> <kbd>↓</kbd> <kbd>→</kbd> — gerak</li>
-            <li><kbd>E</kbd> / <kbd>Enter</kbd> — bicara dengan NPC</li>
+            <li><kbd>E</kbd> / <kbd>Enter</kbd> — bicara dengan NPC (atau buka Tempat Sampah Terpilah / Bank Sampah bila dekat)</li>
             <li><kbd>Spasi</kbd> — lanjut dialog</li>
             <li><kbd>Esc</kbd> — tutup dialog</li>
             <li>Klik mouse — jalan ke titik yang diklik</li>
@@ -95,6 +97,15 @@ export function CaraBermain({ onTutup }: { onTutup: () => void }) {
             <li><kbd>M</kbd> — bisu</li>
           </ul>
         </section>
+
+        <h3 className="aia-section-title">Rumah</h3>
+        <ul style={{ margin: '0 0 12px', paddingLeft: 20 }}>
+          <li>Permainan baru dimulai di rumah. Pintu di bawah membawamu berangkat ke sekolah, dan Jalan Pulang di bawah Gerbang membawamu kembali ke rumah.</li>
+          <li>Kasur = checkpoint: istirahat memulihkan Lapar +30 dan Haus +30, progres tersimpan otomatis.</li>
+          <li>Kulkas: minum gratis, Haus +30, tanpa batas.</li>
+          <li>Ibu memberimu uang saku Rp5.000 + sarapan (Lapar +40) 1x sehari — bicara lagi dengannya esok hari.</li>
+          <li>Meja makan hanya untuk dilihat — tidak ada mekaniknya.</li>
+        </ul>
 
         <h3 className="aia-section-title">Misi</h3>
         <p className="aia-muted" style={{ marginTop: 0 }}>
@@ -114,9 +125,45 @@ export function CaraBermain({ onTutup }: { onTutup: () => void }) {
         <ul style={{ margin: '0 0 12px', paddingLeft: 20 }}>
           <li>Kebun (kangkung, cabai, bayam) tumbuh dari hari ke hari. Tanaman yang tidak disiram 2 hari jadi layu — siram lagi supaya segar.</li>
           <li>Maggot di kotak Pos Maggot makin lapar setiap hari — ketuk kotaknya untuk memberi makan. Maggot dewasa bisa dipanen jadi kasgot (pupuk).</li>
-          <li>Sampah liar menumpuk dari hari ke hari — ketuk atau dekati untuk membersihkannya, +5 Koin Hijau.</li>
+          <li>Sampah liar menumpuk dari hari ke hari — ketuk atau dekati untuk memungutnya, lalu pilah di Tempat Sampah Terpilah dekat Gerbang atau setor ke Bank Sampah di Kebun.</li>
           <li>Tiap pagi ada Laporan Pagi tentang apa yang berubah sejak kunjungan terakhir.</li>
           <li>Merawat hanya bisa dari dekat — dekati dulu petak, kotak, atau sampahnya.</li>
+        </ul>
+
+        <h3 className="aia-section-title">Pilah 5 Bak</h3>
+        <ul style={{ margin: '0 0 12px', paddingLeft: 20 }}>
+          {BAK.map((b) => (
+            <li key={b.id}>
+              <span
+                aria-hidden="true"
+                style={{
+                  display: 'inline-block',
+                  width: 12,
+                  height: 12,
+                  borderRadius: 3,
+                  background: b.warna,
+                  marginRight: 6,
+                  verticalAlign: '-1px',
+                }}
+              />
+              <strong>{b.nama}</strong>
+              {b.id === 'organik' && ' — sisa makanan, kulit buah, daun, dan ranting.'}
+              {b.id === 'anorganik' && ' — botol plastik bersih, kaleng, dan kaca.'}
+              {b.id === 'kertas' && ' — kertas, koran, dan kardus yang kering dan bersih.'}
+              {b.id === 'residu' && ' — bungkus berminyak, styrofoam, tisu, dan masker.'}
+              {b.id === 'b3' && ' — baterai, lampu bekas, dan obat kedaluwarsa.'}
+            </li>
+          ))}
+          <li>Sampah liar yang dipungut masuk ke tasmu — jumlahnya terlihat di HUD (ikon tempat sampah).</li>
+          <li>Di Tempat Sampah Terpilah dekat Gerbang: pilih jenis sampahnya, lalu ketuk bak yang benar. Bak benar: +5 Koin Hijau dan +Rp200 per sampah.</li>
+          <li>Salah bak tidak apa-apa — Magi memberitahu bak yang benar, sampahnya tetap di tasmu, dan kamu bisa coba lagi tanpa kehilangan apa pun.</li>
+        </ul>
+
+        <h3 className="aia-section-title">Bank Sampah</h3>
+        <ul style={{ margin: '0 0 12px', paddingLeft: 20 }}>
+          <li>Di Kebun ada Bank Sampah: dekati mejanya, lalu ketuk &quot;Setor Sampah&quot; untuk menyetor semua sampah yang kamu bawa sekaligus. Setiap sampah: +Rp500 dan +5 Koin Hijau.</li>
+          <li>Bedanya dengan Tempat Sampah Terpilah: di bak, kamu latihan memilah — pilih jenis sampahnya lalu ketuk bak yang benar, hadiahnya +5 Koin Hijau dan +Rp200 per sampah. Di Bank Sampah, kamu tidak perlu memilih bak — semua sampah disetor sekaligus dan langsung jadi uang.</li>
+          <li>Kalau tasmu kosong, Bank Sampah tidak bisa menyetor apa pun. Pungut dulu sampah liar di sekitar sekolah.</li>
         </ul>
 
         <h3 className="aia-section-title">Cerita Bercabang</h3>
@@ -128,7 +175,7 @@ export function CaraBermain({ onTutup }: { onTutup: () => void }) {
 
         <h3 className="aia-section-title">Koin Hijau &amp; streak</h3>
         <ul style={{ margin: '0 0 12px', paddingLeft: 20 }}>
-          <li>Koin didapat dari menyelesaikan tahap misi dan merawat dunia.</li>
+          <li>Koin didapat dari menyelesaikan tahap misi, merawat dunia, memilah sampah liar di Tempat Sampah Terpilah, dan menyetor sampah ke Bank Sampah.</li>
           <li>Main 5 hari berturut-turut: Koin Hijau dari tahap misi jadi 2× lipat.</li>
         </ul>
 
@@ -140,6 +187,28 @@ export function CaraBermain({ onTutup }: { onTutup: () => void }) {
           <li>Tiap misi yang selesai memberi uang dan Koin Daun (pertama kali: Rp5.000 + 20 Koin Daun).</li>
           <li>Koin Daun ditukar di kantin untuk gear (tumbler, tas kain, lunch box — efeknya permanen), menanam 1 pohon di kebun (100 Koin Daun, rapor hijau +5), dan kostum untuk tokohmu.</li>
         </ul>
+
+        <h3 className="aia-section-title">Eco-Shop &amp; Skor Adiwiyata</h3>
+        <p className="aia-muted" style={{ marginTop: 0 }}>
+          Di antara bedeng kebun ada Booth Eco-Shop — dekati, lalu ketuk &quot;Eco-Shop&quot; (atau tekan E di laptop).
+          Itemnya dibeli sekali pakai Koin Hijau, efeknya permanen:
+        </p>
+        <ul style={{ margin: '0 0 12px', paddingLeft: 20 }}>
+          {ECO_SHOP.map((item) => (
+            <li key={item.id}>
+              <strong>{item.nama}</strong> — {item.hargaKoinHijau} Koin Hijau. {item.efek}
+            </li>
+          ))}
+          <li>
+            Pin Duta juga memberi diskon 25% di kantin: harga makanan dan minuman dikali 0,75 lalu dibulatkan ke
+            bawah ke kelipatan 100 — mis. Nasi Lauk Rp8.000 jadi Rp6.000.
+          </li>
+        </ul>
+        <p className="aia-muted" style={{ marginTop: 0 }}>
+          Skor Adiwiyata (terlihat di HUD dunia dan Profil) naik dari: menanam pohon +{SKOR_POHON} per pohon, membeli
+          Panel Surya +{SKOR_PANEL_SURYA}, dan menyelesaikan satu misi utama pertama kali +
+          {SKOR_MISI_PERTAMA}. Ulangan misi tidak menambah skor.
+        </p>
 
         <h3 className="aia-section-title">Hadiah Harian</h3>
         <ul style={{ margin: '0 0 12px', paddingLeft: 20 }}>

@@ -5,9 +5,10 @@
 // Pengaturan suara tersimpan di save kampanye; provider sudah memanggil
 // syncSettings otomatis setiap pengaturan berubah.
 import { useState } from 'react'
-import { Banknote, BookOpen, CalendarCheck, Coins, Flame, Leaf, Store, TreePine, Volume2, VolumeX } from 'lucide-react'
+import { Award, Banknote, BookOpen, CalendarCheck, Coins, Flame, Footprints, Leaf, Store, Sun, TreePine, Volume2, VolumeX } from 'lucide-react'
 import { useCampaign } from '@/lib/apa-itu-adiwiyata/context'
-import { GEAR, KOSTUM } from '@/lib/apa-itu-adiwiyata/content/toko'
+import { CHAPTER_ORDER } from '@/lib/apa-itu-adiwiyata/chapters'
+import { ECO_SHOP, GEAR, KOSTUM, SKOR_MISI_PERTAMA, SKOR_PANEL_SURYA, SKOR_POHON } from '@/lib/apa-itu-adiwiyata/content/toko'
 import { HadiahHarian } from './hadiah-harian'
 import { klik } from './suara'
 
@@ -23,12 +24,27 @@ export function Profil({
   const { save, dispatch } = useCampaign()
   const [nama, setNama] = useState(save.nickname)
   const [pesan, setPesan] = useState<string | null>(null)
+  const [pesanKarakter, setPesanKarakter] = useState<string | null>(null)
   const [pesanKoleksi, setPesanKoleksi] = useState<string | null>(null)
 
   const janjiAktif = save.promises.filter((p) => !p.done)
   const inventaris = save.inventaris ?? []
   const gearDimiliki = GEAR.filter((g) => inventaris.includes(g.id))
   const kostumDimiliki = KOSTUM.filter((k) => inventaris.includes(k.id))
+  /** Rincian Skor Adiwiyata (bisa dihitung dari save): pohon ×5, panel +20,
+   * misi utama yang sudah selesai pertama kali ×5. */
+  const skorPohon = (save.pohonDitanam ?? 0) * SKOR_POHON
+  const skorPanel = save.panelSurya ? SKOR_PANEL_SURYA : 0
+  const misiUtamaSelesai = CHAPTER_ORDER.filter((id) => save.chapters[id]?.done).length
+  const skorMisi = misiUtamaSelesai * SKOR_MISI_PERTAMA
+  const ecoDimiliki = ECO_SHOP.filter(
+    (e) =>
+      (e.id === 'sepatu-eco' && save.sepatuEco) ||
+      (e.id === 'pin-duta' && save.pinDuta) ||
+      (e.id === 'panel-surya' && save.panelSurya),
+  )
+  const ikonEco = (id: string) =>
+    id === 'sepatu-eco' ? <Footprints aria-hidden="true" style={{ width: 16, height: 16, verticalAlign: -3 }} /> : id === 'pin-duta' ? <Award aria-hidden="true" style={{ width: 16, height: 16, verticalAlign: -3 }} /> : <Sun aria-hidden="true" style={{ width: 16, height: 16, verticalAlign: -3 }} />
 
   return (
     <div className="aia-stack">
@@ -41,6 +57,23 @@ export function Profil({
         </span>
         {save.streak.multiplierActive && <span className="aia-chip done">Pengali x2 aktif</span>}
       </div>
+
+      <section className="aia-card">
+        <h3 className="aia-section-title" style={{ marginTop: 0 }}>
+          Skor Adiwiyata
+        </h3>
+        <div className="aia-stats">
+          <span className="aia-stat">
+            <Award aria-hidden="true" /> Skor Adiwiyata: {save.skorAdiwiyata ?? 0}
+          </span>
+        </div>
+        <p className="aia-muted" style={{ marginTop: 8, marginBottom: 0 }}>
+          Pohon ditanam: {save.pohonDitanam ?? 0} × {SKOR_POHON} = {skorPohon} · Panel Surya:{' '}
+          {save.panelSurya ? `+${SKOR_PANEL_SURYA}` : 'belum dibeli'} · Misi utama selesai pertama kali:{' '}
+          {misiUtamaSelesai} × {SKOR_MISI_PERTAMA} = {skorMisi}. Skor naik dari pohon, Panel Surya, dan misi utama
+          yang pertama kali selesai — ulangan misi tidak menambah skor.
+        </p>
+      </section>
 
       <section className="aia-card">
         <h3 className="aia-section-title" style={{ marginTop: 0 }}>
@@ -57,6 +90,20 @@ export function Profil({
             <TreePine aria-hidden="true" /> {save.pohonDitanam ?? 0} pohon ditanam
           </span>
         </div>
+        <p className="aia-muted" style={{ marginTop: 8 }}>
+          Item Eco-Shop yang dimiliki
+        </p>
+        {ecoDimiliki.length === 0 ? (
+          <p className="aia-muted">Belum punya item Eco-Shop. Beli di Booth Eco-Shop di Kebun pakai Koin Hijau.</p>
+        ) : (
+          <div className="aia-stack">
+            {ecoDimiliki.map((item) => (
+              <p key={item.id} className="aia-muted" style={{ margin: 0 }}>
+                {ikonEco(item.id)} <strong>{item.nama}</strong> — {item.efek}
+              </p>
+            ))}
+          </div>
+        )}
         <p className="aia-muted" style={{ marginTop: 8 }}>
           Gear yang dimiliki
         </p>
@@ -163,6 +210,62 @@ export function Profil({
         {pesan && (
           <p className="aia-muted" role="status" style={{ marginTop: 8 }}>
             {pesan}
+          </p>
+        )}
+      </section>
+
+      <section className="aia-card">
+        <h3 className="aia-section-title" style={{ marginTop: 0 }}>
+          Ganti Karakter
+        </h3>
+        <p className="aia-muted" style={{ marginTop: 0 }}>
+          Karakter yang kamu mainkan di dunia sekolah. Bisa diganti kapan saja, tanpa kehilangan progres.
+        </p>
+        <div style={{ display: 'flex', gap: 12, alignItems: 'stretch' }}>
+          {(
+            [
+              { id: 'siswa' as const, nama: 'Siswa', deskripsi: 'Celana panjang abu-abu.' },
+              { id: 'siswi' as const, nama: 'Siswi', deskripsi: 'Rok abu-abu, rambut lebih panjang.' },
+            ] as const
+          ).map((pilihan) => {
+            const dipakai = (save.jenisKelamin ?? 'siswa') === pilihan.id
+            return (
+              <button
+                key={pilihan.id}
+                type="button"
+                className="aia-btn"
+                aria-pressed={dipakai}
+                style={{
+                  flex: 1,
+                  flexDirection: 'column',
+                  alignItems: 'flex-start',
+                  gap: 4,
+                  minHeight: 44,
+                  textAlign: 'left',
+                  borderWidth: 2,
+                  borderColor: dipakai ? '#2e7d32' : undefined,
+                  background: dipakai ? 'rgba(46,125,50,0.08)' : undefined,
+                }}
+                onClick={() => {
+                  klik()
+                  dispatch({ type: 'PILIH_KARAKTER', jenisKelamin: pilihan.id })
+                  setPesanKarakter(`Karakter diganti jadi ${pilihan.nama}.`)
+                }}
+              >
+                <strong>
+                  {pilihan.nama}
+                  {dipakai && <span className="aia-chip done"> Dipakai</span>}
+                </strong>
+                <span className="aia-muted" style={{ fontWeight: 400 }}>
+                  {pilihan.deskripsi}
+                </span>
+              </button>
+            )
+          })}
+        </div>
+        {pesanKarakter && (
+          <p className="aia-muted" role="status" style={{ marginTop: 8 }}>
+            {pesanKarakter}
           </p>
         )}
       </section>

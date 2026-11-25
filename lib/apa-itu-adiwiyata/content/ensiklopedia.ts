@@ -28,10 +28,10 @@ export const KARTU_ENSIKLOPEDIA: KartuEnsiklopedia[] = [
   },
   {
     id: 'jenis-sampah',
-    judul: '4 Tong Sampah SMAN 55',
+    judul: '5 Bak Sampah SMAN 55',
     ringkasan:
-      'Organik, Anorganik, Residu, dan B3, kenali isinya supaya tidak salah tong.',
-    isi: 'Tong Organik untuk sisa makanan dan daun yang bisa membusuk, lalu jadi kompos atau pakan maggot. Tong Anorganik untuk barang yang masih bisa didaur ulang, seperti botol plastik bersih, kardus, dan kaleng. Tong Residu untuk sampah yang sulit diolah, seperti bungkus berminyak, styrofoam, dan masker. Tong B3 untuk bahan berbahaya seperti baterai, lampu bekas, dan obat kedaluwarsa, yang harus ditangani khusus.',
+      'Organik, Anorganik, Kertas, Residu, dan B3, kenali isinya supaya tidak salah bak.',
+    isi: 'Bak Organik untuk sisa makanan dan daun yang bisa membusuk, lalu jadi kompos atau pakan maggot. Bak Anorganik untuk barang yang masih bisa didaur ulang, seperti botol plastik bersih dan kaleng. Bak Kertas untuk kertas, koran, dan kardus yang kering dan bersih. Bak Residu untuk sampah yang sulit diolah, seperti bungkus berminyak, styrofoam, dan masker. Bak B3 untuk bahan berbahaya seperti baterai, lampu bekas, dan obat kedaluwarsa, yang harus ditangani khusus.',
     babTerkait: 'kantin',
   },
   {

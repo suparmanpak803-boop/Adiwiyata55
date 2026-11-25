@@ -28,7 +28,7 @@ export const SOAL_INSPEKSI: SoalInspeksi[] = [
     pilihan: [
       'Dibawa pulang dan dipakai ulang besok',
       'Ditinggalkan dan diganti lunch box',
-      'Dibuang ke tong organik',
+      'Dibuang ke bak organik',
       'Diberikan ke maggot',
     ],
     jawabanIndex: 1,
@@ -36,23 +36,23 @@ export const SOAL_INSPEKSI: SoalInspeksi[] = [
     mekanik: 'tas',
   },
   {
-    pertanyaan: 'Bungkus plastik berminyak bekas gorengan masuk tong apa?',
-    pilihan: ['Organik', 'Anorganik', 'Residu', 'B3'],
-    jawabanIndex: 2,
+    pertanyaan: 'Bungkus plastik berminyak bekas gorengan masuk bak apa?',
+    pilihan: ['Organik', 'Anorganik', 'Kertas', 'Residu', 'B3'],
+    jawabanIndex: 3,
     penjelasan: 'Minyaknya bikin plastik ini sulit didaur ulang.',
     mekanik: 'pilah',
   },
   {
-    pertanyaan: 'Kertas HVS yang masih bersih dan kering masuk tong apa?',
-    pilihan: ['Organik', 'Anorganik', 'Residu', 'B3'],
-    jawabanIndex: 1,
+    pertanyaan: 'Kertas HVS yang masih bersih dan kering masuk bak apa?',
+    pilihan: ['Organik', 'Anorganik', 'Kertas', 'Residu', 'B3'],
+    jawabanIndex: 2,
     penjelasan: 'Kertas bersih masih bisa didaur ulang jadi kertas baru.',
     mekanik: 'pilah',
   },
   {
-    pertanyaan: 'Baterai bekas masuk tong apa?',
-    pilihan: ['Organik', 'Anorganik', 'Residu', 'B3'],
-    jawabanIndex: 3,
+    pertanyaan: 'Baterai bekas masuk bak apa?',
+    pilihan: ['Organik', 'Anorganik', 'Kertas', 'Residu', 'B3'],
+    jawabanIndex: 4,
     penjelasan: 'Baterai mengandung bahan kimia berbahaya dan harus ditangani khusus.',
     mekanik: 'pilah',
   },
@@ -147,7 +147,7 @@ export const REFLEKSI: Record<ChapterId, string> = {
   gerbang:
     'Hari ini kamu mulai membawa barang yang bisa dipakai ulang. Barang sekali pakai apa yang paling sering kamu pakai, dan apa gantinya?',
   kantin:
-    'Tadi kamu memilah sampah ke tong yang benar. Tong mana yang paling sulit kamu bedakan, dan kenapa?',
+    'Tadi kamu memilah sampah ke bak yang benar. Bak mana yang paling sulit kamu bedakan, dan kenapa?',
   maggot:
     'Sisa makananmu ternyata bisa jadi pakan dan pupuk. Apa lagi di kantin yang selama ini terbuang sia-sia?',
   kompos:

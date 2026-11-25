@@ -5,6 +5,7 @@ import {
   Biohazard,
   Check,
   Coins,
+  FileText,
   Heart,
   Leaf,
   Package,
@@ -15,6 +16,7 @@ import {
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { SAMPAH } from '@/lib/apa-itu-adiwiyata/content/sampah'
+import { BAK } from '@/lib/apa-itu-adiwiyata/content/bak'
 import { INTERAKSI_MISI } from '@/lib/apa-itu-adiwiyata/content/interaksi'
 import { hitungDampak } from '@/lib/apa-itu-adiwiyata/siklus'
 import { useCampaign } from '@/lib/apa-itu-adiwiyata/context'
@@ -34,17 +36,27 @@ interface TongInfo {
   ikon: LucideIcon
 }
 
-const TONG: TongInfo[] = [
-  { id: 'organik', nama: 'Organik', warna: '#2f7d4f', teks: '#ffffff', ikon: Leaf },
-  { id: 'anorganik', nama: 'Anorganik', warna: '#eab308', teks: '#1f2937', ikon: Recycle },
-  { id: 'residu', nama: 'Residu', warna: '#6b7280', teks: '#ffffff', ikon: Trash2 },
-  { id: 'b3', nama: 'B3', warna: '#b83232', teks: '#ffffff', ikon: Biohazard },
-]
+const IKON_BAK: Record<TongSampah, LucideIcon> = {
+  organik: Leaf,
+  anorganik: Recycle,
+  kertas: FileText,
+  residu: Trash2,
+  b3: Biohazard,
+}
+
+/** Bak + ikonnya (warna + nama dari sumber tunggal content/bak.ts). */
+const TONG: TongInfo[] = BAK.map((b) => ({
+  id: b.id,
+  nama: b.nama,
+  warna: b.warna,
+  teks: b.teks,
+  ikon: IKON_BAK[b.id],
+}))
 
 const TONG_PER_TAHAP: TongSampah[][] = [
-  ['organik', 'anorganik'],
-  ['organik', 'anorganik', 'residu'],
-  ['organik', 'anorganik', 'residu', 'b3'],
+  ['organik', 'anorganik', 'kertas'],
+  ['organik', 'anorganik', 'kertas', 'residu'],
+  ['organik', 'anorganik', 'kertas', 'residu', 'b3'],
 ]
 
 const JUMLAH_ITEM = [8, 8, 10]
@@ -89,13 +101,13 @@ function bersihPetunjuk(teks: string): string {
 }
 
 /**
- * Mini-game Misi 2 — Pilah Sampah (Kader Pilah), versi gestur.
- * Tahap 1-2: sortir cepat di ban berjalan (SortirCepat) — ketuk tong yang
- * benar sebelum sampah lewat; tahap 1 memakai 2 tong (Organik/Anorganik),
- * tahap 2 memakai 3 tong (+Residu) dan waktu per item lebih singkat.
- * Tahap 3: bidik tong lalu lempar (ThrowAim); tong bergerak pelan.
+ * Mini-game Misi 2 — Pilah Sampah (versi gestur).
+ * Tahap 1-2: sortir cepat di ban berjalan (SortirCepat) — ketuk bak yang
+ * benar sebelum sampah lewat; tahap 1 memakai 3 bak (Organik/Anorganik/
+ * Kertas), tahap 2 memakai 4 bak (+Residu) dan waktu per item lebih singkat.
+ * Tahap 3: bidik bak lalu lempar (ThrowAim); bak bergerak pelan.
  * Bila modeSatuKetukan = true, tampilkan versi tombol lama (ketuk sampah,
- * lalu ketuk tong) sebagai alternatif aksesibilitas — termasuk seret
+ * lalu ketuk bak) sebagai alternatif aksesibilitas — termasuk seret
  * DragDrop tahap 1-2 versi lama.
  * Benar +10, salah pilah -1 nyawa (3 nyawa per tahap) — aturan ini berlaku
  * penuh di versi tombol dan tahap 3; di versi sortir, skor akhir 0-100
@@ -244,13 +256,13 @@ export function PilahSampah({
     if (dampak.maggotKenaMinyak) {
       patch.maggotKenaMinyak = true
       catatan.push(
-        'Ada sampah berminyak atau plastik yang salah masuk tong organik, jadi maggot di Pos Maggot akan rewel. Kamu bisa memperbaikinya di sana dengan pakan bersih.',
+        'Ada sampah berminyak atau plastik yang salah masuk bak organik, jadi maggot di Pos Maggot akan rewel. Kamu bisa memperbaikinya di sana dengan pakan bersih.',
       )
     }
     if (dampak.komposBau) {
       patch.komposBau = true
       catatan.push(
-        'Ada pencemar yang salah masuk tong organik, jadi kompos di Misi 4 nanti bisa bau. Tambah bahan cokelat dan aduk sampai baunya hilang.',
+        'Ada pencemar yang salah masuk bak organik, jadi kompos di Misi 4 nanti bisa bau. Tambah bahan cokelat dan aduk sampai baunya hilang.',
       )
     }
     if (Object.keys(patch).length > 0) {
@@ -286,7 +298,7 @@ export function PilahSampah({
     hasilRef.current = { benarPilihan: true, nyawaBaru: nyawaSisa }
     setUmpan({
       jenis: 'benar',
-      teks: `Benar! ${item.nama} memang masuk tong ${namaTong(item.tong)}.`,
+      teks: `Benar! ${item.nama} memang masuk bak ${namaTong(item.tong)}.`,
       poin: 10,
     })
     jadwalkanLanjut(1400)
@@ -324,7 +336,7 @@ export function PilahSampah({
     // (lewat skor). Bila ada jawaban salah dan deck berisi item pemicu
     // dampak berantai, catat pemicu itu sebagai kemungkinan salah pilah;
     // hitungDampak + SET_CARRYOVER tetap jalan di akhiriTahap. Semangatnya
-    // sama dengan aturan lama yang juga tidak memeriksa tong tujuan saat
+    // sama dengan aturan lama yang juga tidak memeriksa bak tujuan saat
     // mencatat salah pilah.
     idsSalahRef.current =
       salahJumlah > 0
@@ -353,7 +365,7 @@ export function PilahSampah({
     }
   }
 
-  /** Versi tombol (mode satu-ketukan): lempar sampah ke tong dengan animasi terbang. */
+  /** Versi tombol (mode satu-ketukan): lempar sampah ke bak dengan animasi terbang. */
   const selesaikanLempar = (tong: TongSampah) => {
     const item = saatIni
     if (!item || !lemparAktifRef.current) return
@@ -512,7 +524,7 @@ export function PilahSampah({
         <>
           {spec.tutorial && (
             <div style={{ textAlign: 'center', marginBottom: 8 }}>
-              <TanganPenunjuk label="Ketuk tong yang benar sebelum sampah lewat!" />
+              <TanganPenunjuk label="Ketuk bak yang benar sebelum sampah lewat!" />
             </div>
           )}
           <SortirCepat
@@ -530,12 +542,12 @@ export function PilahSampah({
             <p className="aia-muted" style={{ textAlign: 'center', margin: 0 }}>
               Petunjuk:{' '}
               {tahap === 0
-                ? 'sisa makanan, kulit buah & daun → Organik; plastik, kertas, kaleng & kaca → Anorganik.'
+                ? 'sisa makanan, kulit buah & daun → Organik; plastik, kaleng & kaca → Anorganik; kertas, koran & kardus → Kertas.'
                 : 'styrofoam, tisu, masker & bungkus berminyak → Residu; sisanya seperti tahap 1.'}
             </p>
           )}
           <p className="aia-muted" style={{ textAlign: 'center', margin: 0 }}>
-            Sampah berjalan di ban — ketuk tong yang benar sebelum waktunya habis!
+            Sampah berjalan di ban — ketuk bak yang benar sebelum waktunya habis!
           </p>
         </>
       )}
@@ -573,7 +585,7 @@ export function PilahSampah({
             />
             {spec.tutorial && (
               <div style={{ textAlign: 'center', marginBottom: 8 }}>
-                <TanganPenunjuk label={tahap === 2 ? 'Bidik tongnya, lalu lempar!' : 'Seret sampah ke tong yang benar'} />
+                <TanganPenunjuk label={tahap === 2 ? 'Bidik baknya, lalu lempar!' : 'Seret sampah ke bak yang benar'} />
               </div>
             )}
 
@@ -613,7 +625,7 @@ export function PilahSampah({
                         }}
                         disabled={resolving}
                         aria-pressed={aim === tong.id}
-                        aria-label={`Bidik tong ${tong.nama}`}
+                        aria-label={`Bidik bak ${tong.nama}`}
                         onClick={() => setAim(tong.id)}
                       >
                         <IkonTong aria-hidden="true" style={{ width: 24, height: 24 }} />
@@ -655,7 +667,7 @@ export function PilahSampah({
                       pointerEvents: resolving ? 'none' : undefined,
                     }}
                     aria-pressed={dipilih}
-                    aria-label={`${saatIni.nama}. Ketuk untuk memilih, lalu ketuk tong.`}
+                    aria-label={`${saatIni.nama}. Ketuk untuk memilih, lalu ketuk bak.`}
                     onClick={() => {
                       if (resolving) return
                       setDipilih((v) => !v)
@@ -664,12 +676,12 @@ export function PilahSampah({
                     <Package aria-hidden="true" style={{ width: 44, height: 44, color: 'var(--green)' }} />
                     <strong style={{ display: 'block', marginTop: 8, fontSize: 18 }}>{saatIni.nama}</strong>
                     <small className="aia-muted">
-                      {dipilih ? 'Sudah dipilih — ketuk tong yang benar' : 'Ketuk untuk memilih'}
+                      {dipilih ? 'Sudah dipilih — ketuk bak yang benar' : 'Ketuk untuk memilih'}
                     </small>
                   </button>
                   {modeMudah && (
                     <p className="aia-muted" style={{ marginTop: 8 }}>
-                      Petunjuk: masuk tong {namaTong(saatIni.tong)}.
+                      Petunjuk: masuk bak {namaTong(saatIni.tong)}.
                     </p>
                   )}
                 </div>
@@ -710,7 +722,7 @@ export function PilahSampah({
                           boxShadow: dipilih ? '0 0 0 3px var(--green)' : undefined,
                         }}
                         disabled={resolving}
-                        aria-label={`Tong ${tong.nama}`}
+                        aria-label={`Bak ${tong.nama}`}
                         onClick={() => {
                           if (dipilih) {
                             lepas()
@@ -729,16 +741,16 @@ export function PilahSampah({
 
             {modeMudah && !modeSatuKetukan && (
               <p className="aia-muted" style={{ marginTop: 8, textAlign: 'center' }}>
-                Petunjuk: masuk tong {namaTong(saatIni.tong)}.
+                Petunjuk: masuk bak {namaTong(saatIni.tong)}.
               </p>
             )}
 
             <p className="aia-muted" style={{ textAlign: 'center', margin: 0 }}>
               {modeSatuKetukan
-                ? 'Ketuk sampah untuk memilih, lalu ketuk tong.'
+                ? 'Ketuk sampah untuk memilih, lalu ketuk bak.'
                 : tahap === 2
-                  ? 'Ketuk tong untuk membidik, lalu tarik dan lepas untuk melempar. Awas, tongnya bergerak pelan!'
-                  : 'Seret sampah ke tong yang benar, atau ketuk sampah lalu ketuk tong.'}
+                  ? 'Ketuk bak untuk membidik, lalu tarik dan lepas untuk melempar. Awas, baknya bergerak pelan!'
+                  : 'Seret sampah ke bak yang benar, atau ketuk sampah lalu ketuk bak.'}
             </p>
           </div>
 
@@ -800,7 +812,7 @@ export function PilahSampah({
             </button>
             {gagalHitung >= 2 && !modeMudah && (
               <button type="button" className="aia-btn aia-btn-ghost" onClick={() => cobaLagi(true)}>
-                {gestur ? 'Mode mudah: waktu 2× lipat + petunjuk' : 'Mode mudah: tong diam + petunjuk'}
+                {gestur ? 'Mode mudah: waktu 2× lipat + petunjuk' : 'Mode mudah: bak diam + petunjuk'}
               </button>
             )}
           </div>

@@ -34,15 +34,15 @@ export const DIALOG_AWAL: Record<ChapterId, DialogLine[]> = {
     },
     {
       tokoh: 'Pak Plastik',
-      teks: 'Bungkus berminyak? Masukkan saja ke tong hijau, biar sekalian jadi kompos! Hehehe.',
+      teks: 'Bungkus berminyak? Masukkan saja ke bak hijau, biar sekalian jadi kompos! Hehehe.',
     },
     {
       tokoh: 'Magi',
-      teks: 'Jangan didengar. Bungkus berminyak itu tidak bisa jadi kompos atau didaur ulang. Salah tong, maggotku bisa sakit nanti.',
+      teks: 'Jangan didengar. Bungkus berminyak itu tidak bisa jadi kompos atau didaur ulang. Salah bak, maggotku bisa sakit nanti.',
     },
     {
       tokoh: 'Narator',
-      teks: 'Tugasmu: lempar setiap sampah ke tong yang benar. Organik yang kamu pilah dengan benar akan jadi pakan maggot.',
+      teks: 'Tugasmu: lempar setiap sampah ke bak yang benar. Organik yang kamu pilah dengan benar akan jadi pakan maggot.',
     },
   ],
   maggot: [
@@ -151,7 +151,7 @@ const BAB6_PAK_PLASTIK: Record<PakPlastikStatus, string> = {
   netral: 'Aku janji tidak buang sampah sembarangan lagi. Boleh ikut inspeksi, kan? Aku sudah belajar memilah.',
   dibujuk: 'Aku janji tidak buang sampah sembarangan lagi. Boleh ikut inspeksi, kan? Sejak kamu ajak memilah, aku sudah belajar.',
   dilawan: 'Aku janji tidak buang sampah sembarangan lagi. Boleh ikut inspeksi, kan? Lomba pilah kemarin bikin aku latihan tiap pagi.',
-  dijebak: 'Aku janji tidak buang sampah sembarangan lagi. Boleh ikut inspeksi, kan? Sejak keluar dari tong itu, aku jadi mikir sebelum mengacau.',
+  dijebak: 'Aku janji tidak buang sampah sembarangan lagi. Boleh ikut inspeksi, kan? Sejak keluar dari bak itu, aku jadi mikir sebelum mengacau.',
 }
 
 /**

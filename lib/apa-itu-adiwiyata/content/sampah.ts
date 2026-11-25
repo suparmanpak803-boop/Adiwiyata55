@@ -1,7 +1,8 @@
 // Data sampah untuk mini-game Pilah Sampah (Bab 2) dan konten pendukung.
-// Sistem tong memakai sistem asli SMAN 55: 4 tong.
+// Sistem bak memakai sistem asli SMAN 55: 5 bak.
 // - organik: sisa makanan, daun, ranting (bisa membusuk / jadi kompos / pakan maggot)
 // - anorganik: barang bersih yang masih bisa didaur ulang (plastik bersih masuk sini)
+// - kertas: kertas, koran, dan kardus yang kering dan bersih
 // - residu: sulit atau tidak bisa didaur ulang
 // - b3: bahan berbahaya dan beracun, harus ditangani khusus
 import type { TongSampah } from '../types'
@@ -61,7 +62,7 @@ export const SAMPAH: SampahItem[] = [
     nama: 'Sisa nasi',
     tong: 'organik',
     penjelasan:
-      'Sisa nasi bisa dimakan maggot atau masuk kompos. Jangan dibuang ke tong lain.',
+      'Sisa nasi bisa dimakan maggot atau masuk kompos. Jangan dibuang ke bak lain.',
   },
   {
     id: 'botol-plastik-bersih',
@@ -73,9 +74,9 @@ export const SAMPAH: SampahItem[] = [
   {
     id: 'kardus',
     nama: 'Kardus',
-    tong: 'anorganik',
+    tong: 'kertas',
     penjelasan:
-      'Kardus kering masih bisa didaur ulang jadi kertas baru. Lipat dulu biar ringkas.',
+      'Kardus kering masuk bak Kertas, bisa didaur ulang jadi kertas baru. Lipat dulu biar ringkas.',
   },
   {
     id: 'sisa-sayur',
@@ -94,16 +95,23 @@ export const SAMPAH: SampahItem[] = [
   {
     id: 'kertas-hvs-bersih',
     nama: 'Kertas HVS bersih',
-    tong: 'anorganik',
+    tong: 'kertas',
     penjelasan:
-      'Kertas HVS yang masih bersih dan kering bisa didaur ulang. Jangan diremas terlalu kecil.',
+      'Kertas HVS yang masih bersih dan kering masuk bak Kertas, bisa didaur ulang. Jangan diremas terlalu kecil.',
   },
   {
     id: 'koran-bekas',
     nama: 'Koran bekas',
-    tong: 'anorganik',
+    tong: 'kertas',
     penjelasan:
-      'Koran bekas masih bisa didaur ulang, asal kering dan tidak berminyak.',
+      'Koran bekas masuk bak Kertas, masih bisa didaur ulang, asal kering dan tidak berminyak.',
+  },
+  {
+    id: 'majalah-bekas',
+    nama: 'Majalah bekas',
+    tong: 'kertas',
+    penjelasan:
+      'Majalah bekas yang kering masuk bak Kertas. Lepas dulu sampul plastiknya bila ada.',
   },
   {
     id: 'botol-kaca',

@@ -126,18 +126,18 @@ export const PILIHAN_CERITA: Record<ChapterId, [TitikPilihan, TitikPilihan]> = {
       id: 'titik-1',
       misi: 'kantin',
       kapan: 'npc',
-      situasi: 'Pak Plastik mengintip dari balik tong, dan Kang Kantin menantangmu memilah tumpukan hari ini.',
+      situasi: 'Pak Plastik mengintip dari balik bak, dan Kang Kantin menantangmu memilah tumpukan hari ini.',
       opsi: [
         {
           id: 'jebak-tong',
-          teks: 'Jebak Pak Plastik dengan tong mengilap',
-          akibat: 'Pak Plastik melompat ke tong Anorganik demi botol mengilap, lalu tutupnya menutup sendiri.',
+          teks: 'Jebak Pak Plastik dengan bak mengilap',
+          akibat: 'Pak Plastik melompat ke bak Anorganik demi botol mengilap, lalu tutupnya menutup sendiri.',
           pakPlastik: 'dijebak',
         },
         {
           id: 'minta-bantuan',
           teks: 'Minta Pak Plastik bantu pilah',
-          akibat: 'Pak Plastik pura-pura sibuk, tapi sesekali ia melempar botol ke tong yang benar.',
+          akibat: 'Pak Plastik pura-pura sibuk, tapi sesekali ia melempar botol ke bak yang benar.',
         },
         {
           id: 'kerjakan-sendiri',
@@ -150,7 +150,7 @@ export const PILIHAN_CERITA: Record<ChapterId, [TitikPilihan, TitikPilihan]> = {
       id: 'titik-2',
       misi: 'kantin',
       kapan: 'tengah',
-      situasi: 'Tong Anorganik penuh, dan antrean pilah makin panjang.',
+      situasi: 'Bak Anorganik penuh, dan antrean pilah makin panjang.',
       opsi: [
         {
           id: 'padatkan-botol',
@@ -159,8 +159,8 @@ export const PILIHAN_CERITA: Record<ChapterId, [TitikPilihan, TitikPilihan]> = {
         },
         {
           id: 'tong-cadangan',
-          teks: 'Minta Kang Kantin siapkan tong cadangan',
-          akibat: 'Kang Kantin menggeser tong cadangan, dan pilah hari ini tetap lancar.',
+          teks: 'Minta Kang Kantin siapkan bak cadangan',
+          akibat: 'Kang Kantin menggeser bak cadangan, dan pilah hari ini tetap lancar.',
         },
       ],
     },
@@ -360,7 +360,7 @@ export const EPILOG_MISI: Record<ChapterId, EpilogMisi> = {
   kantin: {
     kunci: 'kantin:titik-1',
     opsiBaik: 'minta-bantuan',
-    teksBaik: 'Pak Plastik akhirnya melempar botol ke tong yang benar, dan Kang Kantin mengangguk puas.',
+    teksBaik: 'Pak Plastik akhirnya melempar botol ke bak yang benar, dan Kang Kantin mengangguk puas.',
     teksLain: 'Kantin sudah bersih, meski Pak Plastik pergi dengan caranya sendiri.',
     bonusBaik: BONUS_EPILOG_BAIK,
     bonusLain: BONUS_EPILOG_LAIN,
@@ -424,7 +424,7 @@ export const DIALOG_PAK_PLASTIK: Record<PakPlastikStatus, DialogPakPlastik> = {
     sapaan: 'Hehehe, aku Pak Plastik! Ketemu lagi, ya?',
     baris: [
       'Dulu aku suka dibuang sembarangan. Sekarang aku lagi belajar berubah, pelan-pelan.',
-      'Botolku itu sebenarnya masih berguna kalau dibersihkan dan dipilah ke tong yang benar.',
+      'Botolku itu sebenarnya masih berguna kalau dibersihkan dan dipilah ke bak yang benar.',
       'Kamu sudah main Tas Pagi? Isi tasmu dengan barang yang bisa dipakai ulang, biar aku tidak nambah-nambah.',
     ],
   },
@@ -432,7 +432,7 @@ export const DIALOG_PAK_PLASTIK: Record<PakPlastikStatus, DialogPakPlastik> = {
     sapaan: 'Hehehe, aku Pak Plastik! Sekarang aku tim pilah, ya?',
     baris: [
       'Sejak kamu ajak memilah, aku jadi tahu botolku itu masih berguna kalau dibersihkan.',
-      'Aku sekarang jagain tong Anorganik. Ada yang buang sembarangan, langsung aku tegur — dengan sopan, kok.',
+      'Aku sekarang jagain bak Anorganik. Ada yang buang sembarangan, langsung aku tegur — dengan sopan, kok.',
       'Magi bilang aku sudah lumayan. Lumayan itu pujian besar dari seekor maggot, tahu.',
     ],
   },
@@ -441,14 +441,14 @@ export const DIALOG_PAK_PLASTIK: Record<PakPlastikStatus, DialogPakPlastik> = {
     baris: [
       'Kamu menang lomba pilah kemarin, tapi aku masih simpan botol tercepatku untuk balas dendam.',
       'Aku kalah, tapi kalah yang seru. Sekarang aku latihan memilah tiap pagi sebelum kamu datang.',
-      'Lomba berikutnya, aku yang menang. Sudah aku latih lemparanku ke tong Anorganik!',
+      'Lomba berikutnya, aku yang menang. Sudah aku latih lemparanku ke bak Anorganik!',
     ],
   },
   dijebak: {
     sapaan: 'Hehehe... aku Pak Plastik. Aku masih di sini, kok.',
     baris: [
-      'Jebakan tong itu... lumayan licik. Aku akui, botol mengilap itu memang sulit ditolak.',
-      'Aku sudah keluar dari tong, tenang saja. Tapi sekarang aku jadi mikir: mungkin tong itu memang tempatku.',
+      'Jebakan bak itu... lumayan licik. Aku akui, botol mengilap itu memang sulit ditolak.',
+      'Aku sudah keluar dari bak, tenang saja. Tapi sekarang aku jadi mikir: mungkin bak itu memang tempatku.',
       'Lain kali ajak aku saja, jangan dijebak lagi. Aku janji tidak mengacau... terlalu banyak.',
     ],
   },
@@ -470,7 +470,7 @@ export const DIALOG_MAGI_PAK_PLASTIK: Record<'dibujuk' | 'dilawan' | 'dijebak', 
     'Hati-hati, dia latihan tiap pagi. Lomba berikutnya bisa lebih seru.',
   ],
   dijebak: [
-    'Kamu menjebak Pak Plastik di tong Anorganik? Hah, itu... kreatif sekali.',
+    'Kamu menjebak Pak Plastik di bak Anorganik? Hah, itu... kreatif sekali.',
     'Dia keluar sendiri, kok. Tapi sejak itu dia jadi lebih sering mikir sebelum mengacau.',
     'Mungkin lain kali ajak dia bicara dulu. Jebakan itu lucu, tapi ajakan lebih awet.',
   ],
