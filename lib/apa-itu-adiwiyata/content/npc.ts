@@ -80,7 +80,7 @@ export const DIALOG_NPC: Record<string, DialogNpc> = {
     baris: [
       'Aku baru mulai bawa tumbler minggu ini. Ternyata hemat juga, tidak beli minuman kemasan tiap hari.',
       'Tadi aku lihat Pak Plastik jalan-jalan di dekat gerbang. Dia lucu sih, tapi suka iseng.',
-      'Kamu sudah sampai bab berapa? Aku masih di Kantin, pilahnya susah-susah gampang.',
+      'Kamu sudah sampai bab berapa? Aku masih belajar memilah, susah-susah gampang.',
     ],
     tips: 'Lunch box dari rumah itu lebih enak daripada jajan bungkus styrofoam.',
   },

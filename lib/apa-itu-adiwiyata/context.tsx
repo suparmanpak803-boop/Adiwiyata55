@@ -40,7 +40,7 @@ import {
 import { HADIAH_HARIAN, hadiahBerikutnya } from './content/hadiah-harian'
 import { hitungSetoran } from './content/bank-sampah'
 import { HADIAH_PILAH_KOIN, HADIAH_PILAH_UANG } from './content/bak'
-import type { CampaignSave, Carryover, ChapterId, Checkpoint, JenisKelamin, PakPlastikStatus, PromiseItem, Report, StageProgress, TongSampah, TugasKaderId } from './types'
+import type { CampaignSave, Carryover, ChapterId, Checkpoint, JenisKelamin, PakPlastikStatus, PetaAktif, Report, StageProgress, TongSampah, TugasKaderId } from './types'
 
 export type CampaignAction =
   | { type: 'LOAD'; save: CampaignSave }
@@ -55,8 +55,6 @@ export type CampaignAction =
   | { type: 'EARN_COINS'; amount: number }
   | { type: 'UNLOCK_CARD'; cardId: string }
   | { type: 'EARN_BADGE'; badgeId: string }
-  | { type: 'ADD_PROMISE'; text: string; chapterId: ChapterId }
-  | { type: 'CHECKIN_PROMISE'; id: string }
   | { type: 'SET_CHECKPOINT'; checkpoint: Checkpoint }
   | { type: 'CLEAR_CHECKPOINT' }
   | { type: 'SET_CARRYOVER'; patch: Partial<Carryover> }
@@ -99,9 +97,10 @@ export type CampaignAction =
   /** Klaim Hadiah Harian (atomik, 1x sehari — lihat content/hadiah-harian.ts).
    * Bila sudah klaim di hari yang sama, tidak mengubah apa pun. */
   | { type: 'KLAIM_HADIAH_HARIAN'; hariIni: string }
-  /** Pindah peta: 'rumah' (titik awal) atau 'sekolah' (dunia Jelajah).
-   * Disimpan di save (provider autosave) supaya peta terakhir terbuka lagi. */
-  | { type: 'SET_PETA_AKTIF'; peta: 'rumah' | 'sekolah' }
+  /** Pindah peta: 'rumah' (titik awal) atau salah satu peta sekolah
+   * (dunia Jelajah). Disimpan di save (provider autosave) supaya peta
+   * terakhir terbuka lagi. */
+  | { type: 'SET_PETA_AKTIF'; peta: PetaAktif }
   /** Uang saku Ibu (atomik, 1x per hari kalender lokal): Rp5.000 + sarapan
    * (lapar +40). Bila sudah diberi di hari yang sama, tidak mengubah apa pun. */
   | { type: 'TERIMA_UANG_SAKU'; hariIni: string }
@@ -169,10 +168,6 @@ function hariLokal(d: Date): string {
   const bulan = String(d.getMonth() + 1).padStart(2, '0')
   const tanggal = String(d.getDate()).padStart(2, '0')
   return `${d.getFullYear()}-${bulan}-${tanggal}`
-}
-
-function newPromiseId(): string {
-  return `aia-p-${Date.now().toString(36)}${Math.floor(Math.random() * 1_000_000).toString(36)}`
 }
 
 function reducer(save: CampaignSave, action: CampaignAction): CampaignSave {
@@ -277,20 +272,6 @@ function reducer(save: CampaignSave, action: CampaignAction): CampaignSave {
       return save.badges.includes(action.badgeId)
         ? save
         : touch(save, { badges: [...save.badges, action.badgeId] })
-    case 'ADD_PROMISE': {
-      const item: PromiseItem = {
-        id: newPromiseId(),
-        text: action.text,
-        chapterId: action.chapterId,
-        done: false,
-        createdAt: new Date().toISOString(),
-      }
-      return touch(save, { promises: [...save.promises, item] })
-    }
-    case 'CHECKIN_PROMISE':
-      return touch(save, {
-        promises: save.promises.map((p) => (p.id === action.id ? { ...p, done: true } : p)),
-      })
     case 'SET_CHECKPOINT':
       return touch(save, { checkpoint: action.checkpoint })
     case 'CLEAR_CHECKPOINT':

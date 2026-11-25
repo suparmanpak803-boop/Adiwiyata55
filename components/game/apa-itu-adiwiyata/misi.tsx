@@ -109,9 +109,9 @@ export function Misi() {
         </div>
       </section>
 
-      <section className="aia-card" aria-labelledby="aia-misi-kader-title">
+      <section className="aia-card" aria-labelledby="aia-misi-tambahan-title">
         <span className="aia-kicker">Misi Tambahan · 8 tim</span>
-        <h2 id="aia-misi-kader-title" className="aia-section-title">
+        <h2 id="aia-misi-tambahan-title" className="aia-section-title">
           Misi Tambahan
         </h2>
         <p className="aia-muted">

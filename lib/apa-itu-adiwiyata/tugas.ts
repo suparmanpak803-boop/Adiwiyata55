@@ -35,7 +35,7 @@ export const TUGAS: Record<
     deskripsi:
       'Mengedukasi warga sekolah tentang lingkungan hidup dan perilaku ramah lingkungan, dari pilah sampah sampai hemat air dan energi.',
     npcId: 'npc-edu-lingkungan',
-    zona: 'Plaza',
+    zona: 'Kebun',
     menit: 10,
     icon: '📚',
   },
@@ -45,7 +45,7 @@ export const TUGAS: Record<
     deskripsi:
       'Mengembangkan literasi, riset, dan produk inovasi ramah lingkungan — dari poster dan infografis sampai alat sederhana buatan sendiri.',
     npcId: 'npc-inovasi-hijau',
-    zona: 'Perpustakaan',
+    zona: 'Taman',
     menit: 10,
     icon: '💡',
   },
@@ -75,7 +75,7 @@ export const TUGAS: Record<
     deskripsi:
       'Mengelola media sosial dan konten edukasi lingkungan sekolah, supaya kabar baiknya sampai ke semua orang.',
     npcId: 'npc-eco-communication',
-    zona: 'Plaza',
+    zona: 'Kebun',
     menit: 10,
     icon: '📣',
   },

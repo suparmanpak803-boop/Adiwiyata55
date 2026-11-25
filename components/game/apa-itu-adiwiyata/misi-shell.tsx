@@ -14,7 +14,6 @@ import { REFLEKSI } from '@/lib/apa-itu-adiwiyata/content/pertanyaan'
 import { SPESIES } from '@/lib/apa-itu-adiwiyata/content/spesies'
 import { BAB_BADGE, LENCANA, TUGAS_BADGE } from '@/lib/apa-itu-adiwiyata/lencana'
 import { TUGAS_ORDER, type ChapterId, type Report, type TugasKaderId } from '@/lib/apa-itu-adiwiyata/types'
-import { JanjiHarian } from './janji-harian'
 import { PilihanCerita } from './pilihan-cerita'
 import { RaporSekolah } from './rapor-sekolah'
 import { KejadianAcak } from './minigames/kejadian-acak'
@@ -115,7 +114,7 @@ function tambahRapor(laporan: Report, bonus: Partial<Report>): Partial<Report> {
  * - tombol "Main lagi" kecil hanya untuk tahap yang sudah selesai.
  * Logika penyelesaian dipertahankan dari bab-shell (COMPLETE_STAGE /
  * COMPLETE_CHAPTER / COMPLETE_TUGAS_STAGE / COMPLETE_TUGAS, bonus rapor,
- * lencana, kartu ensiklopedia, janji harian, spesies, kejadian acak, musik).
+ * lencana, kartu ensiklopedia, spesies, kejadian acak, musik).
  */
 export function MisiShell({
   kind,
@@ -701,7 +700,6 @@ export function MisiShell({
                   </p>
                 </>
               )}
-              <JanjiHarian />
             </>
           ) : (
             <>

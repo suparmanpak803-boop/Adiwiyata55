@@ -112,8 +112,16 @@ function jepitKamera(nilai: number, pandang: number, dunia: number): number {
   return Math.max(0, Math.min(nilai, dunia - pandang))
 }
 
-/** Lapisan statis interior rumah — digambar sekali. */
-function bangunStatis(sudahDiberi: boolean): HTMLCanvasElement {
+/** true bila lebar pandang canvas < 480px (HP sempit) — dipakai untuk
+ * mengecilkan label interior supaya tidak bertumpuk. */
+function pandangSempit(viewW: number): boolean {
+  const w = viewW > 0 ? viewW : typeof window !== 'undefined' ? window.innerWidth : 1024
+  return w < 480
+}
+
+/** Lapisan statis interior rumah — digambar sekali. `sempit` = lebar
+ * pandang < 480px: label objek diperkecil. */
+function bangunStatis(sudahDiberi: boolean, sempit = false): HTMLCanvasElement {
   const c = document.createElement('canvas')
   c.width = RUMAH.lebar
   c.height = RUMAH.tinggi
@@ -156,7 +164,7 @@ function bangunStatis(sudahDiberi: boolean): HTMLCanvasElement {
   g.stroke()
 
   const label = (teks: string, cx: number, cy: number) => {
-    g.font = 'bold 12px system-ui, sans-serif'
+    g.font = sempit ? 'bold 11px system-ui, sans-serif' : 'bold 12px system-ui, sans-serif'
     const lebarTeks = g.measureText(teks).width
     g.fillStyle = 'rgba(0,0,0,0.55)'
     rr(g, cx - lebarTeks / 2 - 8, cy - 11, lebarTeks + 16, 22, 11)
@@ -276,7 +284,7 @@ function bangunStatis(sudahDiberi: boolean): HTMLCanvasElement {
   g.beginPath()
   g.arc(POSISI_IBU.x + 3.5, POSISI_IBU.y - 12, 1.4, 0, Math.PI * 2)
   g.fill()
-  g.font = 'bold 11px system-ui, sans-serif'
+  g.font = sempit ? 'bold 10px system-ui, sans-serif' : 'bold 11px system-ui, sans-serif'
   g.textAlign = 'center'
   g.textBaseline = 'bottom'
   g.lineWidth = 3
@@ -479,12 +487,12 @@ export function Rumah({
 
   // Lapisan statis digambar ulang bila status uang saku berubah (tanda "!").
   useEffect(() => {
-    staticRef.current = bangunStatis(sudahDiberi)
+    staticRef.current = bangunStatis(sudahDiberi, pandangSempit(viewRef.current.w))
   }, [sudahDiberi])
 
   // Loop utama: update + gambar + keyboard + jeda saat tab disembunyikan.
   useEffect(() => {
-    staticRef.current = bangunStatis(saveRef.current.ibuTanggal === hariIniLokal())
+    staticRef.current = bangunStatis(saveRef.current.ibuTanggal === hariIniLokal(), pandangSempit(viewRef.current.w))
 
     const update = (dt: number) => {
       const p = playerRef.current
@@ -827,7 +835,7 @@ export function Rumah({
 
   return (
     <div className="aia-stack">
-      <div className="aia-progress-row">
+      <div className="aia-hud">
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
           <Coins aria-hidden="true" /> {save.coins} Koin Hijau
         </span>
@@ -855,13 +863,13 @@ export function Rumah({
         </button>
       </div>
 
-      <div className="aia-progress-row">
+      <div className="aia-hud">
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
           <span>
             Lapar {save.lapar ?? 100}
           </span>
           <span
-            style={{ display: 'inline-block', width: 48, height: 8, borderRadius: 4, background: '#e0e0e0', overflow: 'hidden' }}
+            className="aia-hud-bar"
             role="progressbar"
             aria-label="Lapar"
             aria-valuenow={save.lapar ?? 100}
@@ -876,7 +884,7 @@ export function Rumah({
             Haus {save.haus ?? 100}
           </span>
           <span
-            style={{ display: 'inline-block', width: 48, height: 8, borderRadius: 4, background: '#e0e0e0', overflow: 'hidden' }}
+            className="aia-hud-bar"
             role="progressbar"
             aria-label="Haus"
             aria-valuenow={save.haus ?? 100}
@@ -924,11 +932,11 @@ export function Rumah({
 
         {toast && (
           <div
-            style={{ position: 'absolute', top: 12, left: '50%', transform: 'translateX(-50%)', zIndex: 4 }}
+            style={{ position: 'absolute', top: 12, left: '50%', transform: 'translateX(-50%)', zIndex: 4, maxWidth: 'calc(100% - 24px)' }}
             role="status"
             aria-live="polite"
           >
-            <span className="aia-chip">{toast}</span>
+            <span className="aia-chip aia-chip-wrap">{toast}</span>
           </div>
         )}
 

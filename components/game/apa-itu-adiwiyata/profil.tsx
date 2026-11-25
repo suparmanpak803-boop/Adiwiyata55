@@ -1,11 +1,11 @@
 'use client'
 
-// Profil pemain: nama panggilan, Koin Hijau, streak, janji aktif,
+// Profil pemain: nama panggilan, Koin Hijau, streak,
 // dan pengaturan suara (slider Musik/Efek + Mute semua).
 // Pengaturan suara tersimpan di save kampanye; provider sudah memanggil
 // syncSettings otomatis setiap pengaturan berubah.
 import { useState } from 'react'
-import { Award, Banknote, BookOpen, CalendarCheck, Coins, Flame, Footprints, Leaf, Store, Sun, TreePine, Volume2, VolumeX } from 'lucide-react'
+import { Award, Banknote, BookOpen, Coins, Flame, Footprints, Leaf, Store, Sun, TreePine, Volume2, VolumeX } from 'lucide-react'
 import { useCampaign } from '@/lib/apa-itu-adiwiyata/context'
 import { CHAPTER_ORDER } from '@/lib/apa-itu-adiwiyata/chapters'
 import { ECO_SHOP, GEAR, KOSTUM, SKOR_MISI_PERTAMA, SKOR_PANEL_SURYA, SKOR_POHON } from '@/lib/apa-itu-adiwiyata/content/toko'
@@ -27,7 +27,6 @@ export function Profil({
   const [pesanKarakter, setPesanKarakter] = useState<string | null>(null)
   const [pesanKoleksi, setPesanKoleksi] = useState<string | null>(null)
 
-  const janjiAktif = save.promises.filter((p) => !p.done)
   const inventaris = save.inventaris ?? []
   const gearDimiliki = GEAR.filter((g) => inventaris.includes(g.id))
   const kostumDimiliki = KOSTUM.filter((k) => inventaris.includes(k.id))
@@ -267,24 +266,6 @@ export function Profil({
           <p className="aia-muted" role="status" style={{ marginTop: 8 }}>
             {pesanKarakter}
           </p>
-        )}
-      </section>
-
-      <section className="aia-card">
-        <h3 className="aia-section-title" style={{ marginTop: 0 }}>
-          Janji aktif
-        </h3>
-        {janjiAktif.length === 0 ? (
-          <p className="aia-muted">Belum ada janji aktif. Pilih janji di menu Janji Harian.</p>
-        ) : (
-          <div className="aia-stack">
-            {janjiAktif.map((janji) => (
-              <p key={janji.id} className="aia-muted" style={{ margin: 0 }}>
-                <CalendarCheck aria-hidden="true" style={{ width: 16, height: 16, verticalAlign: -3 }} />{' '}
-                {janji.text}
-              </p>
-            ))}
-          </div>
         )}
       </section>
 

@@ -60,7 +60,6 @@ export function freshSave(nickname = ''): CampaignSave {
     bestScores: {},
     unlockedCards: [],
     badges: [],
-    promises: [],
     report: { sampah: 0, energi: 0, air: 0, hijau: 0, biodiversitas: 0 },
     carryover: { maggotKenaMinyak: false, komposBau: false, kebunLayu: false },
     species: [],
@@ -114,7 +113,6 @@ export function hasProgress(save: CampaignSave): boolean {
   if (
     save.badges.length > 0 ||
     save.unlockedCards.length > 0 ||
-    save.promises.length > 0 ||
     save.species.length > 0
   ) {
     return true
@@ -156,7 +154,7 @@ export function isSaveValid(value: unknown): value is CampaignSave {
   }
   if (typeof v.report !== 'object' || v.report === null) return false
   if (typeof v.carryover !== 'object' || v.carryover === null) return false
-  if (!Array.isArray(v.unlockedCards) || !Array.isArray(v.badges) || !Array.isArray(v.promises) || !Array.isArray(v.species)) return false
+  if (!Array.isArray(v.unlockedCards) || !Array.isArray(v.badges) || !Array.isArray(v.species)) return false
   return true
 }
 
@@ -230,11 +228,18 @@ export function loadSave(): CampaignSave {
     ) {
       merged.hadiahSiklus = 1
     }
-    // Pengaman Peta Rumah: save lama tanpa field ini tetap membuka dunia
-    // sekolah (perilaku lama); nilai rusak juga jadi 'sekolah'. Permainan
-    // baru (freshSave) memakai 'rumah'.
-    const petaTersimpan = (parsed as Partial<CampaignSave>).petaAktif
-    merged.petaAktif = petaTersimpan === 'rumah' || petaTersimpan === 'sekolah' ? petaTersimpan : 'sekolah'
+    // Pengaman Peta: save lama tanpa field ini tetap membuka dunia
+    // sekolah (perilaku lama) — kini sebagai peta Gerbang; nilai lama
+    // 'sekolah' dipetakan ke 'gerbang'; nilai rusak juga jadi 'gerbang'.
+    // Permainan baru (freshSave) memakai 'rumah'.
+    const petaTersimpan: unknown = (parsed as Partial<CampaignSave>).petaAktif
+    const PETA_VALID = ['rumah', 'gerbang', 'kantin', 'kebun', 'maggot', 'taman']
+    merged.petaAktif =
+      petaTersimpan === 'sekolah'
+        ? 'gerbang'
+        : typeof petaTersimpan === 'string' && PETA_VALID.includes(petaTersimpan)
+          ? (petaTersimpan as CampaignSave['petaAktif'])
+          : 'gerbang'
     // Pengaman uang saku Ibu: hanya tanggal lokal YYYY-MM-DD atau null.
     const ibuTersimpan = (parsed as Partial<CampaignSave>).ibuTanggal
     merged.ibuTanggal =

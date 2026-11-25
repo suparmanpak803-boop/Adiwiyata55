@@ -13,6 +13,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { LogOut } from 'lucide-react'
 import { CampaignProvider, useCampaign } from '@/lib/apa-itu-adiwiyata/context'
+import { PETA, type PetaId } from '@/lib/apa-itu-adiwiyata/content/peta'
 import { CHAPTERS, CHAPTER_ORDER } from '@/lib/apa-itu-adiwiyata/chapters'
 import { freshDunia, majukanDunia, type PeristiwaDunia } from '@/lib/apa-itu-adiwiyata/dunia-hidup'
 import { TUGAS } from '@/lib/apa-itu-adiwiyata/tugas'
@@ -62,6 +63,9 @@ function Shell() {
   /** Bila true, layar toko dibuka dari Booth Eco-Shop dan langsung
    * menggulir ke seksi Eco-Shop. */
   const [tokoFokusEco, setTokoFokusEco] = useState(false)
+  /** Titik masuk Jelajah di peta aktif (dari portal tujuan); null = spawn
+   * peta. Diatur saat pindah portal / berangkat dari Rumah. */
+  const [titikMasuk, setTitikMasuk] = useState<{ x: number; y: number } | null>(null)
   const laporanRef = useRef(false)
 
   // Laporan Pagi: majukan Dunia Hidup sekali per sesi, di runner (bukan di
@@ -193,13 +197,21 @@ function Shell() {
   }
 
   // Pindah peta: portal Jalan Pulang di sekolah -> Rumah; pintu di rumah ->
-  // sekolah. Dispatch langsung tersimpan (provider autosave tiap state berubah).
+  // sekolah (peta Gerbang). Pindah antar peta sekolah lewat portal Jelajah.
+  // Dispatch langsung tersimpan (provider autosave tiap state berubah).
   const pulangKeRumah = () => {
+    setTitikMasuk(null)
     dispatch({ type: 'SET_PETA_AKTIF', peta: 'rumah' })
   }
 
   const berangkatKeSekolah = () => {
-    dispatch({ type: 'SET_PETA_AKTIF', peta: 'sekolah' })
+    setTitikMasuk({ ...PETA.gerbang.spawn })
+    dispatch({ type: 'SET_PETA_AKTIF', peta: 'gerbang' })
+  }
+
+  const pindahPeta = (peta: PetaId, masuk: { x: number; y: number }) => {
+    setTitikMasuk(masuk)
+    dispatch({ type: 'SET_PETA_AKTIF', peta })
   }
 
   // Keluar dari bab: kembali ke dunia, kecuali tamat (ke layar tamat).
@@ -331,15 +343,18 @@ function Shell() {
             <div
               className="aia-card"
               role="status"
-              style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}
+              style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}
             >
-              <p style={{ margin: 0 }}>{pesanMisi}</p>
+              <p style={{ margin: 0, minWidth: 0, flex: '1 1 220px' }}>{pesanMisi}</p>
               <button type="button" className="aia-btn aia-btn-ghost" onClick={() => setPesanMisi(null)}>
                 Tutup
               </button>
             </div>
           )}
           <Jelajah
+            petaId={save.petaAktif}
+            masuk={titikMasuk}
+            onPindahPeta={pindahPeta}
             onPlayChapter={mainBab}
             onPlayTugas={mainTugas}
             onPlayTangkap={mainTangkap}

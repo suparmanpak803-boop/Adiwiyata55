@@ -190,7 +190,7 @@ export function CaraBermain({ onTutup }: { onTutup: () => void }) {
 
         <h3 className="aia-section-title">Eco-Shop &amp; Skor Adiwiyata</h3>
         <p className="aia-muted" style={{ marginTop: 0 }}>
-          Di antara bedeng kebun ada Booth Eco-Shop — dekati, lalu ketuk &quot;Eco-Shop&quot; (atau tekan E di laptop).
+          Di Kebun ada Booth Eco-Shop (di bawah meja Bank Sampah) — dekati, lalu ketuk &quot;Eco-Shop&quot; (atau tekan E di laptop).
           Itemnya dibeli sekali pakai Koin Hijau, efeknya permanen:
         </p>
         <ul style={{ margin: '0 0 12px', paddingLeft: 20 }}>

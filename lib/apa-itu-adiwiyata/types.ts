@@ -60,14 +60,6 @@ export interface Checkpoint {
   savedAt: string
 }
 
-export interface PromiseItem {
-  id: string
-  text: string
-  chapterId: ChapterId
-  done: boolean
-  createdAt: string
-}
-
 export interface Report {
   sampah: number
   energi: number
@@ -86,6 +78,11 @@ export interface Carryover {
  * (rok). null = permainan baru yang belum memilih karakter. */
 export type JenisKelamin = 'siswa' | 'siswi'
 
+/** Peta yang sedang dibuka: 'rumah' (titik awal permainan baru) atau salah
+ * satu peta sekolah (dunia Jelajah). Save lama 'sekolah' dipetakan ke
+ * 'gerbang' saat dimuat (lihat loadSave). */
+export type PetaAktif = 'rumah' | 'gerbang' | 'kantin' | 'kebun' | 'maggot' | 'taman'
+
 export interface CampaignSave {
   version: 1
   nickname: string
@@ -100,7 +97,6 @@ export interface CampaignSave {
   bestScores: Record<string, number>
   unlockedCards: string[]
   badges: string[]
-  promises: PromiseItem[]
   report: Report
   carryover: Carryover
   species: string[]
@@ -154,8 +150,9 @@ export interface CampaignSave {
   hadiahTerakhir: string | null
   hadiahSiklus: number
   /** Peta yang sedang dibuka: 'rumah' (titik awal permainan baru) atau
-   * 'sekolah' (dunia Jelajah). Save lama tanpa field ini -> 'sekolah'. */
-  petaAktif: 'rumah' | 'sekolah'
+   * salah satu peta sekolah (dunia Jelajah). Save lama 'sekolah' dipetakan
+   * ke 'gerbang' saat dimuat (lihat loadSave). */
+  petaAktif: PetaAktif
   /** Uang saku Ibu: tanggal lokal (YYYY-MM-DD) terakhir Ibu memberi uang
    * saku + sarapan (1x per hari kalender lokal). */
   ibuTanggal: string | null

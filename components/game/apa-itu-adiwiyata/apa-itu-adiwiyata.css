@@ -11,6 +11,27 @@
   color: var(--foreground);
 }
 
+/* --- Shell runner (index.tsx) — sebelumnya tidak punya aturan dasar,
+   jadi di HP konten menempel ke tepi viewport tanpa padding dan bar HUD
+   yang meluber membuat halaman bisa di-scroll horizontal. --- */
+.aia-shell {
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0 16px calc(88px + env(safe-area-inset-bottom));
+  overflow-x: hidden;
+  overflow-x: clip;
+  overflow-wrap: break-word;
+  color: var(--foreground);
+}
+
+.aia-shell button:focus-visible,
+.aia-shell a:focus-visible,
+.aia-shell input:focus-visible {
+  outline: 3px solid var(--green);
+  outline-offset: 2px;
+}
+
 .aia-root button,
 .aia-root input {
   font: inherit;
@@ -98,6 +119,7 @@
   color: var(--ink-soft);
   font-size: 13px;
   line-height: 1.6;
+  overflow-wrap: break-word;
 }
 
 .aia-stack {
@@ -233,6 +255,63 @@
 
 .aia-progress-row .aia-progress {
   flex: 1;
+}
+
+/* --- HUD dunia (Jelajah + Rumah): baris yang membungkus di layar sempit,
+   supaya nilai Lapar/Haus/Rp/Koin/Skor tidak terpotong di 360px. Berbeda
+   dari .aia-progress-row (tanpa wrap, dipakai banyak layar mini-game). --- */
+.aia-hud {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+.aia-hud > * {
+  min-width: 0;
+}
+
+.aia-hud svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+
+/* Trek bar Lapar/Haus di HUD (dulu inline width 48px, tidak bisa mengecil). */
+.aia-hud-bar {
+  display: inline-block;
+  width: 48px;
+  height: 8px;
+  border-radius: 4px;
+  background: #e0e0e0;
+  overflow: hidden;
+  flex: none;
+}
+
+/* Toast di atas canvas boleh membungkus (chip dasar white-space: nowrap). */
+.aia-chip-wrap {
+  white-space: normal;
+  text-align: center;
+}
+
+@media (max-width: 480px) {
+  .aia-hud {
+    font-size: 12px;
+    gap: 6px 10px;
+  }
+
+  .aia-hud-bar {
+    width: 36px;
+  }
+
+  /* Tombol "Lihat semua misi" sedikit lebih ramping supaya muat di baris
+     sendiri tanpa terpotong; tinggi sentuh tetap 44px. */
+  .aia-hud .aia-btn {
+    padding: 10px 14px;
+    font-size: 13px;
+  }
 }
 
 /* --- Chip status --- */

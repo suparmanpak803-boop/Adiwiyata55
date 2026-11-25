@@ -47,15 +47,17 @@
 //   teks peristiwa/pesan toast memanggil fungsi murni yang sama langsung
 //   dari `save.dunia` (sebelum dispatch), lalu dispatch aksi yang sama;
 //   hasilnya identik karena fungsinya murni dan deterministik.
-// - POSISI: titik interaksi di dunia Canvas 960x640 (lihat dunia.ts).
-//   POSISI_PETAK ada di zona Kebun (x 270-470, y 40-180) tapi DI LUAR kedua
-//   bedeng (290,60,120,40) dan (290,120,120,40); petak-1 digeser ke (450,60)
-//   supaya tidak menumpuk NPC Pak Kebun di (440,90). POSISI_KOTAK_MAGGOT
-//   (760,400) ada di zona Pos Maggot (x 720-920, y 290-430) tapi DI LUAR
-//   dinding rumah maggot (790,310,110,80).
+// - POSISI: titik interaksi di dunia Canvas. SUMBER TUNGGAL adalah
+//   registry peta (lib/apa-itu-adiwiyata/content/peta.ts): POSISI_PETAK
+//   dan POSISI_KOTAK_MAGGOT di bawah diambil dari titikInteraksi peta
+//   Kebun / Pos Maggot (dengan fallback ke koordinat lama bila titik
+//   tidak ditemukan). Petak ada di zona Kebun tapi DI LUAR kedua bedeng;
+//   kotak maggot ada di zona Pos Maggot tapi DI LUAR rumah maggot.
 // - Nama SFX di suara.ts (siram, panen, tumbuh, maggot, koin) TIDAK dipakai
 //   di file ini; UI Gelombang B yang memanggilnya. Nama fungsi di sini
 //   sengaja berbeda (siramTanaman, panenTanaman, ...) supaya tidak bentrok.
+
+import { PETA, cariTitik, type IdTitikInteraksi } from './content/peta'
 
 export type JenisTanaman = 'kangkung' | 'cabai' | 'bayam'
 
@@ -127,15 +129,20 @@ export const KOIN_BERSIHKAN = 5
 export const KOIN_PANEN = 20
 export const KOIN_PANEN_KASGOT = 20
 
-/** Titik interaksi petak kebun di dunia (di zona Kebun, di luar bedeng). */
-export const POSISI_PETAK: Record<PetakId, { x: number; y: number }> = {
-  'petak-1': { x: 450, y: 60 },
-  'petak-2': { x: 450, y: 140 },
-  'petak-3': { x: 320, y: 170 },
+/** Titik interaksi petak kebun — diambil dari registry peta (PETA.kebun).
+ * Fallback = koordinat peta Kebun yang baru bila titik tidak ditemukan. */
+function posisiDariPeta(petaId: 'kebun' | 'maggot', id: IdTitikInteraksi, jatuh: { x: number; y: number }): { x: number; y: number } {
+  return cariTitik(PETA[petaId], id) ?? jatuh
 }
 
-/** Titik interaksi kotak maggot di dunia (di zona Pos Maggot, di luar rumah maggot). */
-export const POSISI_KOTAK_MAGGOT: { x: number; y: number } = { x: 760, y: 400 }
+export const POSISI_PETAK: Record<PetakId, { x: number; y: number }> = {
+  'petak-1': posisiDariPeta('kebun', 'petak-1', { x: 300, y: 70 }),
+  'petak-2': posisiDariPeta('kebun', 'petak-2', { x: 300, y: 150 }),
+  'petak-3': posisiDariPeta('kebun', 'petak-3', { x: 180, y: 205 }),
+}
+
+/** Titik interaksi kotak maggot — diambil dari registry peta (PETA.maggot). */
+export const POSISI_KOTAK_MAGGOT: { x: number; y: number } = posisiDariPeta('maggot', 'kotak-maggot', { x: 480, y: 160 })
 
 /** Tanggal lokal YYYY-MM-DD dari milidetik epoch (bukan UTC). */
 export function hariLokalDariMs(ms: number): string {

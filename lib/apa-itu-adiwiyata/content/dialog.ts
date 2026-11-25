@@ -110,7 +110,7 @@ export const DIALOG_AWAL: Record<ChapterId, DialogLine[]> = {
     },
     {
       tokoh: 'Pak Plastik',
-      teks: 'Aku janji tidak buang sampah sembarangan lagi. Boleh ikut inspeksi, kan? Aku sudah belajar memilah.',
+      teks: 'Aku tidak akan buang sampah sembarangan lagi. Boleh ikut inspeksi, kan? Aku sudah belajar memilah.',
     },
     {
       tokoh: 'Narator',
@@ -148,10 +148,10 @@ const GERBANG_PAK_PLASTIK: Record<PakPlastikStatus, string> = {
 
 /** Baris Pak Plastik di Biodiversitas per status (indeks 2 dari DIALOG_AWAL.biodiversitas). */
 const BAB6_PAK_PLASTIK: Record<PakPlastikStatus, string> = {
-  netral: 'Aku janji tidak buang sampah sembarangan lagi. Boleh ikut inspeksi, kan? Aku sudah belajar memilah.',
-  dibujuk: 'Aku janji tidak buang sampah sembarangan lagi. Boleh ikut inspeksi, kan? Sejak kamu ajak memilah, aku sudah belajar.',
-  dilawan: 'Aku janji tidak buang sampah sembarangan lagi. Boleh ikut inspeksi, kan? Lomba pilah kemarin bikin aku latihan tiap pagi.',
-  dijebak: 'Aku janji tidak buang sampah sembarangan lagi. Boleh ikut inspeksi, kan? Sejak keluar dari bak itu, aku jadi mikir sebelum mengacau.',
+  netral: 'Aku tidak akan buang sampah sembarangan lagi. Boleh ikut inspeksi, kan? Aku sudah belajar memilah.',
+  dibujuk: 'Aku tidak akan buang sampah sembarangan lagi. Boleh ikut inspeksi, kan? Sejak kamu ajak memilah, aku sudah belajar.',
+  dilawan: 'Aku tidak akan buang sampah sembarangan lagi. Boleh ikut inspeksi, kan? Lomba pilah kemarin bikin aku latihan tiap pagi.',
+  dijebak: 'Aku tidak akan buang sampah sembarangan lagi. Boleh ikut inspeksi, kan? Sejak keluar dari bak itu, aku jadi mikir sebelum mengacau.',
 }
 
 /**

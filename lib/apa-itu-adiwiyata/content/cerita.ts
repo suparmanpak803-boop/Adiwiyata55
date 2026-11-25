@@ -449,7 +449,7 @@ export const DIALOG_PAK_PLASTIK: Record<PakPlastikStatus, DialogPakPlastik> = {
     baris: [
       'Jebakan bak itu... lumayan licik. Aku akui, botol mengilap itu memang sulit ditolak.',
       'Aku sudah keluar dari bak, tenang saja. Tapi sekarang aku jadi mikir: mungkin bak itu memang tempatku.',
-      'Lain kali ajak aku saja, jangan dijebak lagi. Aku janji tidak mengacau... terlalu banyak.',
+      'Lain kali ajak aku saja, jangan dijebak lagi. Aku tidak akan mengacau... terlalu banyak.',
     ],
   },
 }
@@ -462,7 +462,7 @@ export const DIALOG_MAGI_PAK_PLASTIK: Record<'dibujuk' | 'dilawan' | 'dijebak', 
   dibujuk: [
     'Pak Plastik sekarang suka memilah, lho. Aku sampai tidak percaya waktu pertama kali lihat.',
     'Dia yang dibujuk malah jadi teman pilah. Kadang yang paling berisik itu yang paling cepat berubah.',
-    'Kalau dia datang ke Pos Maggot, dia cuma lihat-lihat. Tidak mengacau lagi, janji.',
+    'Kalau dia datang ke Pos Maggot, dia cuma lihat-lihat. Tidak mengacau lagi, sungguh.',
   ],
   dilawan: [
     'Kamu menantang Pak Plastik lomba pilah? Berani sekali. Aku suka.',

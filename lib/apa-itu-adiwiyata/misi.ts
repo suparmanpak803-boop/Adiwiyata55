@@ -20,11 +20,11 @@ export const LOKASI_PEMBERI: Record<string, string> = {
   // Pemberi Misi Kader (lokasi = zona dari TUGAS).
   'npc-bank-sampah': 'Bank Sampah',
   'npc-lingkungan-sehat': 'Taman & Toilet',
-  'npc-edu-lingkungan': 'Plaza',
-  'npc-inovasi-hijau': 'Perpustakaan',
+  'npc-edu-lingkungan': 'Kebun',
+  'npc-inovasi-hijau': 'Taman',
   'npc-kantin-hijau': 'Kantin',
   'npc-data-hijau': 'Pos Data',
-  'npc-eco-communication': 'Plaza',
+  'npc-eco-communication': 'Kebun',
   'npc-jejaring-hijau': 'Gerbang',
 }
 
