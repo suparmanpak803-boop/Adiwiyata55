@@ -4,12 +4,14 @@
 // dunia. Setelah nama tersimpan, runner langsung menampilkan dunia.
 
 import { useState } from 'react'
-import { Play } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { LogOut, Play } from 'lucide-react'
 import { useCampaign } from '@/lib/apa-itu-adiwiyata/context'
-import { playPop } from './suara'
+import { klik, playPop } from './suara'
 
 export function GerbangNama() {
   const { dispatch } = useCampaign()
+  const router = useRouter()
   const [nickname, setNickname] = useState('')
 
   const mulai = () => {
@@ -20,7 +22,7 @@ export function GerbangNama() {
   }
 
   return (
-    <section className="aia-card" aria-labelledby="aia-nama-title">
+    <section className="aia-card aia-gerbang-nama" aria-labelledby="aia-nama-title">
       <span className="aia-kicker">Kampanye · Adiwiyata 55</span>
       <h2 id="aia-nama-title" className="aia-section-title">
         Apa itu Adiwiyata?
@@ -51,6 +53,18 @@ export function GerbangNama() {
         <div className="aia-actions">
           <button type="submit" className="aia-btn aia-btn-primary aia-btn-block" disabled={!nickname.trim()}>
             <Play aria-hidden="true" /> Mulai Petualangan
+          </button>
+          {/* Keluar: di layar ini belum ada progres apa pun, jadi langsung
+              kembali ke portal tanpa konfirmasi. */}
+          <button
+            type="button"
+            className="aia-btn aia-btn-ghost aia-btn-block"
+            onClick={() => {
+              klik()
+              router.push('/')
+            }}
+          >
+            <LogOut aria-hidden="true" /> Keluar
           </button>
         </div>
       </form>

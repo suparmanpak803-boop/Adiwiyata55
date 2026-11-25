@@ -217,14 +217,23 @@ function Shell() {
 
   if (!hydrated) {
     return (
-      <section className="aia-card" aria-label="Memuat kampanye">
-        <p className="aia-muted">Memuat progres kampanyemu...</p>
-      </section>
+      <div className="aia-shell">
+        <section className="aia-card" aria-label="Memuat kampanye">
+          <p className="aia-muted">Memuat progres kampanyemu...</p>
+        </section>
+      </div>
     )
   }
 
+  // Gerbang nama ikut di dalam shell (seperti layar lain), supaya di laptop
+  // kartunya tidak membentang selebar viewport — lebarnya dibatasi aturan
+  // .aia-gerbang-nama di CSS.
   if (!save.nickname) {
-    return <GerbangNama />
+    return (
+      <div className="aia-shell">
+        <GerbangNama />
+      </div>
+    )
   }
 
   return (

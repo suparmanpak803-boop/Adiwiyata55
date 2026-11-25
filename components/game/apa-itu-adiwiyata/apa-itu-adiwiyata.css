@@ -666,6 +666,14 @@
     margin: 24px auto 0;
   }
 
+  /* Gerbang nama: kartu tengah yang sama nyamannya (maks. 640px) — layar
+     ini sebelumnya dirender tanpa shell, jadi di laptop input & tombolnya
+     membentang selebar viewport. */
+  .aia-gerbang-nama {
+    max-width: 640px;
+    margin: 24px auto 0;
+  }
+
   /* Panduan Cara Bermain: kartu lebih lebar dari 560px (menimpa inline
      maxWidth di TSX — hanya di desktop), daftar misi 2 kolom. */
   .aia-panduan-overlay > .aia-card {
