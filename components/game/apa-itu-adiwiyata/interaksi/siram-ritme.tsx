@@ -290,7 +290,11 @@ export function SiramRitme({
             className="aia-btn aia-btn-ghost"
             style={{ minHeight: 44 }}
             onClick={mulai}
-            disabled={disabled}
+            // C-27: "Ulangi" dinonaktifkan setelah onSelesai dipanggil —
+            // pengulangan ronde dikendalikan parent lewat `key` baru
+            // (kompos menaikkan `ulangan`), bukan dari tombol internal
+            // yang bisa me-restart ronde yang sudah diproses.
+            disabled={disabled || selesai}
           >
             <RotateCcw aria-hidden="true" /> Ulangi
           </button>

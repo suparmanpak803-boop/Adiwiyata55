@@ -204,7 +204,7 @@ export function KartuBagikan({
         <button type="button" className="aia-btn aia-btn-primary" disabled={sibuk} onClick={unduh}>
           <Download aria-hidden="true" /> Unduh gambar
         </button>
-        <button type="button" className="aia-btn" disabled={sibuk} onClick={bagikan}>
+        <button type="button" className="aia-btn aia-btn-aksi" disabled={sibuk} onClick={bagikan}>
           <Share2 aria-hidden="true" /> Bagikan
         </button>
       </div>

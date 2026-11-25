@@ -6,7 +6,10 @@
 // Tidak tampil bila peristiwa kosong. Bisa ditutup, 1x per sesi.
 
 import { Bug, Droplets, Sprout, Sun, Trash2, type LucideIcon } from 'lucide-react'
+import { CHAPTER_ORDER, CHAPTERS } from '@/lib/apa-itu-adiwiyata/chapters'
 import type { JenisPeristiwaDunia, PeristiwaDunia } from '@/lib/apa-itu-adiwiyata/dunia-hidup'
+import { useCampaign } from '@/lib/apa-itu-adiwiyata/context'
+import { LOKASI_PEMBERI, misiSaatIni, pemberiMisi } from '@/lib/apa-itu-adiwiyata/misi'
 
 const IKON_PERISTIWA: Record<JenisPeristiwaDunia, LucideIcon> = {
   tumbuh: Sprout,
@@ -22,7 +25,13 @@ export function LaporanPagi({
   peristiwa: PeristiwaDunia[]
   onTutup: () => void
 }) {
+  // R8: satu tujuan hari ini di bawah kabar pagi — misi utama berikutnya
+  // (bukan daftar). Bila semua misi utama selesai, ajak ke Misi Tambahan.
+  // useCampaign di atas early return (aturan hooks).
+  const { save } = useCampaign()
   if (peristiwa.length === 0) return null
+  const berikut = misiSaatIni(save)
+  const pemberi = berikut ? pemberiMisi(berikut) : undefined
   return (
     <section className="aia-card" role="status" aria-label="Laporan pagi">
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -45,8 +54,15 @@ export function LaporanPagi({
           )
         })}
       </ul>
+      <p style={{ margin: '12px 0 0', fontWeight: 700 }}>
+        {berikut
+          ? `Satu tujuan hari ini: Misi ${CHAPTER_ORDER.indexOf(berikut) + 1} — ${CHAPTERS[berikut].judul}${
+              pemberi ? ` (temui ${pemberi.nama} di ${LOKASI_PEMBERI[pemberi.id] ?? 'sekolah'})` : ''
+            }.`
+          : 'Semua misi utama selesai! Misi Tambahan masih menunggumu di dunia.'}
+      </p>
       <div className="aia-actions" style={{ marginTop: 12 }}>
-        <button type="button" className="aia-btn aia-btn-primary" style={{ minHeight: 44 }} onClick={onTutup}>
+        <button type="button" className="aia-btn aia-btn-aksi" style={{ minHeight: 44 }} onClick={onTutup}>
           Siap, mulai hari ini
         </button>
       </div>

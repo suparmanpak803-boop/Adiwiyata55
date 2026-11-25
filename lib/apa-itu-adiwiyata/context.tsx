@@ -40,7 +40,7 @@ import {
 import { HADIAH_HARIAN, hadiahBerikutnya } from './content/hadiah-harian'
 import { hitungSetoran } from './content/bank-sampah'
 import { HADIAH_PILAH_KOIN, HADIAH_PILAH_UANG } from './content/bak'
-import type { CampaignSave, Carryover, ChapterId, Checkpoint, JenisKelamin, PakPlastikStatus, PetaAktif, Report, StageProgress, TongSampah, TugasKaderId } from './types'
+import type { CampaignSave, Carryover, ChapterId, JenisKelamin, PakPlastikStatus, PetaAktif, Report, StageProgress, TongSampah, TugasKaderId } from './types'
 
 export type CampaignAction =
   | { type: 'LOAD'; save: CampaignSave }
@@ -55,8 +55,6 @@ export type CampaignAction =
   | { type: 'EARN_COINS'; amount: number }
   | { type: 'UNLOCK_CARD'; cardId: string }
   | { type: 'EARN_BADGE'; badgeId: string }
-  | { type: 'SET_CHECKPOINT'; checkpoint: Checkpoint }
-  | { type: 'CLEAR_CHECKPOINT' }
   | { type: 'SET_CARRYOVER'; patch: Partial<Carryover> }
   | { type: 'SET_REPORT'; patch: Partial<Report> }
   | { type: 'ADD_SPECIES'; id: string }
@@ -104,6 +102,10 @@ export type CampaignAction =
   /** Uang saku Ibu (atomik, 1x per hari kalender lokal): Rp5.000 + sarapan
    * (lapar +40). Bila sudah diberi di hari yang sama, tidak mengubah apa pun. */
   | { type: 'TERIMA_UANG_SAKU'; hariIni: string }
+  /** Istirahat kasur (B-7, atomik, 1x per hari kalender lokal): lapar +30
+   * dan haus +30. Bila sudah istirahat di hari yang sama, tidak mengubah
+   * apa pun — bukan hukuman, hanya batas harian. */
+  | { type: 'ISTIRAHAT_KASUR'; hariIni: string }
   /** Pungut 1 sampah liar: sampahLiar -1 (dihitung seperti sebelumnya)
    * dan sampah masuk inventaris `sampahDibawa` — TANPA koin langsung.
    * Hadiah baru didapat saat dipilah di Tempat Sampah Terpilah. */
@@ -180,10 +182,12 @@ function reducer(save: CampaignSave, action: CampaignAction): CampaignSave {
       return touch(save, { jenisKelamin: action.jenisKelamin })
     case 'START_NEW': {
       // Progres baru, tapi nama panggilan, karakter, dan pengaturan (suara
-      // + mode satu-ketukan) dipertahankan.
+      // + mode satu-ketukan) dipertahankan — termasuk kedua volume (C-20).
       const fresh = freshSave(save.nickname)
       return touch(fresh, {
         muted: save.muted,
+        volumeMusik: save.volumeMusik,
+        volumeEfek: save.volumeEfek,
         modeSatuKetukan: save.modeSatuKetukan,
         jenisKelamin: save.jenisKelamin ?? null,
       })
@@ -199,7 +203,6 @@ function reducer(save: CampaignSave, action: CampaignAction): CampaignSave {
         }
         return stage
       }) as [StageProgress, StageProgress, StageProgress]
-      const isLastStage = action.stageIndex >= 2
       const key = `${action.chapterId}:${action.stageIndex}`
       const drain = drainTahap(save)
       return touch(save, {
@@ -211,14 +214,6 @@ function reducer(save: CampaignSave, action: CampaignAction): CampaignSave {
         haus: drain.haus,
         chapters: { ...save.chapters, [action.chapterId]: { ...chapter, stages } },
         bestScores: { ...save.bestScores, [key]: Math.max(save.bestScores[key] ?? 0, action.score) },
-        checkpoint: isLastStage
-          ? null
-          : {
-              chapterId: action.chapterId,
-              stageId: action.stageIndex + 1,
-              state: null,
-              savedAt: new Date().toISOString(),
-            },
       })
     }
     case 'COMPLETE_CHAPTER': {
@@ -228,13 +223,11 @@ function reducer(save: CampaignSave, action: CampaignAction): CampaignSave {
       const skorBaru = chapter.done ? 0 : SKOR_MISI_PERTAMA
       return touch(save, {
         chapters: { ...save.chapters, [action.chapterId]: { ...chapter, done: true, badgeEarned: true } },
-        checkpoint: null,
         skorAdiwiyata: (save.skorAdiwiyata ?? 0) + skorBaru,
       })
     }
     case 'COMPLETE_TUGAS_STAGE': {
-      // Cermin COMPLETE_STAGE untuk Misi Kader, tanpa checkpoint:
-      // checkpoint Pos Hijau hanya untuk bab utama.
+      // Cermin COMPLETE_STAGE untuk Misi Kader.
       const tugas = save.tugas[action.tugasId]
       const stages = tugas.stages.map((stage, i): StageProgress => {
         if (i === action.stageIndex) {
@@ -272,10 +265,6 @@ function reducer(save: CampaignSave, action: CampaignAction): CampaignSave {
       return save.badges.includes(action.badgeId)
         ? save
         : touch(save, { badges: [...save.badges, action.badgeId] })
-    case 'SET_CHECKPOINT':
-      return touch(save, { checkpoint: action.checkpoint })
-    case 'CLEAR_CHECKPOINT':
-      return touch(save, { checkpoint: null })
     case 'SET_CARRYOVER':
       return touch(save, { carryover: { ...save.carryover, ...action.patch } })
     case 'SET_REPORT': {
@@ -501,6 +490,17 @@ function reducer(save: CampaignSave, action: CampaignAction): CampaignSave {
         uang: (save.uang ?? 0) + 5000,
         lapar: clampBar((save.lapar ?? 100) + 40),
         ibuTanggal: action.hariIni,
+      })
+    }
+    case 'ISTIRAHAT_KASUR': {
+      // B-7: satu aksi atomik — cek tanggal + pulihkan + catat tanggal
+      // dalam satu langkah, supaya kasur tidak bisa dipakai dua kali
+      // di hari yang sama.
+      if ((save.kasurTanggal ?? null) === action.hariIni) return save
+      return touch(save, {
+        lapar: clampBar((save.lapar ?? 100) + 30),
+        haus: clampBar((save.haus ?? 100) + 30),
+        kasurTanggal: action.hariIni,
       })
     }
     case 'PUNGUT_SAMPAH': {

@@ -16,6 +16,8 @@ import { CampaignProvider, useCampaign } from '@/lib/apa-itu-adiwiyata/context'
 import { PETA, type PetaId } from '@/lib/apa-itu-adiwiyata/content/peta'
 import { CHAPTERS, CHAPTER_ORDER } from '@/lib/apa-itu-adiwiyata/chapters'
 import { freshDunia, majukanDunia, type PeristiwaDunia } from '@/lib/apa-itu-adiwiyata/dunia-hidup'
+import { LOKASI_PEMBERI, misiSaatIni, pemberiMisi } from '@/lib/apa-itu-adiwiyata/misi'
+import { hasProgress } from '@/lib/apa-itu-adiwiyata/storage'
 import { TUGAS } from '@/lib/apa-itu-adiwiyata/tugas'
 import type { ChapterId, TugasKaderId } from '@/lib/apa-itu-adiwiyata/types'
 import { GerbangNama } from './gerbang-nama'
@@ -114,6 +116,24 @@ function Shell() {
     return () => unduckMusik()
   }, [dialogRunnerTerbuka])
 
+  // B-6: Esc menutup overlay teratas di runner — konfirmasi Keluar dulu,
+  // lalu panduan Cara Bermain. Diabaikan saat mengetik di input.
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return
+      const target = e.target as HTMLElement | null
+      const tag = target?.tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || target?.isContentEditable) return
+      if (tanyaKeluar) {
+        setTanyaKeluar(false)
+        return
+      }
+      if (panduanTerbuka) setPanduanTerbuka(false)
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [tanyaKeluar, panduanTerbuka])
+
   // Shortcut global M: bisukan/nyalakan semua suara (disimpan di save,
   // sama seperti tombol bisu di HUD dunia dan Profil). Tidak bentrok:
   // tidak ada komponen game yang memakai tombol M (Jelajah memakai
@@ -137,8 +157,20 @@ function Shell() {
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [dispatch])
 
+  // B-3: dari layar lemas di MisiShell — pindah ke peta Kantin (titik
+  // masuk portal gerbang) lalu langsung buka Toko Kantin.
+  const keKantinDariMisi = () => {
+    setTitikMasuk({ ...PETA.kantin.spawn })
+    dispatch({ type: 'SET_PETA_AKTIF', peta: 'kantin' })
+    setTokoFokusEco(false)
+    setScreen('toko')
+  }
+
   const gantiTab = (tab: AiaTab) => {
     setPesanMisi(null)
+    // C-16: Laporan Pagi juga dibersihkan saat pindah tab, supaya tidak
+    // muncul lagi saat kembali ke Jelajah (seperti pesanMisi di atas).
+    setLaporan(null)
     setScreen(tab)
   }
 
@@ -186,9 +218,21 @@ function Shell() {
   }
 
   // Dari Layar Awal: masuk dunia dengan progres yang ada (atau permainan
-  // baru yang masih kosong — tidak ada yang dihapus).
+  // baru yang masih kosong — tidak ada yang dihapus). R8: pemain yang
+  // kembali langsung diberi 1 tujuan di banner dunia (prompt Fogg di
+  // saat motivasi tinggi) — bukan daftar panjang.
   const masukDunia = () => {
     klik()
+    if (hasProgress(save)) {
+      const berikut = misiSaatIni(save)
+      if (berikut) {
+        const pemberi = pemberiMisi(berikut)
+        setPesanMisi(
+          `Lanjutkan: Misi ${CHAPTER_ORDER.indexOf(berikut) + 1} — ${CHAPTERS[berikut].judul}.` +
+            (pemberi ? ` Temui ${pemberi.nama} di ${LOKASI_PEMBERI[pemberi.id] ?? 'sekolah'}.` : ''),
+        )
+      }
+    }
     setScreen('peta')
   }
 
@@ -301,7 +345,8 @@ function Shell() {
           style={{
             position: 'fixed',
             inset: 0,
-            zIndex: 50,
+            // B-6: konfirmasi Keluar (80) di atas semua overlay lain.
+            zIndex: 80,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -345,6 +390,21 @@ function Shell() {
       {screen === 'peta' && laporan && laporan.length > 0 && (
         <LaporanPagi peristiwa={laporan} onTutup={() => setLaporan(null)} />
       )}
+      {/* C-17: banner pesan misi dirender di luar percabangan Rumah /
+          Jelajah, supaya kabar "Misi selesai…" tetap terlihat saat
+          pemain sedang di Rumah. */}
+      {screen === 'peta' && pesanMisi && (
+        <div
+          className="aia-card"
+          role="status"
+          style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}
+        >
+          <p style={{ margin: 0, minWidth: 0, flex: '1 1 220px' }}>{pesanMisi}</p>
+          <button type="button" className="aia-btn aia-btn-ghost" onClick={() => setPesanMisi(null)}>
+            Tutup
+          </button>
+        </div>
+      )}
       {screen === 'peta' && save.petaAktif === 'rumah' && (
         <Rumah
           onBerangkat={berangkatKeSekolah}
@@ -358,40 +418,26 @@ function Shell() {
         />
       )}
       {screen === 'peta' && save.petaAktif !== 'rumah' && (
-        <>
-          {pesanMisi && (
-            <div
-              className="aia-card"
-              role="status"
-              style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}
-            >
-              <p style={{ margin: 0, minWidth: 0, flex: '1 1 220px' }}>{pesanMisi}</p>
-              <button type="button" className="aia-btn aia-btn-ghost" onClick={() => setPesanMisi(null)}>
-                Tutup
-              </button>
-            </div>
-          )}
-          <Jelajah
-            petaId={save.petaAktif}
-            masuk={titikMasuk}
-            onPindahPeta={pindahPeta}
-            onPlayChapter={mainBab}
-            onPlayTugas={mainTugas}
-            onPlayTangkap={mainTangkap}
-            onPlayKuis={mainKuis}
-            onOpenMisi={() => gantiTab('misi')}
-            onOpenPanduan={bukaPanduan}
-            onOpenToko={() => {
-              setTokoFokusEco(false)
-              setScreen('toko')
-            }}
-            onOpenEcoShop={() => {
-              setTokoFokusEco(true)
-              setScreen('toko')
-            }}
-            onPulang={pulangKeRumah}
-          />
-        </>
+        <Jelajah
+          petaId={save.petaAktif}
+          masuk={titikMasuk}
+          onPindahPeta={pindahPeta}
+          onPlayChapter={mainBab}
+          onPlayTugas={mainTugas}
+          onPlayTangkap={mainTangkap}
+          onPlayKuis={mainKuis}
+          onOpenMisi={() => gantiTab('misi')}
+          onOpenPanduan={bukaPanduan}
+          onOpenToko={() => {
+            setTokoFokusEco(false)
+            setScreen('toko')
+          }}
+          onOpenEcoShop={() => {
+            setTokoFokusEco(true)
+            setScreen('toko')
+          }}
+          onPulang={pulangKeRumah}
+        />
       )}
       {screen === 'misi' && <Misi />}
       {screen === 'ensiklopedia' && <Ensiklopedia />}
@@ -414,6 +460,8 @@ function Shell() {
           onExit={() => keluarBab(false, false)}
           onMissionComplete={(tamat) => keluarBab(tamat, !save.chapters[activeChapter].done)}
           onOpenPanduan={bukaPanduan}
+          onKeKantin={keKantinDariMisi}
+          panduanTerbuka={panduanTerbuka}
         />
       )}
       {screen === 'tugas' && (
@@ -424,6 +472,8 @@ function Shell() {
           onExit={() => keluarTugas(false)}
           onMissionComplete={() => keluarTugas(!save.tugas[activeTugas].done)}
           onOpenPanduan={bukaPanduan}
+          onKeKantin={keKantinDariMisi}
+          panduanTerbuka={panduanTerbuka}
         />
       )}
       {screen === 'tamat' && <Tamat onExit={() => setScreen('peta')} />}

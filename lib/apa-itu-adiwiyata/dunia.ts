@@ -7,7 +7,7 @@
 // supaya impor lama tidak crash: DUNIA = peta Gerbang (hub) dengan bentuk
 // lama { lebar, tinggi, spawn, zona, dinding, sampah }.
 import { PETA, cariTitik } from './content/peta'
-import type { Dinding, NpcDunia, PortalPeta, SampahJatuh, ZonaDunia } from './content/peta'
+import type { Dinding, IdTitikInteraksi, NpcDunia, PortalPeta, SampahJatuh, ZonaDunia } from './content/peta'
 
 export { PETA, PETA_ORDER, NPCS, cariTitik, petaUntukNpc } from './content/peta'
 export type { Dinding, NpcDunia, PortalPeta, SampahJatuh, ZonaDunia } from './content/peta'
@@ -32,15 +32,28 @@ export const DUNIA: {
 
 /** @deprecated Portal "Jalan Pulang" kini PETA.gerbang.portal. */
 export const JALAN_PULANG: { x: number; y: number; w: number; h: number } = (() => {
-  const portal = PETA.gerbang.portal.find((p) => p.id === 'jalan-pulang') as PortalPeta
+  // C-37: tanpa cast — bila portal hilang dari peta, gagal dengan pesan
+  // yang jelas, bukan crash `undefined.x` yang sulit dilacak.
+  const portal = PETA.gerbang.portal.find((p) => p.id === 'jalan-pulang')
+  if (!portal) throw new Error("Portal 'jalan-pulang' tidak ditemukan di PETA.gerbang")
   return { x: portal.x, y: portal.y, w: portal.w, h: portal.h }
 })()
 
+/** Ambil titik peta — throw dengan pesan jelas bila titiknya hilang. */
+function titikWajib(
+  peta: (typeof PETA)['gerbang'],
+  id: IdTitikInteraksi,
+): { x: number; y: number } {
+  const titik = cariTitik(peta, id)
+  if (!titik) throw new Error(`Titik '${id}' tidak ditemukan di peta`)
+  return titik
+}
+
 /** @deprecated Tempat Sampah Terpilah kini titik 'pilah' di PETA.gerbang. */
-export const TEMPAT_PILAH: { x: number; y: number } = cariTitik(PETA.gerbang, 'pilah') as { x: number; y: number }
+export const TEMPAT_PILAH: { x: number; y: number } = titikWajib(PETA.gerbang, 'pilah')
 
 /** @deprecated Bank Sampah kini titik 'bank-sampah' di PETA.kebun. */
-export const BANK_SAMPAH: { x: number; y: number } = cariTitik(PETA.kebun, 'bank-sampah') as { x: number; y: number }
+export const BANK_SAMPAH: { x: number; y: number } = titikWajib(PETA.kebun, 'bank-sampah')
 
 /** @deprecated Booth Eco-Shop kini titik 'eco-shop' di PETA.kebun. */
-export const ECO_SHOP: { x: number; y: number } = cariTitik(PETA.kebun, 'eco-shop') as { x: number; y: number }
+export const ECO_SHOP: { x: number; y: number } = titikWajib(PETA.kebun, 'eco-shop')

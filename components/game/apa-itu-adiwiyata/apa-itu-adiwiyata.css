@@ -3,14 +3,6 @@
    max-width 720px di tengah, tombol minimal 44px, focus ring jelas, kontras AA.
    Warna memakai variabel tema situs (globals.css) supaya ikut mode terang/gelap. */
 
-.aia-root {
-  width: 100%;
-  max-width: 720px;
-  margin: 0 auto;
-  padding: 0 16px calc(88px + env(safe-area-inset-bottom));
-  color: var(--foreground);
-}
-
 /* --- Shell runner (index.tsx) — sebelumnya tidak punya aturan dasar,
    jadi di HP konten menempel ke tepi viewport tanpa padding dan bar HUD
    yang meluber membuat halaman bisa di-scroll horizontal. --- */
@@ -32,42 +24,7 @@
   outline-offset: 2px;
 }
 
-.aia-root button,
-.aia-root input {
-  font: inherit;
-}
-
-.aia-root button:focus-visible,
-.aia-root a:focus-visible,
-.aia-root input:focus-visible {
-  outline: 3px solid var(--green);
-  outline-offset: 2px;
-}
-
 /* --- Header kampanye --- */
-.aia-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 16px 0 4px;
-}
-
-.aia-header-title {
-  flex: 1;
-  min-width: 0;
-}
-
-.aia-header-title h1 {
-  margin: 0;
-  font-size: 20px;
-  line-height: 1.25;
-}
-
-.aia-header-title p {
-  margin: 2px 0 0;
-  color: var(--ink-soft);
-  font-size: 12px;
-}
 
 .aia-icon-btn {
   display: inline-grid;
@@ -107,7 +64,8 @@
 
 .aia-section-title {
   margin: 24px 0 10px;
-  font-size: 17px;
+  font-size: 20px;
+  font-weight: 800;
   line-height: 1.3;
 }
 
@@ -117,7 +75,7 @@
 
 .aia-muted {
   color: var(--ink-soft);
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.6;
   overflow-wrap: break-word;
 }
@@ -242,10 +200,15 @@
   height: 100%;
   border-radius: inherit;
   background: var(--green);
+  transition: width 0.5s ease;
 }
 
+/* B-5: baris status membungkus di layar sempit (360px) — bar progres
+   flex:1 turun ke baris berikut daripada memotong teks Lapar/Haus/Rp/
+   Koin. Di layar lebar tidak berubah (satu baris seperti sebelumnya). */
 .aia-progress-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
@@ -258,8 +221,7 @@
 }
 
 /* --- HUD dunia (Jelajah + Rumah): baris yang membungkus di layar sempit,
-   supaya nilai Lapar/Haus/Rp/Koin/Skor tidak terpotong di 360px. Berbeda
-   dari .aia-progress-row (tanpa wrap, dipakai banyak layar mini-game). --- */
+   supaya nilai Lapar/Haus/Rp/Koin/Skor tidak terpotong di 360px. --- */
 .aia-hud {
   display: flex;
   flex-wrap: wrap;
@@ -471,7 +433,7 @@
 .aia-bab-body p {
   margin: 3px 0 6px;
   color: var(--ink-soft);
-  font-size: 12px;
+  font-size: 14px;
   line-height: 1.5;
 }
 
@@ -531,40 +493,6 @@
   line-height: 1.6;
 }
 
-/* --- Daftar tahap --- */
-.aia-stage-list {
-  display: grid;
-  gap: 10px;
-  padding: 0;
-  margin: 0;
-  list-style: none;
-}
-
-.aia-stage-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 14px;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  background: var(--card);
-}
-
-.aia-stage-row > div {
-  flex: 1;
-  min-width: 0;
-}
-
-.aia-stage-row strong {
-  display: block;
-  font-size: 14px;
-}
-
-.aia-stage-row small {
-  color: var(--ink-soft);
-  font-size: 12px;
-}
-
 /* --- Pos Hijau --- */
 .aia-pos-hijau {
   border-color: #2f7d4f;
@@ -593,50 +521,12 @@
 }
 
 /* --- Peta sekolah --- */
+/* C-8: hanya .aia-zone-grid yang dipakai (grid pilihan di kompos/maggot);
+   .aia-zone (kartu zona) tidak dipakai komponen mana pun, sudah dihapus. */
 .aia-zone-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 10px;
-}
-
-.aia-zone {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  min-height: 96px;
-  padding: 16px 10px 12px;
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  background: var(--card);
-  color: var(--foreground);
-  text-align: center;
-  cursor: pointer;
-}
-
-.aia-zone svg {
-  width: 24px;
-  height: 24px;
-  color: var(--green);
-}
-
-.aia-zone strong {
-  font-size: 14px;
-}
-
-.aia-zone small {
-  color: var(--ink-soft);
-  font-size: 11px;
-  line-height: 1.4;
-}
-
-.aia-zone.locked {
-  cursor: not-allowed;
-  opacity: 0.65;
-}
-
-.aia-zone.locked svg {
-  color: var(--ink-soft);
 }
 
 /* --- Bottom nav --- */
@@ -678,36 +568,74 @@
   font-weight: 700;
 }
 
-/* --- Layar "segera hadir" --- */
-.aia-coming {
-  padding: 32px 20px;
-  text-align: center;
-}
-
-.aia-coming svg {
-  width: 36px;
-  height: 36px;
-  margin-bottom: 10px;
-  color: var(--green);
-}
-
-.aia-coming h2 {
-  margin: 0 0 6px;
-  font-size: 18px;
-}
-
-.aia-coming p {
-  margin: 0;
-  color: var(--ink-soft);
-  font-size: 13px;
-  line-height: 1.6;
-}
-
 /* --- Tema gelap: tombol utama memakai hijau terang + teks gelap --- */
 :root[data-theme='dark'] .aia-btn-primary {
   border-color: #9fd2ae;
   background: #9fd2ae;
   color: #102219;
+}
+
+/* C-1: teks status benar/salah — di mode terang #2f7d4f/#b83232 lolos
+   (5,04:1 / 5,93:1 di atas kartu #fffefa), tapi di mode gelap hanya
+   3,01:1 / 2,56:1 di atas kartu #1a2921. Versi gelap memakai warna
+   lebih terang: #81c784 (7,55:1) dan #ff8a80 (6,65:1). */
+.aia-pesan-benar {
+  font-weight: 700;
+  color: #2f7d4f;
+}
+
+.aia-pesan-salah {
+  font-weight: 700;
+  color: #b83232;
+}
+
+:root[data-theme='dark'] .aia-pesan-benar {
+  color: #81c784;
+}
+
+:root[data-theme='dark'] .aia-pesan-salah {
+  color: #ff8a80;
+}
+
+/* C-1: tombol bahaya ("Ya, mulai baru") juga butuh merah terang di gelap. */
+:root[data-theme='dark'] .aia-btn-danger {
+  border-color: #ff8a80;
+  color: #ff8a80;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .aia-pesan-benar {
+    color: #81c784;
+  }
+
+  :root:not([data-theme]) .aia-pesan-salah {
+    color: #ff8a80;
+  }
+
+  :root:not([data-theme]) .aia-btn-danger {
+    border-color: #ff8a80;
+    color: #ff8a80;
+  }
+}
+
+/* C-4: trek Hadiah Harian — 7 kolom di layar lebar, 4+3 di ≤480px supaya
+   sel tidak menyempit (±37px) dan label hadiah tidak membungkus 3–4 baris;
+   di layar sempit hanya ikon + "Hari N" yang tampil. */
+.aia-hadiah-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+@media (max-width: 480px) {
+  .aia-hadiah-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .aia-hadiah-grid .aia-hadiah-label {
+    display: none;
+  }
 }
 
 :root[data-theme='dark'] .aia-chip.done {
@@ -726,7 +654,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .aia-root * {
+  .aia-shell * {
     transition: none !important;
   }
 }
@@ -744,30 +672,19 @@
    ========================================================================== */
 @media (min-width: 1024px) {
   /* Shell lebih lebar (~1120px), tetap di tengah. .aia-shell adalah shell
-     yang dipakai runner (index.tsx); .aia-root dipertahankan untuk
-     kompatibilitas. */
-  .aia-root,
+     yang dipakai runner (index.tsx). */
   .aia-shell {
     max-width: 1120px;
     margin: 0 auto;
     padding: 0 32px calc(96px + env(safe-area-inset-bottom));
   }
 
-  /* Ring fokus keyboard juga berlaku di shell live (.aia-shell) — aturan
-     dasar hanya mencakup .aia-root. */
+  /* Ring fokus keyboard di shell live (.aia-shell). */
   .aia-shell button:focus-visible,
   .aia-shell a:focus-visible,
   .aia-shell input:focus-visible {
     outline: 3px solid var(--green);
     outline-offset: 2px;
-  }
-
-  .aia-header-title h1 {
-    font-size: 24px;
-  }
-
-  .aia-header-title p {
-    font-size: 13px;
   }
 
   /* Kartu & teks: padding sedikit lega, panjang baris dibatasi supaya
@@ -784,14 +701,10 @@
     max-width: 75ch;
   }
 
-  /* Grid: kartu bab 3 kolom, daftar tahap 2 kolom — mengisi lebar baru
-     tanpa satu baris yang terlalu panjang. */
+  /* Grid: kartu bab 3 kolom — mengisi lebar baru tanpa satu baris yang
+     terlalu panjang. */
   .aia-bab-grid {
     grid-template-columns: repeat(3, 1fr);
-  }
-
-  .aia-stage-list {
-    grid-template-columns: 1fr 1fr;
   }
 
   /* Bottom nav selebar shell dan di tengah, bukan membentang selebar
@@ -855,4 +768,149 @@
     font-size: 12px;
     font-weight: 700;
   }
+}
+
+/* ==========================================================================
+   GELOMBANG 3 — bahasa stiker anak muda (R5), sampul hidup (R1),
+   panduan pemula (R2), sorotan misi (R11), galeri koleksi (R9).
+   Aturan kuning: #ffd54a HANYA untuk tombol aksi utama (.aia-btn-aksi)
+   dan sorotan hadiah — bukan untuk semua tombol (risiko red-team:
+   kuning di mana-mana = ramai). Teks gelap #1c2b12 di atas #ffd54a
+   kontrasnya ~13:1, lolos di mode terang maupun gelap.
+   ========================================================================== */
+
+/* Tombol aksi utama: pil kuning hadiah + tekan (scale 0,96). Dipakai
+   SATU per layar/dialog: Layar Awal, Pos Hijau, Laporan Pagi, dialog
+   "Mulai misi", tombol Bagikan. Tombol lain tetap hijau/netral. */
+.aia-btn-aksi {
+  border-color: #b78d00;
+  background: #ffd54a;
+  color: #1c2b12;
+}
+
+.aia-btn-aksi:disabled {
+  opacity: 0.55;
+}
+
+.aia-btn:active {
+  transform: scale(0.96);
+}
+
+/* Kartu stiker koleksi: pinggir tebal + bayangan offset, seperti stiker
+   yang ditempel. Dipakai kartu lencana, spesies, dan misi. */
+.aia-stiker {
+  border: 2px solid var(--line);
+  border-radius: 18px;
+  box-shadow: 0 3px 0 color-mix(in srgb, var(--foreground) 14%, transparent);
+}
+
+/* Judul hero Layar Awal: besar-tebal, satu ukuran hero per layar. */
+.aia-judul-hero {
+  margin: 8px 0 10px;
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1.15;
+}
+
+/* Hero sampul Layar Awal (canvas 16:9 yang digambar HeroAwal). */
+.aia-hero-kanvas {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 16px;
+  margin-bottom: 12px;
+}
+
+/* Kartu sorotan misi berikutnya (R11) + kartu tujuan di Layar Awal (R8):
+   pinggir hijau tebal + tint hijau lembut, supaya langsung terbaca
+   sebagai "ini yang harus dilakukan sekarang". */
+.aia-spotlight {
+  border: 2px solid #2f7d4f;
+  background: color-mix(in srgb, #2f7d4f 8%, var(--card));
+  border-radius: 18px;
+}
+
+/* Prompt pemula di atas canvas Gerbang (R2): 1 kalimat Magi + panah
+   canvas di bawahnya. Kuning pucat supaya terbaca sebagai "perhatian
+   positif", teks tetap var(--foreground) (kontras ≥4,5:1 di kedua mode). */
+.aia-panduan-pemula {
+  position: absolute;
+  /* R12: top 104px supaya tidak menumpuk toast zona (top 56px) maupun
+     chip nama peta (top 12px) saat ketiganya tampil bersamaan. */
+  top: 104px;
+  left: 12px;
+  right: 12px;
+  z-index: 4;
+  padding: 10px 14px;
+  border: 2px solid #ffd54a;
+  border-radius: 14px;
+  background: color-mix(in srgb, #ffd54a 22%, var(--card));
+  color: var(--foreground);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.5;
+  pointer-events: none;
+}
+
+@media (min-width: 560px) {
+  .aia-panduan-pemula {
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    max-width: 480px;
+    white-space: nowrap;
+  }
+}
+
+/* Galeri koleksi (R9): kartu kecil 2 kolom di HP 360px, 3 kolom di
+   layar lebar. Kartu terkunci tetap tampil sebagai "???" supaya
+   penasaran, bukan disembunyikan. */
+.aia-koleksi-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+@media (min-width: 560px) {
+  .aia-koleksi-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.aia-koleksi-kartu {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 0;
+  padding: 12px;
+  text-align: left;
+}
+
+.aia-koleksi-kartu strong {
+  font-size: 14px;
+  overflow-wrap: break-word;
+}
+
+.aia-koleksi-kartu p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 13px;
+  line-height: 1.5;
+  overflow-wrap: break-word;
+}
+
+/* Baris barang toko (R5): tiap barang jadi kartu stiker kecil, bukan
+   baris formulir polos. */
+.aia-toko-item {
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--sage) 35%, var(--card));
+}
+
+/* Potongan confetti berbentuk daun (R4): tiap titik ke-4 RayakanMisi
+   memakai bentuk daun, bukan lingkaran. */
+.aia-ledakan-daun {
+  border-radius: 100% 0 100% 0;
 }

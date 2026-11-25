@@ -10,6 +10,8 @@ import { useCampaign } from '@/lib/apa-itu-adiwiyata/context'
 import { CHAPTER_ORDER } from '@/lib/apa-itu-adiwiyata/chapters'
 import { ECO_SHOP, GEAR, KOSTUM, SKOR_MISI_PERTAMA, SKOR_PANEL_SURYA, SKOR_POHON } from '@/lib/apa-itu-adiwiyata/content/toko'
 import { HadiahHarian } from './hadiah-harian'
+import { KoleksiSpesies } from './koleksi-spesies'
+import { Lencana } from './lencana'
 import { klik } from './suara'
 
 export function Profil({
@@ -89,6 +91,12 @@ export function Profil({
             <TreePine aria-hidden="true" /> {save.pohonDitanam ?? 0} pohon ditanam
           </span>
         </div>
+        {(save.pohonDitanam ?? 0) > 0 && (
+          <p className="aia-muted" style={{ marginTop: 8, marginBottom: 0 }}>
+            Pohonmu tumbuh di zona Pohon, Taman.
+            {(save.pohonDitanam ?? 0) > 8 ? ' Di peta terlihat 8 pohon pertama.' : ''}
+          </p>
+        )}
         <p className="aia-muted" style={{ marginTop: 8 }}>
           Item Eco-Shop yang dimiliki
         </p>
@@ -129,6 +137,7 @@ export function Profil({
               return (
                 <div
                   key={kostum.id}
+                  className="aia-toko-item"
                   style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}
                 >
                   <p className="aia-muted" style={{ margin: 0 }}>
@@ -176,6 +185,20 @@ export function Profil({
 
       <HadiahHarian />
 
+      {/* B-1: galeri Lencana + Koleksi Spesies dulunya kode mati (tidak
+          diimpor di mana pun) — kini tersambung di Profil supaya pemain
+          yang sudah punya lencana/spesies bisa melihatnya. */}
+      <section className="aia-card">
+        <h3 className="aia-section-title" style={{ marginTop: 0 }}>
+          Lencana
+        </h3>
+        <Lencana />
+      </section>
+
+      <section className="aia-card">
+        <KoleksiSpesies />
+      </section>
+
       <section className="aia-card">
         <h3 className="aia-section-title" style={{ marginTop: 0 }}>
           Nama panggilan
@@ -199,7 +222,8 @@ export function Profil({
             disabled={nama.trim() === '' || nama.trim() === save.nickname}
             onClick={() => {
               klik()
-              dispatch({ type: 'SET_NICKNAME', nickname: nama })
+              // C-19: simpan tanpa spasi di ujung (seperti gerbang-nama).
+              dispatch({ type: 'SET_NICKNAME', nickname: nama.trim() })
               setPesan('Nama panggilan disimpan.')
             }}
           >

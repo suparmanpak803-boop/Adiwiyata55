@@ -1,7 +1,10 @@
 // PanenKetuk — grid petak; tiap giliran satu objek muncul di petak acak.
 // Ketuk objek yang MATANG saja untuk memanen; yang BELUM matang = salah.
 // Membiarkan objek matang lewat = terlewat (tanpa hukuman keras).
-// Mode satu-ketukan: giliran 2× lebih lama. Generik: tanpa konten misi.
+// Skor 0–100 = persen objek matang yang dipanen, dikurangi 5 per
+// ketukan salah (seperti TangkapJatuh) — mengetuk semua objek tidak
+// lagi memberi 100. Mode satu-ketukan: giliran 2× lebih lama.
+// Generik: tanpa konten misi.
 
 'use client'
 
@@ -62,6 +65,7 @@ export function PanenKetuk({
   aktifRef.current = aktif
   const panenRef = useRef(panenBenar)
   panenRef.current = panenBenar
+  const salahRef = useRef(0)
   const matangRef = useRef(0)
   const timerRef = useRef<number | null>(null)
   const timerPesanRef = useRef<number | null>(null)
@@ -95,6 +99,7 @@ export function PanenKetuk({
     setAktif(null)
     setPanenBenar(0)
     setJumlahSalah(0)
+    salahRef.current = 0
     setTerlewat(0)
     setPesanSalah(false)
     setSelesai(false)
@@ -116,9 +121,10 @@ export function PanenKetuk({
     if (ronde >= total) {
       selesaiRef.current = true
       setSelesai(true)
+      // B-13: ketukan salah mengurangi skor (−5 per salah ketuk).
       const skor =
         matangRef.current > 0
-          ? clamp(Math.round((panenRef.current / matangRef.current) * 100), 0, 100)
+          ? clamp(Math.round((panenRef.current / matangRef.current) * 100 - 5 * salahRef.current), 0, 100)
           : 100
       onSelesai(skor)
       return
@@ -168,6 +174,7 @@ export function PanenKetuk({
     } else {
       salah()
       getar([40, 40, 40])
+      salahRef.current += 1
       setJumlahSalah((n) => n + 1)
       setPesanSalah(true)
       if (timerPesanRef.current) window.clearTimeout(timerPesanRef.current)
@@ -177,7 +184,9 @@ export function PanenKetuk({
   }
 
   const skorAkhir =
-    matangRef.current > 0 ? clamp(Math.round((panenBenar / matangRef.current) * 100), 0, 100) : 100
+    matangRef.current > 0
+      ? clamp(Math.round((panenBenar / matangRef.current) * 100 - 5 * jumlahSalah), 0, 100)
+      : 100
 
   return (
     <div className="aia-stack">

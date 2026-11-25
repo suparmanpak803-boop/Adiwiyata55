@@ -42,6 +42,10 @@ export function SimulasiKantin({
   const [sisaMs, setSisaMs] = useState(waktuPerPesananMs)
   const [benarHitung, setBenarHitung] = useState(0)
   const [hasil, setHasil] = useState<'senang' | 'kecewa' | null>(null)
+  // C-33: kenapa pelanggan kecewa — 'salah' (ketuk tindakan yang salah)
+  // vs 'waktu' (waktu habis). Hanya bila 'salah' tindakan benar ikut
+  // disorot sebagai umpan belajar.
+  const [alasanKecewa, setAlasanKecewa] = useState<'salah' | 'waktu' | null>(null)
   const [selesai, setSelesai] = useState(false)
 
   const selesaiRef = useRef(false)
@@ -70,6 +74,7 @@ export function SimulasiKantin({
     setSisaMs(waktuPerPesananMs)
     setBenarHitung(0)
     setHasil(null)
+    setAlasanKecewa(null)
     setSelesai(false)
     selesaiRef.current = false
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -93,6 +98,7 @@ export function SimulasiKantin({
     setIdx(berikut)
     setSisaMs(waktuPerPesananMs)
     setHasil(null)
+    setAlasanKecewa(null)
   }
 
   // Lanjut ke pesanan berikutnya: bila sedang terjeda, tunda sampai jeda selesai.
@@ -127,6 +133,7 @@ export function SimulasiKantin({
       salah()
       getar([40, 40, 40])
       setHasil('kecewa')
+      setAlasanKecewa('waktu')
       jadwalkanLanjut()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -142,10 +149,12 @@ export function SimulasiKantin({
       getar(15)
       setBenarHitung((n) => n + 1)
       setHasil('senang')
+      setAlasanKecewa(null)
     } else {
       salah()
       getar([40, 40, 40])
       setHasil('kecewa')
+      setAlasanKecewa('salah')
     }
     jadwalkanLanjut()
   }
@@ -226,6 +235,13 @@ export function SimulasiKantin({
         <p style={{ margin: '6px 0 0' }}>{aktif.permintaan}</p>
         {hasil === 'senang' && <p style={{ margin: '8px 0 0' }}>😊 Pelanggan senang, terima kasih!</p>}
         {hasil === 'kecewa' && <p style={{ margin: '8px 0 0' }}>😞 Pelanggan pergi kecewa.</p>}
+        {/* C-33: jawaban salah menyorot tindakan benar (teks) sebagai
+            umpan belajar — sebelumnya hanya "pergi kecewa" tanpa petunjuk
+            mana tindakan yang benar. Waktu habis tidak menyorot, karena
+            pemain belum sempat memilih. */}
+        {hasil === 'kecewa' && alasanKecewa === 'salah' && (
+          <p style={{ margin: '8px 0 0', fontWeight: 700 }}>Tindakan yang benar: {aktif.tindakanBenar}</p>
+        )}
       </div>
 
       <EfekSalah tampil={hasil === 'kecewa'} petunjuk="Perhatikan baik-baik permintaannya, lalu pilih tindakan yang cocok." />
@@ -240,7 +256,9 @@ export function SimulasiKantin({
             <button
               key={t}
               type="button"
-              className={`aia-gi-kantin-tindakan${hasil === 'senang' && t === aktif.tindakanBenar ? ' dipilih-benar' : ''}`}
+              // C-33: tindakan benar ikut disorot hijau bila jawaban salah
+              // (sebelumnya hanya saat jawaban benar).
+              className={`aia-gi-kantin-tindakan${(hasil === 'senang' || (hasil === 'kecewa' && alasanKecewa === 'salah')) && t === aktif.tindakanBenar ? ' dipilih-benar' : ''}`}
               style={{ minHeight: modeSatuKetukan ? 72 : 64 }}
               disabled={disabled || hasil !== null}
               aria-label={`Tindakan: ${t}`}

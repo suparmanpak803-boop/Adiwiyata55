@@ -7,6 +7,9 @@
 // dikurangi 5 poin untuk setiap percobaan tambahan. Contoh: 4 batang,
 // 3 benar di percobaan pertama lalu diperbaiki dan semua benar di
 // percobaan ke-2 → skor = 75 − 5 = 70. Minimal 0.
+// C-10: "Periksa" tanpa ada batang yang berubah sejak periksaan terakhir
+// bukan percobaan (tidak mengurangi skor). Warna batang mengikuti
+// `warna` tiap batang bila diisi (jenis data), bila tidak biru Anorganik.
 // Mode satu-ketukan: langkah naik/turun tetap 1, tapi tombol lebih besar.
 // Generik: tidak ada konten misi.
 
@@ -23,6 +26,9 @@ export interface BatangGrafik {
   nilaiBenar: number
   maks: number
   satuan?: string
+  /** Warna batang (C-10): bila diisi, batang memakai warna jenis datanya
+   * (mis. Organik hijau, Anorganik biru); bila kosong, biru Anorganik. */
+  warna?: string
 }
 
 export interface GambarGrafikProps {
@@ -52,6 +58,10 @@ export function GambarGrafik({
 
   const selesaiRef = useRef(false)
   const benarPertamaRef = useRef<number | null>(null)
+  // C-10: "Periksa" hanya dihitung sebagai percobaan bila ada batang yang
+  // berubah sejak periksaan terakhir — klik berulang tanpa perubahan
+  // tidak boleh menggerus skor (−5 per percobaan).
+  const berubahRef = useRef(false)
   const nilaiRef = useRef(nilai)
   nilaiRef.current = nilai
   const terkunciRef = useRef(terkunci)
@@ -68,6 +78,7 @@ export function GambarGrafik({
     setSelesai(false)
     selesaiRef.current = false
     benarPertamaRef.current = null
+    berubahRef.current = false
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [kunciBatang])
 
@@ -77,11 +88,23 @@ export function GambarGrafik({
     if (!b || terkunciRef.current.has(id)) return
     klik()
     const sekarang = nilaiRef.current[id] ?? 0
-    setNilai((v) => ({ ...v, [id]: clamp(sekarang + delta, 0, b.maks) }))
+    const baru = clamp(sekarang + delta, 0, b.maks)
+    if (baru !== sekarang) berubahRef.current = true
+    setNilai((v) => ({ ...v, [id]: baru }))
   }
 
   const periksa = () => {
     if (disabled || selesaiRef.current) return
+    // C-10: tanpa perubahan sejak periksaan terakhir, bukan percobaan —
+    // kecuali batangnya memang sudah benar semua (mis. nilai benar 0).
+    if (!berubahRef.current) {
+      const sudahBenar = batang.every((b) => (nilaiRef.current[b.id] ?? 0) === b.nilaiBenar)
+      if (!sudahBenar) {
+        setUmpan('Tidak ada batang yang berubah — atur dulu tingginya, lalu ketuk Periksa.')
+        return
+      }
+    }
+    berubahRef.current = false
     const jumlahPercobaan = percobaan + 1
     setPercobaan(jumlahPercobaan)
     const benarKini = batang.filter((b) => (nilaiRef.current[b.id] ?? 0) === b.nilaiBenar)
@@ -117,8 +140,10 @@ export function GambarGrafik({
   return (
     <div className="aia-stack">
       <style>{`
-        .aia-gi-grafik { display: flex; align-items: flex-end; gap: 12px; padding: 16px 8px 8px; border: 1px solid var(--line, #e5e7eb); border-radius: 14px; background: var(--card, #fff); min-height: 240px; }
-        .aia-gi-grafik-kolom { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 0; }
+        /* C-10: kolom min. 56px + scroll horizontal — 6 batang tahap 0
+           tidak lagi terjepit ~45px/kolom dengan label melipat di 360px. */
+        .aia-gi-grafik { display: flex; align-items: flex-end; gap: 12px; padding: 16px 8px 8px; border: 1px solid var(--line, #e5e7eb); border-radius: 14px; background: var(--card, #fff); min-height: 240px; overflow-x: auto; }
+        .aia-gi-grafik-kolom { flex: 1 0 56px; display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 56px; }
         .aia-gi-grafik-batang-luar { width: 100%; max-width: 72px; height: 140px; display: flex; align-items: flex-end; border-radius: 8px; background: color-mix(in srgb, #3b7ea1 10%, var(--card, #fff)); overflow: hidden; }
         .aia-gi-grafik-batang { width: 100%; background: #3b7ea1; transition: height .2s ease; }
         .aia-gi-grafik-batang.benar { background: #2f7d4f; }
@@ -157,7 +182,9 @@ export function GambarGrafik({
               <div className="aia-gi-grafik-batang-luar">
                 <div
                   className={`aia-gi-grafik-batang${benarBatang ? ' benar' : ''}`}
-                  style={{ height: `${tinggi}%` }}
+                  // C-10: warna batang mengikuti jenis datanya (b.warna),
+                  // bukan biru Anorganik untuk semua data.
+                  style={{ height: `${tinggi}%`, background: benarBatang ? undefined : (b.warna ?? undefined) }}
                 />
               </div>
               <span className="aia-gi-grafik-nilai" aria-label={`${b.label}: ${v}${b.satuan ? ` ${b.satuan}` : ''}`}>

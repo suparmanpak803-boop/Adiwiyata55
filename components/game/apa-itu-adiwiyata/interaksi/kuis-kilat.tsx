@@ -2,6 +2,9 @@
 // lalu tampil penjelasan singkat sebelum soal berikutnya. Jawaban benar
 // beruntun memberi bonus beruntun ("Beruntun xN"). Habis waktu = salah.
 // Mode satu-ketukan: tanpa batas waktu.
+// Urutan pilihan diacak tiap soal (di-memo per daftar soal, supaya
+// pilihan tidak melompat saat render ulang) — jawaban benar tidak
+// selalu di posisi yang sama.
 // Skor 0–100: tiap jawaban benar bernilai 10 poin + 2 poin per tingkat
 // beruntun (jawaban benar ke-2 beruntun +2, ke-3 +4, dst.), lalu
 // dinormalisasi terhadap poin maksimum bila semua soal benar beruntun.
@@ -9,10 +12,10 @@
 
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Flame } from 'lucide-react'
 import { benar, getar, koin, salah } from '../suara'
-import { useKurangiAnimasi } from './util'
+import { acak, useKurangiAnimasi } from './util'
 import { EfekBenar, EfekSalah } from './umpan-balik'
 
 export interface SoalKilat {
@@ -42,6 +45,20 @@ export function KuisKilat({
 }: KuisKilatProps) {
   const kurangi = useKurangiAnimasi()
   const tanpaWaktu = modeSatuKetukan
+  // B-15: acak urutan pilihan tiap soal sekali per daftar soal (memo),
+  // supaya jawaban benar tidak terpola di satu posisi.
+  const soalAcak = useMemo(
+    () =>
+      soal.map((s) => {
+        const urutan = acak(s.pilihan.map((_, i) => i))
+        return {
+          ...s,
+          pilihan: urutan.map((i) => s.pilihan[i] ?? ''),
+          jawaban: urutan.indexOf(s.jawaban),
+        }
+      }),
+    [soal],
+  )
   const [idx, setIdx] = useState(0)
   const [sisaMs, setSisaMs] = useState(waktuPerSoalMs)
   const [dipilih, setDipilih] = useState<number | null>(null)
@@ -65,7 +82,7 @@ export function KuisKilat({
     terjedaRef.current = terjeda
   }, [terjeda])
 
-  const poinMaks = soal.reduce((total, _, i) => total + 10 + 2 * i, 0)
+  const poinMaks = soalAcak.reduce((total, _, i) => total + 10 + 2 * i, 0)
 
   // Reset waktu + status jawaban tiap soal baru.
   useEffect(() => {
@@ -87,7 +104,7 @@ export function KuisKilat({
 
   const lanjut = () => {
     const berikutnya = idxRef.current + 1
-    if (berikutnya >= soal.length) {
+    if (berikutnya >= soalAcak.length) {
       akhiri()
       return
     }
@@ -97,7 +114,7 @@ export function KuisKilat({
   const nilaiJawaban = (pilihanIdx: number | null) => {
     if (dijawabRef.current || selesaiRef.current) return
     dijawabRef.current = true
-    const kini = soal[idxRef.current]
+    const kini = soalAcak[idxRef.current]
     if (!kini) return
     setDipilih(pilihanIdx)
     setDijawab(true)
@@ -123,14 +140,14 @@ export function KuisKilat({
 
   // Hitung mundur per soal (tidak jalan di mode satu-ketukan).
   useEffect(() => {
-    if (tanpaWaktu || selesai || soal.length === 0) return
+    if (tanpaWaktu || selesai || soalAcak.length === 0) return
     const id = window.setInterval(() => {
       // Jeda: lewati tick supaya sisa waktu tidak berkurang selama jeda.
       if (terjedaRef.current) return
       setSisaMs((s) => Math.max(0, s - 100))
     }, 100)
     return () => window.clearInterval(id)
-  }, [idx, selesai, tanpaWaktu, soal.length])
+  }, [idx, selesai, tanpaWaktu, soalAcak.length])
 
   // Waktu habis = salah.
   useEffect(() => {
@@ -139,7 +156,7 @@ export function KuisKilat({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sisaMs, selesai, tanpaWaktu])
 
-  const kini = soal[idx]
+  const kini = soalAcak[idx]
   const persenWaktu = tanpaWaktu ? 100 : (sisaMs / waktuPerSoalMs) * 100
   const detik = Math.ceil(sisaMs / 1000)
 
@@ -169,7 +186,7 @@ export function KuisKilat({
 
       <div className="aia-stats" aria-label="Progres kuis">
         <span className="aia-stat">
-          Soal {Math.min(idx + 1, soal.length)}/{soal.length}
+          Soal {Math.min(idx + 1, soalAcak.length)}/{soalAcak.length}
         </span>
         <span className="aia-stat">Benar {benarHitung}</span>
         {beruntun >= 2 && (
@@ -244,7 +261,7 @@ export function KuisKilat({
                   style={{ minHeight: 48 }}
                   onClick={lanjut}
                 >
-                  {idx + 1 >= soal.length ? 'Lihat hasil' : 'Soal berikutnya'}
+                  {idx + 1 >= soalAcak.length ? 'Lihat hasil' : 'Soal berikutnya'}
                 </button>
               </div>
             </div>
@@ -259,7 +276,7 @@ export function KuisKilat({
         </>
       ) : (
         <p style={{ margin: 0, textAlign: 'center', fontWeight: 700, fontSize: 18 }}>
-          Selesai! Kamu menjawab {benarHitung} dari {soal.length} soal dengan benar.
+          Selesai! Kamu menjawab {benarHitung} dari {soalAcak.length} soal dengan benar.
         </p>
       )}
     </div>

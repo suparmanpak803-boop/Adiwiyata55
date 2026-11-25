@@ -212,10 +212,10 @@ export const INTERAKSI_MISI: Record<ChapterId | TugasKaderId, SpesifikasiInterak
       target: 'Cabai atau kangkung yang butuh dirawat',
       hasilBenar: 'Tanaman segar kembali, daunnya tegak dan hijau.',
       hasilSalah: 'Tanaman makin layu karena perawatannya keliru.',
-      petunjukMagi: 'Magi: "Lihat dulu tanamannya butuh apa — air, cahaya, atau pupuk!"',
+      petunjukMagi: 'Magi: "Lihat tanaman mana yang butuh dirawat, lalu ketuk tepat pada ketukan!"',
       tutorial: false,
       langkah: [
-        'Lihat kebutuhan tanaman (haus, kurang cahaya, butuh pupuk)',
+        'Lihat tanaman mana yang butuh dirawat (tulisannya di kartu tanaman)',
         'Ketuk mengikuti irama untuk merawat tanaman',
         'Ulangi untuk tanaman berikutnya',
       ],
@@ -475,8 +475,7 @@ export const INTERAKSI_MISI: Record<ChapterId | TugasKaderId, SpesifikasiInterak
       petunjukMagi: 'Magi: "Cek meja, lantai, dan tempat cucinya satu per satu!"',
       tutorial: true,
       langkah: [
-        'Cari masalah kebersihan di kantin',
-        'Ketuk masalah yang ditemukan',
+        'Baca pesanan yang masuk — itu masalah yang ditemukan',
         'Ketuk tindakan yang benar untuk pesanan itu',
       ],
     },
@@ -489,8 +488,7 @@ export const INTERAKSI_MISI: Record<ChapterId | TugasKaderId, SpesifikasiInterak
       petunjukMagi: 'Magi: "Sedotan dan styrofoam itu sekali pakai, cari sampai habis!"',
       tutorial: false,
       langkah: [
-        'Cari plastik sekali pakai di kantin',
-        'Ketuk plastik yang ditemukan',
+        'Baca pesanan yang masuk — itu masalah yang ditemukan',
         'Ketuk tindakan yang benar untuk pesanan itu',
       ],
     },
@@ -503,8 +501,7 @@ export const INTERAKSI_MISI: Record<ChapterId | TugasKaderId, SpesifikasiInterak
       petunjukMagi: 'Magi: "Jajanan sehat itu tertutup, segar, dan dijual dengan penjepit!"',
       tutorial: false,
       langkah: [
-        'Cari masalah pada jajanan kantin',
-        'Ketuk masalah yang ditemukan',
+        'Baca pesanan yang masuk — itu masalah yang ditemukan',
         'Ketuk tindakan yang benar untuk pesanan itu',
       ],
     },
@@ -527,7 +524,7 @@ export const INTERAKSI_MISI: Record<ChapterId | TugasKaderId, SpesifikasiInterak
     {
       jenis: 'gambar-grafik',
       objek: ['Angka pemakaian air dan listrik', 'Kartu jawaban soal tabel'],
-      target: 'Batang grafik pemakaian minggu lalu dan minggu ini',
+      target: 'Batang grafik jumlah yang dihemat minggu ini (minggu lalu − minggu ini)',
       hasilBenar: 'Tabel terisi rapi, hematnya kelihatan dari data.',
       hasilSalah: 'Angka salah sel, hematnya tidak kelihatan.',
       petunjukMagi: 'Magi: "Bandingkan minggu lalu dan minggu ini, hematnya kelihatan!"',

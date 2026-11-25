@@ -16,7 +16,7 @@ import {
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { SAMPAH } from '@/lib/apa-itu-adiwiyata/content/sampah'
-import { BAK } from '@/lib/apa-itu-adiwiyata/content/bak'
+import { BAK, warnaTombolBak } from '@/lib/apa-itu-adiwiyata/content/bak'
 import { INTERAKSI_MISI } from '@/lib/apa-itu-adiwiyata/content/interaksi'
 import { hitungDampak } from '@/lib/apa-itu-adiwiyata/siklus'
 import { useCampaign } from '@/lib/apa-itu-adiwiyata/context'
@@ -68,13 +68,6 @@ const WAKTU_SORTIR_MS = [5000, 4000]
 // dipetakan ke skor akhir: 8 item, 3 salah = 5/8 benar = skor 63, jadi
 // skor < 64 berarti nyawa habis (tahap gagal).
 const SKOR_MINIMAL_LOLOS_SORTIR = 64
-// Gabungan id pemicu dampak berantai di siklus.ts (berminyak / plastik / popok).
-const ITEM_PEMICU_DAMPAK = [
-  'bungkus-plastik-berminyak',
-  'minyak-jelantah',
-  'styrofoam',
-  'popok-sekali-pakai',
-]
 
 function acak<T>(daftar: T[]): T[] {
   const salin = [...daftar]
@@ -232,15 +225,18 @@ export function PilahSampah({
     setUmpan(null)
     setDipilih(false)
     setAim(null)
-    if (idx + 1 >= deck.length) {
-      setResolving(false)
-      akhiriTahap()
-      return
-    }
+    // K-3: cek nyawa habis DULU sebelum cek akhir deck — item terakhir
+    // yang salah dengan nyawa tinggal 1 harus gagal, bukan "selesai"
+    // (urutan yang sama seperti tas-pagi.tsx lanjutkan()).
     if (hasil && !hasil.benarPilihan && hasil.nyawaBaru <= 0) {
       setGagalHitung((g) => g + 1)
       setResolving(false)
       setFase('gagal')
+      return
+    }
+    if (idx + 1 >= deck.length) {
+      setResolving(false)
+      akhiriTahap()
       return
     }
     dijawabRef.current = -1
@@ -319,12 +315,12 @@ export function PilahSampah({
     jadwalkanLanjut(3200)
   }
 
-  /** Hasil lari SortirCepat (tahap 1-2 gestur): skor akhir 0-100 dari pustaka. */
-  const sortirSelesai = (skorAkhir: number) => {
+  /** Hasil lari SortirCepat (tahap 1-2 gestur): skor akhir 0-100 dari pustaka
+   * + id item yang benar-benar dijawab salah. */
+  const sortirSelesai = (skorAkhir: number, idsSalah: string[] = []) => {
     // Skor SortirCepat = % jawaban benar, jadi jumlah benar bisa dihitung
     // kembali dari skor (8 item: tiap jawaban benar bernilai 12,5%).
     const benarJumlah = Math.round((skorAkhir / 100) * deck.length)
-    const salahJumlah = deck.length - benarJumlah
     setBenarHitung(benarJumlah)
     setSkor(skorAkhir)
     if (skorAkhir < SKOR_MINIMAL_LOLOS_SORTIR) {
@@ -332,16 +328,9 @@ export function PilahSampah({
       setFase('gagal')
       return
     }
-    // SortirCepat tidak melaporkan item mana yang salah — hanya jumlahnya
-    // (lewat skor). Bila ada jawaban salah dan deck berisi item pemicu
-    // dampak berantai, catat pemicu itu sebagai kemungkinan salah pilah;
-    // hitungDampak + SET_CARRYOVER tetap jalan di akhiriTahap. Semangatnya
-    // sama dengan aturan lama yang juga tidak memeriksa bak tujuan saat
-    // mencatat salah pilah.
-    idsSalahRef.current =
-      salahJumlah > 0
-        ? deck.filter((d) => ITEM_PEMICU_DAMPAK.includes(d.id)).map((d) => d.id)
-        : []
+    // B-11: hanya item yang benar-benar salah yang dicatat untuk dampak
+    // berantai — item pemicu yang dijawab benar tidak ikut dicatat salah.
+    idsSalahRef.current = idsSalah
     akhiriTahap()
   }
 
@@ -477,11 +466,18 @@ export function PilahSampah({
     setFase('main')
   }
 
+  // B-9: skor persen 0–100. Mode gestur (SortirCepat) sudah persen;
+  // mode tombol/lempar memberi +10 per jawaban benar, jadi dinormalkan
+  // terhadap skor mentah maksimum tahap ini (jumlah item × 10).
+  const skorPersen = gestur
+    ? Math.min(100, skor)
+    : Math.min(100, Math.round((skor / (deck.length * 10)) * 100))
+
   const selesaikan = () => {
     if (selesaiRef.current) return
     selesaiRef.current = true
     koin()
-    onStageComplete(Math.min(100, skor))
+    onStageComplete(skorPersen)
   }
 
   return (
@@ -556,7 +552,7 @@ export function PilahSampah({
         <>
           <div className="aia-stats" aria-label="Skor dan nyawa tahap ini">
             <span className="aia-stat">
-              <Coins aria-hidden="true" /> {skor} Koin Hijau
+              <Coins aria-hidden="true" /> Skor {skorPersen}
             </span>
             <span className="aia-stat" aria-label={`Nyawa tersisa: ${nyawaSisa} dari ${NYAWA_AWAL}`}>
               {Array.from({ length: NYAWA_AWAL }, (_, i) => (
@@ -581,7 +577,7 @@ export function PilahSampah({
           <div style={{ position: 'relative' }}>
             <EfekBenar
               tampil={umpan?.jenis === 'benar'}
-              label={umpan?.poin ? `+${umpan.poin} Koin Hijau` : 'Benar!'}
+              label={umpan?.poin ? `+${umpan.poin} poin` : 'Benar!'}
             />
             {spec.tutorial && (
               <div style={{ textAlign: 'center', marginBottom: 8 }}>
@@ -615,7 +611,7 @@ export function PilahSampah({
                           padding: '12px 6px',
                           border: '1px solid var(--line)',
                           borderRadius: 14,
-                          background: tong.warna,
+                          background: warnaTombolBak(tong.id), // C-2: versi gelap, teks putih >=4,5:1
                           color: tong.teks,
                           fontSize: 14,
                           fontWeight: 700,
@@ -713,7 +709,7 @@ export function PilahSampah({
                           padding: '12px 6px',
                           border: '1px solid var(--line)',
                           borderRadius: 14,
-                          background: tong.warna,
+                          background: warnaTombolBak(tong.id), // C-2: versi gelap, teks putih >=4,5:1
                           color: tong.teks,
                           fontSize: 14,
                           fontWeight: 700,
@@ -779,7 +775,7 @@ export function PilahSampah({
             Tahap selesai!
           </h3>
           <p className="aia-muted">
-            Kamu memilah {benarHitung} dari {deck.length} sampah dengan benar dan mengumpulkan {skor} Koin Hijau.
+            Kamu memilah {benarHitung} dari {deck.length} sampah dengan benar. Skor tahap ini {skorPersen} dari 100.
           </p>
           {catatanDampak && (
             <div className="aia-dialog" style={{ textAlign: 'left', marginTop: 12 }}>

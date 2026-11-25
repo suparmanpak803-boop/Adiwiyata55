@@ -98,10 +98,12 @@ export function KejadianAcak({ chapterId, onDone }: { chapterId: ChapterId; onDo
   )
 
   // Bunyi suasana kejadian sekali saat kartu dibuka.
+  // C-29: deps memakai chapterId — bila chapterId berubah tanpa remount,
+  // SFX kejadian baru ikut berbunyi (sebelumnya deps kosong = stale).
   useEffect(() => {
     info.sfx()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [chapterId])
 
   const ketukTarget = () => {
     if (selesai) return

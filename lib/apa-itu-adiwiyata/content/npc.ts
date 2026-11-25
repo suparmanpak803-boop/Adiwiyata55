@@ -1,10 +1,11 @@
 // Dialog NPC mode "Jelajah". Nada santai seperti dialog bab: Magi ramah,
 // Pak Plastik lucu dan sedang berubah, yang lain hangat dan membantu.
 // Tidak menggurui, tidak mengarang angka pasti atas nama sekolah.
+import { CHAPTER_ORDER } from '../chapters'
 import { DIALOG_MAGI_PAK_PLASTIK, DIALOG_PAK_PLASTIK } from './cerita'
 import { DIALOG_TUGAS } from './tugas'
 import { TUGAS } from '../tugas'
-import type { PakPlastikStatus, TugasKaderId } from '../types'
+import type { CampaignSave, PakPlastikStatus, TugasKaderId } from '../types'
 
 export interface DialogNpc {
   sapaan: string
@@ -114,6 +115,40 @@ export const DIALOG_NPC: Record<string, DialogNpc> = {
   },
   // Pemberi Misi Kader (dialog dari DIALOG_TUGAS, lihat atas).
   ...DIALOG_TUGAS_NPC,
+}
+
+/**
+ * Sapaan yang berubah mengikuti progres (R7, Gelombang 3) — relatedness
+ * tanpa multiplayer. Menggantikan sapaan statis DIALOG_NPC hanya bila ada
+ * varian progres untuk NPC itu; selain itu kembalikan null supaya pemanggil
+ * memakai sapaan asli. Magi tetap menasehati maksimal 1 kalimat.
+ * Memakai data progres yang sudah ada (misi utama selesai) — tanpa field
+ * save baru. Pak Plastik tidak disentuh: sapaannya sudah berubah lewat
+ * dialogDenganIngatan (status Cerita Bercabang).
+ */
+export function sapaanProgres(id: string, save: CampaignSave): string | null {
+  const misiSelesai = CHAPTER_ORDER.filter((c) => save.chapters[c].done).length
+  if (misiSelesai === 0) return null
+  switch (id) {
+    case 'magi':
+      return misiSelesai >= 6
+        ? 'Kamu benar-benar penjaga sekolah sekarang — Magi bangga!'
+        : 'Hai lagi! Sekolah sudah lebih hijau sejak kamu datang.'
+    case 'dimas':
+      return misiSelesai >= 3
+        ? 'Kamu sudah jauh! Aku masih belajar memilah, susah-susah gampang.'
+        : 'Eh, kamu! Aku dengar kamu sudah menyelesaikan misi. Keren!'
+    case 'bu-sari':
+      return misiSelesai >= 6
+        ? 'Selamat pagi, Pahlawan Adiwiyata. Ibu bangga sekali.'
+        : 'Selamat pagi, Nak. Ibu dengar kabar baik tentangmu dari tim.'
+    case 'kang-kantin':
+      return 'Selamat datang lagi! Kantin makin rapi sejak kamu memilah.'
+    case 'pak-kebun':
+      return 'Halo lagi, nak. Kebunmu sudah mulai kelihatan hasilnya.'
+    default:
+      return null
+  }
 }
 
 /**

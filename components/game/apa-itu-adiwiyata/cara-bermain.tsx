@@ -41,7 +41,8 @@ export function CaraBermain({ onTutup }: { onTutup: () => void }) {
       style={{
         position: 'fixed',
         inset: 0,
-        zIndex: 50,
+        // B-6: panduan (60) di bawah Jeda (70) dan Keluar (80).
+        zIndex: 60,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -68,7 +69,7 @@ export function CaraBermain({ onTutup }: { onTutup: () => void }) {
         <p className="aia-muted">
           Kamu siswa baru yang ditugaskan menjadikan sekolahmu Adiwiyata. Jelajahi sekolah, temui warga sekolah,
           dan selesaikan 6 misi utama + 8 Misi Tambahan bersama Magi si larva maggot. Tidak ada yang benar-benar
-          sampah.
+          sampah. Panduan ini bisa dibuka kapan saja dari tombol &quot;?&quot; — tidak perlu dihafal sebelum main.
         </p>
 
         <h3 className="aia-section-title">Bergerak</h3>
@@ -101,7 +102,7 @@ export function CaraBermain({ onTutup }: { onTutup: () => void }) {
         <h3 className="aia-section-title">Rumah</h3>
         <ul style={{ margin: '0 0 12px', paddingLeft: 20 }}>
           <li>Permainan baru dimulai di rumah. Pintu di bawah membawamu berangkat ke sekolah, dan Jalan Pulang di bawah Gerbang membawamu kembali ke rumah.</li>
-          <li>Kasur = checkpoint: istirahat memulihkan Lapar +30 dan Haus +30, progres tersimpan otomatis.</li>
+          <li>Kasur = checkpoint: istirahat memulihkan Lapar +30 dan Haus +30, progres tersimpan otomatis — 1x sehari, istirahat lagi besok.</li>
           <li>Kulkas: minum gratis, Haus +30, tanpa batas.</li>
           <li>Ibu memberimu uang saku Rp5.000 + sarapan (Lapar +40) 1x sehari — bicara lagi dengannya esok hari.</li>
           <li>Meja makan hanya untuk dilihat — tidak ada mekaniknya.</li>

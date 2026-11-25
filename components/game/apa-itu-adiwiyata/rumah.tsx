@@ -5,9 +5,9 @@
 // WASD/panah (keyboard), klik peta (mouse, click-to-move), collision
 // dinding/furnitur, interaksi Spasi/Enter/tombol Aksi, dan HUD yang sama.
 // Tokoh pemain digambar dengan gambarPemain yang sama (gender-aware).
-// Kasur = checkpoint (pulih + auto-save lewat provider), kulkas = minum
-// gratis, Ibu = uang saku Rp5.000 + sarapan 1x per hari kalender lokal,
-// pintu = berangkat ke sekolah.
+// Kasur = checkpoint (pulih + auto-save lewat provider) 1x per hari
+// kalender lokal, kulkas = minum gratis, Ibu = uang saku Rp5.000 +
+// sarapan 1x per hari kalender lokal, pintu = berangkat ke sekolah.
 
 import { useEffect, useRef, useState } from 'react'
 import {
@@ -26,9 +26,9 @@ import { hariIniLokal } from '@/lib/apa-itu-adiwiyata/content/hadiah-harian'
 import { warnaKostum } from '@/lib/apa-itu-adiwiyata/content/toko'
 import { useCampaign } from '@/lib/apa-itu-adiwiyata/context'
 import { gambarBayangan, gambarPemain, rr, type PemainState } from '@/lib/apa-itu-adiwiyata/gambar-pemain'
-import { buatKamera, perbaruiKamera } from '@/lib/apa-itu-adiwiyata/kamera'
+import { buatKamera, offsetPusat, perbaruiKamera } from '@/lib/apa-itu-adiwiyata/kamera'
 import { AngkaAnimasi, HudStatus } from './hud-dunia'
-import { duckMusik, klik, koin, pindah, setSuaraMuted, unduckMusik } from './suara'
+import { duckMusik, klik, koin, langkah, pindah, setSuaraMuted, unduckMusik } from './suara'
 
 const KECEPATAN = 160 // unit dunia per detik
 const JARAK_INTERAKSI = 56
@@ -375,6 +375,10 @@ export function Rumah({
   const dekatRef = useRef<ObjekId | null>(null)
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const reducedRef = useRef(false)
+  /** Jarak tempuh sejak langkah kaki terakhir (R10): sama seperti Jelajah,
+   * satu bunyi tiap ~34 unit dunia, kaki kiri-kanan bergantian. */
+  const jarakLangkahRef = useRef(0)
+  const kakiKiriRef = useRef(false)
   const saveRef = useRef(save)
   saveRef.current = save
 
@@ -416,7 +420,13 @@ export function Rumah({
     switch (objek.id) {
       case 'kasur':
         klik()
-        dispatch({ type: 'PULIHKAN', lapar: 30, haus: 30 })
+        // B-7: kasur 1x per hari kalender lokal — bila sudah dipakai hari
+        // ini, hanya pesan (bukan hukuman, tidak ada yang hilang).
+        if ((save.kasurTanggal ?? null) === hariIni) {
+          showToast('Kasur sudah dipakai istirahat hari ini. Istirahat lagi besok, ya.')
+          break
+        }
+        dispatch({ type: 'ISTIRAHAT_KASUR', hariIni })
         showToast('Kamu istirahat sebentar. Lapar +30, Haus +30. Progres tersimpan.')
         break
       case 'kulkas':
@@ -580,11 +590,20 @@ export function Rumah({
         // Sepatu Eco-Runner: kecepatan gerak +35% permanen. Hanya gerak
         // pemain yang dikali — animasi jalan (p.fase) tidak ikut berubah.
         const kecepatan = KECEPATAN * (saveRef.current.sepatuEco ? 1.35 : 1)
+        const xLama = p.x
+        const yLama = p.y
         const nx = p.x + vx * kecepatan * dt
         const ny = p.y + vy * kecepatan * dt
         // Pindah per sumbu supaya bisa geser di sepanjang dinding/furnitur.
         if (!tabrakan(nx, p.y, RADIUS_PEMAIN)) p.x = nx
         if (!tabrakan(p.x, ny, RADIUS_PEMAIN)) p.y = ny
+        // R10: SFX langkah kaki (sama seperti Jelajah).
+        jarakLangkahRef.current += Math.hypot(p.x - xLama, p.y - yLama)
+        if (jarakLangkahRef.current >= 34) {
+          jarakLangkahRef.current -= 34
+          kakiKiriRef.current = !kakiKiriRef.current
+          langkah(kakiKiriRef.current)
+        }
         p.fase += dt * 10
         p.arah =
           Math.abs(vx) > Math.abs(vy) ? (vx > 0 ? 'kanan' : 'kiri') : vy > 0 ? 'bawah' : 'atas'
@@ -641,11 +660,16 @@ export function Rumah({
       // Kamera halus (diperbarui tiap frame di update).
       const camX = camRef.current.x
       const camY = camRef.current.y
+      // K-1 (sama seperti Jelajah): kamera dijepit ke 0 bila pandang lebih
+      // besar dari rumah; rumah dipusatkan lewat offset, dan latar digambar
+      // di koordinat dunia (0,0) dalam translate yang sama dengan pemain.
+      const offX = offsetPusat(view.w, RUMAH.lebar)
+      const offY = offsetPusat(view.h, RUMAH.tinggi)
       ctx.save()
-      ctx.translate(-camX, -camY)
+      ctx.translate(offX - camX, offY - camY)
       const statis = staticRef.current
       if (statis) {
-        ctx.drawImage(statis, camX, camY, view.w, view.h, camX, camY, view.w, view.h)
+        ctx.drawImage(statis, 0, 0)
       }
       // Cincin sorot di objek terdekat.
       const sorotId = dekatRef.current
@@ -793,6 +817,8 @@ export function Rumah({
   const onPointerDown = (e: React.PointerEvent) => {
     if (dialogRef.current) return
     if ((e.target as HTMLElement).closest('button')) return
+    // C-23: klik kanan bukan perintah jalan — abaikan.
+    if (e.button === 2) return
     if (e.pointerType === 'mouse') tujuanRef.current = null
     const pos = posisiPointer(e)
     const view = viewRef.current
@@ -828,8 +854,9 @@ export function Rumah({
         const pos = posisiPointer(e)
         const camX = camRef.current.x
         const camY = camRef.current.y
-        const wx = pos.x + camX
-        const wy = pos.y + camY
+        // Ketukan layar -> koordinat dunia: kurangi offset pemusatan (K-1).
+        const wx = pos.x - offsetPusat(viewRef.current.w, RUMAH.lebar) + camX
+        const wy = pos.y - offsetPusat(viewRef.current.h, RUMAH.tinggi) + camY
         const diAtasInteraktif = OBJEK.some((o) => Math.hypot(o.x - wx, o.y - wy) < 40)
         canvas.style.cursor = diAtasInteraktif ? 'pointer' : 'default'
       }
@@ -851,8 +878,9 @@ export function Rumah({
     const p = playerRef.current
     const camX = camRef.current.x
     const camY = camRef.current.y
-    const wx = pos.x + camX
-    const wy = pos.y + camY
+    // Ketukan layar -> koordinat dunia: kurangi offset pemusatan (K-1).
+    const wx = pos.x - offsetPusat(viewRef.current.w, RUMAH.lebar) + camX
+    const wy = pos.y - offsetPusat(viewRef.current.h, RUMAH.tinggi) + camY
     const objek = OBJEK.find((o) => Math.hypot(o.x - wx, o.y - wy) < 40)
     if (objek) {
       if (Math.hypot(objek.x - p.x, objek.y - p.y) <= 70) {

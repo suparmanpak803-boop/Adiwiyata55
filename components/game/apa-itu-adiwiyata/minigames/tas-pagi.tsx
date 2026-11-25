@@ -420,11 +420,18 @@ export function TasPagi({
     setFase('main')
   }
 
+  // B-9: skor persen 0–100. Mode gestur (TangkapJatuh) sudah persen;
+  // mode tombol/lempar memberi +10 per jawaban benar (+5 bonus combo),
+  // jadi dinormalkan lewat jumlah jawaban benar (maks 10 barang).
+  const skorPersen = gestur
+    ? Math.min(100, skor)
+    : Math.min(100, Math.round((benarHitung / JUMLAH_BARANG) * 100))
+
   const selesaikan = () => {
     if (selesaiRef.current) return
     selesaiRef.current = true
     koin()
-    onStageComplete(Math.min(100, skor))
+    onStageComplete(skorPersen)
   }
 
   const jawabTebak = (i: number, mainkanSuara = true) => {
@@ -586,7 +593,7 @@ export function TasPagi({
         <>
           <div className="aia-stats" aria-label="Skor tahap ini">
             <span className="aia-stat">
-              <Coins aria-hidden="true" /> {skor} Koin Hijau
+              <Coins aria-hidden="true" /> Skor {skorPersen}
             </span>
             {combo >= 2 && (
               <span className="aia-stat">
@@ -641,7 +648,7 @@ export function TasPagi({
           <div style={{ position: 'relative' }}>
             <EfekBenar
               tampil={umpan?.jenis === 'benar'}
-              label={umpan?.poin ? `+${umpan.poin} Koin Hijau` : 'Benar!'}
+              label={umpan?.poin ? `+${umpan.poin} poin` : 'Benar!'}
             />
             {spec.tutorial && (
               <div style={{ textAlign: 'center', marginBottom: 8 }}>
@@ -819,12 +826,12 @@ export function TasPagi({
           <p className="aia-muted">
             {gestur ? (
               <>
-                Kamu mengumpulkan {skor} Koin Hijau dari tangkapanmu. {spec.hasilBenar}
+                Skor tangkapanmu {skor} dari 100. {spec.hasilBenar}
               </>
             ) : (
               <>
-                Kamu berhasil membawa {benarHitung} dari {JUMLAH_BARANG} barang dengan benar dan mengumpulkan {skor}{' '}
-                Koin Hijau.
+                Kamu berhasil membawa {benarHitung} dari {JUMLAH_BARANG} barang dengan benar. Skor tahap ini{' '}
+                {skorPersen} dari 100.
                 {comboTerbaik >= 3 ? ` Combo terbaikmu x${comboTerbaik}. Hebat!` : ''}
               </>
             )}

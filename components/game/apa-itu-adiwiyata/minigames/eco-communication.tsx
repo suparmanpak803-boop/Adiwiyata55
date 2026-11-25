@@ -5,6 +5,9 @@
 // kartu sesuai urutan ceritanya (komponen SusunCerita), bukan seret kartu.
 // Frame dibuat dari brief + teks konsep yang benar di KONTEN_TUGAS
 // (hook → contoh → ajakan); tidak ada isi baru yang dikarang.
+// B-16: dua konsep salah dari data yang sama ikut tampil sebagai kartu
+// pengecoh (prop `pengecoh` SusunCerita) — pemain harus menyingkirkannya,
+// jadi keputusan "pilih" tetap diuji di mode gestur.
 // Mode satu-ketukan (prop modeSatuKetukan) menampilkan versi tombol lama
 // sebagai alternatif aksesibilitas. Skor 0–100 per tahap; onStageComplete
 // dipanggil TEPAT SATU KALI.
@@ -22,6 +25,7 @@ import { INTERAKSI_MISI } from '@/lib/apa-itu-adiwiyata/content/interaksi'
 import type { TugasKaderId } from '@/lib/apa-itu-adiwiyata/types'
 import { benar, getar, klik, koin, salah } from '../suara'
 import { EfekSalah, SusunCerita, TanganPenunjuk, type FrameCerita } from '../interaksi'
+import { TahapTidakTersedia } from '../tahap-tidak-tersedia'
 
 export interface MiniGameTugasSlotProps {
   tugasId: TugasKaderId
@@ -123,6 +127,15 @@ function EcoCommunicationGestur({ tugasId, stageIndex, onStageComplete, terjeda 
     if (!tahap || tahap.jenis !== 'pilih') return []
     return buatFrame(tahap, stageIndex)
   }, [tahap, stageIndex])
+  // B-16: kartu pengecoh dari konsep salah yang sudah ada di data tahap —
+  // mengetuknya di SusunCerita dihitung salah (id pengecoh tidak pernah
+  // sama dengan frame benar berikutnya).
+  const pengecoh = useMemo<FrameCerita[]>(() => {
+    if (!tahap || tahap.jenis !== 'pilih') return []
+    return tahap.pilihan
+      .filter((p) => !p.benar)
+      .map((p, i) => ({ id: `pengecoh-${i}`, teks: p.teks }))
+  }, [tahap])
   const [percobaan, setPercobaan] = useState(0)
   const [kunciUlang, setKunciUlang] = useState(0)
   const [gagal, setGagal] = useState(false)
@@ -134,9 +147,7 @@ function EcoCommunicationGestur({ tugasId, stageIndex, onStageComplete, terjeda 
 
   if (!tahap || tahap.jenis !== 'pilih' || frame.length === 0) {
     return (
-      <div className="aia-card">
-        <p className="aia-muted">Tahap ini belum tersedia.</p>
-      </div>
+      <TahapTidakTersedia onLewati={() => onStageComplete(0)} />
     )
   }
 
@@ -208,7 +219,9 @@ function EcoCommunicationGestur({ tugasId, stageIndex, onStageComplete, terjeda 
         </div>
       )}
 
-      {!gagal && <SusunCerita key={kunciUlang} frame={frame} onSelesai={susunSelesai} terjeda={terjeda} />}
+      {!gagal && (
+        <SusunCerita key={kunciUlang} frame={frame} pengecoh={pengecoh} onSelesai={susunSelesai} terjeda={terjeda} />
+      )}
 
       {gagal && !selesai && (
         <div>
@@ -297,9 +310,7 @@ function EcoCommunicationTombol({ tugasId, stageIndex, onStageComplete }: MiniGa
 
   if (!tahap || tahap.jenis !== 'pilih') {
     return (
-      <div className="aia-card">
-        <p className="aia-muted">Tahap ini belum tersedia.</p>
-      </div>
+      <TahapTidakTersedia onLewati={() => onStageComplete(0)} />
     )
   }
 

@@ -157,6 +157,21 @@ const IKON_PAKAN: Record<string, typeof Soup> = {
   plastik: Trash2,
 }
 
+/** Pakan salah yang mencemari kompos (aturan 2 siklus.ts): daging berlebih
+ * dan makanan berminyak — bila diberikan ke maggot, kompos di Bab 4 jadi
+ * bau dan harus diperbaiki dulu (tambah bahan cokelat + aduk). Plastik
+ * bukan makanan sama sekali, jadi tidak masuk rantai ini. */
+const PAKAN_PENCEMAR_KOMPOS = ['daging', 'minyak']
+
+/**
+ * Ambang gagal bau kotak (K-2): pakan benar MENURUNKAN bau 1 (min 0),
+ * pakan salah menaikkan bau 1. Dengan bau awal 2 (carryover minyak) dan
+ * 3 pakan benar / 2 salah dalam 5 pakan, tahap tetap mungkin selesai —
+ * pemain yang memberi pakan bersih dulu bisa menahan bau di bawah 4 —
+ * tapi dua pakan salah beruntun sebelum pakan bersih tetap menggagalkan.
+ */
+const BAU_MAKS_GAGAL = 4
+
 // ------------------------------------------- Versi tombol (mode satu-ketukan) ----
 
 function FasePakan({
@@ -195,15 +210,23 @@ function FasePakan({
     if (pakan.benar) {
       tambahSkor(10)
       benar()
+      // K-2: pakan bersih menurunkan bau 1 (min 0), sesuai teks petunjuk.
+      setBau((b) => Math.max(0, b - 1))
       setPesan(pakan.penjelasan)
     } else {
       salah()
       setPesan(pakan.penjelasan)
       if (!mudah) {
+        // B-14 (aturan 2 siklus.ts): pakan pencemar (daging/minyak) yang
+        // salah diberikan bikin kompos di Bab 4 jadi bau — bisa diperbaiki
+        // di sana, bukan hukuman permanen.
+        if (PAKAN_PENCEMAR_KOMPOS.includes(pakan.id)) {
+          dispatch({ type: 'SET_CARRYOVER', patch: { komposBau: true } })
+        }
         const bauBaru = bau + 1
         setBau(bauBaru)
         if (bauBaru >= 1) lalat()
-        if (bauBaru >= 3) {
+        if (bauBaru >= BAU_MAKS_GAGAL) {
           timerRef.current = setTimeout(
             () => onGagal('Bau kotak sudah tidak tertahankan dan lalat menyerbu. Kotak maggot perlu diulang dari awal.'),
             1200,
@@ -242,7 +265,7 @@ function FasePakan({
       <div className="aia-progress-row">
         <span>Stok organik dari kantin</span>
         <strong>
-          {diberi.length}/5 pakan · Bau: {bau}/3
+          {diberi.length}/5 pakan · Bau: {bau}/{BAU_MAKS_GAGAL}
         </strong>
       </div>
       <div
@@ -250,10 +273,10 @@ function FasePakan({
         role="progressbar"
         aria-valuenow={bau}
         aria-valuemin={0}
-        aria-valuemax={3}
+        aria-valuemax={BAU_MAKS_GAGAL}
         aria-label="Tingkat bau kotak maggot"
       >
-        <span style={{ width: `${(bau / 3) * 100}%`, background: bau >= 2 ? '#b91c1c' : '#2e7d32' }} />
+        <span style={{ width: `${(bau / BAU_MAKS_GAGAL) * 100}%`, background: bau >= 2 ? '#b91c1c' : '#2e7d32' }} />
       </div>
 
       {bau >= 1 && (
@@ -300,13 +323,20 @@ function FasePakan({
 // dari skor untuk menghitung bau — kecuali skor 0 (tidak ada pakan benar yang
 // tertangkap), yang langsung dianggap gagal.
 
-function uraiSkorTangkap(skor: number): { benar: number; salah: number } {
+/**
+ * C-35: skor 0 itu ambigu — (benar 0, salah 0..3) semuanya memetakan ke
+ * 0. Field `tidakPasti` menandainya: true hanya bila skor 0. Pemanggil
+ * tetap memakai jalur gagal bila benar===0 dan tidak set komposBau
+ * bila salah===0; field ini hanya untuk diagnosis, perilaku tidak berubah.
+ */
+function uraiSkorTangkap(skor: number): { benar: number; salah: number; tidakPasti: boolean } {
   for (let b = 3; b >= 0; b--) {
     for (let s = 0; s <= 3; s++) {
-      if (Math.max(0, Math.round((b / 3) * 100 - 5 * s)) === skor) return { benar: b, salah: s }
+      if (Math.max(0, Math.round((b / 3) * 100 - 5 * s)) === skor)
+        return { benar: b, salah: s, tidakPasti: skor === 0 }
     }
   }
-  return { benar: 0, salah: 0 }
+  return { benar: 0, salah: 0, tidakPasti: true }
 }
 
 function FasePakanGestur({ tambahSkor, onSelesai, onGagal, onSalah, perbesarTarget, terjeda = false }: PropsGestur) {
@@ -346,7 +376,18 @@ function FasePakanGestur({ tambahSkor, onSelesai, onGagal, onSalah, perbesarTarg
     diprosesRef.current = true
     setSelesai(true)
     const { benar: jumlahBenar, salah: jumlahSalah } = uraiSkorTangkap(skorAkhir)
-    const bauAkhir = bauAwal + jumlahSalah
+    // C-35: uraiSkorTangkap juga mengembalikan `tidakPasti` (true bila
+    // skor 0, karena jumlah salah tak bisa diurai) — dipakai diagnosis
+    // saja; jalur gagal tetap jalan karena jumlahBenar 0.
+    // K-2: tiap pakan bersih yang tertangkap menurunkan bau 1 (min 0),
+    // tiap tangkapan salah menaikkan bau 1 — sama seperti mode tombol.
+    const bauAkhir = Math.max(0, bauAwal + jumlahSalah - jumlahBenar)
+    // B-14 (aturan 2 siklus.ts): tangkapan salah mencemari kompos di Bab 4
+    // (TangkapJatuh hanya melaporkan jumlah salah, bukan jenisnya — sama
+    // seperti aturan bau di fase ini, semua tangkapan salah dihitung).
+    if (jumlahSalah > 0) {
+      dispatch({ type: 'SET_CARRYOVER', patch: { komposBau: true } })
+    }
     setBau(bauAkhir)
     for (let i = 0; i < jumlahSalah; i++) onSalah()
     if (jumlahBenar === 0) {
@@ -361,7 +402,7 @@ function FasePakanGestur({ tambahSkor, onSelesai, onGagal, onSalah, perbesarTarg
       )
       return
     }
-    if (bauAkhir >= 3) {
+    if (bauAkhir >= BAU_MAKS_GAGAL) {
       lalat()
       setPetunjuk(bersihPetunjuk(spec.petunjukMagi))
       setPesan('Kotak jadi bau karena makanan yang bikin sakit ikut tertangkap.')
@@ -402,18 +443,18 @@ function FasePakanGestur({ tambahSkor, onSelesai, onGagal, onSalah, perbesarTarg
       )}
 
       <div className="aia-progress-row">
-        <span>Bau kotak (salah tangkap menaikkan bau)</span>
-        <strong>Bau: {bau}/3</strong>
+        <span>Bau kotak (salah tangkap menaikkan bau, pakan bersih menurunkannya)</span>
+        <strong>Bau: {bau}/{BAU_MAKS_GAGAL}</strong>
       </div>
       <div
         className="aia-progress"
         role="progressbar"
         aria-valuenow={bau}
         aria-valuemin={0}
-        aria-valuemax={3}
+        aria-valuemax={BAU_MAKS_GAGAL}
         aria-label="Tingkat bau kotak maggot"
       >
-        <span style={{ width: `${(bau / 3) * 100}%`, background: bau >= 2 ? '#b91c1c' : '#2e7d32' }} />
+        <span style={{ width: `${(bau / BAU_MAKS_GAGAL) * 100}%`, background: bau >= 2 ? '#b91c1c' : '#2e7d32' }} />
       </div>
 
       {bau >= 1 && (
@@ -576,6 +617,11 @@ function FaseJaga({
   const [ronde, setRonde] = useState(0)
   const [nilai, setNilai] = useState({ kelembapan: 55, suhu: 50, bau: 45 })
   const [pesan, setPesan] = useState<string | null>(null)
+  // B-10: kunci jawaban begitu satu jawaban benar dipilih — selama jeda
+  // 700 ms menuju ronde berikutnya, tombol tidak boleh diklik lagi
+  // (klik ganda memberi skor dua kali; klik salah bisa memicu timer
+  // onGagal yang berlomba dengan onSelesai).
+  const [terkunci, setTerkunci] = useState(false)
   const aktif = RONDE_JAGA[ronde]
   const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
@@ -594,14 +640,19 @@ function FaseJaga({
   )
 
   const pilih = (aksiId: string) => {
+    if (terkunci) return
     if (aksiId === aktif.benarId) {
+      setTerkunci(true)
       tambahSkor(10)
       benar()
       setNilai((lama) => ({ ...lama, [aktif.indikator]: 55 }))
       setPesan('Tepat! Indikator kembali ke zona aman.')
       timerRef.current = setTimeout(() => {
         if (ronde >= 2) onSelesai()
-        else setRonde(ronde + 1)
+        else {
+          setTerkunci(false)
+          setRonde(ronde + 1)
+        }
       }, 700)
     } else {
       salah()
@@ -639,7 +690,7 @@ function FaseJaga({
         {aktif.aksi.map((aksi) => {
           const Ikon = IKON_AKSI_JAGA[aksi.id] ?? X
           return (
-            <button key={aksi.id} type="button" className="aia-btn aia-btn-ghost aia-btn-block" onClick={() => pilih(aksi.id)}>
+            <button key={aksi.id} type="button" className="aia-btn aia-btn-ghost aia-btn-block" disabled={terkunci} onClick={() => pilih(aksi.id)}>
               <Ikon aria-hidden="true" /> {aksi.label}
               {mudah && aksi.id === aktif.benarId ? ' · Disarankan' : ''}
             </button>
@@ -1011,6 +1062,13 @@ function FasePanenGestur({
 
 // ------------------------------------------------------------------ Komponen utama ----
 
+// B-9: skor mentah mode tombol per fase — fase 0: 3 pakan benar × 10,
+// fase 1: 3 ronde × 10, fase 2: sekali panen × 10. Mode gestur sudah
+// 0–100 per fase (TangkapJatuh / Tuas / Tahan). onStageComplete selalu
+// menerima persen 0–100, supaya kinerja yang sama memberi Koin Hijau
+// yang sama di kedua mode.
+const MAKS_SKOR_TOMBOL = [30, 30, 10]
+
 export function ZonaMaggot({
   stageIndex,
   onStageComplete,
@@ -1065,8 +1123,18 @@ export function ZonaMaggot({
     if (stageIndex === 2 && save.chapters.maggot.stages[2].status !== 'done') {
       dispatch({ type: 'SET_REPORT', patch: { hijau: save.report.hijau + 10 } })
     }
-    onStageComplete(skor)
+    // B-9: normalisasi skor mentah mode tombol ke persen 0–100.
+    const persen = modeSatuKetukan
+      ? Math.min(100, Math.round((skor / MAKS_SKOR_TOMBOL[stageIndex]) * 100))
+      : Math.min(100, skor)
+    onStageComplete(persen)
   }
+
+  // Tampilan skor di header memakai persen yang sama dengan yang
+  // dikirim ke onStageComplete (supaya angka yang terlihat = hadiahnya).
+  const skorTampil = modeSatuKetukan
+    ? Math.min(100, Math.round((skor / MAKS_SKOR_TOMBOL[stageIndex]) * 100))
+    : Math.min(100, skor)
 
   return (
     <div className="aia-stack">
@@ -1075,7 +1143,7 @@ export function ZonaMaggot({
           Pos Maggot · Fase {Math.min(fase + 1, 3)} dari 3
         </span>
         <span>
-          <Coins aria-hidden="true" /> {skor} Koin Hijau
+          <Coins aria-hidden="true" /> Skor {skorTampil}
         </span>
         <TombolBisukan />
       </div>

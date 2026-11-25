@@ -33,6 +33,26 @@ export function infoBak(id: TongSampah): BakInfo {
   return BAK.find((b) => b.id === id) ?? BAK[0]
 }
 
+/**
+ * Warna latar TOMBOL bak (C-2): versi lebih gelap dari warna sistem di
+ * atas, supaya teks putih di atasnya mencapai kontras ≥4,5:1 (AA).
+ * Warna sistem SMAN 55 di BAK TIDAK diubah — peta ini hanya untuk latar
+ * tombol (dialog Pilah di Jelajah, tombol bak di Pilah, tombol kelompok
+ * di Bank Sampah). Kontras putih di atasnya: Organik 6,29:1, Anorganik
+ * 6,80:1, Kertas 5,63:1, Residu 6,39:1, B3 6,55:1.
+ */
+export const WARNA_TOMBOL_BAK: Record<TongSampah, string> = {
+  organik: '#3a6b38',
+  anorganik: '#2c6178',
+  kertas: '#8a5f14',
+  residu: '#5f5f5f',
+  b3: '#a13b3b',
+}
+
+export function warnaTombolBak(id: TongSampah): string {
+  return WARNA_TOMBOL_BAK[id] ?? WARNA_TOMBOL_BAK.organik
+}
+
 /** Hadiah memilah 1 sampah liar ke bak yang benar di Tempat Sampah Terpilah. */
 export const HADIAH_PILAH_KOIN = 5
 export const HADIAH_PILAH_UANG = 200

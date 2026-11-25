@@ -151,6 +151,9 @@ const IKON_BAHAN: Record<string, typeof Leaf> = {
 }
 
 const TARGET_LAPIS = 8
+// B-18: rasio 3 cokelat : 1 hijau diterapkan sungguhan — dari 8 lapis,
+// paling banyak 2 lapis hijau (6 cokelat : 2 hijau = 3 : 1).
+const MAKS_HIJAU = TARGET_LAPIS / 4
 
 // Urutan 8 lapis untuk SusunMenara: cokelat dan hijau berselang-seling,
 // memakai 5 bahan lama (id unik per lapis supaya kartu kandidat tidak tertukar).
@@ -182,7 +185,6 @@ function FaseLapis({
   const [perluPerbaikan, setPerluPerbaikan] = useState(save.carryover.komposBau)
   const [perbaikan, setPerbaikan] = useState({ cokelat: false, aduk: false })
   const [lapis, setLapis] = useState<JenisBahan[]>([])
-  const [beruntunHijau, setBeruntunHijau] = useState(0)
   const [ditolak, setDitolak] = useState(0)
   const [pesan, setPesan] = useState<string | null>(
     save.carryover.komposBau
@@ -216,16 +218,18 @@ function FaseLapis({
 
   const tambah = (bahan: Bahan) => {
     if (perluPerbaikan || lapis.length >= TARGET_LAPIS) return
-    if (bahan.jenis === 'hijau' && beruntunHijau >= 2) {
+    // B-18: rasio sungguhan — tolak bahan hijau bila kuota hijaunya sudah
+    // habis (2 dari 8 lapis), supaya hasil akhir benar-benar 3 : 1.
+    if (bahan.jenis === 'hijau' && jumlahHijau >= MAKS_HIJAU) {
       salah()
       const tolakBaru = ditolak + 1
       setDitolak(tolakBaru)
       setPesan(
-        'Tiga lapis hijau berturut-turut bikin kompos becek dan bau. Selingi dengan bahan cokelat, lapis ini tidak dihitung.',
+        'Rasio kompos 3 cokelat : 1 hijau — lapis hijaunya sudah cukup (2 dari 8). Tambah bahan cokelat, lapis ini tidak dihitung.',
       )
       if (tolakBaru >= batasTolak) {
         timerRef.current = setTimeout(
-          () => onGagal('Kompos terlalu sering salah lapis dan jadi becek. Ulangi susunan dari awal, ingat selingi cokelat dan hijau.'),
+          () => onGagal('Kompos terlalu sering salah lapis dan jadi becek. Ulangi susunan dari awal, ingat rasio 3 cokelat : 1 hijau.'),
           1200,
         )
       }
@@ -233,7 +237,6 @@ function FaseLapis({
     }
     const baru = [...lapis, bahan.jenis]
     setLapis(baru)
-    setBeruntunHijau(bahan.jenis === 'hijau' ? beruntunHijau + 1 : 0)
     tambahSkor(10)
     benar()
     setPesan(
@@ -253,8 +256,8 @@ function FaseLapis({
         Susun lapis kompos
       </h3>
       <p className="aia-muted">
-        Ketuk bahan untuk menyusun {TARGET_LAPIS} lapis ke bak kompos. Target rasio 3 cokelat : 1 hijau. Jangan
-        susun 3 lapis hijau berturut-turut.
+        Ketuk bahan untuk menyusun {TARGET_LAPIS} lapis ke bak kompos. Target rasio 3 cokelat : 1 hijau —
+        paling banyak {MAKS_HIJAU} lapis hijau dari {TARGET_LAPIS} lapis.
       </p>
 
       {perluPerbaikan ? (
@@ -325,7 +328,7 @@ function FaseLapis({
           </div>
           <p className="aia-muted">
             Lapis: {lapis.length}/{TARGET_LAPIS}
-            {mudah && beruntunHijau >= 2 ? ' · Sebaiknya tambah bahan cokelat sekarang.' : ''}
+            {mudah && jumlahHijau >= MAKS_HIJAU ? ' · Sebaiknya tambah bahan cokelat sekarang.' : ''}
           </p>
 
           <div className="aia-zone-grid" role="group" aria-label="Pilihan bahan kompos">
@@ -340,7 +343,7 @@ function FaseLapis({
                   onClick={() => tambah(bahan)}
                 >
                   <Ikon aria-hidden="true" /> {bahan.nama}
-                  {mudah && bahan.jenis === 'cokelat' && beruntunHijau >= 2 ? ' · Disarankan' : ''}
+                  {mudah && bahan.jenis === 'cokelat' && jumlahHijau >= MAKS_HIJAU ? ' · Disarankan' : ''}
                 </button>
               )
             })}
@@ -520,12 +523,10 @@ const IKON_AKSI_RAWAT: Record<AksiRawat, typeof Droplets> = {
 function KartuTanaman({
   nama,
   sehat,
-  layu,
   butuh,
 }: {
   nama: string
   sehat: number
-  layu: boolean
   butuh: string | null
 }) {
   return (
@@ -534,7 +535,7 @@ function KartuTanaman({
         <Sprout aria-hidden="true" /> {nama}
       </strong>
       <p className="aia-muted" style={{ margin: '4px 0' }}>
-        {layu ? 'Layu — perlu dipulihkan.' : butuh ?? 'Segar.'}
+        {butuh ?? 'Segar.'}
       </p>
       <p aria-label={`Kesehatan ${nama}: ${sehat} dari 3`}>
         {[0, 1, 2].map((i) => (
@@ -558,13 +559,15 @@ function FaseTanaman({
   onSelesai: () => void
   onGagal: (alasan: string) => void
 }) {
-  const { save, dispatch } = useCampaign()
-  const sehatAwal = save.carryover.kebunLayu ? 2 : 3
+  const sehatAwal = 3
   const [ronde, setRonde] = useState(0)
   const [sehat, setSehat] = useState<Record<TanamanId, number>>({ cabai: sehatAwal, kangkung: sehatAwal })
-  const [pesan, setPesan] = useState<string | null>(
-    save.carryover.kebunLayu ? 'Tanaman layu karena kompos kemarin belum matang. Pulihkan dengan perawatan yang tepat.' : null,
-  )
+  const [pesan, setPesan] = useState<string | null>(null)
+  // B-10: kunci jawaban begitu satu jawaban benar dipilih — selama jeda
+  // 700 ms menuju ronde berikutnya, tombol tidak boleh diklik lagi
+  // (klik ganda memberi skor dua kali; klik salah bisa memicu timer
+  // onGagal yang berlomba dengan onSelesai).
+  const [terkunci, setTerkunci] = useState(false)
   const aktif = RONDE_RAWAT[ronde]
   const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
@@ -576,8 +579,10 @@ function FaseTanaman({
   )
 
   const pilih = (aksi: AksiRawat) => {
+    if (terkunci) return
     if (aksi === 'siram') siram()
     if (aksi === aktif.kebutuhan) {
+      setTerkunci(true)
       tambahSkor(10)
       benar()
       tumbuh()
@@ -590,11 +595,9 @@ function FaseTanaman({
       )
       timerRef.current = setTimeout(() => {
         if (ronde >= 2) {
-          if (save.carryover.kebunLayu) {
-            dispatch({ type: 'SET_CARRYOVER', patch: { kebunLayu: false } })
-          }
           onSelesai()
         } else {
+          setTerkunci(false)
           setRonde(ronde + 1)
         }
       }, 700)
@@ -623,23 +626,15 @@ function FaseTanaman({
         Ronde {ronde + 1} dari 3. Perhatikan apa yang dibutuhkan tanaman, lalu pilih tindakan yang tepat.
       </p>
 
-      {save.carryover.kebunLayu && (
-        <p className="aia-chip" role="alert">
-          <AlertTriangle aria-hidden="true" /> Kebun layu karena kompos kemarin belum matang.
-        </p>
-      )}
-
       <div className="aia-zone-grid">
         <KartuTanaman
           nama="Cabai"
           sehat={sehat.cabai}
-          layu={save.carryover.kebunLayu}
           butuh={aktif.tanaman === 'cabai' ? aktif.teks : null}
         />
         <KartuTanaman
           nama="Kangkung"
           sehat={sehat.kangkung}
-          layu={save.carryover.kebunLayu}
           butuh={aktif.tanaman === 'kangkung' ? aktif.teks : null}
         />
       </div>
@@ -652,7 +647,7 @@ function FaseTanaman({
         {AKSI_RAWAT.map((aksi) => {
           const Ikon = IKON_AKSI_RAWAT[aksi.id]
           return (
-            <button key={aksi.id} type="button" className="aia-btn aia-btn-ghost aia-btn-block" onClick={() => pilih(aksi.id)}>
+            <button key={aksi.id} type="button" className="aia-btn aia-btn-ghost aia-btn-block" disabled={terkunci} onClick={() => pilih(aksi.id)}>
               <Ikon aria-hidden="true" /> {aksi.label}
               {mudah && aksi.id === aktif.kebutuhan ? ' · Disarankan' : ''}
             </button>
@@ -681,13 +676,11 @@ const SKOR_RONDE_RAWAT = [34, 33, 33]
 function FaseTanamanGestur({ tambahSkor, onSelesai, onGagal, onSalah, perbesarTarget, terjeda = false }: PropsGestur) {
   const { save, dispatch } = useCampaign()
   const spec = INTERAKSI_MISI.kompos[1]
-  const sehatAwal = save.carryover.kebunLayu ? 2 : 3
+  const sehatAwal = 3
   const [ronde, setRonde] = useState(0)
   const [ulangan, setUlangan] = useState(0)
   const [sehat, setSehat] = useState<Record<TanamanId, number>>({ cabai: sehatAwal, kangkung: sehatAwal })
-  const [pesan, setPesan] = useState<string | null>(
-    save.carryover.kebunLayu ? 'Tanaman layu karena kompos kemarin belum matang. Pulihkan dengan perawatan yang tepat.' : null,
-  )
+  const [pesan, setPesan] = useState<string | null>(null)
   const [petunjuk, setPetunjuk] = useState<string | null>(null)
   const [efekBenar, setEfekBenar] = useState(false)
   const [selesai, setSelesai] = useState(false)
@@ -717,9 +710,6 @@ function FaseTanamanGestur({ tambahSkor, onSelesai, onGagal, onSalah, perbesarTa
       if (ronde >= 2) {
         setSelesai(true)
         timerRef.current = setTimeout(() => {
-          if (save.carryover.kebunLayu) {
-            dispatch({ type: 'SET_CARRYOVER', patch: { kebunLayu: false } })
-          }
           onSelesai()
         }, 900)
       } else {
@@ -766,23 +756,15 @@ function FaseTanamanGestur({ tambahSkor, onSelesai, onGagal, onSalah, perbesarTa
         per ronde.
       </p>
 
-      {save.carryover.kebunLayu && (
-        <p className="aia-chip" role="alert">
-          <AlertTriangle aria-hidden="true" /> Kebun layu karena kompos kemarin belum matang.
-        </p>
-      )}
-
       <div className="aia-zone-grid">
         <KartuTanaman
           nama="Cabai"
           sehat={sehat.cabai}
-          layu={save.carryover.kebunLayu}
           butuh={aktif.tanaman === 'cabai' ? aktif.teks : null}
         />
         <KartuTanaman
           nama="Kangkung"
           sehat={sehat.kangkung}
-          layu={save.carryover.kebunLayu}
           butuh={aktif.tanaman === 'kangkung' ? aktif.teks : null}
         />
       </div>
@@ -968,6 +950,11 @@ function FasePanenGestur({ tambahSkor, onSelesai, perbesarTarget, terjeda = fals
     if (skorAkhir >= 100) {
       setPetunjuk(null)
       setPesan(spec.hasilBenar)
+    } else if (skorAkhir >= 70) {
+      // C-14: skor 70–99 itu panen yang bagus — tidak perlu EfekSalah
+      // ("Belum tepat") hanya karena tidak sempurna.
+      setPetunjuk(null)
+      setPesan('Hampir sempurna — ada sayur matang yang terlewat atau sayur yang belum matang ikut terpetik.')
     } else {
       setPetunjuk(bersihPetunjuk(spec.petunjukMagi))
       setPesan('Ada sayur matang yang terlewat atau sayur yang belum matang ikut terpetik.')
@@ -1024,6 +1011,13 @@ function FasePanenGestur({ tambahSkor, onSelesai, perbesarTarget, terjeda = fals
 
 // ------------------------------------------------------------------ Komponen utama ----
 
+// B-9: skor mentah mode tombol per fase — fase 0: 8 lapis × 10,
+// fase 1: 3 ronde × 10, fase 2: 6 sayur × 10. Mode gestur sudah
+// 0–100 per fase (SusunMenara / SiramRitme / PanenKetuk).
+// onStageComplete selalu menerima persen 0–100, supaya kinerja yang
+// sama memberi Koin Hijau yang sama di kedua mode.
+const MAKS_SKOR_TOMBOL = [80, 30, 60]
+
 export function KomposKebun({
   stageIndex,
   onStageComplete,
@@ -1078,8 +1072,18 @@ export function KomposKebun({
     if (stageIndex === 2 && save.chapters.kompos.stages[2].status !== 'done') {
       dispatch({ type: 'SET_REPORT', patch: { hijau: save.report.hijau + 10, sampah: save.report.sampah + 5 } })
     }
-    onStageComplete(skor)
+    // B-9: normalisasi skor mentah mode tombol ke persen 0–100.
+    const persen = modeSatuKetukan
+      ? Math.min(100, Math.round((skor / MAKS_SKOR_TOMBOL[stageIndex]) * 100))
+      : Math.min(100, skor)
+    onStageComplete(persen)
   }
+
+  // Tampilan skor di header memakai persen yang sama dengan yang
+  // dikirim ke onStageComplete (supaya angka yang terlihat = hadiahnya).
+  const skorTampil = modeSatuKetukan
+    ? Math.min(100, Math.round((skor / MAKS_SKOR_TOMBOL[stageIndex]) * 100))
+    : Math.min(100, skor)
 
   return (
     <div className="aia-stack">
@@ -1088,7 +1092,7 @@ export function KomposKebun({
           Kompos dan Kebun · Fase {Math.min(fase + 1, 3)} dari 3
         </span>
         <span>
-          <Coins aria-hidden="true" /> {skor} Koin Hijau
+          <Coins aria-hidden="true" /> Skor {skorTampil}
         </span>
         <TombolBisukan />
       </div>

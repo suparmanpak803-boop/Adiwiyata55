@@ -18,6 +18,7 @@ import { KONTEN_TUGAS } from '@/lib/apa-itu-adiwiyata/content/tugas'
 import type { TahapTugas } from '@/lib/apa-itu-adiwiyata/content/tugas'
 import type { TugasKaderId } from '@/lib/apa-itu-adiwiyata/types'
 import { EfekBenar, KartuMemori, TanganPenunjuk } from '../interaksi'
+import { TahapTidakTersedia } from '../tahap-tidak-tersedia'
 import { benar, koin, salah } from '../suara'
 
 /** Props mini-game Misi Kader (bentuk sama seperti MiniGameSlotProps, dengan tugasId). */
@@ -156,7 +157,7 @@ function EduLingkunganGestur({
   return (
     <div className="aia-stack" style={{ position: 'relative' }}>
       <style>{`
-        .aia-gi-memori-teks { font-size: 11px; line-height: 1.3; font-weight: 600; text-align: center; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+        .aia-gi-memori-teks { font-size: 12px; line-height: 1.35; font-weight: 600; text-align: center; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
       `}</style>
       <EfekBenar tampil={efekBenar} />
       <div className="aia-card">
@@ -206,7 +207,18 @@ function EduLingkunganTombol({ tugasId, stageIndex, onStageComplete }: TugasMini
   const [benarCount, setBenarCount] = useState(0)
 
   const selesaiRef = useRef(false)
+  // B-15: acak urutan pilihan tiap soal sekali per daftar soal (memo) —
+  // jawaban benar tidak selalu di posisi yang sama.
+  const opsiPerSoal = useMemo(
+    () =>
+      soal.map((s) => {
+        const urutan = acak(s.pilihan.map((_, i) => i))
+        return { urutan, jawabanBaru: urutan.indexOf(s.jawaban) }
+      }),
+    [soal],
+  )
   const pertanyaan = soal[qIndex]
+  const opsi = pertanyaan ? opsiPerSoal[qIndex] : null
   const skor = benarCount * 25
 
   const selesai = () => {
@@ -225,8 +237,8 @@ function EduLingkunganTombol({ tugasId, stageIndex, onStageComplete }: TugasMini
   }
 
   const jawab = (index: number) => {
-    if (dijawab || fase !== 'main') return
-    const isBenar = index === pertanyaan.jawaban
+    if (dijawab || fase !== 'main' || !opsi) return
+    const isBenar = index === opsi.jawabanBaru
     setDipilih(index)
     setDijawab(true)
     if (isBenar) {
@@ -268,8 +280,9 @@ function EduLingkunganTombol({ tugasId, stageIndex, onStageComplete }: TugasMini
               {pertanyaan.pertanyaan}
             </p>
             <div style={{ display: 'grid', gap: 8, marginTop: 12 }}>
-              {pertanyaan.pilihan.map((pilihan, i) => {
-                const isJawaban = i === pertanyaan.jawaban
+              {(opsi?.urutan ?? []).map((asli, i) => {
+                const pilihan = pertanyaan.pilihan[asli] ?? ''
+                const isJawaban = i === opsi?.jawabanBaru
                 const isDipilih = i === dipilih
                 let latar: string | undefined
                 let border: string | undefined
@@ -317,10 +330,10 @@ function EduLingkunganTombol({ tugasId, stageIndex, onStageComplete }: TugasMini
                   marginTop: 12,
                   padding: 12,
                   borderRadius: 12,
-                  background: dipilih === pertanyaan.jawaban ? '#dcfce7' : '#fee2e2',
+                  background: dipilih === opsi?.jawabanBaru ? '#dcfce7' : '#fee2e2',
                 }}
               >
-                <strong>{dipilih === pertanyaan.jawaban ? 'Benar!' : 'Belum tepat.'}</strong>{' '}
+                <strong>{dipilih === opsi?.jawabanBaru ? 'Benar!' : 'Belum tepat.'}</strong>{' '}
                 {pertanyaan.penjelasan}
               </div>
             )}
@@ -374,9 +387,7 @@ export function EduLingkungan({ tugasId, stageIndex, onStageComplete, modeSatuKe
   const spec = INTERAKSI_MISI[tugasId]?.[stageIndex]
   if (!tahap || tahap.jenis !== 'kuis' || !spec) {
     return (
-      <div className="aia-card">
-        <p className="aia-muted">Tahap ini belum tersedia.</p>
-      </div>
+      <TahapTidakTersedia onLewati={() => onStageComplete(0)} />
     )
   }
   const kunci = `${tugasId}-${stageIndex}`

@@ -2,7 +2,10 @@
 // waktu per item; pemain mengetuk tombol target sebelum waktu habis.
 // Benar = poin + bunyi benar; salah atau habis waktu = bunyi salah, lalu
 // lanjut ke item berikutnya. Mode satu-ketukan: waktu per item 2× lipat.
-// Skor 0–100 = persen jawaban benar. Generik: tidak ada konten misi.
+// Skor 0–100 = persen jawaban benar. onSelesai juga melaporkan id item
+// yang dijawab salah (dipakai Pilah Sampah untuk dampak berantai —
+// hanya item yang benar-benar salah yang dicatat, bukan semua item
+// pemicu di deck). Generik: tidak ada konten misi.
 
 'use client'
 
@@ -32,7 +35,8 @@ export interface SortirCepatProps {
   disabled?: boolean
   /** Jeda: bekukan hitung mundur waktu per item. */
   terjeda?: boolean
-  onSelesai: (skor: number) => void
+  /** Skor akhir 0–100 + id item yang dijawab salah (habis waktu dihitung salah). */
+  onSelesai: (skor: number, idsSalah?: string[]) => void
 }
 
 export function SortirCepat({
@@ -59,6 +63,20 @@ export function SortirCepat({
   const benarRef = useRef(0)
   const idxRef = useRef(0)
   idxRef.current = idx
+  // B-19: guard race — efek timeout dan handler jawaban sama-sama
+  // memanggil lanjut(); pemanggilan kedua untuk item yang sama diabaikan
+  // supaya tidak ada item yang terlewat di ~100 ms terakhir.
+  const sudahLanjutRef = useRef(-1)
+  // B-11: id item yang benar-benar dijawab salah (sekali per item).
+  const salahRef = useRef<string[]>([])
+  const salahIdxRef = useRef<Set<number>>(new Set())
+  const catatSalah = () => {
+    const i = idxRef.current
+    if (salahIdxRef.current.has(i)) return
+    salahIdxRef.current.add(i)
+    const kini = item[i]
+    if (kini) salahRef.current = [...salahRef.current, kini.id]
+  }
   const terjedaRef = useRef(terjeda)
   useEffect(() => {
     terjedaRef.current = terjeda
@@ -88,10 +106,14 @@ export function SortirCepat({
     const skor = item.length > 0 ? Math.round((totalBenar / item.length) * 100) : 100
     koin()
     setSelesai(true)
-    onSelesaiRef.current(skor)
+    onSelesaiRef.current(skor, [...salahRef.current])
   }
 
   const lanjut = (totalBenar: number) => {
+    // B-19: abaikan pemanggilan kedua untuk item yang sama (jawaban dan
+    // timeout bisa tiba bersamaan di akhir jendela waktu item itu).
+    if (sudahLanjutRef.current === idxRef.current) return
+    sudahLanjutRef.current = idxRef.current
     const berikutnya = idxRef.current + 1
     if (berikutnya >= item.length) {
       akhiri(totalBenar)
@@ -117,6 +139,7 @@ export function SortirCepat({
     salah()
     getar([40, 40, 40])
     tampilUmpan('salah')
+    catatSalah()
     lanjut(benarRef.current)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sisaMs, selesai])
@@ -137,6 +160,7 @@ export function SortirCepat({
       salah()
       getar([40, 40, 40])
       tampilUmpan('salah')
+      catatSalah()
       lanjut(benarRef.current)
     }
   }

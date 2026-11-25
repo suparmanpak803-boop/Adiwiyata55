@@ -25,6 +25,7 @@ import {
   type BatangGrafik,
   type SoalKilat,
 } from '../interaksi'
+import { TahapTidakTersedia } from '../tahap-tidak-tersedia'
 
 export interface TugasMiniGameSlotProps {
   tugasId: TugasKaderId
@@ -67,6 +68,8 @@ interface TabelData {
  *   tidak masuk akal diketuk satu per satu; hemat adalah isi soal tahap
  *   ini juga.
  * - Tahap 2 (Tanaman): 3 batang = jumlah tanaman per jenis.
+ * C-10: tiap batang membawa `warna` jenis datanya (Organik hijau,
+ * Anorganik biru, dst.) supaya batang tidak semuanya biru.
  */
 function batangDariTabel(stageIndex: number, tabel: TabelData): BatangGrafik[] {
   if (stageIndex === 0) {
@@ -78,6 +81,8 @@ function batangDariTabel(stageIndex: number, tabel: TabelData): BatangGrafik[] {
           label: `${baris[0] ?? ''} · ${tabel.kolom[j] ?? ''}`,
           nilaiBenar: Math.round(angka(baris[j]) * 2),
           maks: 10,
+          // Kolom 1 = Organik, kolom 2 = Anorganik (lihat tabel tahap 0).
+          warna: j === 1 ? '#4d8a4f' : '#3b7ea1',
         })
       }
     })
@@ -86,21 +91,29 @@ function batangDariTabel(stageIndex: number, tabel: TabelData): BatangGrafik[] {
   if (stageIndex === 1) {
     return tabel.baris.map((baris, i) => {
       const hemat = angka(baris[1]) - angka(baris[2])
+      const namaBaris = baris[0] ?? ''
       return {
         id: `batang-${i}`,
-        label: baris[0] ?? '',
+        label: namaBaris,
         nilaiBenar: Math.round(hemat),
         maks: 20,
-        satuan: satuanDariLabel(baris[0] ?? ''),
+        satuan: satuanDariLabel(namaBaris),
+        warna: namaBaris.includes('Listrik')
+          ? '#c98a2e'
+          : namaBaris.includes('Sampah')
+            ? '#4d8a4f'
+            : '#3b7ea1',
       }
     })
   }
+  const WARNA_TANAMAN = ['#2f7d4f', '#4d8a4f', '#8bc34a']
   return tabel.baris.map((baris, i) => ({
     id: `batang-${i}`,
     label: baris[0] ?? '',
     nilaiBenar: Math.round(angka(baris[1])),
     maks: 30,
     satuan: 'tanaman',
+    warna: WARNA_TANAMAN[i % WARNA_TANAMAN.length],
   }))
 }
 
@@ -173,9 +186,7 @@ function VersiGestur({
 
   if (!tahap || !isCatat || !tabel) {
     return (
-      <div className="aia-card">
-        <p className="aia-muted">Tahap ini belum tersedia.</p>
-      </div>
+      <TahapTidakTersedia onLewati={() => selesai(0)} />
     )
   }
 
@@ -287,7 +298,7 @@ function VersiGestur({
             Data yang rapi bikin kerja tim Adiwiyata tidak asal tebak!
           </p>
           <p>
-            Skor tahap ini: <strong>{skorAkhir} Koin Hijau</strong>
+            Skor tahap ini: <strong>{skorAkhir}</strong>
           </p>
           <button
             type="button"
@@ -350,6 +361,17 @@ function TabelReferensi({ tabel }: { tabel: TabelData }) {
 }
 
 /** Versi tombol lama — dipakai sebagai alternatif satu-ketukan. */
+function acak<T>(daftar: T[]): T[] {
+  const salin = [...daftar]
+  for (let i = salin.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1))
+    const tmp = salin[i]
+    salin[i] = salin[j]
+    salin[j] = tmp
+  }
+  return salin
+}
+
 function VersiTombol({ stageIndex, onStageComplete }: TugasMiniGameSlotProps) {
   const tahap = KONTEN_TUGAS['data-hijau'].tahapan[stageIndex]
 
@@ -358,6 +380,10 @@ function VersiTombol({ stageIndex, onStageComplete }: TugasMiniGameSlotProps) {
   const [dipilih, setDipilih] = useState<number | null>(null)
   const [dijawab, setDijawab] = useState(false)
   const [benarCount, setBenarCount] = useState(0)
+  // C-34: mode tombol kini juga menggambar grafik dulu (50/50 seperti
+  // mode gestur) — sebelumnya hanya kuis, jadi skornya tidak sebanding.
+  const [bagian, setBagian] = useState<'grafik' | 'kuis'>('grafik')
+  const [skorGrafik, setSkorGrafik] = useState(0)
 
   const selesaiRef = useRef(false)
 
@@ -369,20 +395,38 @@ function VersiTombol({ stageIndex, onStageComplete }: TugasMiniGameSlotProps) {
 
   if (!tahap || tahap.jenis !== 'catat' || !tahap.soal || tahap.soal.length === 0) {
     return (
-      <div className="aia-card">
-        <p className="aia-muted">Tahap ini belum tersedia.</p>
-      </div>
+      <TahapTidakTersedia onLewati={() => selesai(0)} />
     )
   }
 
   const tabel = tahap.tabel
   const soal = tahap.soal
+  // B-15: acak urutan pilihan tiap soal sekali per daftar soal (memo) —
+  // jawaban benar tidak selalu di posisi yang sama.
+  const opsiPerSoal = useMemo(
+    () =>
+      soal.map((s) => {
+        const urutan = acak(s.pilihan.map((_, i) => i))
+        return { urutan, jawabanBaru: urutan.indexOf(s.jawaban) }
+      }),
+    [soal],
+  )
   const pertanyaan = soal[qIndex]
-  const skorAkhir = Math.round((benarCount / soal.length) * 100)
+  const opsi = pertanyaan ? opsiPerSoal[qIndex] : null
+  // C-34: skor tahap = 50% grafik + 50% kuis, sama seperti mode gestur.
+  const batang = useMemo(() => batangDariTabel(stageIndex, tabel), [stageIndex, tabel])
+  const skorKuis = Math.round((benarCount / soal.length) * 100)
+  const skorAkhir = Math.round((skorGrafik + skorKuis) / 2)
+
+  /** Grafik selesai — lanjut ke kuis soal tabel. */
+  const grafikSelesai = (nilai: number) => {
+    setSkorGrafik(nilai)
+    setBagian('kuis')
+  }
 
   const jawab = (index: number) => {
-    if (dijawab || fase !== 'main') return
-    const isBenar = index === pertanyaan.jawaban
+    if (dijawab || fase !== 'main' || !opsi) return
+    const isBenar = index === opsi.jawabanBaru
     setDipilih(index)
     setDijawab(true)
     if (isBenar) {
@@ -406,7 +450,31 @@ function VersiTombol({ stageIndex, onStageComplete }: TugasMiniGameSlotProps) {
 
   return (
     <div className="aia-stack">
-      {fase === 'main' && (
+      {fase === 'main' && bagian === 'grafik' && (
+        <>
+          <div className="aia-card">
+            <span className="aia-kicker">Data Hijau · {tahap.judul} · Gambar grafik</span>
+            <p className="aia-muted" style={{ margin: '8px 0 0' }}>
+              {tahap.instruksi}
+            </p>
+          </div>
+
+          <TabelReferensi tabel={tabel} />
+
+          <div className="aia-card">
+            <p style={{ margin: '0 0 12px', fontSize: 16, lineHeight: 1.5, fontWeight: 700 }}>
+              {penjelasanSkala(stageIndex)}
+            </p>
+            <GambarGrafik
+              key={stageIndex}
+              batang={batang}
+              onSelesai={grafikSelesai}
+            />
+          </div>
+        </>
+      )}
+
+      {fase === 'main' && bagian === 'kuis' && (
         <>
           <div className="aia-card">
             <span className="aia-kicker">
@@ -416,7 +484,7 @@ function VersiTombol({ stageIndex, onStageComplete }: TugasMiniGameSlotProps) {
               {tahap.instruksi}
             </p>
             <p style={{ margin: '8px 0 0', fontSize: 13, fontWeight: 700 }}>
-              Jawaban benar: {benarCount}/{soal.length}
+              Jawaban benar: {benarCount}/{soal.length} · Skor grafik: {skorGrafik}
             </p>
           </div>
 
@@ -467,8 +535,9 @@ function VersiTombol({ stageIndex, onStageComplete }: TugasMiniGameSlotProps) {
               {pertanyaan.pertanyaan}
             </p>
             <div style={{ display: 'grid', gap: 8 }}>
-              {pertanyaan.pilihan.map((pilihan, i) => {
-                const isJawaban = i === pertanyaan.jawaban
+              {(opsi?.urutan ?? []).map((asli, i) => {
+                const pilihan = pertanyaan.pilihan[asli] ?? ''
+                const isJawaban = i === opsi?.jawabanBaru
                 const isDipilih = i === dipilih
                 let latar: string | undefined
                 let border: string | undefined
@@ -516,10 +585,10 @@ function VersiTombol({ stageIndex, onStageComplete }: TugasMiniGameSlotProps) {
                   marginTop: 12,
                   padding: 12,
                   borderRadius: 12,
-                  background: dipilih === pertanyaan.jawaban ? '#dcfce7' : '#fee2e2',
+                  background: dipilih === opsi?.jawabanBaru ? '#dcfce7' : '#fee2e2',
                 }}
               >
-                <strong>{dipilih === pertanyaan.jawaban ? 'Benar!' : 'Belum tepat.'}</strong>{' '}
+                <strong>{dipilih === opsi?.jawabanBaru ? 'Benar!' : 'Belum tepat.'}</strong>{' '}
                 {pertanyaan.penjelasan}
               </div>
             )}
@@ -548,7 +617,10 @@ function VersiTombol({ stageIndex, onStageComplete }: TugasMiniGameSlotProps) {
             rapi bikin kerja tim Adiwiyata tidak asal tebak!
           </p>
           <p>
-            Skor tahap ini: <strong>{skorAkhir} Koin Hijau</strong>
+            Skor grafik: <strong>{skorGrafik}</strong> · Skor kuis: <strong>{skorKuis}</strong>
+          </p>
+          <p>
+            Skor tahap ini: <strong>{skorAkhir}</strong>
           </p>
           <button type="button" className="aia-btn aia-btn-primary" onClick={() => selesai(skorAkhir)}>
             {stageIndex === 2 ? 'Ke Pos Hijau' : 'Level Selanjutnya'} · +{skorAkhir} Koin Hijau

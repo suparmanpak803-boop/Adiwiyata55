@@ -80,7 +80,14 @@ function ensureCtx(): AudioContext | null {
       sfxBus.connect(audioCtx.destination)
       applyGains()
     }
-    if (audioCtx.state === 'suspended') void audioCtx.resume()
+    if (audioCtx.state === 'suspended') {
+      // C-22: jangan resume saat tab tersembunyi — dan jangan jadwalkan
+      // SFX baru ke context yang membeku (currentTime berhenti, jadi nada
+      // yang dijadwalkan akan berbunyi serentak saat tab kembali aktif).
+      // Pemanggil (tone/noise) sudah menangani null dengan diam.
+      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return null
+      void audioCtx.resume()
+    }
     return audioCtx
   } catch {
     return null
@@ -432,6 +439,106 @@ export function playMumble(karakter: 'Magi' | 'Pak Plastik'): void {
   pola.forEach((langkah, i) => {
     tone(dasar * (1 + langkah * 0.06), 0.07, { type: 'triangle', delay: i * 0.09, volume: 0.1 })
   })
+}
+
+// ------------------------------------------------------- Langkah kaki (R10) ----
+
+/**
+ * Langkah kaki: bunyi tapak lembut — noise lowpass singkat + nada rendah
+ * yang turun. Kaki kiri/kanan beda sedikit nadanya. Volume pelan (0,05)
+ * supaya tidak mengganggu musik; melewati tone()/noise() biasa sehingga
+ * mute, volume efek, dan tab tersembunyi dihormati (ensureCtx).
+ */
+export function langkah(kiri: boolean): void {
+  const v = varianSfx('langkah')
+  const detune = kiri ? -2 : 2
+  noise(0.06, { type: 'lowpass', freq: 350, volume: 0.05, detune, gainDb: v.gainDb })
+  tone(kiri ? 95 : 105, 0.07, { slideTo: 65, volume: 0.04, detune })
+}
+
+// ------------------------------------------------------- Ambience per peta (R10) ----
+
+// Suara latar ringan tiap peta — Kantin ramai (gumam + denting), Kebun /
+// Taman / Gerbang burung sesekali, Pos Maggot dengung pelan. Satu interval
+// 1,5 detik; tiap tick peluang kecil berbunyi supaya tidak jadi loop
+// mekanis. Volume sangat pelan (0,02–0,04), di bawah musik. Melewati
+// tone()/noise() biasa: mute/volume efek dihormati, dan diam saat tab
+// tersembunyi (cek visibilityState + ensureCtx).
+
+function ciritBurungPelan(): void {
+  tone(1900, 0.05, { volume: 0.035 })
+  tone(2500, 0.05, { delay: 0.06, volume: 0.035 })
+  tone(2100, 0.08, { delay: 0.12, volume: 0.03 })
+}
+
+function gumamKantin(): void {
+  noise(0.5, { type: 'bandpass', freq: 500, q: 0.6, volume: 0.025 })
+}
+
+function dentingKantin(): void {
+  tone(1750, 0.06, { volume: 0.03 })
+  tone(1250, 0.08, { delay: 0.05, volume: 0.025 })
+}
+
+function dengungMaggot(): void {
+  tone(95, 0.6, { type: 'sawtooth', volume: 0.018 })
+}
+
+const AMBIENCE_PETA: Record<string, () => void> = {
+  kantin: () => {
+    if (Math.random() < 0.55) gumamKantin()
+    else if (Math.random() < 0.3) dentingKantin()
+  },
+  kebun: () => {
+    if (Math.random() < 0.4) ciritBurungPelan()
+  },
+  taman: () => {
+    if (Math.random() < 0.3) ciritBurungPelan()
+  },
+  gerbang: () => {
+    if (Math.random() < 0.25) ciritBurungPelan()
+  },
+  maggot: () => {
+    if (Math.random() < 0.5) dengungMaggot()
+  },
+}
+
+let ambienceTimer: ReturnType<typeof setInterval> | null = null
+let ambiencePeta: string | null = null
+
+/** Mulai ambience peta tertentu (ganti peta = ganti ambience). Peta tanpa
+ * ambience (mis. rumah — hening) hanya menghentikan yang sedang berjalan. */
+export function mulaiAmbience(peta: string): void {
+  try {
+    hentikanAmbience()
+    const bunyi = AMBIENCE_PETA[peta]
+    if (!bunyi) return
+    ambiencePeta = peta
+    ambienceTimer = setInterval(() => {
+      try {
+        if (ambiencePeta !== peta) return
+        if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return
+        bunyi()
+      } catch {
+        // Diam saja.
+      }
+    }, 1500)
+  } catch {
+    // Diam saja.
+  }
+}
+
+/** Hentikan ambience apa pun yang sedang berjalan. */
+export function hentikanAmbience(): void {
+  try {
+    if (ambienceTimer) {
+      clearInterval(ambienceTimer)
+      ambienceTimer = null
+    }
+    ambiencePeta = null
+  } catch {
+    // Diam saja.
+  }
 }
 
 // ------------------------------------------------- Wrapper lama (agen mini-game) ----

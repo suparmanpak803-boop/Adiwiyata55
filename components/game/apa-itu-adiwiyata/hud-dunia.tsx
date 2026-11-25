@@ -22,10 +22,12 @@ const AMBANG_RENDAH = 25
 
 /** Angka yang bergerak bertahap menuju `nilai` (count-up / count-down).
  * `prefers-reduced-motion: reduce` langsung melompat ke nilai akhir.
- * Nilai awal ditampilkan apa adanya (tanpa animasi saat pertama muncul). */
-export function useAngkaAnimasi(nilai: number, durasi = 500): number {
-  const [tampil, setTampil] = useState(nilai)
-  const tampilRef = useRef(nilai)
+ * Nilai awal ditampilkan apa adanya (tanpa animasi saat pertama muncul),
+ * kecuali `mulaiDariNol` — dipakai angka hadiah Pos Hijau / rapor yang
+ * dihitung naik dari 0 begitu layarnya tampil (R4). */
+export function useAngkaAnimasi(nilai: number, durasi = 500, mulaiDariNol = false): number {
+  const [tampil, setTampil] = useState(mulaiDariNol ? 0 : nilai)
+  const tampilRef = useRef(mulaiDariNol ? 0 : nilai)
   const rafRef = useRef(0)
   useEffect(() => {
     const dari = tampilRef.current
@@ -50,15 +52,18 @@ export function useAngkaAnimasi(nilai: number, durasi = 500): number {
   return tampil
 }
 
-/** Satu angka saldo dengan animasi hitung. */
+/** Satu angka saldo dengan animasi hitung. `dariNol`: hitung naik dari 0
+ * saat pertama tampil (angka hadiah Pos Hijau / rapor). */
 export function AngkaAnimasi({
   nilai,
   format,
+  dariNol,
 }: {
   nilai: number
   format?: (v: number) => string
+  dariNol?: boolean
 }) {
-  const tampil = useAngkaAnimasi(nilai)
+  const tampil = useAngkaAnimasi(nilai, 500, dariNol ?? false)
   return <>{format ? format(tampil) : tampil.toLocaleString('id-ID')}</>
 }
 

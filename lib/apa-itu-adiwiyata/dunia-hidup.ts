@@ -36,6 +36,13 @@
 //   sampah sudah bersih), koin = 0 dan dikembalikan REFERENSI dunia yang
 //   sama, supaya reducer tahu tidak ada yang perlu disimpan.
 //   Koin: siram +5, beri makan +5, bersihkan +5, panen +20, panen kasgot +20.
+//   ANTI-FARMING (K-5): hadiah koin perawatan dibatasi per hari kalender
+//   lokal — siram hanya berkoin bila petak itu belum disiram hari ini,
+//   beri makan hanya berkoin pada pemberian pertama hari itu, panen
+//   kasgot hanya berkoin pada panen pertama hari itu. Aksi selanjutnya di
+//   hari yang sama tetap boleh dilakukan (tanaman tetap disiram, Magi
+//   tetap makan dan tumbuh, kasgot tetap dipanen) tapi tanpa koin — ini
+//   bukan hukuman, hanya batas hadiah harian.
 //   Panen mereset petak ke tahap 0 (jenis tetap) supaya tumbuh lagi; panen
 //   kasgot hanya bila maggot tahap 2, lalu maggot kembali ke tahap 0 dengan
 //   lapar 30, dan petak target naik 1 tahap (maks 3, tidak bila layu).
@@ -83,6 +90,10 @@ export interface Maggot {
   /** 0 kecil, 1 sedang, 2 besar (siap panen kasgot). */
   tahap: 0 | 1 | 2
   kaliDiberiMakan: number
+  /** Milidetik epoch terakhir panen kasgot; 0 = belum pernah.
+   * Dipakai batas hadiah harian panen kasgot (K-5). Save lama tanpa field
+   * ini dinormalisasi ke 0 saat dimuat (lihat storage.ts). */
+  terakhirPanenKasgot: number
 }
 
 export interface DuniaHidup {
@@ -188,7 +199,7 @@ function petakBaru(id: PetakId, jenis: JenisTanaman, sekarang: number): PetakKeb
 export function freshDunia(sekarang: number = Date.now()): DuniaHidup {
   return {
     petak: [petakBaru('petak-1', 'kangkung', sekarang), petakBaru('petak-2', 'cabai', sekarang), petakBaru('petak-3', 'bayam', sekarang)],
-    maggot: { lapar: 20, terakhirDiberiMakan: 0, tahap: 0, kaliDiberiMakan: 0 },
+    maggot: { lapar: 20, terakhirDiberiMakan: 0, tahap: 0, kaliDiberiMakan: 0, terakhirPanenKasgot: 0 },
     sampahLiar: 3,
     hariTerakhirKunjung: hariLokalDariMs(sekarang),
   }
@@ -260,18 +271,30 @@ export function majukanDunia(
   }
 }
 
-function cariPetak(dunia: DuniaHidup, petakId: PetakId): PetakKebun {
-  return dunia.petak.find((p) => p.id === petakId) ?? dunia.petak[0]
+// C-38: tidak ada fallback ke petak[0] lagi — id yang tidak dikenal
+// mengembalikan undefined supaya pemanggil bisa menjawab "tidak ada
+// perubahan" (sebelumnya petak pertama ikut termutasi diam-diam).
+function cariPetak(dunia: DuniaHidup, petakId: PetakId): PetakKebun | undefined {
+  return dunia.petak.find((p) => p.id === petakId)
 }
 
 function gantiPetak(dunia: DuniaHidup, petak: PetakKebun): [PetakKebun, PetakKebun, PetakKebun] {
   return dunia.petak.map((p) => (p.id === petak.id ? petak : p)) as [PetakKebun, PetakKebun, PetakKebun]
 }
 
-/** Siram satu petak: segar lagi (layu hilang), +5 koin. */
+/** Siram satu petak: segar lagi (layu hilang). Koin +5 hanya bila petak
+ * ini belum disiram di hari kalender lokal yang sama (K-5); siram ulang
+ * di hari yang sama tetap menyegarkan tapi tanpa koin. */
 export function siramTanaman(dunia: DuniaHidup, petakId: PetakId, sekarang: number): HasilPerawatan {
   const petak = cariPetak(dunia, petakId)
+  if (!petak) {
+    return { dunia, koin: 0, pesan: 'Petak itu tidak dikenal, tidak ada yang berubah.' }
+  }
   const nama = NAMA_TANAMAN[petak.jenis]
+  // Sudah disiram hari ini: tidak ada perubahan, tidak ada koin.
+  if (petak.terakhirDisiram > 0 && hariLokalDariMs(petak.terakhirDisiram) === hariLokalDariMs(sekarang)) {
+    return { dunia, koin: 0, pesan: `${nama} sudah disiram hari ini, besok bisa disiram lagi.` }
+  }
   const sudah = { ...petak, terakhirDisiram: sekarang, layu: false }
   const pesan =
     petak.tahap === 3
@@ -280,7 +303,10 @@ export function siramTanaman(dunia: DuniaHidup, petakId: PetakId, sekarang: numb
   return { dunia: { ...dunia, petak: gantiPetak(dunia, sudah) }, koin: KOIN_SIRAM, pesan }
 }
 
-/** Beri makan Magi: lapar -40, tiap 3x makan naik 1 tahap (maks 2), +5 koin. */
+/** Beri makan Magi: lapar -40, tiap 3x makan naik 1 tahap (maks 2).
+ * Koin +5 hanya pada pemberian pertama di hari kalender lokal yang sama
+ * (K-5); pemberian berikutnya hari itu tetap memberi makan dan menumbuhkan
+ * Magi, tapi tanpa koin. */
 export function beriMakanMaggot(dunia: DuniaHidup, sekarang: number): HasilPerawatan {
   const kali = dunia.maggot.kaliDiberiMakan + 1
   const naikTahap = kali % 3 === 0 && dunia.maggot.tahap < 2
@@ -289,6 +315,16 @@ export function beriMakanMaggot(dunia: DuniaHidup, sekarang: number): HasilPeraw
     terakhirDiberiMakan: sekarang,
     tahap: naikTahap ? ((dunia.maggot.tahap + 1) as Maggot['tahap']) : dunia.maggot.tahap,
     kaliDiberiMakan: kali,
+    terakhirPanenKasgot: dunia.maggot.terakhirPanenKasgot ?? 0,
+  }
+  const sudahDiberiHariIni =
+    dunia.maggot.terakhirDiberiMakan > 0 &&
+    hariLokalDariMs(dunia.maggot.terakhirDiberiMakan) === hariLokalDariMs(sekarang)
+  if (sudahDiberiHariIni) {
+    const pesan = naikTahap
+      ? 'Magi makan dengan lahap dan makin besar, tapi hadiah hariannya sudah didapat.'
+      : 'Magi makan dengan lahap, tapi hadiah hariannya sudah didapat.'
+    return { dunia: { ...dunia, maggot }, koin: 0, pesan }
   }
   const pesan = naikTahap ? 'Magi makan dengan lahap dan makin besar!' : 'Magi makan dengan lahap.'
   return { dunia: { ...dunia, maggot }, koin: KOIN_BERI_MAKAN, pesan }
@@ -309,6 +345,9 @@ export function bersihkanSampah(dunia: DuniaHidup): HasilPerawatan {
 /** Panen satu petak (hanya bila tahap 3): +20 koin, petak tumbuh lagi dari benih. */
 export function panenTanaman(dunia: DuniaHidup, petakId: PetakId, sekarang: number): HasilPerawatan {
   const petak = cariPetak(dunia, petakId)
+  if (!petak) {
+    return { dunia, koin: 0, pesan: 'Petak itu tidak dikenal, tidak ada yang berubah.' }
+  }
   const nama = NAMA_TANAMAN[petak.jenis]
   if (petak.tahap !== 3) {
     return { dunia, koin: 0, pesan: `${nama} belum siap panen.` }
@@ -324,22 +363,40 @@ export function panenTanaman(dunia: DuniaHidup, petakId: PetakId, sekarang: numb
 }
 
 /**
- * Panen kasgot (hanya bila maggot tahap 2): +20 koin, maggot kembali ke
- * tahap 0 dengan lapar 30, petak target naik 1 tahap (maks 3, tidak bila
- * layu). `terakhirDisiram` petak tidak berubah.
+ * Panen kasgot (hanya bila maggot tahap 2): maggot kembali ke tahap 0
+ * dengan lapar 30, petak target naik 1 tahap (maks 3, tidak bila layu).
+ * Koin +20 hanya pada panen pertama di hari kalender lokal yang sama
+ * (K-5); panen berikutnya hari itu tetap memanen, tapi tanpa koin.
+ * `terakhirDisiram` petak tidak berubah.
  */
 export function panenKasgot(dunia: DuniaHidup, petakId: PetakId, sekarang: number): HasilPerawatan {
-  void sekarang
   if (dunia.maggot.tahap !== 2) {
     return { dunia, koin: 0, pesan: 'Kasgot belum siap dipanen, Magi masih kecil.' }
   }
   const petak = cariPetak(dunia, petakId)
+  if (!petak) {
+    return { dunia, koin: 0, pesan: 'Petak itu tidak dikenal, tidak ada yang berubah.' }
+  }
   const nama = NAMA_TANAMAN[petak.jenis]
-  const maggot: Maggot = { ...dunia.maggot, tahap: 0, lapar: 30 }
+  const sudahPanenHariIni =
+    (dunia.maggot.terakhirPanenKasgot ?? 0) > 0 &&
+    hariLokalDariMs(dunia.maggot.terakhirPanenKasgot ?? 0) === hariLokalDariMs(sekarang)
+  const maggot: Maggot = {
+    ...dunia.maggot,
+    tahap: 0,
+    lapar: 30,
+    terakhirPanenKasgot: sudahPanenHariIni ? (dunia.maggot.terakhirPanenKasgot ?? 0) : sekarang,
+  }
   const naik = !petak.layu && petak.tahap < 3
   const petakBaruHasil: PetakKebun = naik
     ? { ...petak, tahap: (petak.tahap + 1) as PetakKebun['tahap'] }
     : petak
+  if (sudahPanenHariIni) {
+    const pesan = naik
+      ? `Kasgot dipanen, ${nama} jadi makin subur, tapi hadiah hariannya sudah didapat.`
+      : `Kasgot dipanen, tapi ${nama} sedang layu jadi tidak ikut tumbuh; hadiah hariannya sudah didapat.`
+    return { dunia: { ...dunia, petak: gantiPetak(dunia, petakBaruHasil), maggot }, koin: 0, pesan }
+  }
   const pesan = naik
     ? `Kasgot dipanen, ${nama} jadi makin subur.`
     : `Kasgot dipanen, tapi ${nama} sedang layu jadi tidak ikut tumbuh.`

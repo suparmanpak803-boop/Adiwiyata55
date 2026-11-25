@@ -152,6 +152,10 @@ export function DragDrop({
     if (modeSatuKetukan) {
       klik()
       setDipilih((v) => !v)
+      // C-24: pointerdown sudah men-toggle — abaikan onClick yang
+      // menyusul dari ketukan yang sama, supaya tidak toggle dua kali
+      // (net tidak berubah) bagi pemakai modeSatuKetukan di masa depan.
+      abaikanKlikRef.current = true
       return
     }
     ambil()

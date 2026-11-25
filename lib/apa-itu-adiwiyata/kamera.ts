@@ -11,9 +11,26 @@
 //   posisi baru, tidak "terbang" menyeberang peta.
 // - Clamp ke batas peta tetap dipertahankan (jepitKamera).
 
+/**
+ * Jepit posisi kamera ke dalam peta. Bila pandang lebih besar dari dunia,
+ * kamera diam di 0 (peta tidak digeser ke koordinat negatif) — pemusatan
+ * peta di dalam pandang yang lebih lebar ditangani `offsetPusat` di
+ * pemanggil, bukan dengan kamera negatif (lihat K-1: kamera negatif
+ * membuat aktor bergeser terhadap latar statis).
+ */
 export function jepitKamera(nilai: number, pandang: number, dunia: number): number {
-  if (pandang >= dunia) return (dunia - pandang) / 2
+  if (pandang >= dunia) return 0
   return Math.max(0, Math.min(nilai, dunia - pandang))
+}
+
+/**
+ * Geser layar (px) supaya peta yang lebih kecil dari pandang tampil di
+ * tengah, bukan menempel di tepi kiri/atas. 0 bila pandang muat di peta.
+ * Dipakai pemanggil sebagai `translate(offset - cam, ...)` dan sebagai
+ * koreksi konversi ketukan (`wx = pos.x - offset + camX`).
+ */
+export function offsetPusat(pandang: number, dunia: number): number {
+  return pandang > dunia ? (pandang - dunia) / 2 : 0
 }
 
 /** Keadaan kamera yang dipegang satu ref per peta. */

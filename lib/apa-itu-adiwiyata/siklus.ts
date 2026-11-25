@@ -25,13 +25,6 @@ export const ATURAN_SIKLUS: DampakBerantai[] = [
     perbaikan:
       'Tambah bahan cokelat seperti daun kering ke kompos, lalu aduk sampai udara masuk dan baunya hilang.',
   },
-  {
-    pemicu: 'Kompos yang bau dan belum matang dipakai untuk kebun.',
-    dampak:
-      'Tanaman cabai dan kangkung layu karena pupuknya belum siap.',
-    perbaikan:
-      'Ganti dengan kasgot yang benar dari panen maggot, lalu siram dan beri cahaya yang cukup sampai tanaman segar lagi.',
-  },
 ]
 
 // Id sampah (lihat content/sampah.ts) yang kalau salah pilah di Bab 2

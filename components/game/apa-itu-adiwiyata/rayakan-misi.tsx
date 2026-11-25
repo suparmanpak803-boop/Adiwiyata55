@@ -43,7 +43,9 @@ export function RayakanMisi() {
       {TITIK.map((t, i) => (
         <span
           key={i}
-          className="aia-ledakan-dot"
+          // R4: tiap titik ke-4 berbentuk daun, bukan lingkaran — confetti
+          // daun sesuai tema, tetap 28 titik dan 0,9 detik yang sama.
+          className={`aia-ledakan-dot${i % 4 === 0 ? ' aia-ledakan-daun' : ''}`}
           style={{
             width: t.ukuran,
             height: t.ukuran,

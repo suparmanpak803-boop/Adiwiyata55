@@ -163,13 +163,20 @@ const BAB6_PAK_PLASTIK: Record<PakPlastikStatus, string> = {
 export function dialogAwalUntuk(misi: ChapterId, pakPlastik: PakPlastikStatus): DialogLine[] {
   const dasar = DIALOG_AWAL[misi]
   if (misi === 'gerbang' && pakPlastik !== 'netral') {
+    // C-39: cari baris Pak Plastik berdasarkan tokoh, bukan indeks tetap
+    // (rapuh bila urutan dialog berubah). Bila tidak ada, kembalikan
+    // salinan tanpa perubahan.
+    const idx = dasar.findIndex((b) => b.tokoh === 'Pak Plastik')
+    if (idx === -1) return [...dasar]
     return dasar.map((baris, i) =>
-      i === 2 && baris.tokoh === 'Pak Plastik' ? { ...baris, teks: GERBANG_PAK_PLASTIK[pakPlastik] } : baris,
+      i === idx ? { ...baris, teks: GERBANG_PAK_PLASTIK[pakPlastik] } : baris,
     )
   }
   if (misi === 'biodiversitas' && pakPlastik !== 'netral') {
+    const idx = dasar.findIndex((b) => b.tokoh === 'Pak Plastik')
+    if (idx === -1) return [...dasar]
     return dasar.map((baris, i) =>
-      i === 2 && baris.tokoh === 'Pak Plastik' ? { ...baris, teks: BAB6_PAK_PLASTIK[pakPlastik] } : baris,
+      i === idx ? { ...baris, teks: BAB6_PAK_PLASTIK[pakPlastik] } : baris,
     )
   }
   return [...dasar]

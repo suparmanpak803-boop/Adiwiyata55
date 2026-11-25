@@ -6,7 +6,7 @@
 import { CHAPTER_ORDER } from './chapters'
 import { freshDunia, type DuniaHidup } from './dunia-hidup'
 import { TUGAS_ORDER } from './types'
-import type { CampaignSave, ChapterId, ChapterProgress, StageProgress, TugasKaderId, TugasProgress } from './types'
+import type { CampaignSave, Carryover, ChapterId, ChapterProgress, StageProgress, TugasKaderId, TugasProgress } from './types'
 
 export const SAVE_KEY = 'aia-save-v1'
 export const SAVE_VERSION = 1 as const
@@ -56,12 +56,11 @@ export function freshSave(nickname = ''): CampaignSave {
     streak: { count: 0, lastDay: null, multiplierActive: false },
     chapters,
     tugas,
-    checkpoint: null,
     bestScores: {},
     unlockedCards: [],
     badges: [],
     report: { sampah: 0, energi: 0, air: 0, hijau: 0, biodiversitas: 0 },
-    carryover: { maggotKenaMinyak: false, komposBau: false, kebunLayu: false },
+    carryover: { maggotKenaMinyak: false, komposBau: false },
     species: [],
     muted: false,
     volumeMusik: 0.7,
@@ -88,6 +87,7 @@ export function freshSave(nickname = ''): CampaignSave {
     panelSurya: false,
     petaAktif: 'rumah',
     ibuTanggal: null,
+    kasurTanggal: null,
     sampahDibawa: {},
     completedAt: null,
     updatedAt: new Date().toISOString(),
@@ -107,7 +107,8 @@ export function hasProgress(save: CampaignSave): boolean {
     if (save.chapters[id].stages.some((s) => s.status === 'done')) return true
   }
   for (const id of TUGAS_ORDER) {
-    if (save.tugas[id].stages.some((s) => s.status === 'done')) return true
+    const t = save.tugas?.[id]
+    if (t?.stages?.some((s) => s.status === 'done')) return true
   }
   if (save.coins > 0) return true
   if (
@@ -117,7 +118,7 @@ export function hasProgress(save: CampaignSave): boolean {
   ) {
     return true
   }
-  if (save.streak.count > 0) return true
+  if ((save.streak?.count ?? 0) > 0) return true
   if ((save.uang ?? 0) > 0 || (save.koinDaun ?? 0) > 0) return true
   if (Object.values(save.sampahDibawa ?? {}).some((n) => n > 0)) return true
   if ((save.inventaris?.length ?? 0) > 0 || (save.pohonDitanam ?? 0) > 0) return true
@@ -125,7 +126,6 @@ export function hasProgress(save: CampaignSave): boolean {
   if ((save.lapar ?? 100) < 100 || (save.haus ?? 100) < 100) return true
   if ((save.hadiahTerakhir ?? null) !== null) return true
   if (save.completedAt !== null) return true
-  if (save.checkpoint !== null) return true
   if (Object.keys(save.cerita ?? {}).length > 0 || save.pakPlastik !== 'netral') return true
   const dunia = save.dunia
   if (dunia) {
@@ -155,6 +155,42 @@ export function isSaveValid(value: unknown): value is CampaignSave {
   if (typeof v.report !== 'object' || v.report === null) return false
   if (typeof v.carryover !== 'object' || v.carryover === null) return false
   if (!Array.isArray(v.unlockedCards) || !Array.isArray(v.badges) || !Array.isArray(v.species)) return false
+  // B-8: streak + tugas juga diperiksa — save korup berisi streak/tugas
+  // null sebelumnya lolos cek ini, lalu menimpa default segar di loadSave
+  // dan membuat hasProgress melempar (layar putih).
+  if (!isStreakValid(v.streak)) return false
+  if (!isTugasValid(v.tugas)) return false
+  return true
+}
+
+/** Bentuk `streak` yang sehat: count angka, lastDay string/null, pengali boolean.
+ * Field yang TIDAK ADA (save lama) diterima — default diisi gabungan di loadSave;
+ * yang ditolak hanya yang ada tapi bentuknya rusak (mis. null). */
+function isStreakValid(value: unknown): value is CampaignSave['streak'] {
+  if (value === undefined) return true
+  if (typeof value !== 'object' || value === null) return false
+  const s = value as Partial<CampaignSave['streak']>
+  if (typeof s.count !== 'number' || Number.isNaN(s.count)) return false
+  if (typeof s.lastDay !== 'string' && s.lastDay !== null) return false
+  if (typeof s.multiplierActive !== 'boolean') return false
+  return true
+}
+
+/** Bentuk `tugas` yang sehat: tiap Misi Kader punya 3 tahap valid (cermin cek chapters).
+ * Field yang TIDAK ADA (save lama) diterima — default diisi gabungan di loadSave;
+ * yang ditolak hanya yang ada tapi bentuknya rusak (mis. null). */
+function isTugasValid(value: unknown): value is CampaignSave['tugas'] {
+  if (value === undefined) return true
+  if (typeof value !== 'object' || value === null) return false
+  const t = value as Partial<Record<TugasKaderId, TugasProgress>>
+  for (const id of TUGAS_ORDER) {
+    const tugas = t[id]
+    if (!tugas || !Array.isArray(tugas.stages) || tugas.stages.length !== 3) return false
+    for (const stage of tugas.stages) {
+      if (!stage || typeof stage.bestScore !== 'number') return false
+      if (stage.status !== 'locked' && stage.status !== 'open' && stage.status !== 'done') return false
+    }
+  }
   return true
 }
 
@@ -174,6 +210,36 @@ export function loadSave(): CampaignSave {
     // isSaveValid sengaja TIDAK diubah: save lama tanpa `dunia` tetap valid
     // dan mendapat default dari gabungan di atas.
     if (!isDuniaValid(merged.dunia)) merged.dunia = freshDunia()
+    // Normalisasi carryover (B-14): flag `kebunLayu` yang sudah dihapus
+    // tidak lagi dibaca — save lama yang masih menyimpannya dibersihkan
+    // ke dua flag yang masih berlaku, supaya tidak ada kunci mati yang
+    // tersisa di save tersimpan.
+    merged.carryover = {
+      maggotKenaMinyak: (merged.carryover as Partial<Carryover> | null)?.maggotKenaMinyak === true,
+      komposBau: (merged.carryover as Partial<Carryover> | null)?.komposBau === true,
+    }
+    // Normalisasi field baru Dunia Hidup (K-5): save lama tanpa
+    // `terakhirPanenKasgot` tetap valid (isDuniaValid tidak mewajibkannya)
+    // dan mendapat 0 di sini (= belum pernah panen kasgot).
+    if (typeof merged.dunia.maggot.terakhirPanenKasgot !== 'number') {
+      merged.dunia = {
+        ...merged.dunia,
+        maggot: { ...merged.dunia.maggot, terakhirPanenKasgot: 0 },
+      }
+    }
+    // B-8: pengaman streak/tugas — bila bentuknya rusak (mis. null dari
+    // save yang diedit manual), ganti bagian itu saja dengan default baru
+    // supaya hasProgress tidak melempar; sisa progres tetap dipertahankan.
+    if (!isStreakValid(merged.streak)) {
+      merged.streak = { count: 0, lastDay: null, multiplierActive: false }
+    }
+    if (!isTugasValid(merged.tugas)) {
+      const tugasBaru = {} as Record<TugasKaderId, TugasProgress>
+      for (const id of TUGAS_ORDER) {
+        tugasBaru[id] = freshTugas()
+      }
+      merged.tugas = tugasBaru
+    }
     if (typeof merged.cerita !== 'object' || merged.cerita === null) merged.cerita = {}
     if (
       merged.pakPlastik !== 'netral' &&
@@ -244,6 +310,10 @@ export function loadSave(): CampaignSave {
     const ibuTersimpan = (parsed as Partial<CampaignSave>).ibuTanggal
     merged.ibuTanggal =
       typeof ibuTersimpan === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(ibuTersimpan) ? ibuTersimpan : null
+    // Pengaman kasur (B-7): pola yang sama seperti ibuTanggal.
+    const kasurTersimpan = (parsed as Partial<CampaignSave>).kasurTanggal
+    merged.kasurTanggal =
+      typeof kasurTersimpan === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(kasurTersimpan) ? kasurTersimpan : null
     // Pengaman sampah dibawa: save lama tanpa field ini -> {}; bentuk rusak
     // atau jumlah bukan angka positif dibuang, sisanya dipertahankan.
     const dibawaTersimpan = (parsed as Partial<CampaignSave>).sampahDibawa

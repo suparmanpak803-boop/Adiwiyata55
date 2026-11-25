@@ -161,7 +161,8 @@ export function SliderLever({
           aria-valuetext={`${nilai}${satuan ? ` ${satuan}` : ''}`}
           onKeyDown={onKeyDown}
         >
-          ↕
+          {/* C-26: slider ini horizontal — gagang memakai "↔", bukan "↕". */}
+          ↔
         </button>
       </div>
 

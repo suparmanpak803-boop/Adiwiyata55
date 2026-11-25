@@ -21,6 +21,7 @@ import { INTERAKSI_MISI } from '@/lib/apa-itu-adiwiyata/content/interaksi'
 import type { TugasKaderId } from '@/lib/apa-itu-adiwiyata/types'
 import { benar, getar, klik, koin, salah } from '../suara'
 import { BalasCepat, EfekBenar, PetunjukMagi, TanganPenunjuk, type PesanChat } from '../interaksi'
+import { TahapTidakTersedia } from '../tahap-tidak-tersedia'
 
 export interface MiniGameTugasSlotProps {
   tugasId: TugasKaderId
@@ -85,9 +86,7 @@ function JejaringHijauGestur({ tugasId, stageIndex, onStageComplete, terjeda = f
 
   if (!tahap || tahap.jenis !== 'pilih' || pesan.length === 0) {
     return (
-      <div className="aia-card">
-        <p className="aia-muted">Tahap ini belum tersedia.</p>
-      </div>
+      <TahapTidakTersedia onLewati={() => onStageComplete(0)} />
     )
   }
 
@@ -242,9 +241,7 @@ function JejaringHijauTombol({ tugasId, stageIndex, onStageComplete }: MiniGameT
 
   if (!tahap || tahap.jenis !== 'pilih') {
     return (
-      <div className="aia-card">
-        <p className="aia-muted">Tahap ini belum tersedia.</p>
-      </div>
+      <TahapTidakTersedia onLewati={() => onStageComplete(0)} />
     )
   }
 

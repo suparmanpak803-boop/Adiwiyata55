@@ -18,7 +18,10 @@ import type { SpesifikasiInteraksi } from '@/lib/apa-itu-adiwiyata/content/inter
 import { KONTEN_TUGAS } from '@/lib/apa-itu-adiwiyata/content/tugas'
 import type { TahapTugas } from '@/lib/apa-itu-adiwiyata/content/tugas'
 import type { TugasKaderId } from '@/lib/apa-itu-adiwiyata/types'
+import { warnaTombolBak } from '@/lib/apa-itu-adiwiyata/content/bak'
+import type { TongSampah } from '@/lib/apa-itu-adiwiyata/types'
 import { EfekBenar, EfekSalah, KuisKilat, SortirCepat, TanganPenunjuk } from '../interaksi'
+import { TahapTidakTersedia } from '../tahap-tidak-tersedia'
 import { benar, getar, koin, nyawa, playPop, salah } from '../suara'
 
 export interface TugasMiniGameSlotProps {
@@ -74,11 +77,25 @@ function BarisNyawa({ nyawaSisa, total }: { nyawaSisa: number; total: number }) 
   )
 }
 
+/**
+ * C-9: warna kelompok material memakai palet 5 Bak SMAN 55 — PET, Kaleng,
+ * dan Kaca semuanya Anorganik di sistem 5 bak, Kertas memakai warna
+ * Kertas sistem (#c98a2e, bukan #b45309). Dipakai untuk ikon daur ulang;
+ * latar tombol memakai versi gelapnya (warnaTombolBak) supaya teks putih
+ * tetap ≥4,5:1.
+ */
+const BAK_KELOMPOK: Record<string, TongSampah> = {
+  PET: 'anorganik',
+  Kertas: 'kertas',
+  Kaleng: 'anorganik',
+  Kaca: 'anorganik',
+}
+
 const WARNA_KELOMPOK: Record<string, string> = {
-  PET: '#2563eb',
-  Kertas: '#b45309',
-  Kaleng: '#6b7280',
-  Kaca: '#0d9488',
+  PET: '#3b7ea1',
+  Kertas: '#c98a2e',
+  Kaleng: '#3b7ea1',
+  Kaca: '#3b7ea1',
 }
 
 // ------------------------------------------------- Tahap 1: pilah (gestur) ----
@@ -143,7 +160,7 @@ function PilahGestur({
             Kamu memilah {benarHitung} dari {item.length} item dengan benar. {spec.hasilBenar}
           </p>
           <p>
-            Skor tahap ini: <strong>{skorAkhir} Koin Hijau</strong>
+            Skor tahap ini: <strong>{skorAkhir}</strong>
           </p>
           <div className="aia-actions" style={{ justifyContent: 'center' }}>
             <button type="button" className="aia-btn aia-btn-primary" onClick={() => selesaikan(skorAkhir)}>
@@ -210,6 +227,10 @@ function CatatGestur({
   const [efekBenar, setEfekBenar] = useState(false)
   const [pesanSalah, setPesanSalah] = useState<string | null>(null)
   const [tercatat, setTercatat] = useState<Record<string, string>>({})
+  // C-25: cermin state dari terkunciRef — `disabled={ref.current}` adalah
+  // prop mati (ref tidak memicu render), jadi tombol tampak aktif selama
+  // 550 ms jeda maju baris. State ini yang menggerakkan `disabled`.
+  const [terkunci, setTerkunci] = useState(false)
 
   const selesaiRef = useRef(false)
   const terkunciRef = useRef(false)
@@ -262,6 +283,7 @@ function CatatGestur({
     if (!barisSaatIni || terkunciRef.current) return
     if (berat === beratBenar) {
       terkunciRef.current = true
+      setTerkunci(true)
       benar()
       getar(20)
       setSkor((s) => s + (percobaan === 0 ? 25 : 10))
@@ -278,6 +300,7 @@ function CatatGestur({
           return
         }
         terkunciRef.current = false
+        setTerkunci(false)
         if (pos + 1 >= baris.length) setSelesai(true)
         else {
           setPos((p) => p + 1)
@@ -304,7 +327,7 @@ function CatatGestur({
             <strong>{totalBerat}</strong>. {spec.hasilBenar}
           </p>
           <p>
-            Skor tahap ini: <strong>{skor} Koin Hijau</strong>
+            Skor tahap ini: <strong>{skor}</strong>
           </p>
           <div className="aia-actions" style={{ justifyContent: 'center' }}>
             <button type="button" className="aia-btn aia-btn-primary" onClick={() => selesaikan(skor)}>
@@ -334,7 +357,7 @@ function CatatGestur({
         </p>
         <div className="aia-stats" style={{ marginTop: 12 }}>
           <span className="aia-stat">
-            <Coins aria-hidden="true" /> {skor} Koin Hijau
+            <Coins aria-hidden="true" /> Skor {skor}
           </span>
           <span className="aia-stat">
             Jenis {Math.min(pos + 1, baris.length)}/{baris.length}
@@ -414,7 +437,7 @@ function CatatGestur({
                 key={berat}
                 type="button"
                 className="aia-btn aia-btn-block"
-                disabled={terkunciRef.current}
+                disabled={terkunci}
                 onClick={() => jawab(berat)}
                 aria-label={`Berat ${berat}`}
                 style={{
@@ -491,7 +514,7 @@ function KuisGestur({
             Kamu menyelesaikan {soal.length} soal hitung tabungan. {spec.hasilBenar}
           </p>
           <p>
-            Skor tahap ini: <strong>{skorAkhir} Koin Hijau</strong>
+            Skor tahap ini: <strong>{skorAkhir}</strong>
           </p>
           <div className="aia-actions" style={{ justifyContent: 'center' }}>
             <button type="button" className="aia-btn aia-btn-primary" onClick={() => selesaikan(skorAkhir)}>
@@ -636,7 +659,7 @@ function PilahAnorganik({
             </p>
             <div className="aia-stats" style={{ marginTop: 12 }}>
               <span className="aia-stat">
-                <Coins aria-hidden="true" /> {skor} Koin Hijau
+                <Coins aria-hidden="true" /> Skor {skor}
               </span>
               <span className="aia-stat">
                 <BarisNyawa nyawaSisa={nyawaSisa} total={totalNyawa} /> {nyawaSisa} nyawa
@@ -662,7 +685,9 @@ function PilahAnorganik({
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
             {tahap.kelompok.map((kelompok) => {
-              const warna = WARNA_KELOMPOK[kelompok] ?? '#236b4d'
+              // C-9: latar tombol memakai versi gelap warna bak supaya
+              // teks putih ≥4,5:1 (warna bak mentah #c98a2e hanya 2,93:1).
+              const warnaTombol = warnaTombolBak(BAK_KELOMPOK[kelompok] ?? 'anorganik')
               const isDipilih = dipilih === kelompok
               const isJawaban = item.kelompok === kelompok
               let latar: string | undefined
@@ -684,7 +709,7 @@ function PilahAnorganik({
                   aria-label={`Kelompok ${kelompok}`}
                   style={{
                     minHeight: 56,
-                    background: latar ?? warna,
+                    background: latar ?? warnaTombol,
                     border,
                     color: latar ? 'inherit' : '#ffffff',
                     whiteSpace: 'normal',
@@ -728,7 +753,7 @@ function PilahAnorganik({
             Kamu memilah {benarCount} dari {deck.length} item dengan benar.
           </p>
           <p>
-            Skor tahap ini: <strong>{skor} Koin Hijau</strong>
+            Skor tahap ini: <strong>{skor}</strong>
           </p>
           <div className="aia-actions" style={{ justifyContent: 'center' }}>
             <button type="button" className="aia-btn aia-btn-primary" onClick={() => selesai(skor)}>
@@ -889,7 +914,7 @@ function CatatTimbangan({
             </p>
             <div className="aia-stats" style={{ marginTop: 12 }}>
               <span className="aia-stat">
-                <Coins aria-hidden="true" /> {skor} Koin Hijau
+                <Coins aria-hidden="true" /> Skor {skor}
               </span>
               <span className="aia-stat">
                 <BarisNyawa nyawaSisa={nyawaSisa} total={totalNyawa} /> {nyawaSisa} nyawa
@@ -934,7 +959,17 @@ function CatatTimbangan({
                           fontWeight: j === 0 && i === rowIdx ? 800 : j === 0 ? 700 : undefined,
                         }}
                       >
-                        {sel}
+                        {/* B-12: kolom Berat disembunyikan seperti di CatatGestur —
+                            berat hanya terlihat setelah baris itu dijawab benar,
+                            '?' untuk baris yang sedang ditimbang, '—' untuk sisanya.
+                            Kalau berat ditampilkan semua, pertanyaannya bocor. */}
+                        {j === 1
+                          ? hasil[i] === true
+                            ? sel
+                            : i === rowIdx
+                              ? '?'
+                              : '—'
+                          : sel}
                       </td>
                     ))}
                     <td style={{ padding: '8px 4px', borderBottom: '1px solid var(--line)' }}>
@@ -1027,7 +1062,7 @@ function CatatTimbangan({
             <strong>{totalBerat}</strong>.
           </p>
           <p>
-            Skor tahap ini: <strong>{skor} Koin Hijau</strong>
+            Skor tahap ini: <strong>{skor}</strong>
           </p>
           <div className="aia-actions" style={{ justifyContent: 'center' }}>
             <button type="button" className="aia-btn aia-btn-primary" onClick={() => selesai(skor)}>
@@ -1181,7 +1216,7 @@ function KuisTabungan({
             </p>
             <div className="aia-stats" style={{ marginTop: 12 }}>
               <span className="aia-stat">
-                <Coins aria-hidden="true" /> {skor} Koin Hijau
+                <Coins aria-hidden="true" /> Skor {skor}
               </span>
               <span className="aia-stat">
                 <BarisNyawa nyawaSisa={nyawaSisa} total={totalNyawa} /> {nyawaSisa} nyawa
@@ -1275,7 +1310,7 @@ function KuisTabungan({
             Kamu menjawab {benarCount} dari {soal.length} soal hitung tabungan dengan benar.
           </p>
           <p>
-            Skor tahap ini: <strong>{skor} Koin Hijau</strong>
+            Skor tahap ini: <strong>{skor}</strong>
           </p>
           <div className="aia-actions" style={{ justifyContent: 'center' }}>
             <button type="button" className="aia-btn aia-btn-primary" onClick={() => selesai(skor)}>
@@ -1325,9 +1360,7 @@ export function BankSampah({ tugasId, stageIndex, onStageComplete, modeSatuKetuk
   const spec = INTERAKSI_MISI[tugasId]?.[stageIndex]
   if (!tahap || !spec) {
     return (
-      <div className="aia-card">
-        <p className="aia-muted">Tahap ini belum tersedia.</p>
-      </div>
+      <TahapTidakTersedia onLewati={() => onStageComplete(0)} />
     )
   }
   const kunci = `${tugasId}-${stageIndex}`
@@ -1336,17 +1369,13 @@ export function BankSampah({ tugasId, stageIndex, onStageComplete, modeSatuKetuk
     if (tahap.jenis === 'catat') return <CatatTimbangan key={kunci} tahap={tahap} onStageComplete={onStageComplete} tahapTerakhir={stageIndex === 2} />
     if (tahap.jenis === 'kuis') return <KuisTabungan key={kunci} tahap={tahap} onStageComplete={onStageComplete} tahapTerakhir={stageIndex === 2} />
     return (
-      <div className="aia-card">
-        <p className="aia-muted">Tahap ini belum tersedia.</p>
-      </div>
+      <TahapTidakTersedia onLewati={() => onStageComplete(0)} />
     )
   }
   if (tahap.jenis === 'pilah') return <PilahGestur key={kunci} tahap={tahap} spec={spec} onStageComplete={onStageComplete} tahapTerakhir={stageIndex === 2} terjeda={terjeda} />
   if (tahap.jenis === 'catat') return <CatatGestur key={kunci} tahap={tahap} spec={spec} onStageComplete={onStageComplete} tahapTerakhir={stageIndex === 2} terjeda={terjeda} />
   if (tahap.jenis === 'kuis') return <KuisGestur key={kunci} tahap={tahap} spec={spec} onStageComplete={onStageComplete} tahapTerakhir={stageIndex === 2} terjeda={terjeda} />
   return (
-    <div className="aia-card">
-      <p className="aia-muted">Tahap ini belum tersedia.</p>
-    </div>
+    <TahapTidakTersedia onLewati={() => onStageComplete(0)} />
   )
 }

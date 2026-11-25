@@ -20,6 +20,7 @@ import { KONTEN_TUGAS } from '@/lib/apa-itu-adiwiyata/content/tugas'
 import type { TahapTugas } from '@/lib/apa-itu-adiwiyata/content/tugas'
 import type { TugasKaderId } from '@/lib/apa-itu-adiwiyata/types'
 import { CariPerbedaan, EfekBenar, EfekSalah, TanganPenunjuk } from '../interaksi'
+import { TahapTidakTersedia } from '../tahap-tidak-tersedia'
 import { benar, getar, koin, nyawa, playPop, salah } from '../suara'
 
 export interface TugasMiniGameSlotProps {
@@ -118,20 +119,47 @@ function InspeksiGestur({
 
   // Sel adegan: 5 titik masalah (beda kiri-kanan) + 3 titik sehat (sama),
   // diacak posisinya tiap tahap.
+  // C-12: perbedaannya berupa KONDISI yang berbeda, bukan sekadar ikon —
+  // panel kiri menunjukkan keadaan seharusnya ("Beres"), panel kanan
+  // menunjukkan keadaan sebenarnya (teks masalahnya). Sebelumnya label
+  // kiri-kanan identik dan hanya ikon Check/AlertTriangle yang berbeda,
+  // sehingga tugasnya menjadi "ketuk ikon peringatan".
   const sel = useMemo(() => {
     const labelTahap = LABEL_TITIK[stageIndex] ?? LABEL_TITIK[0]
     const sehatTahap = TITIK_SEHAT[stageIndex] ?? TITIK_SEHAT[0]
     const beda = temuan.map((t, i) => ({
       id: `temuan-${i}`,
       label: labelTahap[i] ?? t.masalah,
-      kiri: <Check aria-hidden="true" style={{ width: 22, height: 22, color: '#2f7d4f' }} />,
-      kanan: <AlertTriangle aria-hidden="true" style={{ width: 22, height: 22, color: '#b45309' }} />,
+      kiri: (
+        <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+          <Check aria-hidden="true" style={{ width: 22, height: 22, color: '#2f7d4f' }} />
+          <span style={{ fontSize: 11, fontWeight: 700, color: '#2f7d4f' }}>Beres</span>
+        </span>
+      ),
+      kanan: (
+        <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+          <AlertTriangle aria-hidden="true" style={{ width: 22, height: 22, color: '#b45309' }} />
+          <span style={{ fontSize: 11, fontWeight: 700, color: '#b45309', textAlign: 'center' }}>
+            {t.masalah}
+          </span>
+        </span>
+      ),
     }))
     const sehat = sehatTahap.map((nama, i) => ({
       id: `sehat-${i}`,
       label: nama,
-      kiri: <Check aria-hidden="true" style={{ width: 22, height: 22, color: '#2f7d4f' }} />,
-      kanan: <Check aria-hidden="true" style={{ width: 22, height: 22, color: '#2f7d4f' }} />,
+      kiri: (
+        <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+          <Check aria-hidden="true" style={{ width: 22, height: 22, color: '#2f7d4f' }} />
+          <span style={{ fontSize: 11, fontWeight: 700, color: '#2f7d4f' }}>Beres</span>
+        </span>
+      ),
+      kanan: (
+        <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+          <Check aria-hidden="true" style={{ width: 22, height: 22, color: '#2f7d4f' }} />
+          <span style={{ fontSize: 11, fontWeight: 700, color: '#2f7d4f' }}>Beres</span>
+        </span>
+      ),
     }))
     return acak([...beda, ...sehat])
   }, [temuan, stageIndex])
@@ -226,7 +254,7 @@ function InspeksiGestur({
             {spec.hasilBenar}
           </p>
           <p>
-            Skor tahap ini: <strong>{skor} Koin Hijau</strong>
+            Skor tahap ini: <strong>{skor}</strong>
           </p>
           <div className="aia-actions" style={{ justifyContent: 'center' }}>
             <button type="button" className="aia-btn aia-btn-primary" onClick={() => selesaikan(skor)}>
@@ -250,7 +278,7 @@ function InspeksiGestur({
         </p>
         <div className="aia-stats" style={{ marginTop: 12 }}>
           <span className="aia-stat">
-            <Coins aria-hidden="true" /> {skor} Koin Hijau
+            <Coins aria-hidden="true" /> Skor {skor}
           </span>
         </div>
       </div>
@@ -442,7 +470,7 @@ function InspeksiSehat({
             </p>
             <div className="aia-stats" style={{ marginTop: 12 }}>
               <span className="aia-stat">
-                <Coins aria-hidden="true" /> {skor} Koin Hijau
+                <Coins aria-hidden="true" /> Skor {skor}
               </span>
               <span
                 className="aia-stat"
@@ -543,7 +571,7 @@ function InspeksiSehat({
             Kamu memilih {benarCount} dari {temuan.length} tindakan yang benar. Sekolah jadi lebih sehat!
           </p>
           <p>
-            Skor tahap ini: <strong>{skor} Koin Hijau</strong>
+            Skor tahap ini: <strong>{skor}</strong>
           </p>
           <div className="aia-actions" style={{ justifyContent: 'center' }}>
             <button type="button" className="aia-btn aia-btn-primary" onClick={() => selesai(skor)}>
@@ -593,9 +621,7 @@ export function LingkunganSehat({ tugasId, stageIndex, onStageComplete, modeSatu
   const spec = INTERAKSI_MISI[tugasId]?.[stageIndex]
   if (!tahap || tahap.jenis !== 'inspeksi' || !spec) {
     return (
-      <div className="aia-card">
-        <p className="aia-muted">Tahap ini belum tersedia.</p>
-      </div>
+      <TahapTidakTersedia onLewati={() => onStageComplete(0)} />
     )
   }
   const kunci = `${tugasId}-${stageIndex}`

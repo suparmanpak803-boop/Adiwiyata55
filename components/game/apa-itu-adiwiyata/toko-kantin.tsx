@@ -175,7 +175,7 @@ export function TokoKantin({
           {MAKANAN.map((item) => {
             const hargaBayar = hargaKantin(item.harga)
             return (
-              <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
+              <div key={item.id} className="aia-toko-item" style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
                 <div>
                   <strong>{item.nama}</strong> — Lapar +{item.lapar}
                   {punyaPinDuta && (
@@ -215,7 +215,7 @@ export function TokoKantin({
           {MINUMAN.map((item) => {
             const hargaBayar = hargaKantin(item.harga)
             return (
-              <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
+              <div key={item.id} className="aia-toko-item" style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
                 <div>
                   <strong>{item.nama}</strong> — Haus +{item.haus}
                   {punyaPinDuta && (
@@ -252,7 +252,7 @@ export function TokoKantin({
           <Apple aria-hidden="true" /> Gratis
         </h3>
         <div className="aia-stack">
-          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
+          <div className="aia-toko-item" style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
             <div>
               <strong>Air Keran</strong> — Haus +{AIR_KERAN_HAUS}
               <p className="aia-muted" style={{ margin: 0 }}>
@@ -272,7 +272,7 @@ export function TokoKantin({
               <Droplets aria-hidden="true" /> Minum
             </button>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
+          <div className="aia-toko-item" style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
             <div>
               <strong>Bekal Rumah</strong> — Lapar +{bekalPulih}
               <p className="aia-muted" style={{ margin: 0 }}>
@@ -303,7 +303,7 @@ export function TokoKantin({
         </h3>
         <div className="aia-stack">
           {GEAR.map((item) => (
-            <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
+            <div key={item.id} className="aia-toko-item" style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
               <div>
                 <strong>{item.nama}</strong> — {item.efek}
                 <p className="aia-muted" style={{ margin: 0 }}>
@@ -339,7 +339,7 @@ export function TokoKantin({
         </p>
         <div className="aia-stack">
           {ECO_SHOP.map((item) => (
-            <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
+            <div key={item.id} className="aia-toko-item" style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
               <div>
                 <strong>{item.nama}</strong> — {item.efek}
                 <p className="aia-muted" style={{ margin: 0 }}>
@@ -398,7 +398,7 @@ export function TokoKantin({
             const dimiliki = punya(item.id)
             const dipakai = save.kostumDipakai === item.id
             return (
-              <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
+              <div key={item.id} className="aia-toko-item" style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
                 <div>
                   <strong>{item.nama}</strong>
                   {dipakai && <span className="aia-chip done"> Dipakai</span>}

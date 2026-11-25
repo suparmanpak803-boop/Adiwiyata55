@@ -6,6 +6,7 @@ import { Lock } from 'lucide-react'
 import { CHAPTERS } from '@/lib/apa-itu-adiwiyata/chapters'
 import { useCampaign } from '@/lib/apa-itu-adiwiyata/context'
 import type { ChapterId, Report } from '@/lib/apa-itu-adiwiyata/types'
+import { AngkaAnimasi } from './hud-dunia'
 
 const BARIS: { kunci: keyof Report; label: string; bab: ChapterId; keterangan: string }[] = [
   { kunci: 'sampah', label: 'Sampah', bab: 'kantin', keterangan: 'Memilah dan mengurangi sampah' },
@@ -36,7 +37,9 @@ export function RaporSekolah() {
           <article key={baris.kunci} className="aia-card">
             <div className="aia-progress-row">
               <strong>{baris.label}</strong>
-              <span>{terkunci ? 'Terkunci' : `${nilai}/100`}</span>
+              {/* R4: angka rapor dihitung naik dari 0 saat Pos Hijau tampil;
+                  bar beranimasi lewat transisi lebar di CSS. */}
+              <span>{terkunci ? 'Terkunci' : <><AngkaAnimasi nilai={nilai} dariNol />/100</>}</span>
             </div>
             <p className="aia-muted" style={{ margin: '4px 0 8px' }}>
               {baris.keterangan}

@@ -63,7 +63,7 @@ export function HadiahHarian({
         Kembali setiap hari dan klaim hadiahmu. Hari ini: Hari {siklus} — {hadiahHariIni?.label ?? ''}.
       </p>
       <div
-        style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 6, marginBottom: 12 }}
+        className="aia-hadiah-grid"
         role="list"
         aria-label="Trek hadiah 7 hari"
       >
@@ -77,21 +77,28 @@ export function HadiahHarian({
               role="listitem"
               aria-label={`Hari ${hadiah.hari}: ${hadiah.label}${diklaim ? ' (sudah diklaim)' : ''}${hariIniKotak ? ' (hari ini)' : ''}`}
               style={{
-                border: `2px solid ${hariIniKotak ? '#2f7d4f' : '#d8d8d8'}`,
+                // B-4: latar + border dari variabel tema, bukan warna hardcode —
+                // di mode gelap teks terang di atas '#e6f4ea' kontrasnya ~1:1.
+                // var(--sage)/var(--muted) + var(--foreground) aman di terang
+                // maupun gelap (≥4,5:1).
+                border: `2px solid ${hariIniKotak ? 'var(--green)' : 'var(--line)'}`,
                 borderRadius: 10,
                 padding: '8px 2px',
                 textAlign: 'center',
-                background: diklaim ? '#e6f4ea' : hariIniKotak ? '#f2faf4' : 'transparent',
+                background: diklaim ? 'var(--sage)' : hariIniKotak ? 'var(--muted)' : 'transparent',
                 opacity: diklaim ? 0.85 : 1,
               }}
             >
               <div style={{ fontWeight: 800, fontSize: 13 }}>Hari {hadiah.hari}</div>
               {diklaim ? (
-                <Check aria-hidden="true" style={{ width: 20, height: 20, marginTop: 4, color: '#2f7d4f' }} />
+                <Check aria-hidden="true" style={{ width: 20, height: 20, marginTop: 4, color: 'var(--green)' }} />
               ) : (
                 <Ikon aria-hidden="true" style={{ width: 20, height: 20, marginTop: 4 }} />
               )}
-              <div style={{ fontSize: 10, lineHeight: 1.3, marginTop: 4 }}>{hadiah.label}</div>
+              {/* C-4: label hadiah disembunyikan di ≤480px (CSS) supaya sel
+                  4 kolom tidak membungkus 3–4 baris; info lengkap tetap ada
+                  di aria-label sel dan di teks "Hari ini" di atas. */}
+              <div className="aia-hadiah-label" style={{ fontSize: 10, lineHeight: 1.3, marginTop: 4 }}>{hadiah.label}</div>
             </div>
           )
         })}

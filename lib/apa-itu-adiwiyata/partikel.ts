@@ -493,8 +493,9 @@ export function intensitasMatahari(jam = new Date().getHours()): number {
 /**
  * Gradien langit pagi + sinar matahari (SANGAT tipis, alpha maks 0,10).
  * Ruang LAYAR (dipanggil setelah ctx.restore(), tanpa translate kamera):
- * gradien hangat dari atas memudar ke bawah + glow radial di pojok kanan
- * atas. Tidak menutupi permainan dan tidak menambah objek tabrakan.
+ * gradien hangat dari atas memudar ke bawah + glow radial di pojok kiri
+ * atas (C-7: sesuai art-direction-brief yang mengunci matahari di kiri
+ * atas; sebelumnya di kanan atas).
  */
 export function gambarLangitPagi(
   g: CanvasRenderingContext2D,
@@ -511,9 +512,9 @@ export function gambarLangitPagi(
   langit.addColorStop(1, `rgba(${warnaLangit},0)`)
   g.fillStyle = langit
   g.fillRect(0, 0, viewW, viewH * 0.45)
-  // Sinar: glow radial lembut dari pojok kanan atas.
+  // Sinar: glow radial lembut dari pojok kiri atas.
   const r = Math.max(viewW, viewH) * 0.55
-  const sinar = g.createRadialGradient(viewW * 0.82, -40, 0, viewW * 0.82, -40, r)
+  const sinar = g.createRadialGradient(viewW * 0.18, -40, 0, viewW * 0.18, -40, r)
   sinar.addColorStop(0, `rgba(255,243,196,${(0.09 * intensitas).toFixed(3)})`)
   sinar.addColorStop(1, 'rgba(255,243,196,0)')
   g.fillStyle = sinar

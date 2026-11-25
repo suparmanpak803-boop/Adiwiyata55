@@ -9,6 +9,7 @@
 import { useEffect, useRef } from 'react'
 import { Award, Check, PartyPopper, Trophy } from 'lucide-react'
 import { useCampaign } from '@/lib/apa-itu-adiwiyata/context'
+import { LENCANA } from '@/lib/apa-itu-adiwiyata/lencana'
 import { KartuBagikan } from './kartu-bagikan'
 import { sertifikat } from './suara'
 
@@ -69,7 +70,7 @@ export function Tamat({ onExit }: { onExit: () => void }) {
             SMAN 55 Jakarta · {tanggal}
           </p>
           <p style={{ margin: '12px 0 0', fontSize: 14 }}>
-            Total Koin Hijau: <strong>{save.coins}</strong> · Lencana: <strong>{save.badges.length}/8</strong>
+            Total Koin Hijau: <strong>{save.coins}</strong> · Lencana: <strong>{save.badges.length}/{LENCANA.length}</strong>
           </p>
           <p className="aia-muted" style={{ margin: '8px 0 0' }}>
             <Trophy aria-hidden="true" style={{ verticalAlign: '-3px' }} /> Tidak ada yang benar-benar

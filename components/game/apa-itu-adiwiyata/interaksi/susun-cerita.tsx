@@ -1,11 +1,15 @@
 // SusunCerita — susun frame cerita ke storyboard sesuai urutan yang benar.
 // Frame diacak; pemain mengetuk kartu sesuai urutan yang menurutnya benar.
 // Ketukan yang bukan frame benar berikutnya = salah (kartu kembali).
-// Generik: tidak ada konten misi di sini.
+// Kartu `pengecoh` (opsional) ikut diacak ke dalam tumpukan kartu, tapi
+// tidak pernah masuk storyboard: mengetuknya selalu salah — dipakai
+// Eco-Communication untuk menampilkan frame dari konsep yang salah,
+// supaya pemain benar-benar memilih konsep yang tepat, bukan hanya
+// mengurutkan frame yang semuanya benar. Generik: tidak ada konten misi di sini.
 
 'use client'
 
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { BookOpen, Check, RotateCcw } from 'lucide-react'
 import { benar, getar, klik, koin, salah } from '../suara'
 import { acak, clamp, useKurangiAnimasi } from './util'
@@ -20,6 +24,9 @@ export interface FrameCerita {
 export interface SusunCeritaProps {
   /** Urutan benar = urutan array. */
   frame: FrameCerita[]
+  /** Kartu pengecoh: ikut diacak, tapi tidak pernah jadi frame berikutnya
+   * (mengetuknya selalu salah). */
+  pengecoh?: FrameCerita[]
   modeSatuKetukan?: boolean
   disabled?: boolean
   /** Bila true, permainan dijeda: panggilan selesai ditunda sampai lanjut. */
@@ -27,9 +34,12 @@ export interface SusunCeritaProps {
   onSelesai: (skor: number) => void
 }
 
-export function SusunCerita({ frame, modeSatuKetukan = false, disabled = false, terjeda = false, onSelesai }: SusunCeritaProps) {
+export function SusunCerita({ frame, pengecoh, modeSatuKetukan = false, disabled = false, terjeda = false, onSelesai }: SusunCeritaProps) {
   const kurangi = useKurangiAnimasi()
-  const [acakFrame, setAcakFrame] = useState<FrameCerita[]>(() => acak(frame))
+  // Tumpukan kartu = frame benar + pengecoh (di-memo supaya urutan acak
+  // stabil selama daftar frame tidak berubah).
+  const semuaKartu = useMemo(() => [...frame, ...(pengecoh ?? [])], [frame, pengecoh])
+  const [acakFrame, setAcakFrame] = useState<FrameCerita[]>(() => acak(semuaKartu))
   const [terisi, setTerisi] = useState<string[]>([])
   const [jumlahSalah, setJumlahSalah] = useState(0)
   const [salahTerakhir, setSalahTerakhir] = useState(false)
@@ -56,20 +66,24 @@ export function SusunCerita({ frame, modeSatuKetukan = false, disabled = false, 
 
   // Daftar frame berubah = mulai dari nol lagi.
   useEffect(() => {
-    setAcakFrame(acak(frame))
+    setAcakFrame(acak(semuaKartu))
     setTerisi([])
     setJumlahSalah(0)
     setSalahTerakhir(false)
     setSelesai(false)
     selesaiRef.current = false
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [frame])
+  }, [semuaKartu])
 
   const ulangi = () => {
     if (timerRef.current) window.clearTimeout(timerRef.current)
-    setAcakFrame(acak(frame))
+    setAcakFrame(acak(semuaKartu))
     setTerisi([])
-    setJumlahSalah(0)
+    // K-6: "Ulangi" mengacak ulang papan TAPI TIDAK menghapus ketukan
+    // salah — kalau jumlah salah di-reset, pemain bisa mengulang tanpa
+    // batas sampai selalu mendapat skor 100. Ketukan salah yang sudah
+    // terjadi tetap dihitung di skor akhir, jadi skor tetap jujur;
+    // pemain tetap bisa menyelesaikan cerita (tanpa jalan buntu).
     setSalahTerakhir(false)
     setSelesai(false)
     selesaiRef.current = false
@@ -200,6 +214,12 @@ export function SusunCerita({ frame, modeSatuKetukan = false, disabled = false, 
             </button>
           ))}
         </div>
+      )}
+
+      {pengecoh && pengecoh.length > 0 && !selesai && (
+        <p className="aia-muted" style={{ margin: 0, textAlign: 'center' }}>
+          Awas: ada kartu pengecoh dari konsep lain — kartu itu bukan bagian cerita ini, jangan diketuk.
+        </p>
       )}
 
       <PetunjukMagi teks="Susun dari awal cerita sampai akhir — tiap ketukan menaruh kartu ke slot berikutnya." />

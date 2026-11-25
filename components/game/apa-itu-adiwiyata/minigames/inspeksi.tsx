@@ -21,6 +21,17 @@ function teksMagi(s: string): string {
   return s.replace(/^Magi:\s*/, '').replace(/^"|"$/g, '')
 }
 
+function acak<T>(daftar: T[]): T[] {
+  const salin = [...daftar]
+  for (let i = salin.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1))
+    const tmp = salin[i]
+    salin[i] = salin[j]
+    salin[j] = tmp
+  }
+  return salin
+}
+
 // ------------------------------------------------- Versi tombol (lama) ----
 
 const WAKTU_NORMAL = 15
@@ -55,7 +66,20 @@ function InspeksiTombol({ stageIndex, onStageComplete, terjeda = false }: MiniGa
 
   const selesaiRef = useRef(false)
   const totalWaktu = mudah ? WAKTU_MUDAH : WAKTU_NORMAL
+  // B-15: acak urutan pilihan tiap soal sekali per daftar soal (memo) —
+  // jawaban benar tidak selalu di posisi yang sama.
+  const opsiPerSoal = useMemo(
+    () =>
+      soal.map((s) => {
+        const urutan = acak(s.pilihan.map((_, i) => i))
+        return { urutan, jawabanBaru: urutan.indexOf(s.jawabanIndex) }
+      }),
+    [soal],
+  )
   const pertanyaan = soal[qIndex]
+  const opsi = pertanyaan ? opsiPerSoal[qIndex] : null
+  // B-9: skor mentah maks 60 (4 soal × (10 + 5 bonus cepat)) — kirim persen.
+  const skorPersen = Math.min(100, Math.round((skor / 60) * 100))
 
   const selesai = (nilai: number) => {
     if (selesaiRef.current) return
@@ -98,9 +122,9 @@ function InspeksiTombol({ stageIndex, onStageComplete, terjeda = false }: MiniGa
   }
 
   const jawab = (index: number) => {
-    if (dijawab || fase !== 'main') return
+    if (dijawab || fase !== 'main' || !opsi) return
     const elapsed = totalWaktu - waktu
-    const isBenar = index === pertanyaan.jawabanIndex
+    const isBenar = index === opsi.jawabanBaru
     setDipilih(index)
     setDijawab(true)
     if (isBenar) {
@@ -176,7 +200,7 @@ function InspeksiTombol({ stageIndex, onStageComplete, terjeda = false }: MiniGa
                   fill={i < nyawaSisa ? '#e11d48' : 'transparent'}
                 />
               ))}
-              <span style={{ marginLeft: 8, fontSize: 13, fontWeight: 700 }}>Skor: {skor}</span>
+              <span style={{ marginLeft: 8, fontSize: 13, fontWeight: 700 }}>Skor: {skorPersen}</span>
             </div>
             <div className="aia-progress-row" style={{ marginTop: 10 }}>
               <div
@@ -212,8 +236,9 @@ function InspeksiTombol({ stageIndex, onStageComplete, terjeda = false }: MiniGa
               </p>
             )}
             <div style={{ display: 'grid', gap: 8, marginTop: 12 }}>
-              {pertanyaan.pilihan.map((pilihan, i) => {
-                const isJawaban = i === pertanyaan.jawabanIndex
+              {(opsi?.urutan ?? []).map((asli, i) => {
+                const pilihan = pertanyaan.pilihan[asli] ?? ''
+                const isJawaban = i === opsi?.jawabanBaru
                 const isDipilih = i === dipilih
                 let latar: string | undefined
                 let border: string | undefined
@@ -263,7 +288,7 @@ function InspeksiTombol({ stageIndex, onStageComplete, terjeda = false }: MiniGa
                   borderRadius: 12,
                   background: waktuHabis
                     ? '#fef3c7'
-                    : dipilih === pertanyaan.jawabanIndex
+                    : dipilih === opsi?.jawabanBaru
                       ? '#dcfce7'
                       : '#fee2e2',
                 }}
@@ -271,12 +296,12 @@ function InspeksiTombol({ stageIndex, onStageComplete, terjeda = false }: MiniGa
                 <strong>
                   {waktuHabis
                     ? 'Waktu habis!'
-                    : dipilih === pertanyaan.jawabanIndex
+                    : dipilih === opsi?.jawabanBaru
                       ? 'Benar!'
                       : 'Belum tepat.'}
                 </strong>{' '}
                 {pertanyaan.penjelasan}
-                {dijawab && dipilih === pertanyaan.jawabanIndex && totalWaktu - waktu <= 5 && (
+                {dijawab && dipilih === opsi?.jawabanBaru && totalWaktu - waktu <= 5 && (
                   <span> Bonus kecepatan +5!</span>
                 )}
               </div>
@@ -310,10 +335,10 @@ function InspeksiTombol({ stageIndex, onStageComplete, terjeda = false }: MiniGa
             pengetahuanmu!
           </p>
           <p>
-            Skor tahap ini: <strong>{skor} Koin Hijau</strong>
+            Skor tahap ini: <strong>{skorPersen}</strong>
           </p>
-          <button type="button" className="aia-btn aia-btn-primary" onClick={() => selesai(skor)}>
-            {stageIndex === 2 ? 'Ke Pos Hijau' : 'Level Selanjutnya'} · +{skor} Koin Hijau
+          <button type="button" className="aia-btn aia-btn-primary" onClick={() => selesai(skorPersen)}>
+            {stageIndex === 2 ? 'Ke Pos Hijau' : 'Level Selanjutnya'} · +{skorPersen} Koin Hijau
           </button>
         </div>
       )}
@@ -343,9 +368,7 @@ function InspeksiTombol({ stageIndex, onStageComplete, terjeda = false }: MiniGa
   )
 }
 
-// ------------------------------------------------- Versi gestur (utama) ----
-
-// ------------------------------------------------- Versi gestur (utama) ----
+// ------------------------------------------------- Versi gestur --------
 // KuisKilat: 4 soal per tahap, bar waktu 10 detik per soal, bonus beruntun.
 // Aturan skor (0–100, dinormalisasi oleh KuisKilat): tiap jawaban benar
 // bernilai 10 poin + 2 poin per tingkat beruntun (jawaban benar ke-2
@@ -429,7 +452,7 @@ function InspeksiGestur({
           </h3>
           <p>{spec.hasilBenar}</p>
           <p>
-            Skor tahap ini: <strong>{skor} Koin Hijau</strong>
+            Skor tahap ini: <strong>{skor}</strong>
           </p>
           <button type="button" className="aia-btn aia-btn-primary" onClick={() => onSelesai(skor)}>
             {stageIndex === 2 ? 'Ke Pos Hijau' : 'Level Selanjutnya'} · +{skor} Koin Hijau

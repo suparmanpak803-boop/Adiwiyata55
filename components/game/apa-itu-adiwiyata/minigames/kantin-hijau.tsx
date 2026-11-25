@@ -5,10 +5,9 @@
 // dengan timer; pemain mengetuk tindakan yang benar di antara 3 kartu
 // tindakan. Isi dari KONTEN_TUGAS['kantin-hijau'] (12 temuan).
 // Gestur tiap tahap dari INTERAKSI_MISI['kantin-hijau'].
-// Skor 0–100: benar +25 / salah +10 per pesanan, seperti skor lama.
-// SimulasiKantin memberi 25 per pesanan benar (0 bila salah), jadi
-// skor akhir dipetakan: skor = 40 + 0,6 × skorKomponen (0 benar → 40,
-// 4 benar → 100). onStageComplete dipanggil TEPAT SATU KALI.
+// Skor 0–100 (persen): SimulasiKantin mengembalikan persen
+// (benar / total pesanan × 100), jadi skor tahap dipakai apa adanya.
+// onStageComplete dipanggil TEPAT SATU KALI.
 // Prop modeSatuKetukan menampilkan versi tombol lama (aksesibilitas).
 
 import { useMemo, useRef, useState } from 'react'
@@ -24,6 +23,7 @@ import {
   TanganPenunjuk,
   type PesananKantin,
 } from '../interaksi'
+import { TahapTidakTersedia } from '../tahap-tidak-tersedia'
 
 export interface TugasMiniGameSlotProps {
   tugasId: TugasKaderId
@@ -46,9 +46,6 @@ function acak<T>(arr: T[]): T[] {
   }
   return hasil
 }
-
-const SKOR_PERTAMA = 25
-const SKOR_SESUDAH_GAGAL = 10
 
 interface OpsiTindakan {
   teks: string
@@ -106,24 +103,17 @@ function VersiGestur({
 
   if (!tahap || tahap.jenis !== 'inspeksi' || temuan.length === 0) {
     return (
-      <div className="aia-card">
-        <p className="aia-muted">Tahap ini belum tersedia.</p>
-      </div>
+      <TahapTidakTersedia onLewati={() => selesai(0)} />
     )
   }
 
   /**
-   * Simulasi selesai — petakan skor komponen (25 per pesanan benar)
-   * ke aturan lama: benar +25, salah +10 per pesanan.
+   * Simulasi selesai — SimulasiKantin sudah mengembalikan persen 0–100,
+   * jadi skor tahap dipakai apa adanya (B-17). Pemetaan lama yang membagi
+   * skor dengan 25 membuat 0 pesanan benar tetap bernilai 40.
    */
   const simulasiSelesai = (skorKomponen: number) => {
-    const benarHitung = Math.round(skorKomponen / SKOR_PERTAMA)
-    const salahHitung = Math.max(0, temuan.length - benarHitung)
-    const nilai = Math.min(
-      100,
-      benarHitung * SKOR_PERTAMA + salahHitung * SKOR_SESUDAH_GAGAL,
-    )
-    setSkor(nilai)
+    setSkor(Math.min(100, Math.max(0, Math.round(skorKomponen))))
     setFase('selesai')
   }
 
@@ -193,7 +183,7 @@ function VersiGestur({
             berkatmu!
           </p>
           <p>
-            Skor tahap ini: <strong>{skor} Koin Hijau</strong>
+            Skor tahap ini: <strong>{skor}</strong>
           </p>
           <button type="button" className="aia-btn aia-btn-primary" onClick={() => selesai(skor)}>
             {stageIndex === 2 ? 'Ke Pos Hijau' : 'Level Selanjutnya'} · +{skor} Koin Hijau
@@ -225,7 +215,6 @@ function VersiTombol({ stageIndex, onStageComplete }: TugasMiniGameSlotProps) {
   const [dipilih, setDipilih] = useState<number | null>(null)
   const [dijawab, setDijawab] = useState(false)
   const [benarCount, setBenarCount] = useState(0)
-  const [skor, setSkor] = useState(0)
 
   const selesaiRef = useRef(false)
 
@@ -237,15 +226,17 @@ function VersiTombol({ stageIndex, onStageComplete }: TugasMiniGameSlotProps) {
 
   if (!tahap || tahap.jenis !== 'inspeksi') {
     return (
-      <div className="aia-card">
-        <p className="aia-muted">Tahap ini belum tersedia.</p>
-      </div>
+      <TahapTidakTersedia onLewati={() => selesai(0)} />
     )
   }
 
   const temuan = tahap.temuan[tIndex]
   const opsi = opsiPerTemuan[tIndex] ?? []
   const tindakanBenar = temuan.tindakan
+  // C-34: skor persen (benar/total × 100), sama seperti mode gestur —
+  // sebelumnya +25 per benar (SKOR_PERTAMA), yang hanya setara bila
+  // jumlah temuan tepat 4 dan rapuh bila jumlahnya berubah.
+  const skor = Math.round((benarCount / tahap.temuan.length) * 100)
 
   const jawab = (index: number) => {
     if (dijawab || fase !== 'main') return
@@ -254,7 +245,6 @@ function VersiTombol({ stageIndex, onStageComplete }: TugasMiniGameSlotProps) {
     setDijawab(true)
     if (isBenar) {
       setBenarCount((c) => c + 1)
-      setSkor((s) => s + SKOR_PERTAMA)
       benar()
       koin()
     } else {
@@ -391,7 +381,7 @@ function VersiTombol({ stageIndex, onStageComplete }: TugasMiniGameSlotProps) {
             Kantin jadi lebih bersih dan sehat berkatmu!
           </p>
           <p>
-            Skor tahap ini: <strong>{skor} Koin Hijau</strong>
+            Skor tahap ini: <strong>{skor}</strong>
           </p>
           <button type="button" className="aia-btn aia-btn-primary" onClick={() => selesai(skor)}>
             {stageIndex === 2 ? 'Ke Pos Hijau' : 'Level Selanjutnya'} · +{skor} Koin Hijau

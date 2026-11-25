@@ -1,10 +1,10 @@
 'use client'
 
 // Mini-game Misi Kader "Inovasi Hijau" — Kak Raka (GESTUR).
-// Tiga tahap puzzle geser: susun 9 potongan poster kampanye sampai
-// urut. Isi dari KONTEN_TUGAS['inovasi-hijau'] (3 desain per tahap,
-// 1 benar + alasan). Gestur tiap tahap dari
-// INTERAKSI_MISI['inovasi-hijau'].
+// Tiap tahap: pilih dulu desain kampanye yang paling efektif (dari
+// 3 desain di KONTEN_TUGAS['inovasi-hijau'], 1 benar + alasan),
+// baru susun 9 potongan posternya dengan puzzle geser.
+// Gestur tiap tahap dari INTERAKSI_MISI['inovasi-hijau'].
 // Skor 0–100: aturan PuzzleGeser — mulai 100, dikurangi 5 poin untuk
 // setiap pertukaran di atas jumlah minimal. onStageComplete dipanggil
 // TEPAT SATU KALI saat tahap selesai.
@@ -23,6 +23,7 @@ import {
   TanganPenunjuk,
   type PotonganPuzzle,
 } from '../interaksi'
+import { TahapTidakTersedia } from '../tahap-tidak-tersedia'
 
 export interface TugasMiniGameSlotProps {
   tugasId: TugasKaderId
@@ -37,23 +38,43 @@ function bersihkanPetunjuk(teks: string): string {
   return teks.replace(/^Magi:\s*"/, '').replace(/"$/, '').trim()
 }
 
+function acak<T>(daftar: T[]): T[] {
+  const salin = [...daftar]
+  for (let i = salin.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1))
+    const tmp = salin[i]
+    salin[i] = salin[j]
+    salin[j] = tmp
+  }
+  return salin
+}
+
 /**
  * Potongan poster 3×3 dari teks data tahap itu saja (tanpa gambar baru):
  * judul + brief + teks desain yang benar, dibagi menjadi 9 kelompok kata.
  * Urutan benar = urutan baca poster dari atas ke bawah.
+ * C-13: pembagian lama (ceil(n/9) kata per kelompok) menghasilkan 8
+ * potong untuk 24 dan 29 kata — kelompok dibagi rata (selisih maks 1
+ * kata) sehingga SELALU tepat 9 potong berisi.
  */
 function potonganPoster(judul: string, brief: string, teksBenar: string): PotonganPuzzle[] {
   const kata = `${judul} ${brief} ${teksBenar}`.split(/\s+/).filter(Boolean)
   const jumlah = 9
-  const perKelompok = Math.max(1, Math.ceil(kata.length / jumlah))
+  // Bila kata lebih sedikit dari 9, tiap kata jadi satu potong (grid
+  // tidak berlubang karena PuzzleGeser memakai panjang array apa adanya).
+  const target = Math.min(jumlah, Math.max(1, kata.length))
+  const dasar = Math.floor(kata.length / target)
+  const sisa = kata.length % target
   const potongan: PotonganPuzzle[] = []
-  for (let i = 0; i < jumlah; i += 1) {
-    const kelompok = kata.slice(i * perKelompok, (i + 1) * perKelompok)
+  let awal = 0
+  for (let i = 0; i < target; i += 1) {
+    const ukuranKelompok = dasar + (i < sisa ? 1 : 0)
+    const kelompok = kata.slice(awal, awal + ukuranKelompok)
+    awal += ukuranKelompok
     if (kelompok.length === 0) break
-    const teks = kelompok.join(' ')
     potongan.push({
       id: `potongan-${i}`,
-      label: teks,
+      label: kelompok.join(' '),
       konten: (
         <span aria-hidden="true" style={{ fontSize: 22 }}>
           🧩
@@ -98,6 +119,13 @@ function VersiGestur({
   const [fase, setFase] = useState<'main' | 'selesai'>('main')
   const [skor, setSkor] = useState(0)
   const [tampilPetunjuk, setTampilPetunjuk] = useState(false)
+  // B-16: langkah "pilih desain" sebelum puzzle — keputusan "pilih"
+  // tetap diuji di mode gestur; pilihan salah hanya ditegur (tampil
+  // alasan), tanpa penalti skor puzzle.
+  const [desainDipilih, setDesainDipilih] = useState(false)
+  const [salahDipilih, setSalahDipilih] = useState<number[]>([])
+  const [umpanPilih, setUmpanPilih] = useState<string | null>(null)
+  const opsiAcak = useMemo(() => acak(pilihan), [pilihan])
 
   const selesaiRef = useRef(false)
 
@@ -110,10 +138,23 @@ function VersiGestur({
 
   if (!tahap || tahap.jenis !== 'pilih' || pilihan.length === 0 || !opsiBenar) {
     return (
-      <div className="aia-card">
-        <p className="aia-muted">Tahap ini belum tersedia.</p>
-      </div>
+      <TahapTidakTersedia onLewati={() => selesai(0)} />
     )
+  }
+
+  const pilihDesain = (index: number) => {
+    if (desainDipilih || salahDipilih.includes(index)) return
+    const opsi = opsiAcak[index]
+    if (!opsi) return
+    if (opsi.benar) {
+      benar()
+      setDesainDipilih(true)
+      setUmpanPilih(null)
+    } else {
+      salah()
+      setSalahDipilih((d) => [...d, index])
+      setUmpanPilih(opsi.alasan.trim() ? opsi.alasan : 'Coba pikirkan lagi.')
+    }
   }
 
   /** Puzzle selesai — komponen sudah menghitung skor 0–100. */
@@ -150,23 +191,77 @@ function VersiGestur({
             <p>{brief}</p>
           </div>
 
-          <div className="aia-card">
-            <p style={{ margin: '0 0 12px', fontSize: 16, lineHeight: 1.5, fontWeight: 700 }}>
-              Susun posternya: ketuk dua petak untuk menukar isinya sampai urut.
-            </p>
-            {tutorial && (
-              <div style={{ textAlign: 'center', marginBottom: 10 }}>
-                <TanganPenunjuk label="Ketuk dua petak untuk menukar isinya" />
+          {!desainDipilih && (
+            <div className="aia-card">
+              <p style={{ margin: '0 0 4px', fontSize: 16, lineHeight: 1.5, fontWeight: 700 }}>
+                Mana desain yang paling efektif?
+              </p>
+              <div style={{ display: 'grid', gap: 8, marginTop: 12 }}>
+                {opsiAcak.map((opsi, i) => {
+                  const isSalah = salahDipilih.includes(i)
+                  return (
+                    <button
+                      key={i}
+                      type="button"
+                      className="aia-btn aia-btn-block"
+                      disabled={isSalah}
+                      onClick={() => pilihDesain(i)}
+                      aria-label={`Pilihan ${String.fromCharCode(65 + i)}: ${opsi.teks}`}
+                      style={{
+                        justifyContent: 'flex-start',
+                        textAlign: 'left',
+                        minHeight: 48,
+                        background: isSalah ? '#fee2e2' : undefined,
+                        border: isSalah ? '2px solid #b83232' : undefined,
+                        whiteSpace: 'normal',
+                        height: 'auto',
+                        padding: '12px 16px',
+                      }}
+                    >
+                      <span aria-hidden="true" style={{ fontWeight: 800 }}>
+                        {String.fromCharCode(65 + i)}.
+                      </span>
+                      <span>{opsi.teks}</span>
+                      {isSalah && <X aria-hidden="true" color="#b83232" />}
+                    </button>
+                  )
+                })}
               </div>
-            )}
-            <PuzzleGeser
-              key={stageIndex}
-              potongan={potongan}
-              modeSatuKetukan={modeSatuKetukan}
-              terjeda={terjeda}
-              onSelesai={puzzleSelesai}
-            />
-          </div>
+              {umpanPilih && (
+                <div
+                  role="status"
+                  style={{
+                    marginTop: 12,
+                    padding: 12,
+                    borderRadius: 12,
+                    background: '#fee2e2',
+                  }}
+                >
+                  <strong>Belum tepat.</strong> {umpanPilih}
+                </div>
+              )}
+            </div>
+          )}
+
+          {desainDipilih && (
+            <div className="aia-card">
+              <p style={{ margin: '0 0 12px', fontSize: 16, lineHeight: 1.5, fontWeight: 700 }}>
+                Susun posternya: ketuk dua petak untuk menukar isinya sampai urut.
+              </p>
+              {tutorial && (
+                <div style={{ textAlign: 'center', marginBottom: 10 }}>
+                  <TanganPenunjuk label="Ketuk dua petak untuk menukar isinya" />
+                </div>
+              )}
+              <PuzzleGeser
+                key={stageIndex}
+                potongan={potongan}
+                modeSatuKetukan={modeSatuKetukan}
+                terjeda={terjeda}
+                onSelesai={puzzleSelesai}
+              />
+            </div>
+          )}
 
           {!tampilPetunjuk ? (
             <button
@@ -230,9 +325,7 @@ function VersiTombol({ tugasId, stageIndex, onStageComplete }: TugasMiniGameSlot
 
   if (!tahap || tahap.jenis !== 'pilih') {
     return (
-      <div className="aia-card">
-        <p className="aia-muted">Tahap ini belum tersedia.</p>
-      </div>
+      <TahapTidakTersedia onLewati={() => onStageComplete(0)} />
     )
   }
 

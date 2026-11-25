@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, type ComponentType } from 'react'
-import { ArrowLeft, Banknote, Check, Droplets, Flag, Leaf, LogOut, Pause, Play, RotateCcw, Store, UtensilsCrossed } from 'lucide-react'
+import { ArrowLeft, Banknote, Check, Droplets, Flag, Leaf, LogOut, Pause, Play, RotateCcw, Share2, Store, UtensilsCrossed } from 'lucide-react'
 import { CHAPTERS, CHAPTER_ORDER } from '@/lib/apa-itu-adiwiyata/chapters'
 import { TUGAS } from '@/lib/apa-itu-adiwiyata/tugas'
 import { kunciCerita, PILIHAN_CERITA, pilihEpilog } from '@/lib/apa-itu-adiwiyata/content/cerita'
@@ -16,6 +16,8 @@ import { BAB_BADGE, LENCANA, TUGAS_BADGE } from '@/lib/apa-itu-adiwiyata/lencana
 import { TUGAS_ORDER, type ChapterId, type Report, type TugasKaderId } from '@/lib/apa-itu-adiwiyata/types'
 import { PilihanCerita } from './pilihan-cerita'
 import { RaporSekolah } from './rapor-sekolah'
+import { KartuBagikan } from './kartu-bagikan'
+import { AngkaAnimasi } from './hud-dunia'
 import { KejadianAcak } from './minigames/kejadian-acak'
 import { AirEnergi } from './minigames/air-energi'
 import { Inspeksi } from './minigames/inspeksi'
@@ -124,6 +126,8 @@ export function MisiShell({
   onMissionComplete,
   modeSatuKetukan = false,
   onOpenPanduan,
+  onKeKantin,
+  panduanTerbuka = false,
 }: {
   kind: 'bab' | 'tugas'
   id: ChapterId | TugasKaderId
@@ -133,12 +137,21 @@ export function MisiShell({
   modeSatuKetukan?: boolean
   /** Buka panduan Cara Bermain (overlay dari runner); bila tidak diisi, tombol "?" tidak tampil. */
   onOpenPanduan?: () => void
+  /** B-3: pindah ke peta Kantin + buka Toko Kantin (dipakai tombol "Ke
+      Kantin" di layar lemas); bila tidak diisi, tombol itu kembali ke peta. */
+  onKeKantin?: () => void
+  /** B-6: true saat panduan Cara Bermain sedang terbuka — shortcut P
+      dinonaktifkan supaya jeda tidak terpicu di balik panduan. */
+  panduanTerbuka?: boolean
 }) {
   const { save, dispatch } = useCampaign()
   const [replayStage, setReplayStage] = useState<number | null>(null)
   const [showEvent, setShowEvent] = useState(false)
   const [eventDone, setEventDone] = useState(false)
   const [pesanSukses, setPesanSukses] = useState<string | null>(null)
+  /** R4: kartu bagikan di Pos Hijau — tertutup dulu supaya tombol
+   * "Selesaikan Misi" tetap langsung terlihat (≤3 detik ke lanjut). */
+  const [tampilkanBagikan, setTampilkanBagikan] = useState(false)
   // Gerbang judul + jeda: misi tidak langsung memainkan tahap pertama —
   // pemain menekan "Mulai Misi" dulu; "Main lagi" langsung ke tahap itu
   // tanpa layar judul lagi. Jeda membekukan permainan lewat prop terjeda.
@@ -203,6 +216,7 @@ export function MisiShell({
     setShowEvent(false)
     setEventDone(false)
     setPesanSukses(null)
+    setTampilkanBagikan(false)
     setSudahMulai(false)
     setTerjeda(false)
     setIntroIdx(null)
@@ -239,7 +253,7 @@ export function MisiShell({
   // mini-game yang memakai tombol P, dan Esc belum dipakai di shell ini.
   // Diabaikan saat mengetik di input atau bersama Ctrl/Cmd/Alt.
   useEffect(() => {
-    const bisaJeda = sudahMulai && tampilkanGame && !showEvent && !introAktif
+    const bisaJeda = sudahMulai && tampilkanGame && !showEvent && !introAktif && !panduanTerbuka
     const onKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null
       const tag = target?.tagName
@@ -258,7 +272,7 @@ export function MisiShell({
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [sudahMulai, tampilkanGame, showEvent, terjeda, introAktif])
+  }, [sudahMulai, tampilkanGame, showEvent, terjeda, introAktif, panduanTerbuka])
 
   const selesaikanTahap = (stageIndex: number, score: number) => {
     if (kind === 'bab' && chapterId) {
@@ -276,7 +290,14 @@ export function MisiShell({
     bendera()
     // Satu kejadian acak per kunjungan bab, muncul setelah tahap pertama
     // yang diselesaikan di kunjungan ini (sama seperti bab-shell).
-    if (kind === 'bab' && !eventDone) setShowEvent(true)
+    // C-18: eventDone ditandai SEKALIGUS saat kejadian dipicu (bukan
+    // hanya saat ditutup), supaya mengulang tahap yang sama di kunjungan
+    // ini tidak memicu kejadian kedua — penanda tidak lagi bergantung
+    // pada jalur penutupan kartu kejadian.
+    if (kind === 'bab' && !eventDone) {
+      setEventDone(true)
+      setShowEvent(true)
+    }
   }
 
   const selesaikanMisi = () => {
@@ -514,7 +535,12 @@ export function MisiShell({
             Makan atau minum dulu di Kantin sebelum mulai misi. Tidak ada yang hilang — cukup isi perutmu.
           </p>
           <div className="aia-actions">
-            <button type="button" className="aia-btn aia-btn-primary" style={{ minHeight: 44 }} onClick={onExit}>
+            <button
+              type="button"
+              className="aia-btn aia-btn-primary"
+              style={{ minHeight: 44 }}
+              onClick={onKeKantin ?? onExit}
+            >
               <Store aria-hidden="true" /> Ke Kantin
             </button>
             <button
@@ -697,8 +723,9 @@ export function MisiShell({
                 lencana misi ini.
               </p>
               <p className="aia-muted">
-                Hadiah misi ini: +Rp{(pertamaKali ? 5000 : 2000).toLocaleString('id-ID')} dan +
-                {pertamaKali ? 20 : 5} Koin Daun.
+                Hadiah misi ini: +Rp
+                <AngkaAnimasi nilai={pertamaKali ? 5000 : 2000} dariNol /> dan +
+                <AngkaAnimasi nilai={pertamaKali ? 20 : 5} dariNol /> Koin Daun.
               </p>
               <RaporSekolah />
               <p>
@@ -716,6 +743,9 @@ export function MisiShell({
                   </p>
                 </>
               )}
+              <p>
+                <strong>Sekolahmu selangkah lebih hijau — dan itu karena kamu.</strong>
+              </p>
             </>
           ) : (
             <>
@@ -724,19 +754,52 @@ export function MisiShell({
                 {lengkapiKader ? ' Ini misi tambahan terakhir — kamu juga mendapat lencana Tim Lengkap!' : ''}
               </p>
               <p className="aia-muted">
-                Hadiah misi ini: +Rp{(pertamaKali ? 5000 : 2000).toLocaleString('id-ID')} dan +
-                {pertamaKali ? 20 : 5} Koin Daun.
+                Hadiah misi ini: +Rp
+                <AngkaAnimasi nilai={pertamaKali ? 5000 : 2000} dariNol /> dan +
+                <AngkaAnimasi nilai={pertamaKali ? 20 : 5} dariNol /> Koin Daun.
+              </p>
+              <p>
+                <strong>Satu tim lagi bergerak karena kamu.</strong>
               </p>
             </>
           )}
-          <button
-            type="button"
-            className="aia-btn aia-btn-primary"
-            style={{ minHeight: 44 }}
-            onClick={selesaikanMisi}
-          >
-            <Check aria-hidden="true" /> Selesaikan Misi
-          </button>
+          <div className="aia-actions">
+            <button
+              type="button"
+              className="aia-btn aia-btn-aksi"
+              style={{ minHeight: 44 }}
+              onClick={selesaikanMisi}
+            >
+              <Check aria-hidden="true" /> Selesaikan Misi
+            </button>
+            <button
+              type="button"
+              className="aia-btn"
+              style={{ minHeight: 44 }}
+              aria-expanded={tampilkanBagikan}
+              onClick={() => {
+                klik()
+                setTampilkanBagikan((v) => !v)
+              }}
+            >
+              <Share2 aria-hidden="true" /> {tampilkanBagikan ? 'Sembunyikan kartu' : 'Bagikan pencapaian'}
+            </button>
+          </div>
+          {tampilkanBagikan && (
+            <div style={{ marginTop: 12 }}>
+              <KartuBagikan
+                nickname={save.nickname}
+                coins={save.coins}
+                kalimat={
+                  kind === 'bab' && chapterId
+                    ? REFLEKSI[chapterId]
+                    : tugasId
+                      ? `Misi Tambahan selesai: ${TUGAS[tugasId].judul}!`
+                      : 'Misi Tambahan selesai!'
+                }
+              />
+            </div>
+          )}
         </section>
       )}
 
@@ -754,7 +817,9 @@ export function MisiShell({
           style={{
             position: 'fixed',
             inset: 0,
-            zIndex: 50,
+            // B-6: Jeda (70) di atas panduan (60) dan konfirmasi mulai baru
+            // (65), di bawah konfirmasi Keluar runner (80).
+            zIndex: 70,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',

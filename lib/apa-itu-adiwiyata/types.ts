@@ -53,13 +53,6 @@ export interface TugasProgress {
   badgeEarned: boolean
 }
 
-export interface Checkpoint {
-  chapterId: ChapterId
-  stageId: number
-  state: unknown
-  savedAt: string
-}
-
 export interface Report {
   sampah: number
   energi: number
@@ -71,7 +64,6 @@ export interface Report {
 export interface Carryover {
   maggotKenaMinyak: boolean
   komposBau: boolean
-  kebunLayu: boolean
 }
 
 /** Jenis kelamin karakter pemain: 'siswa' (celana panjang) atau 'siswi'
@@ -93,7 +85,6 @@ export interface CampaignSave {
   streak: { count: number; lastDay: string | null; multiplierActive: boolean }
   chapters: Record<ChapterId, ChapterProgress>
   tugas: Record<TugasKaderId, TugasProgress>
-  checkpoint: Checkpoint | null
   bestScores: Record<string, number>
   unlockedCards: string[]
   badges: string[]
@@ -156,6 +147,10 @@ export interface CampaignSave {
   /** Uang saku Ibu: tanggal lokal (YYYY-MM-DD) terakhir Ibu memberi uang
    * saku + sarapan (1x per hari kalender lokal). */
   ibuTanggal: string | null
+  /** Istirahat kasur (B-7): tanggal lokal (YYYY-MM-DD) terakhir kasur
+   * dipakai istirahat (1x per hari kalender lokal, seperti uang saku Ibu).
+   * Save lama tanpa field ini -> null (boleh istirahat sekali). */
+  kasurTanggal: string | null
   /** Sampah liar yang dipungut di dunia dan dibawa (jumlah per jenis bak).
    * Dipilah di Tempat Sampah Terpilah dekat Gerbang: bak benar = +5 Koin
    * Hijau + Rp200 per sampah. Save lama tanpa field ini -> {}. */

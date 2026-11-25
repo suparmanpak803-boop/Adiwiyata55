@@ -2,31 +2,15 @@
 // Magi, tangan penunjuk tutorial, dan pemetaan mode satu-ketukan.
 // Semua efek hanya CSS (tanpa aset); suara berasal dari ../suara.ts.
 // Tidak ada teks misi spesifik di sini — petunjuk diisi lewat props.
+// C-36: `ModeAksesibilitas` dan `PETA_GERAKAN_ALTERNATIF` yang dulu ada di
+// sini sudah dihapus — tidak pernah diimpor/dipakai di mana pun (mode
+// satu-ketukan diatur langsung lewat prop tiap komponen).
 
 'use client'
 
 import { Hand, Volume2 } from 'lucide-react'
 import { playMumble } from '../suara'
 import { useKurangiAnimasi } from './util'
-
-/** Opsi aksesibilitas yang dipakai semua komponen interaksi. */
-export interface ModeAksesibilitas {
-  /** Bila true, gestur rumit diganti ketuk (lihat PETA_GERAKAN_ALTERNATIF). */
-  modeSatuKetukan: boolean
-  /** Bila true, animasi dikurangi (biasanya dari prefers-reduced-motion). */
-  kurangiAnimasi: boolean
-}
-
-/**
- * Pemetaan gestur rumit ke alternatif satu-ketukan.
- * Dipakai komponen gestur saat prop modeSatuKetukan = true.
- */
-export const PETA_GERAKAN_ALTERNATIF: Record<string, string> = {
-  seret: 'Ketuk benda, lalu ketuk target.',
-  lempar: 'Ketuk target untuk melempar.',
-  tahan: 'Ketuk sekali untuk mengisi otomatis.',
-  putar: 'Ketuk dua kali untuk memutar 90°.',
-}
 
 const DAUN_WARNA = ['#2f7d4f', '#4d8a4f', '#8bc34a', '#eab308']
 

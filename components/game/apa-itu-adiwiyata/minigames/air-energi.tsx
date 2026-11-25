@@ -7,7 +7,9 @@
 // (RotateDial, PipePuzzle, HiddenObject) sesuai INTERAKSI_MISI. Versi tombol
 // lama disimpan sebagai mode alternatif satu-ketukan (prop modeSatuKetukan).
 // Tiap tahap memanggil onStageComplete(score) TEPAT SATU KALI (dijaga ref
-// di komponen utama).
+// di komponen utama). Skor selalu persen 0–100 (B-9): Biopori 5 lubang
+// × 20, Tampung Hujan = tetes/target × 100, Cari Boros 5 perangkat × 20,
+// PipePuzzle sudah 0–100 dari awal.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
@@ -33,6 +35,8 @@ import {
   RotateDial,
   TanganPenunjuk,
 } from '../interaksi'
+import { clamp } from '../interaksi/util'
+import { TahapTidakTersedia } from '../tahap-tidak-tersedia'
 import type { PotonganPipa } from '../interaksi'
 import { benar, getar, klik, koin, salah, siram } from '../suara'
 
@@ -59,7 +63,8 @@ function Biopori({
   const [pesan, setPesan] = useState('Ketuk lubang untuk mengebor. Tiap lubang butuh 3 ketukan.')
   const selesai = lubang.filter((n) => n >= KETUKAN_PER_LUBANG).length
   const banjir = 100 - selesai * 20
-  const skor = selesai * 10
+  // B-9: persen 0–100 (5 lubang × 20).
+  const skor = selesai * 20
   const tuntas = selesai === JUMLAH_LUBANG
 
   const bor = (i: number) => {
@@ -199,6 +204,8 @@ const TARGET_NORMAL = 10
 const TARGET_MUDAH = 7
 const WAKTU_NORMAL = 30
 const WAKTU_MUDAH = 40
+/** Posisi awal tangki (kiri area) — dipakai saat mulai dan saat ulangi. */
+const TANGKI_AWAL_X = 140
 
 function TampungHujan({
   onSelesai,
@@ -215,7 +222,7 @@ function TampungHujan({
   const [gagal, setGagal] = useState(0)
   const [waktu, setWaktu] = useState(WAKTU_NORMAL)
   const [tertangkap, setTertangkap] = useState(0)
-  const [tangkiX, setTangkiX] = useState(140)
+  const [tangkiX, setTangkiX] = useState(TANGKI_AWAL_X)
   const [, setRender] = useState(0)
 
   // Jeda: bekukan loop tetes dan hitung mundur selama terjeda.
@@ -226,11 +233,13 @@ function TampungHujan({
 
   const target = mudah ? TARGET_MUDAH : TARGET_NORMAL
   const lebarTangki = mudah ? 96 : 72
-  const skor = tertangkap * 5
+  // B-9: persen 0–100 terhadap target (dijepit 100 — tangkapan bisa
+  // melebihi target dalam satu tick sebelum fase berubah).
+  const skor = Math.min(100, Math.round((tertangkap / target) * 100))
 
   const areaRef = useRef<HTMLDivElement>(null)
   const tetesRef = useRef<Tetes[]>([])
-  const tangkiRef = useRef({ x: 140 })
+  const tangkiRef = useRef({ x: TANGKI_AWAL_X })
   const tertangkapRef = useRef(0)
   const idRef = useRef(0)
   const spawnRef = useRef(0)
@@ -337,6 +346,10 @@ function TampungHujan({
     spawnRef.current = 0
     setTertangkap(0)
     setWaktu(pakaiMudah ? WAKTU_MUDAH : WAKTU_NORMAL)
+    // C-28: posisi tangki ikut direset ke awal — sebelumnya tangki tetap
+    // di posisi terakhir percobaan sebelumnya.
+    tangkiRef.current.x = TANGKI_AWAL_X
+    setTangkiX(TANGKI_AWAL_X)
     setRender((n) => n + 1)
     setFase('main')
   }
@@ -636,7 +649,11 @@ function CariBoros({
     teks: 'Ada 5 perangkat boros di sekolah ini. Ketuk yang menurutmu boros!',
     ok: true,
   })
-  const skor = ditemukan.size * 10
+  // B-9: persen 0–100 (5 perangkat boros × 20).
+  // C-28: tiap ketukan salah mengurangi skor 10 (dijepit 0–100) — tanpa
+  // penalti, semua tombol bisa diketuk satu per satu sampai 100 (brute
+  // force). Ini hanya menentukan skor tahap, bukan menghilangkan progres.
+  const skor = clamp(ditemukan.size * 20 - salahKetuk.size * 10, 0, 100)
   const tuntas = ditemukan.size === JUMLAH_BOROS
 
   const ketuk = (p: Perangkat) => {
@@ -663,7 +680,7 @@ function CariBoros({
         <span className="aia-kicker">Cari boros · {ditemukan.size}/{JUMLAH_BOROS} ditemukan</span>
         <p className="aia-muted" style={{ margin: '8px 0 0' }}>
           Lampu, AC, keran, komputer, kipas — ada yang menyala dan menetes sia-sia. Temukan semuanya!
-          Mengetuk perangkat yang hemat tidak mengurangi nyawa, hanya penjelasan.
+          Mengetuk perangkat yang hemat mengurangi skor 10 poin — perhatikan dulu sebelum mengetuk.
         </p>
       </div>
 
@@ -720,6 +737,7 @@ function CariBoros({
       )}
       <p className="aia-muted" style={{ margin: 0 }}>
         Skor: {skor}
+        {salahKetuk.size > 0 ? ` · Ketukan salah: ${salahKetuk.size} (−${salahKetuk.size * 10})` : ''}
       </p>
 
       {tuntas && (
@@ -757,7 +775,8 @@ function BioporiGestur({
   const [selesai, setSelesai] = useState(0)
   const tuntas = selesai >= JUMLAH_LUBANG
   const banjir = 100 - selesai * 20
-  const skor = selesai * 10
+  // B-9: persen 0–100 (5 lubang × 20), sama seperti mode tombol.
+  const skor = selesai * 20
   const spec = INTERAKSI_MISI['air-energi'][0]
 
   return (
@@ -971,7 +990,8 @@ function CariBorosGestur({
   const spec = INTERAKSI_MISI['air-energi'][2]
 
   const boros = useMemo(() => PERANGKAT.filter((p) => p.boros), [])
-  const skor = ditemukan.size * 10
+  // B-9: persen 0–100 (5 perangkat boros × 20), sama seperti mode tombol.
+  const skor = ditemukan.size * 20
 
   // Identitas array objek harus stabil (useMemo) — HiddenObject mereset
   // progresnya bila referensi objek berubah.
@@ -1093,9 +1113,5 @@ export function AirEnergi({
       return <TampungHujanGestur onSelesai={selesai} tahapTerakhir={false} modeSatuKetukan={modeSatuKetukan} terjeda={terjeda} />
     if (stageIndex === 2) return <CariBorosGestur onSelesai={selesai} tahapTerakhir terjeda={terjeda} />
   }
-  return (
-    <div className="aia-card">
-      <p className="aia-muted">Tahap tidak dikenal.</p>
-    </div>
-  )
+  return <TahapTidakTersedia onLewati={() => selesai(0)} pesan="Tahap tidak dikenal." />
 }

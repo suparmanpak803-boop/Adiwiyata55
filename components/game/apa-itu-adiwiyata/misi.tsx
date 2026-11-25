@@ -4,7 +4,8 @@
 // Misi TIDAK bisa dimulai dari daftar ini — pemain harus menjelajah dunia
 // dan menemui langsung pemberi misinya (NPC) untuk memulai.
 
-import { Check, Flag, Lock, MapPin } from 'lucide-react'
+import { useState } from 'react'
+import { Check, ChevronDown, ChevronUp, Flag, Lock, MapPin } from 'lucide-react'
 import { CHAPTERS, CHAPTER_ORDER } from '@/lib/apa-itu-adiwiyata/chapters'
 import { TUGAS } from '@/lib/apa-itu-adiwiyata/tugas'
 import { TUGAS_ORDER } from '@/lib/apa-itu-adiwiyata/types'
@@ -13,6 +14,7 @@ import {
   jumlahMisiSelesai,
   jumlahTugasSelesai,
   LOKASI_PEMBERI,
+  misiSaatIni,
   pemberiMisi,
   pemberiTugas,
   statusMisi,
@@ -32,6 +34,16 @@ export function Misi() {
 
   const selesai = jumlahMisiSelesai(save)
   const tugasSelesai = jumlahTugasSelesai(save)
+  // R11: satu misi utama disorot besar di atas — misi berikutnya. Sisanya
+  // tetap di grid (tanpa yang disorot, supaya tidak dobel). Misi Tambahan
+  // dalam grup yang bisa diciutkan; default terbuka, kecuali bila sudah
+  // semuanya selesai.
+  const berikut = misiSaatIni(save)
+  const nomorBerikut = berikut ? CHAPTER_ORDER.indexOf(berikut) + 1 : 0
+  const pemberiBerikut = berikut ? pemberiMisi(berikut) : undefined
+  const tahapBerikut = berikut ? save.chapters[berikut].stages.filter((s) => s.status === 'done').length : 0
+  const [tampilkanTambahan, setTampilkanTambahan] = useState(tugasSelesai < 8)
+  const misiLain = CHAPTER_ORDER.filter((id) => id !== berikut)
 
   return (
     <div className="aia-stack">
@@ -60,9 +72,43 @@ export function Misi() {
         </div>
       </section>
 
+      <section className="aia-card aia-spotlight" aria-label="Misi berikutnya">
+        <span className="aia-kicker">Misi berikutnya</span>
+        {berikut ? (
+          <>
+            <h3 className="aia-section-title" style={{ marginTop: 0 }}>
+              Misi {nomorBerikut} · {CHAPTERS[berikut].judul}
+            </h3>
+            <p className="aia-muted" style={{ marginBottom: 8 }}>
+              {CHAPTERS[berikut].deskripsi}
+            </p>
+            <span className="aia-bab-meta">
+              {pemberiBerikut && (
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                  <MapPin aria-hidden="true" /> Temui {pemberiBerikut.nama} di{' '}
+                  {LOKASI_PEMBERI[pemberiBerikut.id] ?? 'sekolah'}
+                </span>
+              )}
+              {tahapBerikut > 0 && <span>Tahap {tahapBerikut}/3 selesai</span>}
+              <span className="aia-chip open">Tersedia</span>
+            </span>
+          </>
+        ) : (
+          <>
+            <h3 className="aia-section-title" style={{ marginTop: 0 }}>
+              Semua misi utama selesai!
+            </h3>
+            <p className="aia-muted" style={{ marginBottom: 0 }}>
+              Kamu Pahlawan Adiwiyata. Misi Tambahan di bawah masih bisa dimainkan lagi.
+            </p>
+          </>
+        )}
+      </section>
+
       <section aria-label="Daftar misi">
         <div className="aia-bab-grid">
-          {CHAPTER_ORDER.map((id, index) => {
+          {misiLain.map((id) => {
+            const index = CHAPTER_ORDER.indexOf(id)
             const meta = CHAPTERS[id]
             const status = statusMisi(save, id)
             const pemberi = pemberiMisi(id)
@@ -73,7 +119,7 @@ export function Misi() {
             return (
               <article
                 key={id}
-                className={`aia-bab-card statis${status === 'selesai' ? ' done' : ''}${status === 'terkunci' ? ' locked' : ''}`}
+                className={`aia-bab-card statis aia-stiker${status === 'selesai' ? ' done' : ''}${status === 'terkunci' ? ' locked' : ''}`}
                 aria-label={`Misi ${index + 1}: ${meta.judul}, ${labelStatus}`}
               >
                 <span className="aia-bab-icon">
@@ -111,9 +157,28 @@ export function Misi() {
 
       <section className="aia-card" aria-labelledby="aia-misi-tambahan-title">
         <span className="aia-kicker">Misi Tambahan · 8 tim</span>
-        <h2 id="aia-misi-tambahan-title" className="aia-section-title">
-          Misi Tambahan
-        </h2>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
+          <h2 id="aia-misi-tambahan-title" className="aia-section-title" style={{ marginTop: 0 }}>
+            Misi Tambahan
+          </h2>
+          <button
+            type="button"
+            className="aia-btn"
+            style={{ minHeight: 44, whiteSpace: 'nowrap' }}
+            aria-expanded={tampilkanTambahan}
+            onClick={() => setTampilkanTambahan((v) => !v)}
+          >
+            {tampilkanTambahan ? (
+              <>
+                <ChevronUp aria-hidden="true" /> Ciutkan
+              </>
+            ) : (
+              <>
+                <ChevronDown aria-hidden="true" /> Tampilkan ({tugasSelesai}/8)
+              </>
+            )}
+          </button>
+        </div>
         <p className="aia-muted">
           Delapan misi penuh dari tim-tim yang lain. Semuanya tersedia sejak awal — tidak berantai
           seperti misi utama. Temui pemberi misinya di dunia untuk memulai.
@@ -133,6 +198,7 @@ export function Misi() {
         </div>
       </section>
 
+      {tampilkanTambahan && (
       <section aria-label="Daftar Misi Tambahan">
         <div className="aia-bab-grid">
           {TUGAS_ORDER.map((id, index) => {
@@ -145,7 +211,7 @@ export function Misi() {
             return (
               <article
                 key={id}
-                className={`aia-bab-card statis${status === 'selesai' ? ' done' : ''}`}
+                className={`aia-bab-card statis aia-stiker${status === 'selesai' ? ' done' : ''}`}
                 aria-label={`Misi Tambahan ${index + 1}: ${meta.judul}, ${labelStatus}`}
               >
                 <span className="aia-bab-icon">
@@ -180,6 +246,7 @@ export function Misi() {
           })}
         </div>
       </section>
+      )}
     </div>
   )
 }

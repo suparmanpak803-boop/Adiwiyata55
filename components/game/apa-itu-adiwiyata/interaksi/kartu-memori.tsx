@@ -137,12 +137,15 @@ export function KartuMemori({
     }
   }
 
-  const ukuran = modeSatuKetukan ? 88 : 72
+  // C-11: kartu lebih besar (96px, 112px di mode satu-ketukan) supaya
+  // teks soal/jawaban (4 baris × 12px) + label muat tanpa terpotong
+  // clamp 3 baris di kartu 72px.
+  const ukuran = modeSatuKetukan ? 112 : 96
 
   return (
     <div className="aia-stack">
       <style>{`
-        .aia-gi-memori-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(72px, 1fr)); gap: 10px; }
+        .aia-gi-memori-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(88px, 1fr)); gap: 10px; }
         .aia-gi-memori-kartu { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; border-radius: 14px; border: 1px solid var(--line, #e5e7eb); background: var(--card, #fff); color: var(--foreground, #111); font-weight: 700; font-size: 14px; cursor: pointer; touch-action: manipulation; transition: transform .15s ease, background .15s ease; }
         .aia-gi-memori-kartu.tertutup { background: color-mix(in srgb, #2f7d4f 14%, var(--card, #fff)); font-size: 22px; }
         .aia-gi-memori-kartu.terbuka { transform: scale(1.03); }

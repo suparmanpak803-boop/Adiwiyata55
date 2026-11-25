@@ -115,10 +115,12 @@ export function SusunMenara({ lapisan, modeSatuKetukan = false, disabled = false
       getar([40, 40, 40])
       setJumlahSalah((s) => s + 1)
       setSalahTerakhir(true)
-      // Ganti kartu salah itu dengan kandidat baru (bukan lapisan benar).
+      // Ganti kartu salah itu dengan kandidat baru (bukan lapisan benar
+      // dan bukan kartu yang baru saja diketuk — C-15: filter lama bisa
+      // mengembalikan kartu yang sama persis).
       setKandidat((lama) => {
         const pengganti = lapisan.filter(
-          (l) => l.id !== benarBerikut.id && !lama.some((k) => k.id === l.id && k.id !== id),
+          (l) => l.id !== benarBerikut.id && l.id !== id && !lama.some((k) => k.id === l.id),
         )
         if (pengganti.length === 0) return lama
         const baru = acak(pengganti)[0]
@@ -207,9 +209,12 @@ export function SusunMenara({ lapisan, modeSatuKetukan = false, disabled = false
               key={k.id}
               type="button"
               className="aia-gi-menara-kartu"
+              // C-15: jenis lapisan ("Cokelat"/"Hijau") disembunyikan di
+              // kartu kandidat — label dan garis warna jenisnya membocorkan
+              // jawaban (lapisan selang-seling). Jenis baru terlihat setelah
+              // kartu dipilih, di visual menara di atas.
               style={{
                 minHeight: modeSatuKetukan ? 72 : 64,
-                borderLeft: `6px solid ${WARNA_LAPISAN[k.jenis]}`,
               }}
               disabled={disabled}
               aria-label={`Lapisan: ${k.label}`}
@@ -217,9 +222,6 @@ export function SusunMenara({ lapisan, modeSatuKetukan = false, disabled = false
             >
               {k.ikon}
               <span>{k.label}</span>
-              <span className="aia-muted" style={{ marginLeft: 'auto' }}>
-                {k.jenis === 'cokelat' ? 'Cokelat' : 'Hijau'}
-              </span>
             </button>
           ))}
         </div>
