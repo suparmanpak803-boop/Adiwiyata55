@@ -20,7 +20,7 @@ const CARA_MISI: { judul: string; cara: string }[] = [
   { judul: 'Bank Sampah dan Daur Ulang', cara: 'Sortir cepat, ketuk sel tabel timbangan, hitung kilat.' },
   { judul: 'Lingkungan Sehat', cara: 'Cari perbedaan di toilet, drainase, dan taman, lalu ketuk tindakan yang benar.' },
   { judul: 'Edu-Lingkungan', cara: 'Kartu memori: pasangkan soal dengan jawaban.' },
-  { judul: 'Inovasi Hijau', cara: 'Puzzle geser 3×3: susun potongan poster.' },
+  { judul: 'Inovasi Hijau', cara: 'Puzzle geser 3×3: ketuk dua petak untuk menukar isinya sampai jadi kalimat poster yang benar (baca kiri ke kanan, atas ke bawah).' },
   { judul: 'Kantin Hijau', cara: 'Simulasi kantin: layani pesanan yang datang.' },
   { judul: 'Data Hijau', cara: 'Ketuk batang grafik sampai tingginya sesuai data, lalu jawab soal tabel.' },
   { judul: 'Eco-Communication', cara: 'Susun frame storyboard sesuai urutan cerita.' },
@@ -103,7 +103,7 @@ export function CaraBermain({ onTutup }: { onTutup: () => void }) {
         <ul style={{ margin: '0 0 12px', paddingLeft: 20 }}>
           <li>Permainan baru dimulai di rumah. Pintu di bawah membawamu berangkat ke sekolah, dan Jalan Pulang di bawah Gerbang membawamu kembali ke rumah.</li>
           <li>Kasur = checkpoint: istirahat memulihkan Lapar +30 dan Haus +30, progres tersimpan otomatis — 1x sehari, istirahat lagi besok.</li>
-          <li>Kulkas: minum gratis, Haus +30, tanpa batas.</li>
+          <li>Kulkas: minum gratis, Haus +30, dengan jeda 30 menit.</li>
           <li>Ibu memberimu uang saku Rp5.000 + sarapan (Lapar +40) 1x sehari — bicara lagi dengannya esok hari.</li>
           <li>Meja makan hanya untuk dilihat — tidak ada mekaniknya.</li>
         </ul>
@@ -120,6 +120,16 @@ export function CaraBermain({ onTutup }: { onTutup: () => void }) {
               <strong>{m.judul}</strong> — {m.cara}
             </li>
           ))}
+        </ul>
+
+        <h3 className="aia-section-title">Puzzle geser</h3>
+        <ul style={{ margin: '0 0 12px', paddingLeft: 20 }}>
+          <li>Ketuk satu petak (dapat garis hijau), lalu ketuk petak kedua — isinya bertukar. Ketuk petak yang sama lagi untuk batal.</li>
+          <li>Susun 9 potongan jadi kalimat poster yang benar. Baca seperti buku: kiri ke kanan, atas ke bawah.</li>
+          <li>Strategi: baca semua potongan dulu; cari potongan awal (biasanya judul) dan potongan yang diakhiri titik — itu penutup kalimat.</li>
+          <li>&quot;Pertukaran&quot; = jumlah tukarmu; &quot;Minimal&quot; = tukar paling sedikit dari acakan awal. Skor mulai 100, dikurangi 5 untuk tiap tukar di atas minimal.</li>
+          <li>Mentok? Ketuk &quot;Minta petunjuk Magi&quot; di bawah puzzle. Mode satu-ketukan (di Profil) menampilkan nomor urutan di tiap petak.</li>
+          <li>Panduan puzzle muncul saat pertama kali main — tombol &quot;?&quot; di atas grid membukanya lagi kapan saja.</li>
         </ul>
 
         <h3 className="aia-section-title">Dunia Hidup</h3>

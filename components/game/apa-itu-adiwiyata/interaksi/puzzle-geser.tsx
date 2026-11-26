@@ -3,6 +3,10 @@
 // (urutan array `potongan`), puzzle selesai + bunyi benar. Petak ≥56px.
 // Mode satu-ketukan: tiap potongan menampilkan nomor urutan benarnya
 // sebagai petunjuk.
+// TUTORIAL: saat puzzle pertama kali muncul di perangkat, kartu panduan
+// 3 langkah tampil menutupi grid (overlay) sampai ditutup — penanda
+// disimpan di localStorage kunci sendiri ('aia-tutorial-puzzle-dilihat'),
+// BUKAN field save. Tombol "?" di baris statistik membuka lagi kapan saja.
 // ATURAN SKOR (0–100): mulai dari 100, dikurangi 5 poin untuk setiap
 // pertukaran di atas jumlah minimal yang dibutuhkan untuk menyelesaikan
 // susunan acak awal (jumlah minimal = 9 − jumlah siklus permutasi).
@@ -61,6 +65,10 @@ function acakUrutan(n: number): number[] {
   return u
 }
 
+/** Penanda "tutorial puzzle sudah dilihat" per perangkat — kunci
+ *  localStorage sendiri, BUKAN field save (skema save tidak berubah). */
+const KUNCI_TUTORIAL_PUZZLE = 'aia-tutorial-puzzle-dilihat'
+
 export function PuzzleGeser({
   potongan,
   modeSatuKetukan = false,
@@ -73,6 +81,34 @@ export function PuzzleGeser({
   const [dipilih, setDipilih] = useState<number | null>(null)
   const [tukar, setTukar] = useState(0)
   const [selesai, setSelesai] = useState(false)
+  // Tutorial pertama kali: mulai tertutup supaya render server dan
+  // render pertama klien sama (tanpa mismatch hidrasi); dibuka lewat
+  // efek setelah mount bila penanda localStorage belum ada.
+  const [tutorialTerbuka, setTutorialTerbuka] = useState(false)
+
+  useEffect(() => {
+    try {
+      if (window.localStorage.getItem(KUNCI_TUTORIAL_PUZZLE) !== '1') setTutorialTerbuka(true)
+    } catch {
+      setTutorialTerbuka(true)
+    }
+  }, [])
+
+  const tutupTutorial = () => {
+    klik()
+    try {
+      window.localStorage.setItem(KUNCI_TUTORIAL_PUZZLE, '1')
+    } catch {
+      // localStorage tidak tersedia (mode privat dsb.) — tutorial tetap
+      // ditutup untuk sesi ini; tampil lagi di kunjungan berikutnya.
+    }
+    setTutorialTerbuka(false)
+  }
+
+  const bukaTutorial = () => {
+    klik()
+    setTutorialTerbuka(true)
+  }
 
   const selesaiRef = useRef(false)
   const minTukarRef = useRef(tukarMinimal(urutan))
@@ -123,7 +159,7 @@ export function PuzzleGeser({
   }
 
   return (
-    <div className="aia-stack">
+    <div className="aia-stack" style={{ position: 'relative' }}>
       <style>{`
         .aia-gi-puzzle-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
         .aia-gi-puzzle-petak { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: 84px; min-width: 56px; padding: 8px 4px; border-radius: 12px; border: 1px solid var(--line, #e5e7eb); background: var(--card, #fff); color: var(--foreground, #111); font-weight: 700; font-size: 14px; cursor: pointer; touch-action: manipulation; transition: transform .15s ease, outline .15s ease; }
@@ -131,12 +167,27 @@ export function PuzzleGeser({
         @media (hover: hover) { .aia-gi-puzzle-petak:hover:not(:disabled) { transform: scale(1.04); box-shadow: 0 4px 14px rgba(0,0,0,.12); } }
         .aia-gi-puzzle-petak:focus-visible { outline: 3px solid var(--green, #2f7d4f); outline-offset: 2px; }
         .aia-gi-puzzle-nomor { font-size: 11px; color: var(--green, #2f7d4f); font-weight: 800; }
-        @media (prefers-reduced-motion: reduce) { .aia-gi-puzzle-petak { transition: none; } .aia-gi-puzzle-petak.dipilih { transform: none; } }
+        .aia-gi-puzzle-demo { display: flex; gap: 8px; margin: 8px 0 2px; }
+        .aia-gi-puzzle-demo-petak { flex: 1; min-height: 48px; display: flex; align-items: center; justify-content: center; border-radius: 12px; border: 1px solid var(--line, #e5e7eb); background: var(--card, #fff); color: var(--foreground, #111); font-weight: 800; font-size: 16px; }
+        .aia-gi-puzzle-demo-kiri { animation: aia-puzzle-demo-kiri 2.4s ease-in-out infinite alternate; }
+        .aia-gi-puzzle-demo-kanan { animation: aia-puzzle-demo-kanan 2.4s ease-in-out infinite alternate; }
+        @keyframes aia-puzzle-demo-kiri { from { transform: translateX(0); } to { transform: translateX(calc(100% + 8px)); } }
+        @keyframes aia-puzzle-demo-kanan { from { transform: translateX(0); } to { transform: translateX(calc(-100% - 8px)); } }
+        @media (prefers-reduced-motion: reduce) { .aia-gi-puzzle-petak { transition: none; } .aia-gi-puzzle-petak.dipilih { transform: none; } .aia-gi-puzzle-demo-kiri, .aia-gi-puzzle-demo-kanan { animation: none; } }
       `}</style>
 
       <div className="aia-stats" aria-label="Progres puzzle">
         <span className="aia-stat">Pertukaran {tukar}</span>
         <span className="aia-stat">Minimal {minTukarRef.current} tukar</span>
+        <button
+          type="button"
+          className="aia-icon-btn"
+          style={{ marginLeft: 'auto', fontWeight: 800, fontSize: 18 }}
+          onClick={bukaTutorial}
+          aria-label="Buka panduan puzzle"
+        >
+          ?
+        </button>
       </div>
 
       <div className="aia-gi-puzzle-grid" role="group" aria-label="Puzzle geser 3 kali 3">
@@ -148,7 +199,7 @@ export function PuzzleGeser({
               key={posisi}
               type="button"
               className={`aia-gi-puzzle-petak${dipilih === posisi ? ' dipilih' : ''}`}
-              disabled={disabled || selesai}
+              disabled={disabled || selesai || tutorialTerbuka}
               aria-pressed={dipilih === posisi}
               aria-label={`Petak ${posisi + 1}: ${p.label}${dipilih === posisi ? ', sudah dipilih, ketuk petak lain untuk menukar' : ''}`}
               onClick={() => ketukPetak(posisi)}
@@ -170,6 +221,70 @@ export function PuzzleGeser({
             ? 'Ketuk dua petak untuk menukar isinya sampai urut.'
             : 'Ketuk dua petak untuk menukar isinya sampai urut!'}
       </p>
+
+      {tutorialTerbuka && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Panduan puzzle geser"
+          style={{
+            position: 'absolute',
+            inset: 0,
+            zIndex: 5,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 8,
+            overflowY: 'auto',
+            background: 'rgba(0,0,0,0.45)',
+            borderRadius: 12,
+          }}
+        >
+          <section
+            className="aia-card"
+            style={{ width: '100%', maxWidth: 420, margin: 'auto', maxHeight: '100%', overflowY: 'auto' }}
+            aria-labelledby="aia-puzzle-tutorial-title"
+          >
+            <span className="aia-kicker">Panduan</span>
+            <h3 id="aia-puzzle-tutorial-title" className="aia-section-title" style={{ marginTop: 4 }}>
+              Cara menyusun puzzle
+            </h3>
+            <ol style={{ margin: '0 0 4px', paddingLeft: 20, fontSize: 14, lineHeight: 1.6 }}>
+              <li>
+                <strong>Tujuan.</strong> Susun 9 potongan jadi kalimat poster yang benar. Baca seperti buku: kiri
+                ke kanan, atas ke bawah.
+              </li>
+              <li>
+                <strong>Cara tukar.</strong> Ketuk satu petak (dapat garis hijau), lalu ketuk petak kedua — isinya
+                bertukar. Ketuk petak yang sama lagi untuk batal.
+                <div className="aia-gi-puzzle-demo" aria-hidden="true">
+                  <span className="aia-gi-puzzle-demo-petak aia-gi-puzzle-demo-kiri">A</span>
+                  <span className="aia-gi-puzzle-demo-petak aia-gi-puzzle-demo-kanan">B</span>
+                </div>
+              </li>
+              <li>
+                <strong>Strategi &amp; skor.</strong> Baca semua potongan dulu. Cari potongan awal (biasanya judul),
+                dan potongan yang diakhiri titik menutup kalimat. &quot;Pertukaran&quot; = jumlah tukarmu;
+                &quot;Minimal&quot; = tukar paling sedikit dari acakan awal — makin dekat ke minimal, makin tinggi
+                skormu. Mentok? Ketuk &quot;Minta petunjuk Magi&quot;.
+              </li>
+            </ol>
+            <p className="aia-muted" style={{ fontSize: 13, margin: '8px 0 0' }}>
+              Mode satu-ketukan (di Profil) menampilkan nomor urutan di tiap petak.
+            </p>
+            <div className="aia-actions" style={{ marginTop: 12 }}>
+              <button
+                type="button"
+                className="aia-btn aia-btn-primary"
+                style={{ minHeight: 44 }}
+                onClick={tutupTutorial}
+              >
+                Mengerti, mulai susun
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
     </div>
   )
 }
