@@ -82,7 +82,7 @@
 .admin-quiz-config input { width: 100%; }
 .admin-save-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
 .admin-save-row p { color: var(--green); font-size: 11px; }
-.admin-save-button, .admin-reset-controls button { display: inline-flex; min-height: 43px; align-items: center; justify-content: center; gap: 8px; padding: 0 16px; border: 1px solid var(--forest); border-radius: 7px; background: var(--forest); color: #f4f6ed; font: inherit; font-size: 11px; font-weight: 700; cursor: pointer; }
+.admin-save-button, .admin-reset-controls button { display: inline-flex; min-height: 43px; align-items: center; justify-content: center; gap: 8px; padding: 0 16px; border: 1px solid var(--primary); border-radius: 7px; background: var(--primary); color: var(--primary-foreground); font: inherit; font-size: 11px; font-weight: 700; cursor: pointer; }
 .admin-save-button:disabled, .admin-reset-controls button:disabled { cursor: not-allowed; opacity: .55; }
 .admin-save-button svg { width: 15px; height: 15px; }
 .admin-reset-card { display: flex; align-items: flex-end; justify-content: space-between; gap: 25px; margin-top: 15px; border-color: color-mix(in srgb, #b45309 28%, var(--line)); }
