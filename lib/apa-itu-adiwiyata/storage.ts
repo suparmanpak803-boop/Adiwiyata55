@@ -88,6 +88,7 @@ export function freshSave(nickname = ''): CampaignSave {
     petaAktif: 'rumah',
     ibuTanggal: null,
     kasurTanggal: null,
+    kulkasTerakhir: null,
     sampahDibawa: {},
     completedAt: null,
     updatedAt: new Date().toISOString(),
@@ -314,6 +315,13 @@ export function loadSave(): CampaignSave {
     const kasurTersimpan = (parsed as Partial<CampaignSave>).kasurTanggal
     merged.kasurTanggal =
       typeof kasurTersimpan === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(kasurTersimpan) ? kasurTersimpan : null
+    // Pengaman kulkas: timestamp ms terakhir minum dari kulkas, atau null.
+    // Nilai bukan angka positif yang wajar dibuang (save lama -> null).
+    const kulkasTersimpan = (parsed as Partial<CampaignSave>).kulkasTerakhir
+    merged.kulkasTerakhir =
+      typeof kulkasTersimpan === 'number' && Number.isFinite(kulkasTersimpan) && kulkasTersimpan > 0
+        ? Math.floor(kulkasTersimpan)
+        : null
     // Pengaman sampah dibawa: save lama tanpa field ini -> {}; bentuk rusak
     // atau jumlah bukan angka positif dibuang, sisanya dipertahankan.
     const dibawaTersimpan = (parsed as Partial<CampaignSave>).sampahDibawa

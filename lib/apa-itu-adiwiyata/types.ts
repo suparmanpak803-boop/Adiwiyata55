@@ -151,6 +151,10 @@ export interface CampaignSave {
    * dipakai istirahat (1x per hari kalender lokal, seperti uang saku Ibu).
    * Save lama tanpa field ini -> null (boleh istirahat sekali). */
   kasurTanggal: string | null
+  /** Minum dari kulkas: timestamp (ms, Date.now()) terakhir kulkas dipakai
+   * minum (jeda 30 menit waktu nyata). Save lama tanpa field ini -> null
+   * (boleh minum sekali). */
+  kulkasTerakhir: number | null
   /** Sampah liar yang dipungut di dunia dan dibawa (jumlah per jenis bak).
    * Dipilah di Tempat Sampah Terpilah dekat Gerbang: bak benar = +5 Koin
    * Hijau + Rp200 per sampah. Save lama tanpa field ini -> {}. */

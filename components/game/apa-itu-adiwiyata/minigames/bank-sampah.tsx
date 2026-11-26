@@ -3,8 +3,10 @@
 // Mini-game Misi Kader "Bank Sampah dan Daur Ulang" — versi gestur baru.
 // Tahap 1 (pilah): SortirCepat — item melintas di ban berjalan, ketuk
 //   kelompok PET / Kertas / Kaleng / Kaca sebelum waktu habis.
-// Tahap 2 (catat): ketuk sel tabel — isi kolom Berat yang dikosongkan
-//   dengan mengetuk berat yang benar dari pilihan yang tersedia.
+// Tahap 2 (catat): baca slip timbangan (berat baris yang sedang ditimbang),
+// lalu ketuk berat yang sama dari pilihan yang tersedia untuk mengisi buku
+// catatan — kolom Berat tabel tetap dikosongkan ("?"/"—") supaya jawaban
+// tidak bocor dari tabel.
 // Tahap 3 (kuis): KuisKilat — satu soal per layar dengan bar waktu.
 // Gestur mengikuti INTERAKSI_MISI['bank-sampah']; isi dari KONTEN_TUGAS.
 // Skor tiap tahap 0–100; onStageComplete dipanggil tepat satu kali.
@@ -12,7 +14,7 @@
 // sudah ada di file ini) sebagai alternatif aksesibilitas.
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Check, Coins, Heart, Package, Recycle, RotateCcw, X } from 'lucide-react'
+import { Check, Coins, Heart, Package, Receipt, Recycle, RotateCcw, X } from 'lucide-react'
 import { INTERAKSI_MISI } from '@/lib/apa-itu-adiwiyata/content/interaksi'
 import type { SpesifikasiInteraksi } from '@/lib/apa-itu-adiwiyata/content/interaksi'
 import { KONTEN_TUGAS } from '@/lib/apa-itu-adiwiyata/content/tugas'
@@ -58,6 +60,34 @@ function acak<T>(daftar: T[]): T[] {
  *  komponen PetunjukMagi sudah memberi label Magi sendiri. */
 function teksMagi(teks: string): string {
   return teks.replace(/^Magi:\s*"/, '').replace(/"$/, '')
+}
+
+/**
+ * Slip timbangan — SATU-SATUNYA sumber jawaban tahap "Timbang dan Catat".
+ * Menampilkan HANYA baris yang sedang ditimbang (jenis + beratnya), jadi
+ * pemain bisa membaca jawabannya tanpa membocorkan baris lain. Tabel di
+ * bawah tetap jadi buku catatan (terisi satu per satu saat baris dijawab
+ * benar). Dipakai di kedua mode (CatatGestur dan CatatTimbangan).
+ */
+function SlipTimbangan({ jenis, berat }: { jenis: string; berat: string }) {
+  return (
+    <div
+      className="aia-card"
+      role="status"
+      aria-label={`Slip timbangan: ${jenis} beratnya ${berat}`}
+      style={{ border: '2px dashed var(--line)' }}
+    >
+      <span className="aia-kicker">
+        <Receipt aria-hidden="true" style={{ verticalAlign: '-3px' }} /> Slip timbangan
+      </span>
+      <p style={{ margin: '8px 0 0', fontSize: 18, lineHeight: 1.5 }}>
+        <strong>{jenis}</strong> — <strong>{berat}</strong>
+      </p>
+      <p className="aia-muted" style={{ margin: '4px 0 0', fontSize: 13 }}>
+        Baca slip ini, lalu ketuk berat yang sama di bawah.
+      </p>
+    </div>
+  )
 }
 
 function BarisNyawa({ nyawaSisa, total }: { nyawaSisa: number; total: number }) {
@@ -199,9 +229,11 @@ function PilahGestur({
 }
 
 // ------------------------------------------------- Tahap 2: catat (gestur) ----
-// Ketuk sel tabel: tabel timbangan tampil penuh sebagai referensi dengan
-// kolom Berat dikosongkan ("?"); pemain mengetuk berat yang benar dari
-// pilihan yang tersedia untuk mengisi baris yang sedang ditimbang.
+// Ketuk sel tabel: slip timbangan menampilkan berat baris yang sedang
+// ditimbang (satu-satunya sumber jawaban); pemain mengetuk berat yang sama
+// dari pilihan yang tersedia untuk mengisi buku catatan. Tabel tetap jadi
+// buku catatan: berat hanya terlihat setelah baris itu dijawab benar
+// ('?' untuk baris aktif, '—' untuk sisanya).
 // +25 percobaan pertama / +10 ulangan; skor maks 100.
 
 function CatatGestur({
@@ -419,9 +451,10 @@ function CatatGestur({
           </tbody>
         </table>
       </div>
+      <SlipTimbangan jenis={jenis} berat={beratBenar} />
       {tunjuk && (
         <div style={{ textAlign: 'center' }}>
-          <TanganPenunjuk label="Ketuk berat yang benar untuk jenis ini" />
+          <TanganPenunjuk label="Baca slip timbangan, lalu ketuk berat yang sama" />
         </div>
       )}
       <div className="aia-card">
@@ -859,7 +892,7 @@ function CatatTimbangan({
       if (sisa <= 0) setHabis(true)
       salah()
       nyawa()
-      setUmpan({ benar: false, teks: `Bukan ${berat}. Cek lagi tabelnya: ${jenis} beratnya ${beratBenar}.` })
+      setUmpan({ benar: false, teks: `Bukan ${berat}. Cek lagi slip timbangannya: ${jenis} beratnya ${beratBenar}.` })
     }
   }
 
@@ -980,6 +1013,8 @@ function CatatTimbangan({
               </tbody>
             </table>
           </div>
+
+          <SlipTimbangan jenis={jenis} berat={beratBenar} />
 
           <div className="aia-card">
             <p style={{ margin: '0 0 12px', fontSize: 16, lineHeight: 1.5, fontWeight: 700 }}>

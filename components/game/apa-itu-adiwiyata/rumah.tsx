@@ -6,8 +6,9 @@
 // dinding/furnitur, interaksi Spasi/Enter/tombol Aksi, dan HUD yang sama.
 // Tokoh pemain digambar dengan gambarPemain yang sama (gender-aware).
 // Kasur = checkpoint (pulih + auto-save lewat provider) 1x per hari
-// kalender lokal, kulkas = minum gratis, Ibu = uang saku Rp5.000 +
-// sarapan 1x per hari kalender lokal, pintu = berangkat ke sekolah.
+// kalender lokal, kulkas = minum (Haus +30) dengan jeda 30 menit waktu
+// nyata, Ibu = uang saku Rp5.000 + sarapan 1x per hari kalender lokal,
+// pintu = berangkat ke sekolah.
 
 import { useEffect, useRef, useState } from 'react'
 import {
@@ -24,7 +25,7 @@ import {
 } from 'lucide-react'
 import { hariIniLokal } from '@/lib/apa-itu-adiwiyata/content/hadiah-harian'
 import { warnaKostum } from '@/lib/apa-itu-adiwiyata/content/toko'
-import { useCampaign } from '@/lib/apa-itu-adiwiyata/context'
+import { KULKAS_JEDA_MS, useCampaign } from '@/lib/apa-itu-adiwiyata/context'
 import { gambarBayangan, gambarPemain, rr, type PemainState } from '@/lib/apa-itu-adiwiyata/gambar-pemain'
 import { buatKamera, offsetPusat, perbaruiKamera } from '@/lib/apa-itu-adiwiyata/kamera'
 import { AngkaAnimasi, HudStatus } from './hud-dunia'
@@ -414,6 +415,27 @@ export function Rumah({
     klik()
   }
 
+  /** Sisa jeda kulkas dalam menit (0 bila boleh minum). Dihitung dari
+   * timestamp save supaya batasnya terlihat tanpa harus mengetuk dulu. */
+  const sisaJedaKulkasMenit = () => {
+    const terakhir = save.kulkasTerakhir ?? null
+    if (terakhir === null) return 0
+    const sisaMs = KULKAS_JEDA_MS - (Date.now() - terakhir)
+    if (sisaMs <= 0) return 0
+    return Math.max(1, Math.min(30, Math.ceil(sisaMs / 60000)))
+  }
+
+  /** Label tombol aksi objek terdekat: kasur/kulkas menampilkan batasnya
+   * bila sedang tidak bisa dipakai (kasur 1x sehari, kulkas jeda 30 menit). */
+  const labelAksi = (objek: ObjekRumah) => {
+    if (objek.id === 'kasur' && (save.kasurTanggal ?? null) === hariIni) return 'Istirahat (besok)'
+    if (objek.id === 'kulkas') {
+      const menit = sisaJedaKulkasMenit()
+      if (menit > 0) return `Minum (${menit} mnt)`
+    }
+    return objek.aksi
+  }
+
   /** Aksi tiap objek: kasur/kulkas/pintu langsung, meja/Ibu lewat dialog. */
   const jalankanAksi = (objek: ObjekRumah) => {
     if (dialogRef.current) return
@@ -431,7 +453,14 @@ export function Rumah({
         break
       case 'kulkas':
         klik()
-        dispatch({ type: 'PULIHKAN', haus: 30 })
+        // Jeda 30 menit waktu nyata — bila masih jeda, hanya pesan ramah
+        // berisi sisa menit (bukan hukuman, tidak ada yang hilang).
+        // Pengecekan ulang juga ada di reducer (MINUM_KULKAS, atomik).
+        if (sisaJedaKulkasMenit() > 0) {
+          showToast(`Kulkas baru dipakai. Coba lagi dalam ${sisaJedaKulkasMenit()} menit, ya.`)
+          break
+        }
+        dispatch({ type: 'MINUM_KULKAS', sekarang: Date.now() })
         showToast('Kamu minum air dingin dari kulkas. Haus +30.')
         break
       case 'meja':
@@ -999,9 +1028,9 @@ export function Rumah({
             className="aia-btn aia-btn-primary"
             style={{ position: 'absolute', right: 12, bottom: 12, zIndex: 4 }}
             onClick={() => jalankanAksi(dekat)}
-            aria-label={`${dekat.aksi} — ${dekat.nama}`}
+            aria-label={`${labelAksi(dekat)} — ${dekat.nama}`}
           >
-            {ikonAksi(dekat.id)} {dekat.aksi}
+            {ikonAksi(dekat.id)} {labelAksi(dekat)}
           </button>
         )}
 
@@ -1060,8 +1089,8 @@ export function Rumah({
         {isDesktop
           ? 'Gerakkan tokoh dengan tombol WASD/panah, atau klik peta untuk berjalan ke titik itu. Dekati objek lalu tekan E untuk berinteraksi.'
           : 'Gerakkan tokoh dengan joystick kiri bawah atau tombol WASD/panah. Dekati objek lalu ketuk tombol Aksi.'}{' '}
-        Kasur untuk istirahat (Lapar +30, Haus +30), kulkas untuk minum (Haus +30), dan Ibu memberimu uang saku
-        Rp5.000 + sarapan 1x sehari. Pintu di bawah membawamu berangkat ke sekolah.
+        Kasur untuk istirahat (Lapar +30, Haus +30) 1x sehari, kulkas untuk minum (Haus +30) dengan jeda 30 menit,
+        dan Ibu memberimu uang saku Rp5.000 + sarapan 1x sehari. Pintu di bawah membawamu berangkat ke sekolah.
       </p>
     </div>
   )

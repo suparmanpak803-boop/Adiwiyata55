@@ -78,10 +78,10 @@ export const KONTEN_TUGAS: Record<TugasKaderId, KontenTugasKader> = {
       },
       {
         judul: 'Timbang dan Catat',
-        instruksi: 'Catat berat tiap jenis sampah anorganik ke buku tabungan bank sampah.',
+        instruksi: 'Baca slip timbangan tiap jenis, lalu catat beratnya ke buku tabungan bank sampah.',
         jenis: 'catat',
         tabel: {
-          judul: 'Timbangan hari ini (contoh)',
+          judul: 'Buku tabungan bank sampah',
           kolom: ['Jenis sampah', 'Berat'],
           baris: [
             ['PET', '4,2 kg'],

@@ -42,6 +42,10 @@ import { hitungSetoran } from './content/bank-sampah'
 import { HADIAH_PILAH_KOIN, HADIAH_PILAH_UANG } from './content/bak'
 import type { CampaignSave, Carryover, ChapterId, JenisKelamin, PakPlastikStatus, PetaAktif, Report, StageProgress, TongSampah, TugasKaderId } from './types'
 
+/** Jeda minum dari kulkas: 30 menit waktu nyata antar tegukan. Dipakai
+ * reducer (MINUM_KULKAS) dan UI Rumah (pesan sisa jeda). */
+export const KULKAS_JEDA_MS = 30 * 60 * 1000
+
 export type CampaignAction =
   | { type: 'LOAD'; save: CampaignSave }
   | { type: 'SET_NICKNAME'; nickname: string }
@@ -106,6 +110,10 @@ export type CampaignAction =
    * dan haus +30. Bila sudah istirahat di hari yang sama, tidak mengubah
    * apa pun — bukan hukuman, hanya batas harian. */
   | { type: 'ISTIRAHAT_KASUR'; hariIni: string }
+  /** Minum dari kulkas (atomik, jeda 30 menit waktu nyata): haus +30.
+   * Bila masih dalam jeda, tidak mengubah apa pun — bukan hukuman,
+   * hanya jeda supaya kulkas tidak bisa di-spam untuk memenuhi bar. */
+  | { type: 'MINUM_KULKAS'; sekarang: number }
   /** Pungut 1 sampah liar: sampahLiar -1 (dihitung seperti sebelumnya)
    * dan sampah masuk inventaris `sampahDibawa` — TANPA koin langsung.
    * Hadiah baru didapat saat dipilah di Tempat Sampah Terpilah. */
@@ -501,6 +509,17 @@ function reducer(save: CampaignSave, action: CampaignAction): CampaignSave {
         lapar: clampBar((save.lapar ?? 100) + 30),
         haus: clampBar((save.haus ?? 100) + 30),
         kasurTanggal: action.hariIni,
+      })
+    }
+    case 'MINUM_KULKAS': {
+      // Satu aksi atomik — cek timestamp + pulihkan + catat timestamp
+      // dalam satu langkah, supaya kulkas tidak bisa di-spam: minum kedua
+      // dalam 30 menit tidak mengubah apa pun.
+      const terakhir = save.kulkasTerakhir ?? null
+      if (terakhir !== null && action.sekarang - terakhir < KULKAS_JEDA_MS) return save
+      return touch(save, {
+        haus: clampBar((save.haus ?? 100) + 30),
+        kulkasTerakhir: action.sekarang,
       })
     }
     case 'PUNGUT_SAMPAH': {
