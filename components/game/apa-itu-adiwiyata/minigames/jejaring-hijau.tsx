@@ -183,27 +183,13 @@ function JejaringHijauGestur({ tugasId, stageIndex, onStageComplete, terjeda = f
       )}
 
       {selesai && berhasil && (
-        <div
-          role="status"
-          style={{
-            padding: 12,
-            borderRadius: 12,
-            background: '#dcfce7',
-          }}
-        >
+        <div role="status" className="aia-umpan-benar" style={{ padding: 12, borderRadius: 12 }}>
           <strong>Benar!</strong> {spec?.hasilBenar ?? ''} {opsiBenar?.alasan ?? ''}
         </div>
       )}
 
       {selesai && !berhasil && opsiBenar && (
-        <div
-          role="status"
-          style={{
-            padding: 12,
-            borderRadius: 12,
-            background: '#fee2e2',
-          }}
-        >
+        <div role="status" className="aia-umpan-salah" style={{ padding: 12, borderRadius: 12 }}>
           <strong>Belum berhasil.</strong> Balasan yang tepat:{' '}
           <strong>{opsiBenar.teks}</strong> — {opsiBenar.alasan}
         </div>
@@ -307,20 +293,20 @@ function JejaringHijauTombol({ tugasId, stageIndex, onStageComplete }: MiniGameT
         {tahap.pilihan.map((opsi, i) => {
           const isJawaban = i === jawabanBenar
           const isSalah = salahPilihan.includes(i)
-          let latar: string | undefined
+          let kelasUmpan: string | undefined
           let border: string | undefined
           if (selesai && isJawaban) {
-            latar = '#dcfce7'
+            kelasUmpan = 'aia-umpan-benar'
             border = '2px solid #236b4d'
           } else if (isSalah) {
-            latar = '#fee2e2'
+            kelasUmpan = 'aia-umpan-salah'
             border = '2px solid #b83232'
           }
           return (
             <button
               key={i}
               type="button"
-              className="aia-btn aia-btn-block"
+              className={`aia-btn aia-btn-block${kelasUmpan ? ` ${kelasUmpan}` : ''}`}
               disabled={selesai || isSalah}
               onClick={() => pilih(i)}
               aria-label={`Pilihan ${String.fromCharCode(65 + i)}: ${opsi.teks}`}
@@ -328,7 +314,6 @@ function JejaringHijauTombol({ tugasId, stageIndex, onStageComplete }: MiniGameT
                 justifyContent: 'flex-start',
                 textAlign: 'left',
                 minHeight: 48,
-                background: latar,
                 border,
                 whiteSpace: 'normal',
                 height: 'auto',
@@ -339,49 +324,28 @@ function JejaringHijauTombol({ tugasId, stageIndex, onStageComplete }: MiniGameT
                 {String.fromCharCode(65 + i)}.
               </span>
               <span>{opsi.teks}</span>
-              {selesai && isJawaban && <Check aria-hidden="true" color="#236b4d" />}
-              {isSalah && <X aria-hidden="true" color="#b83232" />}
+              {selesai && isJawaban && <Check aria-hidden="true" />}
+              {isSalah && <X aria-hidden="true" />}
             </button>
           )
         })}
       </div>
 
       {dipilih !== null && opsiDipilih && !berhasil && !selesai && (
-        <div
-          role="status"
-          style={{
-            padding: 12,
-            borderRadius: 12,
-            background: '#fee2e2',
-          }}
-        >
+        <div role="status" className="aia-umpan-salah" style={{ padding: 12, borderRadius: 12 }}>
           <strong>Belum tepat.</strong> {opsiDipilih.alasan} Coba sekali lagi — masih ada{' '}
           {MAKS_PERCOBAAN - percobaan} kesempatan.
         </div>
       )}
 
       {selesai && berhasil && opsiBenar && (
-        <div
-          role="status"
-          style={{
-            padding: 12,
-            borderRadius: 12,
-            background: '#dcfce7',
-          }}
-        >
+        <div role="status" className="aia-umpan-benar" style={{ padding: 12, borderRadius: 12 }}>
           <strong>Benar!</strong> {opsiBenar.alasan}
         </div>
       )}
 
       {selesai && !berhasil && opsiBenar && (
-        <div
-          role="status"
-          style={{
-            padding: 12,
-            borderRadius: 12,
-            background: '#fee2e2',
-          }}
-        >
+        <div role="status" className="aia-umpan-salah" style={{ padding: 12, borderRadius: 12 }}>
           <strong>Belum berhasil.</strong> {opsiDipilih?.alasan ?? ''} Pendekatan yang tepat:{' '}
           <strong>{opsiBenar.teks}</strong> — {opsiBenar.alasan}
         </div>

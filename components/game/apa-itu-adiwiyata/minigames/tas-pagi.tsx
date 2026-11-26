@@ -846,7 +846,7 @@ export function TasPagi({
 
       {fase === 'gagal' && (
         <section className="aia-card" style={{ textAlign: 'center' }} aria-labelledby="aia-tp-gagal-title">
-          <X aria-hidden="true" style={{ width: 36, height: 36, color: '#b83232' }} />
+          <X aria-hidden="true" style={{ width: 36, height: 36, color: 'var(--aia-merah)' }} />
           <h3 id="aia-tp-gagal-title" className="aia-section-title">
             Meter sampah penuh
           </h3>

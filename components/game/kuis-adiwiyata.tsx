@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { LogOut, Pause, Play } from 'lucide-react'
+import { Brain, Coins, Info, ListChecks, LogOut, Pause, Play, Timer } from 'lucide-react'
 import { SOAL_INSPEKSI } from '@/lib/apa-itu-adiwiyata/content/pertanyaan'
 import { useCampaign } from '@/lib/apa-itu-adiwiyata/context'
 import { koinKuis } from '@/lib/apa-itu-adiwiyata/arkade'
@@ -98,11 +98,20 @@ export function KuisAdiwiyata({ onExit, onFinished }: { onExit: () => void; onFi
   if (stage === 'judul') {
     return (
       <section className="game-stage" aria-labelledby="kuis-judul">
-        <h2 id="kuis-judul">Kuis Adiwiyata</h2>
-        <p className="game-hint">Jawab 12 soal tentang sekolah hijau — 20 detik per soal, makin banyak benar makin banyak Koin Hijau.</p>
-        <div className="game-actions">
+        <div className="game-ikon-judul" aria-hidden="true"><Brain /></div>
+        <h2 id="kuis-judul" className="game-judul">Kuis Adiwiyata</h2>
+        <p className="game-hint">Jawab soal tentang sekolah hijau. Makin banyak benar, makin banyak Koin Hijau.</p>
+        <div className="game-fakta">
+          <div className="game-fakta-chip"><ListChecks aria-hidden="true" />12<span>soal</span></div>
+          <div className="game-fakta-chip"><Timer aria-hidden="true" />20 dtk<span>per soal</span></div>
+          <div className="game-fakta-chip"><Coins aria-hidden="true" />×3<span>koin per benar</span></div>
+        </div>
+        <ul className="game-aturan">
+          <li><Info aria-hidden="true" /><span>Jawab sebelum waktu habis. Penjelasan muncul setelah tiap jawaban, jadi bisa sambil belajar.</span></li>
+        </ul>
+        <div className="game-actions game-actions--tumpuk">
           <button type="button" className="game-play" style={{ minHeight: 44 }} onClick={mulai}><Play aria-hidden="true" /> Mulai</button>
-          <button type="button" className="game-ghost" style={{ minHeight: 44 }} onClick={onExit}>Keluar</button>
+          <button type="button" className="game-ghost" style={{ minHeight: 44 }} onClick={onExit}><LogOut aria-hidden="true" /> Keluar</button>
         </div>
       </section>
     )
@@ -120,9 +129,9 @@ export function KuisAdiwiyata({ onExit, onFinished }: { onExit: () => void; onFi
           Rekor terbaik: <b>{Math.max(terbaikLama, skorAkhir)} benar</b>
           {rekorBaru && ' — Rekor baru!'}
         </p>
-        <div className="game-actions">
+        <div className="game-actions game-actions--tumpuk">
           <button type="button" className="game-play" style={{ minHeight: 44 }} onClick={mulai}><Play aria-hidden="true" /> Main lagi</button>
-          <button type="button" className="game-ghost" style={{ minHeight: 44 }} onClick={onExit}>Kembali ke dunia</button>
+          <button type="button" className="game-ghost" style={{ minHeight: 44 }} onClick={onExit}><LogOut aria-hidden="true" /> Kembali ke dunia</button>
         </div>
       </section>
     )

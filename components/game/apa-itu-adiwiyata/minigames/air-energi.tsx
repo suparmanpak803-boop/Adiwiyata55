@@ -698,6 +698,7 @@ function CariBoros({
                   onClick={() => ketuk(p)}
                   disabled={sudahBenar || sudahSalah || tuntas}
                   aria-label={`${p.nama} di ${ruangan}${sudahBenar ? ' — sudah ditemukan boros' : sudahSalah ? ' — sudah dicek, ternyata hemat' : ''}`}
+                  className={sudahBenar ? 'aia-umpan-benar' : undefined}
                   style={{
                     minHeight: 64,
                     display: 'flex',
@@ -712,16 +713,16 @@ function CariBoros({
                       : sudahSalah
                         ? '2px solid var(--line)'
                         : '1px solid var(--line)',
-                    background: sudahBenar ? '#dcfce7' : 'var(--card)',
-                    color: 'var(--foreground)',
+                    background: sudahBenar ? undefined : 'var(--card)',
+                    color: sudahBenar ? undefined : 'var(--foreground)',
                     fontSize: 13,
                     fontWeight: 700,
                     cursor: sudahBenar || sudahSalah || tuntas ? 'default' : 'pointer',
                   }}
                 >
-                  {sudahBenar ? <Check aria-hidden="true" color="#236b4d" /> : ikonPerangkat(p.ikon)}
+                  {sudahBenar ? <Check aria-hidden="true" /> : ikonPerangkat(p.ikon)}
                   {p.nama}
-                  {sudahBenar && <span style={{ fontSize: 11, color: '#236b4d' }}>Boros — ditemukan!</span>}
+                  {sudahBenar && <span style={{ fontSize: 11 }}>Boros — ditemukan!</span>}
                   {sudahSalah && <span style={{ fontSize: 11, color: 'var(--ink-soft)' }}>Hemat</span>}
                 </button>
               )
@@ -731,7 +732,7 @@ function CariBoros({
       ))}
 
       {pesan && (
-        <p className="aia-muted" role="status" style={{ margin: 0, color: pesan.ok ? '#236b4d' : undefined }}>
+        <p className="aia-muted" role="status" style={{ margin: 0, color: pesan.ok ? 'var(--green)' : undefined }}>
           {pesan.teks}
         </p>
       )}
@@ -1055,7 +1056,7 @@ function CariBorosGestur({
       )}
 
       {pesan && !tuntas && (
-        <p className="aia-muted" role="status" style={{ margin: 0, color: '#236b4d' }}>
+        <p className="aia-muted" role="status" style={{ margin: 0, color: 'var(--green)' }}>
           {pesan}
         </p>
       )}

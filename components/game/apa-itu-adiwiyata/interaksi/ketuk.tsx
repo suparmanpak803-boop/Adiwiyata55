@@ -37,11 +37,15 @@ export function TapSpam({
   const [hitung, setHitung] = useState(0)
   const selesaiRef = useRef(false)
 
-  // Tahap baru (jumlah ketukan berubah) = mulai dari nol lagi.
+  // Tahap baru (jumlah ketukan atau label berubah) = mulai dari nol lagi.
+  // Label masuk dep supaya dua TapSpam berurutan di posisi yang sama
+  // (mis. perbaiki kompos: cokelat lalu aduk) tidak memakai instance
+  // lama yang sudah selesai — tanpa ini, langkah kedua tampil 5/5
+  // dan tombolnya mati total.
   useEffect(() => {
     setHitung(0)
     selesaiRef.current = false
-  }, [jumlahKetukan])
+  }, [jumlahKetukan, label])
 
   const ketuk = () => {
     if (disabled || selesaiRef.current) return

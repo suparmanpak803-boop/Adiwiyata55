@@ -301,20 +301,20 @@ function VersiTombol({ stageIndex, onStageComplete }: TugasMiniGameSlotProps) {
               {opsi.map((pilihan, i) => {
                 const isJawaban = pilihan.benar
                 const isDipilih = i === dipilih
-                let latar: string | undefined
+                let kelasUmpan: string | undefined
                 let border: string | undefined
                 if (dijawab && isJawaban) {
-                  latar = '#dcfce7'
+                  kelasUmpan = 'aia-umpan-benar'
                   border = '2px solid #236b4d'
                 } else if (dijawab && isDipilih) {
-                  latar = '#fee2e2'
+                  kelasUmpan = 'aia-umpan-salah'
                   border = '2px solid #b83232'
                 }
                 return (
                   <button
                     key={i}
                     type="button"
-                    className="aia-btn aia-btn-block"
+                    className={`aia-btn aia-btn-block${kelasUmpan ? ` ${kelasUmpan}` : ''}`}
                     disabled={dijawab}
                     onClick={() => jawab(i)}
                     aria-label={`Pilihan ${String.fromCharCode(65 + i)}: ${pilihan.teks}`}
@@ -322,7 +322,6 @@ function VersiTombol({ stageIndex, onStageComplete }: TugasMiniGameSlotProps) {
                       justifyContent: 'flex-start',
                       textAlign: 'left',
                       minHeight: 48,
-                      background: latar,
                       border,
                       whiteSpace: 'normal',
                       height: 'auto',
@@ -333,8 +332,8 @@ function VersiTombol({ stageIndex, onStageComplete }: TugasMiniGameSlotProps) {
                       {String.fromCharCode(65 + i)}.
                     </span>
                     <span>{pilihan.teks}</span>
-                    {dijawab && isJawaban && <Check aria-hidden="true" color="#236b4d" />}
-                    {dijawab && isDipilih && !isJawaban && <X aria-hidden="true" color="#b83232" />}
+                    {dijawab && isJawaban && <Check aria-hidden="true" />}
+                    {dijawab && isDipilih && !isJawaban && <X aria-hidden="true" />}
                   </button>
                 )
               })}
@@ -343,11 +342,11 @@ function VersiTombol({ stageIndex, onStageComplete }: TugasMiniGameSlotProps) {
             {dijawab && (
               <div
                 role="status"
+                className={dipilih !== null && opsi[dipilih]?.benar ? 'aia-umpan-benar' : 'aia-umpan-salah'}
                 style={{
                   marginTop: 12,
                   padding: 12,
                   borderRadius: 12,
-                  background: dipilih !== null && opsi[dipilih]?.benar ? '#dcfce7' : '#fee2e2',
                 }}
               >
                 <strong>

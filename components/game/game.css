@@ -60,3 +60,20 @@
 .garden-grid figcaption { display: flex; flex-direction: column; align-items: center; font-size: 12px; }
 .garden-grid small { color: var(--ink-soft); }
 @media (min-width: 640px) { .garden-grid { grid-template-columns: repeat(8, 1fr); } .game-memory { grid-template-columns: repeat(4, 1fr); } }
+
+/* Layar judul arcade: kartu rapi, ikon, chip fakta, tombol bertumpuk. */
+.game-judul { margin: 12px 0 6px; font-family: Georgia, 'Times New Roman', serif; font-size: 26px; line-height: 1.2; }
+.game-ikon-judul { display: grid; place-items: center; width: 64px; height: 64px; margin: 0 auto; border-radius: 20px; background: var(--aia-solar, #f2b705); color: #1c2b12; }
+.game-ikon-judul svg { width: 30px; height: 30px; }
+.game-bak-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin: 14px 0 4px; }
+.game-bak-chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border: 1px solid var(--line); border-radius: 999px; background: var(--aia-card, var(--card)); font-size: 12px; font-weight: 700; }
+.game-bak-dot { width: 12px; height: 12px; border-radius: 50%; }
+.game-fakta { display: flex; justify-content: center; gap: 8px; margin: 14px 0 4px; }
+.game-fakta-chip { display: flex; flex: 1; flex-direction: column; align-items: center; gap: 2px; max-width: 110px; padding: 10px 6px; border: 1px solid var(--line); border-radius: 14px; background: var(--aia-card, var(--card)); font-size: 13px; font-weight: 800; text-align: center; }
+.game-fakta-chip svg { width: 18px; height: 18px; color: var(--aia-leaf, var(--green)); }
+.game-fakta-chip span { font-size: 11px; font-weight: 600; color: var(--ink-soft); }
+.game-aturan { margin: 14px 0 4px; padding: 0; list-style: none; text-align: left; font-size: 13px; line-height: 1.6; color: var(--ink-soft); }
+.game-aturan li { display: flex; gap: 8px; margin-bottom: 8px; }
+.game-aturan svg { flex: none; width: 16px; height: 16px; margin-top: 2px; color: var(--aia-leaf, var(--green)); }
+.game-actions--tumpuk { flex-direction: column; align-items: stretch; }
+.game-actions--tumpuk .game-play, .game-actions--tumpuk .game-ghost { width: 100%; min-height: 48px; }

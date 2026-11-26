@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { LogOut, Pause, Play, Volume2, VolumeX } from 'lucide-react'
+import { ArrowLeft, Heart, LogOut, MoveHorizontal, Pause, Play, Target, Timer, Trash2, Volume2, VolumeX, Zap } from 'lucide-react'
 import { BINS, WASTE_ITEMS, type Bin } from '@/lib/waste-items'
 import { useCampaign } from '@/lib/apa-itu-adiwiyata/context'
 import { koinTangkapSampah } from '@/lib/apa-itu-adiwiyata/arkade'
@@ -223,17 +223,26 @@ export function TangkapSampah({ onExit, onFinished }: { onExit: () => void; onFi
   if (stage === 'judul') {
     return (
       <section className="game-stage" aria-labelledby="tangkap-judul">
-        <h2 id="tangkap-judul">Tangkap Sampah</h2>
+        <div className="game-ikon-judul" aria-hidden="true"><Trash2 /></div>
+        <h2 id="tangkap-judul" className="game-judul">Tangkap Sampah</h2>
         <p className="game-hint">Tangkap sampah yang jatuh dan masukkan ke bak yang tepat sebelum waktu habis.</p>
-        <ol className="game-tutorial">
-          <li>Sampah jatuh dari atas layar. Geser keranjang dengan mouse, sentuhan, atau tombol panah kiri dan kanan.</li>
-          <li>Tangkap hanya sampah jenis yang tertulis di keranjang: Organik, Anorganik, Kertas, Residu, atau B3.</li>
-          <li>Tangkapan benar menambah skor (beruntun makin besar). Tangkapan salah, atau sampah yang diminta lolos, mengurangi 1 nyawa.</li>
-          <li>Kamu punya 3 nyawa dan waktu 60 detik. Kumpulkan skor sebanyak-banyaknya.</li>
-        </ol>
-        <div className="game-actions">
+        <div className="game-bak-row" aria-label="Lima bak sampah">
+          {BINS.map((b) => (
+            <span key={b.id} className="game-bak-chip"><span className="game-bak-dot" style={{ background: b.color }} aria-hidden="true" />{b.label}</span>
+          ))}
+        </div>
+        <div className="game-fakta">
+          <div className="game-fakta-chip"><Target aria-hidden="true" />Tangkap<span>jenis di keranjang</span></div>
+          <div className="game-fakta-chip"><Heart aria-hidden="true" />3<span>nyawa</span></div>
+          <div className="game-fakta-chip"><Timer aria-hidden="true" />60 dtk<span>waktu main</span></div>
+        </div>
+        <ul className="game-aturan">
+          <li><MoveHorizontal aria-hidden="true" /><span>Geser keranjang dengan mouse, sentuhan, atau tombol panah kiri dan kanan.</span></li>
+          <li><Zap aria-hidden="true" /><span>Tangkapan beruntun menambah skor makin besar. Salah tangkap atau sampah yang diminta lolos mengurangi 1 nyawa.</span></li>
+        </ul>
+        <div className="game-actions game-actions--tumpuk">
           <button type="button" className="game-play" style={{ minHeight: 44 }} onClick={mulaiMain}><Play aria-hidden="true" /> Mulai main</button>
-          <button type="button" className="game-ghost" style={{ minHeight: 44 }} onClick={onExit}>Kembali ke dunia</button>
+          <button type="button" className="game-ghost" style={{ minHeight: 44 }} onClick={onExit}><ArrowLeft aria-hidden="true" /> Kembali ke dunia</button>
         </div>
       </section>
     )
@@ -251,9 +260,9 @@ export function TangkapSampah({ onExit, onFinished }: { onExit: () => void; onFi
           Rekor terbaik: <b>{Math.max(terbaikLama, skorAkhir)}</b>
           {rekorBaru && ' — Rekor baru!'}
         </p>
-        <div className="game-actions">
+        <div className="game-actions game-actions--tumpuk">
           <button type="button" className="game-play" style={{ minHeight: 44 }} onClick={mulaiMain}><Play aria-hidden="true" /> Main lagi</button>
-          <button type="button" className="game-ghost" style={{ minHeight: 44 }} onClick={onExit}>Kembali ke dunia</button>
+          <button type="button" className="game-ghost" style={{ minHeight: 44 }} onClick={onExit}><ArrowLeft aria-hidden="true" /> Kembali ke dunia</button>
         </div>
       </section>
     )

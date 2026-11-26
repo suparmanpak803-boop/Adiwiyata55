@@ -132,14 +132,14 @@ function InspeksiGestur({
       label: labelTahap[i] ?? t.masalah,
       kiri: (
         <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-          <Check aria-hidden="true" style={{ width: 22, height: 22, color: '#2f7d4f' }} />
-          <span style={{ fontSize: 11, fontWeight: 700, color: '#2f7d4f' }}>Beres</span>
+          <Check aria-hidden="true" style={{ width: 22, height: 22, color: 'var(--green)' }} />
+          <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--green)' }}>Beres</span>
         </span>
       ),
       kanan: (
         <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-          <AlertTriangle aria-hidden="true" style={{ width: 22, height: 22, color: '#b45309' }} />
-          <span style={{ fontSize: 11, fontWeight: 700, color: '#b45309', textAlign: 'center' }}>
+          <AlertTriangle aria-hidden="true" style={{ width: 22, height: 22, color: 'var(--aia-amber)' }} />
+          <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--aia-amber)', textAlign: 'center' }}>
             {t.masalah}
           </span>
         </span>
@@ -150,14 +150,14 @@ function InspeksiGestur({
       label: nama,
       kiri: (
         <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-          <Check aria-hidden="true" style={{ width: 22, height: 22, color: '#2f7d4f' }} />
-          <span style={{ fontSize: 11, fontWeight: 700, color: '#2f7d4f' }}>Beres</span>
+          <Check aria-hidden="true" style={{ width: 22, height: 22, color: 'var(--green)' }} />
+          <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--green)' }}>Beres</span>
         </span>
       ),
       kanan: (
         <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-          <Check aria-hidden="true" style={{ width: 22, height: 22, color: '#2f7d4f' }} />
-          <span style={{ fontSize: 11, fontWeight: 700, color: '#2f7d4f' }}>Beres</span>
+          <Check aria-hidden="true" style={{ width: 22, height: 22, color: 'var(--green)' }} />
+          <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--green)' }}>Beres</span>
         </span>
       ),
     }))
@@ -247,7 +247,7 @@ function InspeksiGestur({
     return (
       <div className="aia-stack">
         <section className="aia-card aia-pos-hijau" style={{ textAlign: 'center' }}>
-          <Check aria-hidden="true" style={{ width: 36, height: 36, color: '#2f7d4f' }} />
+          <Check aria-hidden="true" style={{ width: 36, height: 36, color: 'var(--green)' }} />
           <h3 className="aia-section-title">Tahap selesai!</h3>
           <p className="aia-muted">
             Kamu memilih {benarCount} dari {temuan.length} tindakan yang benar. Sekolah jadi lebih sehat!{' '}
@@ -314,7 +314,7 @@ function InspeksiGestur({
                 <button
                   key={k.id}
                   type="button"
-                  className="aia-btn aia-btn-block"
+                  className={sudahBenar ? 'aia-btn aia-btn-block aia-umpan-benar' : 'aia-btn aia-btn-block'}
                   disabled={terkunciRef.current}
                   onClick={() => jawabTindakan(k.benar)}
                   aria-label={`Tindakan: ${k.label}`}
@@ -324,7 +324,6 @@ function InspeksiGestur({
                     minHeight: 48,
                     outline: sorot ? '2px dashed #b45309' : undefined,
                     outlineOffset: 2,
-                    background: sudahBenar ? '#dcfce7' : undefined,
                     border: sudahBenar ? '2px solid #236b4d' : undefined,
                     whiteSpace: 'normal',
                     height: 'auto',
@@ -337,7 +336,7 @@ function InspeksiGestur({
             })}
           </div>
           {jawabanBenar && (
-            <div role="status" style={{ marginTop: 12, padding: 12, borderRadius: 12, background: '#dcfce7' }}>
+            <div role="status" className="aia-umpan-benar" style={{ marginTop: 12, padding: 12, borderRadius: 12 }}>
               <strong>Benar!</strong> {jawabanBenar}
             </div>
           )}
@@ -504,20 +503,20 @@ function InspeksiSehat({
             {opsi.map((pilihan, i) => {
               const isJawaban = pilihan.benar
               const isDipilih = i === dipilih
-              let latar: string | undefined
+              let kelasUmpan: string | undefined
               let border: string | undefined
               if (umpan && isJawaban) {
-                latar = '#dcfce7'
+                kelasUmpan = 'aia-umpan-benar'
                 border = '2px solid #236b4d'
               } else if (umpan && isDipilih) {
-                latar = '#fee2e2'
+                kelasUmpan = 'aia-umpan-salah'
                 border = '2px solid #b83232'
               }
               return (
                 <button
                   key={i}
                   type="button"
-                  className="aia-btn aia-btn-block"
+                  className={`aia-btn aia-btn-block${kelasUmpan ? ` ${kelasUmpan}` : ''}`}
                   disabled={!!umpan}
                   onClick={() => jawab(i)}
                   aria-label={`Tindakan ${String.fromCharCode(65 + i)}: ${pilihan.teks}`}
@@ -525,7 +524,6 @@ function InspeksiSehat({
                     justifyContent: 'flex-start',
                     textAlign: 'left',
                     minHeight: 48,
-                    background: latar,
                     border,
                     whiteSpace: 'normal',
                     height: 'auto',
@@ -536,8 +534,8 @@ function InspeksiSehat({
                     {String.fromCharCode(65 + i)}.
                   </span>
                   <span>{pilihan.teks}</span>
-                  {umpan && isJawaban && <Check aria-hidden="true" color="#236b4d" />}
-                  {umpan && isDipilih && !isJawaban && <X aria-hidden="true" color="#b83232" />}
+                  {umpan && isJawaban && <Check aria-hidden="true" />}
+                  {umpan && isDipilih && !isJawaban && <X aria-hidden="true" />}
                 </button>
               )
             })}
@@ -563,7 +561,7 @@ function InspeksiSehat({
 
       {fase === 'selesai' && (
         <section className="aia-card aia-pos-hijau" style={{ textAlign: 'center' }} aria-labelledby="aia-ls-selesai-title">
-          <Check aria-hidden="true" style={{ width: 36, height: 36, color: '#2f7d4f' }} />
+          <Check aria-hidden="true" style={{ width: 36, height: 36, color: 'var(--green)' }} />
           <h3 id="aia-ls-selesai-title" className="aia-section-title">
             Tahap selesai!
           </h3>
@@ -583,7 +581,7 @@ function InspeksiSehat({
 
       {fase === 'gagal' && (
         <section className="aia-card" style={{ textAlign: 'center' }} aria-labelledby="aia-ls-gagal-title">
-          <X aria-hidden="true" style={{ width: 36, height: 36, color: '#b83232' }} />
+          <X aria-hidden="true" style={{ width: 36, height: 36, color: 'var(--aia-merah)' }} />
           <h3 id="aia-ls-gagal-title" className="aia-section-title">
             Nyawa habis
           </h3>

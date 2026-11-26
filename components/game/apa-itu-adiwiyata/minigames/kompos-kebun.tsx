@@ -309,7 +309,7 @@ function FaseLapis({
               border: '2px solid #8d6e63',
               borderRadius: 12,
               overflow: 'hidden',
-              background: '#f5efe6',
+              background: 'var(--muted)',
               minHeight: 32,
               display: 'flex',
               flexDirection: 'column-reverse',
@@ -428,8 +428,13 @@ function FaseLapisGestur({ tambahSkor, onSelesai, perbesarTarget, terjeda = fals
           <p className="aia-chip" role="alert">
             <AlertTriangle aria-hidden="true" /> Kompos bau! Perbaiki dulu dengan 2 aksi ini.
           </p>
+          <p className="aia-muted" style={{ margin: '0 0 8px' }}>
+            Langkah {tahapPerbaiki === 'cokelat' ? 1 : 2} dari 2:{' '}
+            {tahapPerbaiki === 'cokelat' ? 'tambah bahan cokelat, lalu aduk.' : 'aduk kompos sampai baunya hilang.'}
+          </p>
           {tahapPerbaiki === 'cokelat' ? (
             <TapSpam
+              key="perbaiki-cokelat"
               label="Tambah bahan cokelat"
               jumlahKetukan={5}
               ikon={<Leaf aria-hidden="true" />}
@@ -438,6 +443,7 @@ function FaseLapisGestur({ tambahSkor, onSelesai, perbesarTarget, terjeda = fals
             />
           ) : (
             <TapSpam
+              key="perbaiki-aduk"
               label="Aduk kompos"
               jumlahKetukan={5}
               ikon={<RefreshCw aria-hidden="true" />}

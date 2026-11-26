@@ -770,7 +770,7 @@ export function PilahSampah({
 
       {fase === 'selesai' && (
         <section className="aia-card" style={{ textAlign: 'center' }} aria-labelledby="aia-ps-selesai-title">
-          <Check aria-hidden="true" style={{ width: 36, height: 36, color: '#2f7d4f' }} />
+          <Check aria-hidden="true" style={{ width: 36, height: 36, color: 'var(--green)' }} />
           <h3 id="aia-ps-selesai-title" className="aia-section-title">
             Tahap selesai!
           </h3>
@@ -793,7 +793,7 @@ export function PilahSampah({
 
       {fase === 'gagal' && (
         <section className="aia-card" style={{ textAlign: 'center' }} aria-labelledby="aia-ps-gagal-title">
-          <X aria-hidden="true" style={{ width: 36, height: 36, color: '#b83232' }} />
+          <X aria-hidden="true" style={{ width: 36, height: 36, color: 'var(--aia-merah)' }} />
           <h3 id="aia-ps-gagal-title" className="aia-section-title">
             Nyawa habis
           </h3>

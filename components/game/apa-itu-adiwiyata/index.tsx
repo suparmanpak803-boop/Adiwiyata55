@@ -39,6 +39,10 @@ import { Profil } from './profil'
 import { TokoKantin } from './toko-kantin'
 import { duckMusik, klik, setSuaraMuted, startMusic, stopMusic, unduckMusik, type MusicMode } from './suara'
 import './apa-itu-adiwiyata.css'
+// Gaya arcade (.game-*) dipakai Tangkap Sampah + Kuis di dalam runner ini.
+// Tanpa import ini, semua layar arcade tampil tanpa gaya sama sekali
+// (tombol polos menempel, teks tanpa kartu) seperti di screenshot user.
+import '../game.css'
 
 const MODE_BAB: MusicMode[] = ['bab1', 'bab2', 'bab3', 'bab4', 'bab5', 'bab6']
 

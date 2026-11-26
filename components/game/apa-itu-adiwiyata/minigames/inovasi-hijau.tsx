@@ -199,7 +199,7 @@ function VersiGestur({
                     <button
                       key={i}
                       type="button"
-                      className="aia-btn aia-btn-block"
+                      className={isSalah ? 'aia-btn aia-btn-block aia-umpan-salah' : 'aia-btn aia-btn-block'}
                       disabled={isSalah}
                       onClick={() => pilihDesain(i)}
                       aria-label={`Pilihan ${String.fromCharCode(65 + i)}: ${opsi.teks}`}
@@ -207,7 +207,6 @@ function VersiGestur({
                         justifyContent: 'flex-start',
                         textAlign: 'left',
                         minHeight: 48,
-                        background: isSalah ? '#fee2e2' : undefined,
                         border: isSalah ? '2px solid #b83232' : undefined,
                         whiteSpace: 'normal',
                         height: 'auto',
@@ -218,21 +217,13 @@ function VersiGestur({
                         {String.fromCharCode(65 + i)}.
                       </span>
                       <span>{opsi.teks}</span>
-                      {isSalah && <X aria-hidden="true" color="#b83232" />}
+                      {isSalah && <X aria-hidden="true" />}
                     </button>
                   )
                 })}
               </div>
               {umpanPilih && (
-                <div
-                  role="status"
-                  style={{
-                    marginTop: 12,
-                    padding: 12,
-                    borderRadius: 12,
-                    background: '#fee2e2',
-                  }}
-                >
+                <div role="status" className="aia-umpan-salah" style={{ marginTop: 12, padding: 12, borderRadius: 12 }}>
                   <strong>Belum tepat.</strong> {umpanPilih}
                 </div>
               )}
@@ -375,20 +366,20 @@ function VersiTombol({ tugasId, stageIndex, onStageComplete }: TugasMiniGameSlot
               {pilihan.map((opsi, i) => {
                 const isSalah = salahDipilih.includes(i)
                 const isBenarDipilih = dipilihBenar && opsi.benar
-                let latar: string | undefined
+                let kelasUmpan: string | undefined
                 let border: string | undefined
                 if (isBenarDipilih) {
-                  latar = '#dcfce7'
+                  kelasUmpan = 'aia-umpan-benar'
                   border = '2px solid #236b4d'
                 } else if (isSalah) {
-                  latar = '#fee2e2'
+                  kelasUmpan = 'aia-umpan-salah'
                   border = '2px solid #b83232'
                 }
                 return (
                   <button
                     key={i}
                     type="button"
-                    className="aia-btn aia-btn-block"
+                    className={`aia-btn aia-btn-block${kelasUmpan ? ` ${kelasUmpan}` : ''}`}
                     disabled={dipilihBenar || isSalah}
                     onClick={() => pilih(i)}
                     aria-label={`Pilihan ${String.fromCharCode(65 + i)}: ${opsi.teks}`}
@@ -396,7 +387,6 @@ function VersiTombol({ tugasId, stageIndex, onStageComplete }: TugasMiniGameSlot
                       justifyContent: 'flex-start',
                       textAlign: 'left',
                       minHeight: 48,
-                      background: latar,
                       border,
                       whiteSpace: 'normal',
                       height: 'auto',
@@ -407,8 +397,8 @@ function VersiTombol({ tugasId, stageIndex, onStageComplete }: TugasMiniGameSlot
                       {String.fromCharCode(65 + i)}.
                     </span>
                     <span>{opsi.teks}</span>
-                    {isBenarDipilih && <Check aria-hidden="true" color="#236b4d" />}
-                    {isSalah && <X aria-hidden="true" color="#b83232" />}
+                    {isBenarDipilih && <Check aria-hidden="true" />}
+                    {isSalah && <X aria-hidden="true" />}
                   </button>
                 )
               })}
@@ -417,11 +407,11 @@ function VersiTombol({ tugasId, stageIndex, onStageComplete }: TugasMiniGameSlot
             {umpan && (
               <div
                 role="status"
+                className={umpan.jenis === 'benar' ? 'aia-umpan-benar' : 'aia-umpan-salah'}
                 style={{
                   marginTop: 12,
                   padding: 12,
                   borderRadius: 12,
-                  background: umpan.jenis === 'benar' ? '#dcfce7' : '#fee2e2',
                 }}
               >
                 <strong>{umpan.jenis === 'benar' ? 'Tepat!' : 'Belum tepat.'}</strong> {umpan.teks}

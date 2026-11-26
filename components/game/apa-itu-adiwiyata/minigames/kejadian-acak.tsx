@@ -202,7 +202,7 @@ export function KejadianAcak({ chapterId, onDone }: { chapterId: ChapterId; onDo
               }}
             >
               <div>
-                <Check aria-hidden="true" style={{ width: 36, height: 36, color: '#2f7d4f' }} />
+                <Check aria-hidden="true" style={{ width: 36, height: 36, color: 'var(--green)' }} />
                 <p style={{ margin: '8px 0 0', fontWeight: 700 }}>Berhasil! Kejadian teratasi.</p>
               </div>
             </div>

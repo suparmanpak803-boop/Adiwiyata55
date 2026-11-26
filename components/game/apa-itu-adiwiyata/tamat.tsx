@@ -55,7 +55,7 @@ export function Tamat({ onExit }: { onExit: () => void }) {
             textAlign: 'center',
           }}
         >
-          <Award aria-hidden="true" size={36} color="#236b4d" style={{ margin: '0 auto 4px' }} />
+          <Award aria-hidden="true" size={36} style={{ margin: '0 auto 4px', color: 'var(--green)' }} />
           <span className="aia-kicker" style={{ textAlign: 'center' }}>
             Sertifikat
           </span>

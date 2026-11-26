@@ -184,7 +184,7 @@ function PilahGestur({
     return (
       <div className="aia-stack">
         <section className="aia-card aia-pos-hijau" style={{ textAlign: 'center' }}>
-          <Check aria-hidden="true" style={{ width: 36, height: 36, color: '#2f7d4f' }} />
+          <Check aria-hidden="true" style={{ width: 36, height: 36, color: 'var(--green)' }} />
           <h3 className="aia-section-title">Tahap selesai!</h3>
           <p className="aia-muted">
             Kamu memilah {benarHitung} dari {item.length} item dengan benar. {spec.hasilBenar}
@@ -352,7 +352,7 @@ function CatatGestur({
     return (
       <div className="aia-stack">
         <section className="aia-card aia-pos-hijau" style={{ textAlign: 'center' }}>
-          <Check aria-hidden="true" style={{ width: 36, height: 36, color: '#2f7d4f' }} />
+          <Check aria-hidden="true" style={{ width: 36, height: 36, color: 'var(--green)' }} />
           <h3 className="aia-section-title">Tahap selesai!</h3>
           <p className="aia-muted">
             Kamu mencatat {benarCount} dari {baris.length} jenis sampah dengan benar. Total timbangan hari ini:{' '}
@@ -541,7 +541,7 @@ function KuisGestur({
     return (
       <div className="aia-stack">
         <section className="aia-card aia-pos-hijau" style={{ textAlign: 'center' }}>
-          <Check aria-hidden="true" style={{ width: 36, height: 36, color: '#2f7d4f' }} />
+          <Check aria-hidden="true" style={{ width: 36, height: 36, color: 'var(--green)' }} />
           <h3 className="aia-section-title">Tahap selesai!</h3>
           <p className="aia-muted">
             Kamu menyelesaikan {soal.length} soal hitung tabungan. {spec.hasilBenar}
@@ -710,7 +710,7 @@ function PilahAnorganik({
               Masuk kelompok apa?
             </p>
             {mudah && (
-              <p className="aia-muted" style={{ margin: '8px 0 0', color: '#236b4d' }}>
+              <p className="aia-muted" style={{ margin: '8px 0 0', color: 'var(--green)' }}>
                 Petunjuk: masuk kelompok {item.kelompok}.
               </p>
             )}
@@ -723,28 +723,28 @@ function PilahAnorganik({
               const warnaTombol = warnaTombolBak(BAK_KELOMPOK[kelompok] ?? 'anorganik')
               const isDipilih = dipilih === kelompok
               const isJawaban = item.kelompok === kelompok
-              let latar: string | undefined
+              let kelasUmpan: string | undefined
               let border: string | undefined
               if (umpan && isJawaban) {
-                latar = '#dcfce7'
+                kelasUmpan = 'aia-umpan-benar'
                 border = '2px solid #236b4d'
               } else if (umpan && isDipilih) {
-                latar = '#fee2e2'
+                kelasUmpan = 'aia-umpan-salah'
                 border = '2px solid #b83232'
               }
               return (
                 <button
                   key={kelompok}
                   type="button"
-                  className="aia-btn aia-btn-block"
+                  className={`aia-btn aia-btn-block${kelasUmpan ? ` ${kelasUmpan}` : ''}`}
                   disabled={!!umpan}
                   onClick={() => jawab(kelompok)}
                   aria-label={`Kelompok ${kelompok}`}
                   style={{
                     minHeight: 56,
-                    background: latar ?? warnaTombol,
+                    background: kelasUmpan ? undefined : warnaTombol,
                     border,
-                    color: latar ? 'inherit' : '#ffffff',
+                    color: kelasUmpan ? undefined : '#ffffff',
                     whiteSpace: 'normal',
                     height: 'auto',
                     padding: '12px 16px',
@@ -778,7 +778,7 @@ function PilahAnorganik({
 
       {fase === 'selesai' && (
         <section className="aia-card aia-pos-hijau" style={{ textAlign: 'center' }} aria-labelledby="aia-bs-selesai-title">
-          <Check aria-hidden="true" style={{ width: 36, height: 36, color: '#2f7d4f' }} />
+          <Check aria-hidden="true" style={{ width: 36, height: 36, color: 'var(--green)' }} />
           <h3 id="aia-bs-selesai-title" className="aia-section-title">
             Tahap selesai!
           </h3>
@@ -798,7 +798,7 @@ function PilahAnorganik({
 
       {fase === 'gagal' && (
         <section className="aia-card" style={{ textAlign: 'center' }} aria-labelledby="aia-bs-gagal-title">
-          <X aria-hidden="true" style={{ width: 36, height: 36, color: '#b83232' }} />
+          <X aria-hidden="true" style={{ width: 36, height: 36, color: 'var(--aia-merah)' }} />
           <h3 id="aia-bs-gagal-title" className="aia-section-title">
             Nyawa habis
           </h3>
@@ -1032,26 +1032,25 @@ function CatatTimbangan({
               {opsi.map((berat) => {
                 const isDipilih = dipilih === berat
                 const isJawaban = berat === beratBenar
-                let latar: string | undefined
+                let kelasUmpan: string | undefined
                 let border: string | undefined
                 if (umpan && isJawaban) {
-                  latar = '#dcfce7'
+                  kelasUmpan = 'aia-umpan-benar'
                   border = '2px solid #236b4d'
                 } else if (umpan && isDipilih) {
-                  latar = '#fee2e2'
+                  kelasUmpan = 'aia-umpan-salah'
                   border = '2px solid #b83232'
                 }
                 return (
                   <button
                     key={berat}
                     type="button"
-                    className="aia-btn aia-btn-block"
+                    className={`aia-btn aia-btn-block${kelasUmpan ? ` ${kelasUmpan}` : ''}`}
                     disabled={!!umpan}
                     onClick={() => jawab(berat)}
                     aria-label={`Berat ${berat}`}
                     style={{
                       minHeight: 48,
-                      background: latar,
                       border,
                       whiteSpace: 'normal',
                       height: 'auto',
@@ -1069,11 +1068,11 @@ function CatatTimbangan({
             {umpan && (
               <div
                 role="status"
+                className={umpan.benar ? 'aia-umpan-benar' : 'aia-umpan-salah'}
                 style={{
                   marginTop: 12,
                   padding: 12,
                   borderRadius: 12,
-                  background: umpan.benar ? '#dcfce7' : '#fee2e2',
                 }}
               >
                 <strong>{umpan.benar ? 'Benar!' : 'Belum tepat.'}</strong> {umpan.teks}
@@ -1096,7 +1095,7 @@ function CatatTimbangan({
 
       {fase === 'selesai' && (
         <section className="aia-card aia-pos-hijau" style={{ textAlign: 'center' }} aria-labelledby="aia-bs2-selesai-title">
-          <Check aria-hidden="true" style={{ width: 36, height: 36, color: '#2f7d4f' }} />
+          <Check aria-hidden="true" style={{ width: 36, height: 36, color: 'var(--green)' }} />
           <h3 id="aia-bs2-selesai-title" className="aia-section-title">
             Tahap selesai!
           </h3>
@@ -1117,7 +1116,7 @@ function CatatTimbangan({
 
       {fase === 'gagal' && (
         <section className="aia-card" style={{ textAlign: 'center' }} aria-labelledby="aia-bs2-gagal-title">
-          <X aria-hidden="true" style={{ width: 36, height: 36, color: '#b83232' }} />
+          <X aria-hidden="true" style={{ width: 36, height: 36, color: 'var(--aia-merah)' }} />
           <h3 id="aia-bs2-gagal-title" className="aia-section-title">
             Nyawa habis
           </h3>
@@ -1276,20 +1275,20 @@ function KuisTabungan({
                 const pilihan = pertanyaan.pilihan[asli] ?? ''
                 const isJawaban = i === opsi.jawabanBaru
                 const isDipilih = i === dipilih
-                let latar: string | undefined
+                let kelasUmpan: string | undefined
                 let border: string | undefined
                 if (umpan && isJawaban) {
-                  latar = '#dcfce7'
+                  kelasUmpan = 'aia-umpan-benar'
                   border = '2px solid #236b4d'
                 } else if (umpan && isDipilih) {
-                  latar = '#fee2e2'
+                  kelasUmpan = 'aia-umpan-salah'
                   border = '2px solid #b83232'
                 }
                 return (
                   <button
                     key={i}
                     type="button"
-                    className="aia-btn aia-btn-block"
+                    className={`aia-btn aia-btn-block${kelasUmpan ? ` ${kelasUmpan}` : ''}`}
                     disabled={!!umpan}
                     onClick={() => jawab(i)}
                     aria-label={`Pilihan ${String.fromCharCode(65 + i)}: ${pilihan}`}
@@ -1297,7 +1296,6 @@ function KuisTabungan({
                       justifyContent: 'flex-start',
                       textAlign: 'left',
                       minHeight: 48,
-                      background: latar,
                       border,
                       whiteSpace: 'normal',
                       height: 'auto',
@@ -1308,8 +1306,8 @@ function KuisTabungan({
                       {String.fromCharCode(65 + i)}.
                     </span>
                     <span>{pilihan}</span>
-                    {umpan && isJawaban && <Check aria-hidden="true" color="#236b4d" />}
-                    {umpan && isDipilih && !isJawaban && <X aria-hidden="true" color="#b83232" />}
+                    {umpan && isJawaban && <Check aria-hidden="true" />}
+                    {umpan && isDipilih && !isJawaban && <X aria-hidden="true" />}
                   </button>
                 )
               })}
@@ -1318,11 +1316,11 @@ function KuisTabungan({
             {umpan && (
               <div
                 role="status"
+                className={umpan.benar ? 'aia-umpan-benar' : 'aia-umpan-salah'}
                 style={{
                   marginTop: 12,
                   padding: 12,
                   borderRadius: 12,
-                  background: umpan.benar ? '#dcfce7' : '#fee2e2',
                 }}
               >
                 <strong>{umpan.benar ? 'Benar!' : 'Belum tepat.'}</strong> {umpan.teks}
@@ -1345,7 +1343,7 @@ function KuisTabungan({
 
       {fase === 'selesai' && (
         <section className="aia-card aia-pos-hijau" style={{ textAlign: 'center' }} aria-labelledby="aia-bs3-selesai-title">
-          <Check aria-hidden="true" style={{ width: 36, height: 36, color: '#2f7d4f' }} />
+          <Check aria-hidden="true" style={{ width: 36, height: 36, color: 'var(--green)' }} />
           <h3 id="aia-bs3-selesai-title" className="aia-section-title">
             Tahap selesai!
           </h3>
@@ -1365,7 +1363,7 @@ function KuisTabungan({
 
       {fase === 'gagal' && (
         <section className="aia-card" style={{ textAlign: 'center' }} aria-labelledby="aia-bs3-gagal-title">
-          <X aria-hidden="true" style={{ width: 36, height: 36, color: '#b83232' }} />
+          <X aria-hidden="true" style={{ width: 36, height: 36, color: 'var(--aia-merah)' }} />
           <h3 id="aia-bs3-gagal-title" className="aia-section-title">
             Nyawa habis
           </h3>
