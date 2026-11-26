@@ -1,5 +1,6 @@
 import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
+import Script from 'next/script'
 import { SiteMotion } from '@/components/animations'
 import './globals.css'
 
@@ -52,6 +53,20 @@ export default function RootLayout({
   return (
     <html lang="id">
       <body className="antialiased">
+        {/* GA4 — Measurement ID G-5NRM2FJHWQ (properti "Adiwiyata55",
+            dibuat user 26 Nov 14:33; ID ini publik, aman di kode). */}
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-5NRM2FJHWQ"
+          strategy="afterInteractive"
+        />
+        <Script id="ga4-init" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-5NRM2FJHWQ');
+          `}
+        </Script>
         <SiteMotion>
           {children}
         </SiteMotion>
