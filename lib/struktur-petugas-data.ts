@@ -427,11 +427,19 @@ function bersihkanPetugas(value: unknown, dipakai: Set<string>): HasilValidasi<P
   if (jabatan.length > BATAS.jabatan) return { ok: false, error: `Jabatan petugas maksimal ${BATAS.jabatan} karakter.` }
   const tugas = teks(item.tugas)
   if (tugas.length > BATAS.tugas) return { ok: false, error: `Tugas petugas maksimal ${BATAS.tugas} karakter.` }
-  // Field tak dikenal (termasuk `foto` dan `whatsapp`) dibuang.
+  // `foto` dipertahankan bila berupa path lokal gambar yang valid
+  // (sesuai tipe Petugas + komentar header modul); sebelumnya field
+  // ini dibuang diam-diam, jadi foto yang sudah ada hilang setiap
+  // kali admin menyimpan dari editor. `whatsapp` dan field lain yang
+  // tak dikenal tetap dibuang.
+  const fotoMentah = typeof item.foto === 'string' ? item.foto.trim() : ''
+  const foto = fotoMentah && fotoMentah.startsWith('/') && !fotoMentah.startsWith('//') && fotoMentah.length <= 500 && /\.(jpe?g|png|webp|avif)$/i.test(fotoMentah.split('?')[0])
+    ? fotoMentah
+    : undefined
   const idMentah = teks(item.id)
   const id = idMentah && !dipakai.has(idMentah) && /^[a-z0-9][a-z0-9-]*$/.test(idMentah) ? idMentah : idBaru(nama, dipakai)
   dipakai.add(id)
-  return { ok: true, data: { id, nama, kelas, jabatan, tugas } }
+  return { ok: true, data: { id, nama, kelas, jabatan, tugas, ...(foto ? { foto } : {}) } }
 }
 
 function bersihkanTim(value: unknown, dipakai: Set<string>): HasilValidasi<TimPetugas> {

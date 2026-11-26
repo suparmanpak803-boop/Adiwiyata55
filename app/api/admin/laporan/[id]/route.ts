@@ -24,6 +24,11 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   try {
     const { id } = await params
     if (!/^\d{1,15}$/.test(id)) return NextResponse.json({ error: 'Laporan tidak ditemukan.' }, { status: 404 })
+    // updateReports diam-diam melewati laporan yang tidak ada / bukan
+    // tugas petugas — tanpa cek ini PATCH selalu menjawab ok:true
+    // walau tidak ada yang berubah. Pastikan dulu laporan ada dan
+    // boleh disentuh pemanggil.
+    if (!(await getReportDetail(id, auth.user))) return NextResponse.json({ error: 'Laporan tidak ditemukan.' }, { status: 404 })
     const parsed = await readJsonBody<Record<string, unknown>>(request)
     if (!parsed.ok) return NextResponse.json({ error: parsed.reason === 'too_large' ? 'Data terlalu besar.' : 'Data tidak valid.' }, { status: parsed.reason === 'too_large' ? 413 : 400 })
     const body = parsed.data as Record<string, unknown> | null

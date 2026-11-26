@@ -121,7 +121,10 @@ const UJUNG: [number, number][] = [
 
 function PipaSvg({ jenis, rotasi, basah }: { jenis: JenisPipa; rotasi: RotasiPipa; basah: boolean }) {
   const sisi = sisiPipa(jenis, rotasi)
-  const warna = basah ? '#2563eb' : '#64748b'
+  // Gelombang B: warna pipa memakai variabel tema (via style, karena
+  // atribut presentasi SVG tidak mendukung var()). Hex mentah #2563eb
+  // hanya 2,75:1 dan #64748b 2,98:1 di atas kartu gelap.
+  const warna = basah ? 'var(--aia-sky)' : 'var(--ink-soft)'
   return (
     <svg viewBox="0 0 40 40" width="100%" height="100%" aria-hidden="true">
       {Array.from(sisi).map((s) => (
@@ -131,12 +134,12 @@ function PipaSvg({ jenis, rotasi, basah }: { jenis: JenisPipa; rotasi: RotasiPip
           y1={20}
           x2={UJUNG[s][0]}
           y2={UJUNG[s][1]}
-          stroke={warna}
+          style={{ stroke: warna }}
           strokeWidth={7}
           strokeLinecap="round"
         />
       ))}
-      <circle cx={20} cy={20} r={5} fill={warna} />
+      <circle cx={20} cy={20} r={5} style={{ fill: warna }} />
     </svg>
   )
 }
@@ -248,9 +251,9 @@ export function PipePuzzle({
         .aia-gi-pipa-sel:focus-visible { outline: 3px solid var(--green, #2f7d4f); outline-offset: 2px; }
         .aia-gi-pipa-sel.basah { background: color-mix(in srgb, #2563eb 14%, var(--card, #fff)); }
         .aia-gi-pipa-sel.tetap { cursor: default; opacity: .75; }
-        .aia-gi-pipa-petunjuk { outline: 3px solid #b45309; outline-offset: 1px; animation: aia-gi-denyut 1s ease-in-out infinite alternate; }
-        @keyframes aia-gi-denyut { from { outline-color: #b45309; } to { outline-color: #f59e0b; } }
-        .aia-gi-pipa-tanda { position: absolute; top: 2px; right: 2px; width: 20px; height: 20px; border-radius: 50%; background: var(--card, #fff); border: 1px solid var(--line, #e5e7eb); display: flex; align-items: center; justify-content: center; color: #2563eb; }
+        .aia-gi-pipa-petunjuk { outline: 3px solid var(--aia-amber, #b45309); outline-offset: 1px; animation: aia-gi-denyut 1s ease-in-out infinite alternate; }
+        @keyframes aia-gi-denyut { from { outline-color: var(--aia-amber, #b45309); } to { outline-color: color-mix(in srgb, var(--aia-amber, #b45309) 70%, white); } }
+        .aia-gi-pipa-tanda { position: absolute; top: 2px; right: 2px; width: 20px; height: 20px; border-radius: 50%; background: var(--card, #fff); border: 1px solid var(--line, #e5e7eb); display: flex; align-items: center; justify-content: center; color: var(--aia-sky, #2563eb); }
         .aia-gi-pipa-tanda svg { width: 12px; height: 12px; }
         @media (prefers-reduced-motion: reduce) { .aia-gi-pipa-petunjuk { animation: none; } }
       `}</style>

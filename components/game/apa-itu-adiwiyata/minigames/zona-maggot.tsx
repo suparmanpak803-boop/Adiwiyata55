@@ -276,7 +276,7 @@ function FasePakan({
         aria-valuemax={BAU_MAKS_GAGAL}
         aria-label="Tingkat bau kotak maggot"
       >
-        <span style={{ width: `${(bau / BAU_MAKS_GAGAL) * 100}%`, background: bau >= 2 ? '#b91c1c' : '#2e7d32' }} />
+        <span style={{ width: `${(bau / BAU_MAKS_GAGAL) * 100}%`, background: bau >= 2 ? 'var(--aia-merah)' : 'var(--aia-leaf)' }} />
       </div>
 
       {bau >= 1 && (
@@ -454,7 +454,7 @@ function FasePakanGestur({ tambahSkor, onSelesai, onGagal, onSalah, perbesarTarg
         aria-valuemax={BAU_MAKS_GAGAL}
         aria-label="Tingkat bau kotak maggot"
       >
-        <span style={{ width: `${(bau / BAU_MAKS_GAGAL) * 100}%`, background: bau >= 2 ? '#b91c1c' : '#2e7d32' }} />
+        <span style={{ width: `${(bau / BAU_MAKS_GAGAL) * 100}%`, background: bau >= 2 ? 'var(--aia-merah)' : 'var(--aia-leaf)' }} />
       </div>
 
       {bau >= 1 && (
@@ -564,7 +564,7 @@ function BarIndikator({
   ikon: typeof Thermometer
 }) {
   const status = nilai < 40 ? 'Terlalu rendah' : nilai <= 70 ? 'Aman' : masalah
-  const warna = nilai < 40 ? '#b45309' : nilai <= 70 ? '#2e7d32' : '#b91c1c'
+  const warna = nilai < 40 ? '#b45309' : nilai <= 70 ? '#212121' : '#b91c1c'
   return (
     <div>
       <div className="aia-progress-row">
@@ -583,7 +583,11 @@ function BarIndikator({
         aria-valuemax={100}
         aria-label={`${label}: ${status}`}
       >
-        <span style={{ position: 'absolute', left: '40%', width: '30%', top: 0, bottom: 0, background: '#a8d5a2' }} />
+        {/* Gelombang B: pita zona aman #a8d5a2 di atas trek hanya 1,39:1;
+            #2f7d4f = 4,24:1. Penanda di zona aman memakai #212121
+            (3,20:1 di atas pita, 13,56:1 di atas trek) supaya tetap
+            terlihat di atas pita gelap. */}
+        <span style={{ position: 'absolute', left: '40%', width: '30%', top: 0, bottom: 0, background: '#2f7d4f' }} />
         <span
           style={{
             position: 'absolute',

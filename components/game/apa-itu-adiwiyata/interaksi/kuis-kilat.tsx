@@ -178,9 +178,9 @@ export function KuisKilat({
         @media (hover: hover) { .aia-gi-kuis-pilihan:hover:not(:disabled) { transform: scale(1.01); box-shadow: 0 4px 14px rgba(0,0,0,.12); } }
         .aia-gi-kuis-pilihan:focus-visible { outline: 3px solid var(--green, #2f7d4f); outline-offset: 2px; }
         .aia-gi-kuis-pilihan.benar-dipilih { border-color: var(--green, #2f7d4f); background: color-mix(in srgb, #2f7d4f 14%, var(--card, #fff)); }
-        .aia-gi-kuis-pilihan.salah-dipilih { border-color: #b83232; background: color-mix(in srgb, #b83232 10%, var(--card, #fff)); }
+        .aia-gi-kuis-pilihan.salah-dipilih { border-color: var(--aia-merah, #b83232); background: color-mix(in srgb, #b83232 10%, var(--card, #fff)); }
         .aia-gi-kuis-pilihan.jawaban-benar { border-color: var(--green, #2f7d4f); background: color-mix(in srgb, #2f7d4f 14%, var(--card, #fff)); }
-        .aia-gi-kuis-beruntun { display: inline-flex; align-items: center; gap: 4px; color: #b45309; font-weight: 800; }
+        .aia-gi-kuis-beruntun { display: inline-flex; align-items: center; gap: 4px; color: var(--aia-amber, #b45309); font-weight: 800; }
         .aia-gi-kuis-beruntun svg { width: 16px; height: 16px; }
       `}</style>
 

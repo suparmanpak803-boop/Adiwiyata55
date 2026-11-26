@@ -22,7 +22,12 @@ export async function deleteAdiwiyataDocument(id: string) {
     .limit(1)
   if (!document) throw new Error('Dokumen tidak ditemukan atau sudah dihapus.')
 
-  if (document.pathname.startsWith('adiwiyata-documents/')) await del(document.url)
+  if (document.pathname.startsWith('adiwiyata-documents/')) {
+    // Hapus blob best-effort: bila berkasnya sudah hilang dari Blob,
+    // penghapusan dokumen tetap jalan (sebelumnya del() yang melempar
+    // membuat baris DB tidak pernah terhapus dan admin terkunci).
+    await del(document.url).catch(() => undefined)
+  }
   await db.delete(adiwiyataDocuments).where(eq(adiwiyataDocuments.id, id))
   revalidatePath('/adiwiyata')
   revalidatePath('/adiwiyata/dokumen')

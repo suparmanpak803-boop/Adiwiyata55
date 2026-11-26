@@ -9,6 +9,14 @@
 .game-card p { margin: 0; color: var(--ink-soft); font-size: 13px; line-height: 1.6; }
 .game-card-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 12px; color: var(--ink-soft); }
 .game-play, .game-ghost { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 16px; border: 1px solid var(--green); border-radius: 999px; background: var(--green); color: #fff; font-size: 13px; font-weight: 700; text-decoration: none; cursor: pointer; }
+/* Gelombang B: di mode gelap --green = #9fd2ae (hijau terang), jadi teks
+   putih di atasnya hanya 1,71:1. Tombol utama arkade memakai pasangan
+   gelap yang sama dengan .aia-btn-primary: hijau terang + teks gelap
+   (#102219 di atas #9fd2ae = 9,73:1). */
+:root[data-theme='dark'] .game-play { border-color: #9fd2ae; background: #9fd2ae; color: #102219; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .game-play { border-color: #9fd2ae; background: #9fd2ae; color: #102219; }
+}
 .game-play svg { width: 14px; height: 14px; }
 .game-play:disabled { border-color: var(--line); background: transparent; color: var(--ink-soft); cursor: not-allowed; }
 .game-ghost { background: transparent; color: var(--green); }
@@ -41,12 +49,12 @@
 .game-options { display: grid; gap: 8px; }
 .game-option { padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); color: var(--foreground); font: inherit; text-align: left; cursor: pointer; }
 .game-option.right { border-color: var(--aia-leaf, #2f7d4f); background: color-mix(in srgb, var(--aia-leaf, #2f7d4f) 25%, var(--card)); }
-.game-option.wrong { border-color: #b83232; background: color-mix(in srgb, #b83232 22%, var(--card)); }
+.game-option.wrong { border-color: var(--aia-merah, #b83232); background: color-mix(in srgb, #b83232 22%, var(--card)); }
 .game-explain { margin-top: 12px; padding: 12px 14px; border-radius: 10px; background: color-mix(in srgb, var(--sage) 60%, var(--card)); font-size: 14px; }
 .game-explain a { color: inherit; text-decoration: underline; }
 .game-sort { display: grid; gap: 8px; margin: 10px 0; padding: 0; list-style: none; }
 .game-sort li { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); cursor: grab; }
-.game-sort li.right { border-color: var(--aia-leaf, #2f7d4f); } .game-sort li.wrong { border-color: #b83232; }
+.game-sort li.right { border-color: var(--aia-leaf, #2f7d4f); } .game-sort li.wrong { border-color: var(--aia-merah, #b83232); }
 .game-rank { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--sage); font-size: 12px; font-weight: 700; }
 .game-sort-name { display: flex; flex: 1; flex-direction: column; }
 .game-sort-name small { color: var(--ink-soft); font-size: 12px; }
@@ -56,7 +64,7 @@
 .garden-mine h3 { margin: 0 0 4px; }
 .garden-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 8px 0 14px; }
 .garden-grid figure { display: flex; flex-direction: column; align-items: center; margin: 0; padding: 6px; border: 1px solid var(--line); border-radius: 12px; }
-.garden-grid figure.mine { border: 2px solid #2f7d4f; }
+.garden-grid figure.mine { border: 2px solid var(--aia-leaf, #2f7d4f); }
 .garden-grid figcaption { display: flex; flex-direction: column; align-items: center; font-size: 12px; }
 .garden-grid small { color: var(--ink-soft); }
 @media (min-width: 640px) { .garden-grid { grid-template-columns: repeat(8, 1fr); } .game-memory { grid-template-columns: repeat(4, 1fr); } }
@@ -77,3 +85,18 @@
 .game-aturan svg { flex: none; width: 16px; height: 16px; margin-top: 2px; color: var(--aia-leaf, var(--green)); }
 .game-actions--tumpuk { flex-direction: column; align-items: stretch; }
 .game-actions--tumpuk .game-play, .game-actions--tumpuk .game-ghost { width: 100%; min-height: 48px; }
+
+/* ==========================================================================
+   GELOMBANG E — sapuan responsif (26 Nov 2026, append-only).
+   ========================================================================== */
+@media (max-width: 480px) {
+  /* E-C1: tombol arcade .game-play/.game-ghost ~37px (kontrol ~33px)
+     -> 44px. Mencakup tombol lonceng notifikasi (.game-ghost) di
+     halaman laporan. */
+  .game-play, .game-ghost { min-height: 44px; }
+  .game-controls .game-play, .game-controls .game-ghost { padding: 10px 16px; }
+  /* E-C2: tombol naik/turun urutan 32px -> 44px; nama diberi
+     min-width:0 supaya tombol tidak terdorong keluar baris. */
+  .game-sort-btns button { width: 44px; height: 44px; }
+  .game-sort-name { min-width: 0; }
+}

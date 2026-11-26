@@ -197,7 +197,7 @@ export function HoldAction({
             cy={60}
             r={R}
             fill="none"
-            stroke="#2f7d4f"
+            stroke="var(--aia-leaf, #2f7d4f)"
             strokeWidth={10}
             strokeLinecap="round"
             strokeDasharray={KELILING}

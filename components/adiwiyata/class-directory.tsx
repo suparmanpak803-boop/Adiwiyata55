@@ -46,7 +46,7 @@ export function ClassDirectory({ classes, isAdmin }: { classes: Classes; isAdmin
       <label className="search-field"><Search aria-hidden="true" /><span className="sr-only">Cari kelas</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Cari kelas, mis. XI-C" /></label>
       {error && <p className="auth-error" role="alert">{error}</p>}
       {message && <p className="auth-success" role="status">{message}</p>}
-      <motion.div className="class-grid" variants={staggerParent} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-40px' }}>
+      <motion.div className="class-grid" variants={staggerParent} initial="hidden" animate="show">
         {filteredClasses.map((item) => <motion.article className="class-card" key={item.name} variants={fadeUpChild} whileHover={{ y: -4 }}>
           <div className="class-card-top"><span className="class-grade">TINGKAT {item.grade}</span><span className="class-status">{item.student_count ? 'Data terisi' : 'Perlu dilengkapi'}</span></div>
           <h2>{item.name}</h2>

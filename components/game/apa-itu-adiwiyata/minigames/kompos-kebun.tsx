@@ -543,9 +543,12 @@ function KartuTanaman({
       <p className="aia-muted" style={{ margin: '4px 0' }}>
         {butuh ?? 'Segar.'}
       </p>
+      {/* Gelombang B: daun sehat memakai hijau tema; daun layu #c8cfc4
+          hanya 1,57:1 di terang — cokelat layu #8d6e63 ≥3,07:1 di
+          kedua tema (ikon, ambang 3:1). */}
       <p aria-label={`Kesehatan ${nama}: ${sehat} dari 3`}>
         {[0, 1, 2].map((i) => (
-          <Leaf key={i} aria-hidden="true" style={{ color: i < sehat ? '#2e7d32' : '#c8cfc4' }} />
+          <Leaf key={i} aria-hidden="true" style={{ color: i < sehat ? 'var(--aia-leaf)' : '#8d6e63' }} />
         ))}
       </p>
     </div>

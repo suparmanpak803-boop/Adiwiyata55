@@ -98,8 +98,8 @@ function BarisNyawa({ nyawaSisa, total }: { nyawaSisa: number; total: number }) 
           key={i}
           aria-hidden="true"
           size={18}
-          color={i < nyawaSisa ? '#e11d48' : '#cbd5ce'}
-          fill={i < nyawaSisa ? '#e11d48' : 'transparent'}
+          color={i < nyawaSisa ? 'var(--aia-merah)' : 'var(--ink-soft)'}
+          fill={i < nyawaSisa ? 'var(--aia-merah)' : 'transparent'}
           style={{ verticalAlign: '-3px' }}
         />
       ))}
@@ -372,11 +372,9 @@ function CatatGestur({
   }
 
   if (!barisSaatIni) {
-    return (
-      <div className="aia-card">
-        <p className="aia-muted">Tabel tahap ini belum tersedia.</p>
-      </div>
-    )
+    // Gelombang C: jalan buntu diganti TahapTidakTersedia (residu K-4) —
+    // pemain bisa lewati tahap dengan skor 0, bukan terjebak di teks.
+    return <TahapTidakTersedia onLewati={() => selesaikan(0)} pesan="Tabel tahap ini belum tersedia." />
   }
 
   return (
@@ -475,7 +473,7 @@ function CatatGestur({
                 aria-label={`Berat ${berat}`}
                 style={{
                   minHeight: 48,
-                  outline: sorot ? '2px dashed #b45309' : undefined,
+                  outline: sorot ? '2px dashed var(--aia-amber)' : undefined,
                   outlineOffset: 2,
                   whiteSpace: 'normal',
                   height: 'auto',
@@ -674,11 +672,8 @@ function PilahAnorganik({
   }
 
   if (!item) {
-    return (
-      <div className="aia-card">
-        <p className="aia-muted">Item tahap ini belum tersedia.</p>
-      </div>
-    )
+    // Gelombang C: jalan buntu diganti TahapTidakTersedia (residu K-4).
+    return <TahapTidakTersedia onLewati={() => selesai(0)} pesan="Item tahap ini belum tersedia." />
   }
 
   return (
@@ -727,10 +722,10 @@ function PilahAnorganik({
               let border: string | undefined
               if (umpan && isJawaban) {
                 kelasUmpan = 'aia-umpan-benar'
-                border = '2px solid #236b4d'
+                border = '2px solid var(--aia-leaf)'
               } else if (umpan && isDipilih) {
                 kelasUmpan = 'aia-umpan-salah'
-                border = '2px solid #b83232'
+                border = '2px solid var(--aia-merah)'
               }
               return (
                 <button
@@ -762,7 +757,7 @@ function PilahAnorganik({
             <div
               className="aia-dialog"
               aria-live="polite"
-              style={umpan.benar ? undefined : { borderLeftColor: '#b83232' }}
+              style={umpan.benar ? undefined : { borderLeftColor: 'var(--aia-merah)' }}
             >
               <strong>{umpan.benar ? 'Benar!' : 'Yah, salah kelompok.'}</strong>
               <p>{umpan.teks}</p>
@@ -929,11 +924,9 @@ function CatatTimbangan({
   }
 
   if (!barisSaatIni) {
-    return (
-      <div className="aia-card">
-        <p className="aia-muted">Tabel tahap ini belum tersedia.</p>
-      </div>
-    )
+    // Gelombang C: jalan buntu diganti TahapTidakTersedia (residu K-4) —
+    // pemain bisa lewati tahap dengan skor 0, bukan terjebak di teks.
+    return <TahapTidakTersedia onLewati={() => selesai(0)} pesan="Tabel tahap ini belum tersedia." />
   }
 
   return (
@@ -1036,10 +1029,10 @@ function CatatTimbangan({
                 let border: string | undefined
                 if (umpan && isJawaban) {
                   kelasUmpan = 'aia-umpan-benar'
-                  border = '2px solid #236b4d'
+                  border = '2px solid var(--aia-leaf)'
                 } else if (umpan && isDipilih) {
                   kelasUmpan = 'aia-umpan-salah'
-                  border = '2px solid #b83232'
+                  border = '2px solid var(--aia-merah)'
                 }
                 return (
                   <button
@@ -1238,11 +1231,8 @@ function KuisTabungan({
   }
 
   if (!pertanyaan || !opsi) {
-    return (
-      <div className="aia-card">
-        <p className="aia-muted">Soal tahap ini belum tersedia.</p>
-      </div>
-    )
+    // Gelombang C: jalan buntu diganti TahapTidakTersedia (residu K-4).
+    return <TahapTidakTersedia onLewati={() => selesai(0)} pesan="Soal tahap ini belum tersedia." />
   }
 
   return (
@@ -1279,10 +1269,10 @@ function KuisTabungan({
                 let border: string | undefined
                 if (umpan && isJawaban) {
                   kelasUmpan = 'aia-umpan-benar'
-                  border = '2px solid #236b4d'
+                  border = '2px solid var(--aia-leaf)'
                 } else if (umpan && isDipilih) {
                   kelasUmpan = 'aia-umpan-salah'
-                  border = '2px solid #b83232'
+                  border = '2px solid var(--aia-merah)'
                 }
                 return (
                   <button

@@ -562,8 +562,8 @@ export function PilahSampah({
                   style={{
                     width: 16,
                     height: 16,
-                    color: i < nyawaSisa ? '#b83232' : 'var(--ink-soft)',
-                    fill: i < nyawaSisa ? '#b83232' : 'transparent',
+                    color: i < nyawaSisa ? 'var(--aia-merah)' : 'var(--ink-soft)',
+                    fill: i < nyawaSisa ? 'var(--aia-merah)' : 'transparent',
                   }}
                 />
               ))}
@@ -755,7 +755,7 @@ export function PilahSampah({
             <div
               className="aia-dialog"
               aria-live="polite"
-              style={umpan.jenis === 'salah' ? { borderLeftColor: '#b83232' } : undefined}
+              style={umpan.jenis === 'salah' ? { borderLeftColor: 'var(--aia-merah)' } : undefined}
             >
               <p>{umpan.teks}</p>
               <div className="aia-actions">

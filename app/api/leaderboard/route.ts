@@ -15,7 +15,7 @@ export async function GET(request: Request) {
     return NextResponse.json(payload, { headers: { 'Cache-Control': 'private, no-store, max-age=0' } })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Gagal memuat leaderboard.'
-    const status = message === 'UNAUTHORIZED' ? 401 : message === 'FORBIDDEN' ? 403 : 500
+    const status = message === 'UNAUTHORIZED' ? 401 : message === 'FORBIDDEN' ? 403 : message === 'Game tidak dikenal.' ? 400 : 500
     return NextResponse.json({ error: status === 500 ? 'Leaderboard belum dapat dimuat.' : message }, { status })
   }
 }

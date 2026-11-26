@@ -1050,3 +1050,15 @@
 .aia-ledakan-daun {
   border-radius: 100% 0 100% 0;
 }
+
+/* ==========================================================================
+   GELOMBANG E — sapuan responsif (26 Nov 2026, append-only).
+   ========================================================================== */
+@media (max-width: 480px) {
+  /* E-A1 (TINGGI): label "Ensiklopedia" (12 huruf) di bottom-nav 5 kolom:
+     kolom ~69px, teks 11px ~62-70px — kata tunggal tanpa spasi tidak bisa
+     membungkus dan meluber ke tombol sebelah. Font 10px + padding 1px
+     memberi ~66px ruang teks; overflow-wrap sebagai pengaman. */
+  .aia-nav-btn { font-size: 10px; padding: 6px 1px; }
+  .aia-nav-btn span { overflow-wrap: anywhere; }
+}

@@ -188,7 +188,7 @@ export function BalasCepat({
         @media (hover: hover) { .aia-gi-chat-balasan:hover:not(:disabled) { transform: scale(1.01); box-shadow: 0 4px 14px rgba(0,0,0,.12); } }
         .aia-gi-chat-balasan:focus-visible { outline: 3px solid var(--green, #2f7d4f); outline-offset: 2px; }
         .aia-gi-chat-balasan.dipilih-benar { outline: 3px solid var(--green, #2f7d4f); background: color-mix(in srgb, #2f7d4f 12%, var(--card, #fff)); }
-        .aia-gi-chat-balasan.dipilih-salah { outline: 3px solid #b83232; background: color-mix(in srgb, #b83232 10%, var(--card, #fff)); }
+        .aia-gi-chat-balasan.dipilih-salah { outline: 3px solid var(--aia-merah, #b83232); background: color-mix(in srgb, #b83232 10%, var(--card, #fff)); }
         .aia-gi-chat-balasan:disabled { cursor: default; }
         @media (prefers-reduced-motion: reduce) { .aia-gi-chat-balasan { transition: none; } .aia-gi-chat-balasan:active { transform: none; } }
       `}</style>

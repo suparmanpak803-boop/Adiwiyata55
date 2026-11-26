@@ -551,6 +551,13 @@ function gambarTempatPilah(g: CanvasRenderingContext2D, disorot: boolean, pos: {
     g.fillStyle = 'rgba(0,0,0,0.25)'
     g.fillRect(x + 2, cy - 16, lebarBak - 4, 6)
     g.font = 'bold 9px system-ui, sans-serif'
+    // Gelombang B: singkatan putih 9px di atas rumput #93cc6f hanya
+    // 1,89:1. Pil gelap yang sama dengan label zona/NPC (rgba 0,0,0,0.55)
+    // di belakang teks → putih di atas pil ≈7,5:1.
+    const lebarSingkatan = g.measureText(bak.singkatan).width
+    g.fillStyle = 'rgba(0,0,0,0.55)'
+    rr(g, x + lebarBak / 2 - lebarSingkatan / 2 - 4, cy + 24 - 7, lebarSingkatan + 8, 14, 7)
+    g.fill()
     g.fillStyle = '#ffffff'
     g.textAlign = 'center'
     g.textBaseline = 'middle'
@@ -633,6 +640,8 @@ function gambarBoothEco(g: CanvasRenderingContext2D, disorot: boolean, pos: { x:
   // Bayangan alas di bawah stan.
   gambarBayangan(g, cx, cy + h / 2 + 3, w / 2, 6)
   // Stan hijau + label.
+  // Gelombang B: teks putih di atas stan #66bb6a hanya ~2,3:1. Teks gelap
+  // #1c2b12 di atas #66bb6a = 6,33:1; warna stan tidak diubah.
   g.fillStyle = '#66bb6a'
   rr(g, cx - w / 2, cy - h / 2, w, h, 6)
   g.fill()
@@ -640,7 +649,7 @@ function gambarBoothEco(g: CanvasRenderingContext2D, disorot: boolean, pos: { x:
   g.lineWidth = 2
   rr(g, cx - w / 2, cy - h / 2, w, h, 6)
   g.stroke()
-  g.fillStyle = '#ffffff'
+  g.fillStyle = '#1c2b12'
   g.font = kecil ? 'bold 11px system-ui, sans-serif' : 'bold 12px system-ui, sans-serif'
   g.textAlign = 'center'
   g.textBaseline = 'middle'
@@ -1701,8 +1710,16 @@ export function Jelajah({
         ctx.beginPath()
         ctx.arc(pp.x, pp.y, 6 + k * 18, 0, Math.PI * 2)
         ctx.stroke()
-        ctx.fillStyle = '#ffffff'
+        // Gelombang B: teks putih 13px melayang di atas rumput #93cc6f
+        // hanya 1,89:1. Pil gelap (pola label zona) di belakang teks →
+        // putih di atas pil ≈7,5:1; pil ikut memudar bersama teks karena
+        // globalAlpha sudah diatur di atas.
         ctx.font = 'bold 13px system-ui, sans-serif'
+        const lebarPop = ctx.measureText(pp.teks).width
+        ctx.fillStyle = 'rgba(0,0,0,0.55)'
+        rr(ctx, pp.x - lebarPop / 2 - 8, pp.y - 16 - k * 16 - 11, lebarPop + 16, 22, 11)
+        ctx.fill()
+        ctx.fillStyle = '#ffffff'
         ctx.textAlign = 'center'
         ctx.textBaseline = 'middle'
         ctx.fillText(pp.teks, pp.x, pp.y - 16 - k * 16)

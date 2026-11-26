@@ -60,7 +60,11 @@ export async function updateAdminUserRole(input: { userId: string; role: Managed
 
     const expiresOn = role === 'petugas' && typeof input.expiresOn === 'string' && input.expiresOn ? input.expiresOn : null
     const parsedExpiry = expiresOn ? new Date(`${expiresOn}T00:00:00.000Z`) : null
-    if (expiresOn && (!/^\d{4}-\d{2}-\d{2}$/.test(expiresOn) || Number.isNaN(parsedExpiry?.getTime()) || parsedExpiry?.toISOString().slice(0, 10) !== expiresOn || expiresOn < new Date().toISOString().slice(0, 10))) {
+    // "Hari ini" dihitung dalam WIB: di 00:00–07:00 WIB tanggal UTC
+    // masih hari kemarin, sehingga tanggal berakhir hari ini (Jakarta)
+    // sempat ditolak sebagai tanggal lampau.
+    const todayJakarta = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta' }).format(new Date())
+    if (expiresOn && (!/^\d{4}-\d{2}-\d{2}$/.test(expiresOn) || Number.isNaN(parsedExpiry?.getTime()) || parsedExpiry?.toISOString().slice(0, 10) !== expiresOn || expiresOn < todayJakarta)) {
       throw new UserManagementError('Tanggal berakhir harus hari ini atau tanggal setelahnya.')
     }
 

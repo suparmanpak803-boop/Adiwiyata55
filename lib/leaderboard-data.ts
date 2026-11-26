@@ -9,7 +9,7 @@
 // Lihat PERBAIKAN.md.
 import { pool } from '@/lib/db'
 import { getPortalUser, type PortalUser } from '@/lib/auth/access'
-import { getHariLibur, hitungHariSekolah, listHariLibur, type HariLibur } from '@/lib/hari-sekolah'
+import { getHariLibur, hitungHariSekolah, listHariLibur, tanggalIsoValid, type HariLibur } from '@/lib/hari-sekolah'
 
 export const GAME_KEYS = [
   'pilah_sampah',
@@ -35,6 +35,7 @@ export type LeaderboardPayload = {
   currentRank?: number | null
   period?: string
   metric?: string
+  sort?: string
   settings?: { tampil_tersedikit: boolean; tampil_terbanyak: boolean; metrik_default: string } | null
 }
 
@@ -118,28 +119,71 @@ async function ensureSettingsAndPeriod(): Promise<{ settings: SettingsRow; perio
 
 type WastePeriod = { from: string; to: string; previousFrom: string; previousTo: string }
 
+// Semua perhitungan tanggal memakai zona Asia/Jakarta (UTC+7, tanpa
+// DST): setoran dicatat dengan tanggal Jakarta, jadi "bulan ini" yang
+// dihitung dari tanggal UTC server akan salah di 00:00–07:00 WIB
+// (dan di batas bulan). Helper ini mengubah jam dinding Jakarta
+// menjadi instans Date UTC yang setara.
+const WIB_OFFSET_MS = 7 * 3_600_000
+
+function jakartaWallToDate(tahun: number, bulan: number, hari: number, jam = 0, menit = 0): Date {
+  return new Date(Date.UTC(tahun, bulan - 1, hari, jam, menit) - WIB_OFFSET_MS)
+}
+
+function jakartaTodayParts(): { tahun: number; bulan: number; hari: number; hariMinggu: number } {
+  const bagian = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Jakarta',
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric',
+  }).formatToParts(new Date())
+  const ambil = (jenis: string) => Number(bagian.find((item) => item.type === jenis)?.value)
+  const tahun = ambil('year')
+  const bulan = ambil('month')
+  const hari = ambil('day')
+  return {
+    tahun,
+    bulan,
+    hari,
+    // Hari minggu dihitung dari tanggalnya sendiri (bukan dari
+    // string locale) supaya tidak bergantung pada data ICU.
+    hariMinggu: new Date(Date.UTC(tahun, bulan - 1, hari)).getUTCDay(),
+  }
+}
+
 function wastePeriodRange(period: string, from?: string, to?: string): WastePeriod {
-  const today = new Date()
+  const jakarta = jakartaTodayParts()
+  // "Hari ini" sebagai tanggal kalender Jakarta pada 00:00 UTC —
+  // getUTC* di bawah ini lalu mengembalikan tanggal & hari Jakarta.
+  // (jakartaWallToDate tidak dipakai di sini: ia menggeser ke 17:00 UTC
+  // hari sebelumnya, sehingga getUTCDay() akan salah satu hari.)
+  const today = new Date(Date.UTC(jakarta.tahun, jakarta.bulan - 1, jakarta.hari))
   const iso = (d: Date) => d.toISOString().slice(0, 10)
   const addDays = (d: Date, n: number) => {
     const copy = new Date(d)
-    copy.setDate(copy.getDate() + n)
+    copy.setUTCDate(copy.getUTCDate() + n)
     return copy
   }
   let start: Date
   let end: Date = today
   if (period === 'minggu_ini') {
-    const day = (today.getDay() + 6) % 7 // Senin = 0
+    const day = (today.getUTCDay() + 6) % 7 // Senin = 0
     start = addDays(today, -day)
   } else if (period === 'semester_ini') {
-    start = new Date(today.getFullYear(), today.getMonth() < 6 ? 0 : 6, 1)
+    start = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth() < 6 ? 0 : 6, 1))
   } else if (period === '30_hari') {
     start = addDays(today, -29)
-  } else if (period === 'custom' && from && to) {
+  } else if (period === 'custom' && from && to && tanggalIsoValid(from) && tanggalIsoValid(to)) {
     start = new Date(`${from}T00:00:00Z`)
     end = new Date(`${to}T00:00:00Z`)
+    // Rentang terbalik (dari > sampai) tidak menghasilkan apa-apa;
+    // samakan dengan bulan berjalan supaya tidak tampil kosong.
+    if (end < start) {
+      start = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 1))
+      end = today
+    }
   } else {
-    start = new Date(today.getFullYear(), today.getMonth(), 1) // bulan_ini
+    start = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 1)) // bulan_ini
   }
   const lengthDays = Math.max(1, Math.round((end.getTime() - start.getTime()) / 86_400_000) + 1)
   return {
@@ -300,9 +344,17 @@ export async function getLeaderboardPayload(searchParams: URLSearchParams): Prom
     })
     const qualified = mapped.filter((row) => row.days >= minimumDays && !row.tanpa_jumlah_siswa)
     const insufficient = mapped.filter((row) => row.days < minimumDays || row.tanpa_jumlah_siswa)
+    // Pengaturan tampil_terbanyak/tampil_tersedikit sebelumnya diabaikan
+    // server: urutan yang dinonaktifkan admin tetap diterapkan dan
+    // halaman hanya menampilkan catatan "dinonaktifkan". Bila urutan
+    // yang diminta dinonaktifkan, pakai urutan lain yang masih aktif;
+    // bila keduanya nonaktif, pertahankan yang diminta.
+    let effectiveSort = sort
+    if (sort === 'terbanyak' && waste?.tampil_terbanyak === false && waste?.tampil_tersedikit !== false) effectiveSort = 'tersedikit'
+    if (sort === 'tersedikit' && waste?.tampil_tersedikit === false && waste?.tampil_terbanyak !== false) effectiveSort = 'terbanyak'
     qualified.sort((a, b) => {
       const diff = Number(b[metricKey] ?? 0) - Number(a[metricKey] ?? 0)
-      return sort === 'tersedikit' ? -diff : diff
+      return effectiveSort === 'tersedikit' ? -diff : diff
     })
     qualified.forEach((row, index) => {
       row.peringkat = index + 1
@@ -321,6 +373,9 @@ export async function getLeaderboardPayload(searchParams: URLSearchParams): Prom
     base.hariSekolah = hariSekolah
     base.period = period
     base.metric = metric
+    // Urutan yang benar-benar dipakai (bisa berbeda dari yang diminta
+    // bila urutan itu dinonaktifkan admin — lihat effectiveSort di atas).
+    base.sort = effectiveSort
     base.settings = waste
       ? { tampil_tersedikit: waste.tampil_tersedikit, tampil_terbanyak: waste.tampil_terbanyak, metrik_default: waste.metrik_default }
       : null
@@ -453,35 +508,46 @@ function nextResetDate(settings: {
   tanggal_mulai_semester: string | null
   tanggal_akhir_semester: string | null
 }): Date | null {
+  // Jam reset diisi admin sebagai WIB (label panel: "Waktu reset
+  // (WIB)") — jadi jadwal dihitung dari jam dinding Jakarta, bukan
+  // waktu lokal server (UTC di Vercel; selisih 7 jam). Semua kandidat
+  // dibangun lewat jakartaWallToDate di atas.
   const now = new Date()
   const [hour, minute] = String(settings.jam ?? '00:00')
     .split(':')
     .map((part) => Number(part) || 0)
-  const at = (date: Date) => {
-    const copy = new Date(date)
-    copy.setHours(hour, minute, 0, 0)
-    return copy
-  }
+  const jakarta = jakartaTodayParts()
+  const at = (tahun: number, bulan: number, hari: number) => jakartaWallToDate(tahun, bulan, hari, hour, minute)
   if (settings.mode === 'harian') {
-    const next = at(new Date(now))
-    if (next <= now) next.setDate(next.getDate() + 1)
+    const next = at(jakarta.tahun, jakarta.bulan, jakarta.hari)
+    if (next <= now) return jakartaWallToDate(jakarta.tahun, jakarta.bulan, jakarta.hari + 1, hour, minute)
     return next
   }
   if (settings.mode === 'mingguan') {
     const targetDay = settings.hari // 0 = Minggu ... 6 = Sabtu
-    const next = at(new Date(now))
-    let diff = (targetDay - now.getDay() + 7) % 7
-    if (diff === 0 && next <= now) diff = 7
-    next.setDate(next.getDate() + diff)
+    let diff = (targetDay - jakarta.hariMinggu + 7) % 7
+    let next = at(jakarta.tahun, jakarta.bulan, jakarta.hari + diff)
+    if (diff === 0 && next <= now) {
+      diff = 7
+      next = at(jakarta.tahun, jakarta.bulan, jakarta.hari + diff)
+    }
     return next
   }
   if (settings.mode === 'bulanan') {
-    const next = at(new Date(now.getFullYear(), now.getMonth(), Math.min(28, Math.max(1, settings.tanggal))))
-    if (next <= now) next.setMonth(next.getMonth() + 1)
+    const day = Math.min(28, Math.max(1, settings.tanggal))
+    let next = at(jakarta.tahun, jakarta.bulan, day)
+    if (next <= now) {
+      const bulanBerikut = jakarta.bulan === 12
+        ? { tahun: jakarta.tahun + 1, bulan: 1 }
+        : { tahun: jakarta.tahun, bulan: jakarta.bulan + 1 }
+      next = at(bulanBerikut.tahun, bulanBerikut.bulan, day)
+    }
     return next
   }
   if (settings.mode === 'semester' && settings.tanggal_akhir_semester) {
-    const end = at(new Date(`${settings.tanggal_akhir_semester}T00:00:00`))
+    const cocok = /^(\d{4})-(\d{2})-(\d{2})$/.exec(settings.tanggal_akhir_semester)
+    if (!cocok) return null
+    const end = at(Number(cocok[1]), Number(cocok[2]), Number(cocok[3]))
     return end > now ? end : null
   }
   return null // manual / never / khusus: hanya reset manual

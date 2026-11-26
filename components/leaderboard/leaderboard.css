@@ -132,3 +132,32 @@
 .admin-question-preview li { margin: 5px 0; }
 .admin-question-preview li strong { color: var(--green); }
 @media (max-width: 560px) { .diagnostics-summary { grid-template-columns: 1fr; } .diagnostics-seed { align-items: stretch; flex-direction: column; } .diagnostics-tables .admin-setting-heading { align-items: stretch; flex-direction: column; } .admin-content-actions { flex-wrap: wrap; } .admin-content-form .span-all { grid-column: auto; } .leaderboard-page, .admin-game-page { padding: 20px 15px 40px; } .leaderboard-header { margin-top: 11px; padding: 20px 17px; border-radius: 13px; } .leaderboard-title-row, .admin-game-header { align-items: flex-start; gap: 12px; margin-top: 21px; } .leaderboard-mark { width: 42px; height: 42px; border-radius: 12px; } .leaderboard-mark svg { width: 20px; height: 20px; } .leaderboard-title-row h1, .admin-game-header h1 { font-size: 35px; } .leaderboard-title-row p, .admin-game-header p { font-size: 11px; } .leaderboard-summary > div { min-width: 0; flex: 1; padding: 10px; } .leaderboard-summary strong { font-size: 10px; line-height: 1.4; } .leaderboard-tabs { margin-top: 16px; } .leaderboard-tabs button { min-height: 41px; padding: 0 12px; font-size: 10px; } .leaderboard-tools { align-items: stretch; padding: 11px; } .leaderboard-tools label { flex: 1 1 125px; } .leaderboard-tools select, .leaderboard-tools input { width: 100%; min-width: 0; } .leaderboard-refresh { flex: 1 1 100%; } .leaderboard-podium { gap: 7px; } .podium-card { min-height: 105px; padding: 12px 5px; } .podium-card.place-1 { min-height: 122px; } .podium-card b { font-size: 12px; } .podium-card > span:last-child { font-size: 8px; } .leaderboard-table th, .leaderboard-table td { padding: 10px 11px; font-size: 9px; } .admin-form-grid { grid-template-columns: 1fr; } .admin-setting-card, .admin-class-info { padding: 16px; } .game-setting-row { grid-template-columns: 1fr 1fr; } .admin-quiz-config { grid-template-columns: 1fr; } .game-setting-title { grid-column: 1 / -1; grid-template-columns: 1fr auto; align-items: center; } .game-setting-row label { min-width: 0; } .admin-reset-controls label { flex: 1 1 100%; } .admin-reset-controls input { width: 100%; } .admin-reset-controls button { flex: 1; } .admin-save-row { align-items: stretch; } .admin-save-row p { flex-basis: 100%; } .admin-save-button { width: 100%; } }
+
+/* ==========================================================================
+   GELOMBANG E — sapuan responsif (26 Nov 2026, append-only).
+   ========================================================================== */
+@media (max-width: 560px) {
+  /* E-B1: tab leaderboard 41px -> 44px. */
+  .leaderboard-tabs button { min-height: 44px; }
+  /* E-B2: kontrol alat leaderboard + form admin game 39px -> 44px. */
+  .leaderboard-tools select, .leaderboard-tools input { min-height: 44px; }
+  .leaderboard-refresh { min-height: 44px; }
+  .admin-game-page select, .admin-game-page input:not([type=checkbox]) { min-height: 44px; }
+  /* E-B3: tombol admin kecil 32-39px -> 44px (aksi konten, hapus
+     libur, label berkas CSV, simpan/reset). */
+  .admin-content-actions button { min-height: 44px; }
+  .libur-list li button { min-height: 44px; }
+  .csv-file-label { min-height: 44px; }
+  .admin-save-button, .admin-reset-controls button { min-height: 44px; }
+}
+
+/* Gelombang A — kontras mode gelap: teks merah/amber gelap hanya
+   2,3–2,6:1 di atas kartu gelap #1B2F24; di tema gelap diganti ke
+   varian terang (#ffd0c8 merah, #f2c94c amber). Tombol reset merah
+   (#a64a3f) di tema gelap teksnya diganti ke #FFFDF6 (5,62:1) karena
+   --primary-foreground gelap (#122019) hanya 2,95:1 di atasnya. */
+:root[data-theme='dark'] .leaderboard-state.is-error,
+:root[data-theme='dark'] .diagnostic-status.missing,
+:root[data-theme='dark'] .admin-content-actions button.danger { color: #ffd0c8; }
+:root[data-theme='dark'] .admin-content-warning.is-warning { color: #f2c94c; }
+:root[data-theme='dark'] .admin-reset-controls button { color: #FFFDF6; }

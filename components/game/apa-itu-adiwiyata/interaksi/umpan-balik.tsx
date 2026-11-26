@@ -67,7 +67,7 @@ export function EfekSalah({ tampil, petunjuk }: { tampil: boolean; petunjuk?: st
   return (
     <div className="aia-gi-salah" role="alert">
       <style>{`
-        .aia-gi-salah { border: 1px solid #b83232; border-left: 4px solid #b83232; border-radius: 12px; background: color-mix(in srgb, #b83232 8%, var(--card, #fff)); padding: 12px 14px; animation: aia-gi-goyang .3s ease; }
+        .aia-gi-salah { border: 1px solid var(--aia-merah, #b83232); border-left: 4px solid var(--aia-merah, #b83232); border-radius: 12px; background: color-mix(in srgb, #b83232 8%, var(--card, #fff)); padding: 12px 14px; animation: aia-gi-goyang .3s ease; }
         @keyframes aia-gi-goyang { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
         @media (prefers-reduced-motion: reduce) { .aia-gi-salah { animation: none; } }
       `}</style>
@@ -117,7 +117,7 @@ export function TanganPenunjuk({ label, tampil = true }: { label: string; tampil
   return (
     <div className="aia-gi-tangan" aria-hidden="true">
       <style>{`
-        .aia-gi-tangan { display: inline-flex; flex-direction: column; align-items: center; gap: 2px; color: #b45309; font-weight: 800; font-size: 13px; pointer-events: none; z-index: 6; }
+        .aia-gi-tangan { display: inline-flex; flex-direction: column; align-items: center; gap: 2px; color: var(--aia-amber, #b45309); font-weight: 800; font-size: 13px; pointer-events: none; z-index: 6; }
         .aia-gi-tangan svg { width: 32px; height: 32px; animation: aia-gi-tunjuk 1s ease-in-out infinite alternate; }
         @keyframes aia-gi-tunjuk { from { transform: translateY(0); } to { transform: translateY(8px); } }
         @media (prefers-reduced-motion: reduce) { .aia-gi-tangan svg { animation: none; } }

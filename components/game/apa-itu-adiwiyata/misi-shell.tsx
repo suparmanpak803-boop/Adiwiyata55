@@ -303,9 +303,13 @@ export function MisiShell({
   const selesaikanMisi = () => {
     playMenang()
     // Hadiah misi (di atas Koin Hijau dari skor tahap): pertama kali
-    // +Rp5.000 dan +20 Koin Daun, ulangan +Rp2.000 dan +5 Koin Daun.
-    dispatch({ type: 'EARN_UANG', amount: pertamaKali ? 5000 : 2000 })
-    dispatch({ type: 'EARN_KOIN_DAUN', amount: pertamaKali ? 20 : 5 })
+    // +Rp5.000 dan +20 Koin Daun. Ulangan tidak memberi hadiah lagi —
+    // kalau tidak, masuk misi yang sudah selesai lalu ketuk "Selesaikan
+    // Misi" bisa difarm tanpa memainkan apa pun (Gelombang C).
+    if (pertamaKali) {
+      dispatch({ type: 'EARN_UANG', amount: 5000 })
+      dispatch({ type: 'EARN_KOIN_DAUN', amount: 20 })
+    }
     if (kind === 'bab' && chapterId) {
       dispatch({ type: 'COMPLETE_CHAPTER', chapterId })
       dispatch({ type: 'EARN_BADGE', badgeId: BAB_BADGE[chapterId] })
@@ -385,8 +389,10 @@ export function MisiShell({
                   width: 12,
                   height: 12,
                   borderRadius: '50%',
-                  background: stage.status === 'done' ? '#2f7d4f' : 'transparent',
-                  border: '2px solid #2f7d4f',
+                  // Gelombang B: titik tahap memakai hijau tema — '#2f7d4f'
+                  // di atas kartu gelap hanya 2,82:1.
+                  background: stage.status === 'done' ? 'var(--aia-leaf)' : 'transparent',
+                  border: '2px solid var(--aia-leaf)',
                   opacity: i === tahapBerjalan ? 1 : stage.status === 'done' ? 1 : 0.4,
                 }}
               />
@@ -430,7 +436,7 @@ export function MisiShell({
               Lapar {save.lapar ?? 100}
             </span>
             <span
-              style={{ display: 'inline-block', width: 48, height: 8, borderRadius: 4, background: '#e0e0e0', overflow: 'hidden' }}
+              style={{ display: 'inline-block', width: 48, height: 8, borderRadius: 4, background: 'var(--muted)', overflow: 'hidden' }}
               role="progressbar"
               aria-label="Lapar"
               aria-valuenow={save.lapar ?? 100}
@@ -445,7 +451,7 @@ export function MisiShell({
               Haus {save.haus ?? 100}
             </span>
             <span
-              style={{ display: 'inline-block', width: 48, height: 8, borderRadius: 4, background: '#e0e0e0', overflow: 'hidden' }}
+              style={{ display: 'inline-block', width: 48, height: 8, borderRadius: 4, background: 'var(--muted)', overflow: 'hidden' }}
               role="progressbar"
               aria-label="Haus"
               aria-valuenow={save.haus ?? 100}
@@ -498,7 +504,7 @@ export function MisiShell({
       </section>
 
       {pesanSukses && (
-        <div className="aia-card" role="status" style={{ borderColor: '#2f7d4f' }}>
+        <div className="aia-card" role="status" style={{ borderColor: 'var(--aia-leaf)' }}>
           <span className="aia-chip done">
             <Check aria-hidden="true" /> {pesanSukses}
           </span>
@@ -618,8 +624,8 @@ export function MisiShell({
                   width: 10,
                   height: 10,
                   borderRadius: '50%',
-                  background: i === introIdx ? '#2f7d4f' : 'transparent',
-                  border: '2px solid #2f7d4f',
+                  background: i === introIdx ? 'var(--aia-leaf)' : 'transparent',
+                  border: '2px solid var(--aia-leaf)',
                   opacity: i === introIdx ? 1 : 0.4,
                 }}
               />
@@ -722,11 +728,17 @@ export function MisiShell({
                 Ketiga tahap selesai! Di Pos Hijau progresmu disimpan, rapor sekolah diperbarui, dan kamu mendapat
                 lencana misi ini.
               </p>
-              <p className="aia-muted">
-                Hadiah misi ini: +Rp
-                <AngkaAnimasi nilai={pertamaKali ? 5000 : 2000} dariNol /> dan +
-                <AngkaAnimasi nilai={pertamaKali ? 20 : 5} dariNol /> Koin Daun.
-              </p>
+              {pertamaKali ? (
+                <p className="aia-muted">
+                  Hadiah misi ini: +Rp
+                  <AngkaAnimasi nilai={5000} dariNol /> dan +
+                  <AngkaAnimasi nilai={20} dariNol /> Koin Daun.
+                </p>
+              ) : (
+                <p className="aia-muted">
+                  Hadiah misi ini sudah kamu terima saat pertama menyelesaikan misi ini.
+                </p>
+              )}
               <RaporSekolah />
               <p>
                 <strong>Refleksi:</strong> {REFLEKSI[chapterId]}
@@ -753,11 +765,17 @@ export function MisiShell({
                 Ketiga tahap selesai! Kamu mendapat lencana {namaLencanaTugas}.
                 {lengkapiKader ? ' Ini misi tambahan terakhir — kamu juga mendapat lencana Tim Lengkap!' : ''}
               </p>
-              <p className="aia-muted">
-                Hadiah misi ini: +Rp
-                <AngkaAnimasi nilai={pertamaKali ? 5000 : 2000} dariNol /> dan +
-                <AngkaAnimasi nilai={pertamaKali ? 20 : 5} dariNol /> Koin Daun.
-              </p>
+              {pertamaKali ? (
+                <p className="aia-muted">
+                  Hadiah misi ini: +Rp
+                  <AngkaAnimasi nilai={5000} dariNol /> dan +
+                  <AngkaAnimasi nilai={20} dariNol /> Koin Daun.
+                </p>
+              ) : (
+                <p className="aia-muted">
+                  Hadiah misi ini sudah kamu terima saat pertama menyelesaikan misi ini.
+                </p>
+              )}
               <p>
                 <strong>Satu tim lagi bergerak karena kamu.</strong>
               </p>

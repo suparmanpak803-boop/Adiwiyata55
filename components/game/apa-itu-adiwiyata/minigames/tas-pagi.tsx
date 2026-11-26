@@ -619,14 +619,14 @@ export function TasPagi({
                       height: 12,
                       marginLeft: 4,
                       borderRadius: '50%',
-                      background: i < salahHitung ? '#b83232' : 'var(--muted)',
+                      background: i < salahHitung ? 'var(--aia-merah)' : 'var(--muted)',
                     }}
                   />
                 ))}
               </span>
             </div>
             <div className="aia-progress" style={{ marginTop: 6 }}>
-              <span style={{ width: `${(salahHitung / MAKS_SALAH) * 100}%`, background: '#b83232' }} />
+              <span style={{ width: `${(salahHitung / MAKS_SALAH) * 100}%`, background: 'var(--aia-merah)' }} />
             </div>
           </div>
 
@@ -804,7 +804,7 @@ export function TasPagi({
             <div
               className="aia-dialog"
               aria-live="polite"
-              style={umpan.jenis === 'salah' ? { borderLeftColor: '#b83232' } : undefined}
+              style={umpan.jenis === 'salah' ? { borderLeftColor: 'var(--aia-merah)' } : undefined}
             >
               <p>{umpan.teks}</p>
               <div className="aia-actions">

@@ -7,7 +7,7 @@
 .lap-meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .lap-empty { color: var(--ink-soft); font-size: 13px; }
 .lap-badge { padding: 3px 10px; border-radius: 999px; color: #FFFDF6; font-size: 11px; font-weight: 700; white-space: nowrap; }
-.lap-baru { background: #2b6cb0; } .lap-diproses { background: #b8860b; } .lap-selesai { background: #2f7d4f; } .lap-ditolak { background: #b83232; }
+.lap-baru { background: #2b6cb0; } .lap-diproses { background: #8a6100; } .lap-selesai { background: #2f7d4f; } .lap-ditolak { background: #b83232; }
 .lap-body { white-space: pre-wrap; line-height: 1.7; }
 .lap-photos { display: flex; flex-wrap: wrap; gap: 10px; margin: 12px 0; }
 .lap-photos img { width: 150px; height: 110px; object-fit: cover; border-radius: 10px; border: 1px solid var(--line); }
@@ -25,13 +25,13 @@
 .lap-form fieldset { border: 0; padding: 0; margin: 0; }
 .lap-radios { display: flex; gap: 18px; margin-top: 6px; }
 .lap-radios label, .lap-check { flex-direction: row !important; align-items: center; flex-wrap: wrap; gap: 8px !important; font-weight: 500 !important; }
-.lap-error { color: #e5484d; font-size: 13px; font-weight: 600; }
+.lap-error { color: #b42318; font-size: 13px; font-weight: 600; }
 .lap-stars { display: flex; gap: 4px; }
-.lap-stars button { border: 0; background: transparent; color: var(--line); font-size: 30px; cursor: pointer; }
-.lap-stars button.on { color: #e0a800; }
+.lap-stars button { border: 0; background: transparent; color: var(--ink-soft); font-size: 30px; cursor: pointer; }
+.lap-stars button.on { color: #8a6100; }
 .lap-bell { position: relative; }
 .lap-bell > button { position: relative; }
-.lap-count { margin-left: 6px; padding: 0 6px; border-radius: 999px; background: #e5484d; color: #FFFDF6; font-size: 11px; }
+.lap-count { margin-left: 6px; padding: 0 6px; border-radius: 999px; background: #b42318; color: #FFFDF6; font-size: 11px; }
 .lap-pop { position: absolute; z-index: 20; top: 110%; left: 0; width: min(340px, 86vw); max-height: 360px; overflow: auto; padding: 8px; border: 1px solid var(--line); border-radius: 14px; background: var(--card); box-shadow: 0 12px 30px rgb(0 0 0 / .18); }
 .lap-notif { display: flex; flex-direction: column; gap: 2px; padding: 10px; border-radius: 10px; color: inherit; font-size: 13px; text-decoration: none; }
 .lap-notif.unread { background: color-mix(in srgb, var(--sage) 60%, var(--card)); }
@@ -59,9 +59,9 @@
 .lap-table tr.late { background: color-mix(in srgb, #b83232 8%, var(--card)); }
 .lap-link { padding: 0; border: 0; background: none; color: var(--green); font: inherit; font-weight: 700; text-align: left; text-decoration: underline; cursor: pointer; }
 .lap-urg { display: inline-block; margin-right: 6px; font-weight: 700; }
-.lap-urg-tinggi { color: #b83232; } .lap-urg-sedang { color: #b8860b; } .lap-urg-rendah { color: var(--ink-soft); }
+.lap-urg-tinggi { color: #b83232; } .lap-urg-sedang { color: #8a6100; } .lap-urg-rendah { color: var(--ink-soft); }
 .lap-badge.lap-late { background: #b83232; margin-left: 4px; } .lap-badge.lap-best { background: #7a4fb0; margin-left: 4px; }
-.lap-ok { color: #2f7d4f; font-size: 13px; font-weight: 600; }
+.lap-ok { color: var(--green); font-size: 13px; font-weight: 600; }
 .lap-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
 .lap-chart { margin: 0; padding: 16px; border: 1px solid var(--line); border-radius: 14px; background: var(--card); }
 .lap-chart figcaption { margin-bottom: 8px; font-size: 13px; font-weight: 700; }
@@ -74,3 +74,40 @@
 .lap-admin-form { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line); }
 .lap-danger { border-color: #b83232 !important; color: #b83232 !important; }
 .lap-settings { max-width: 560px; }
+
+/* ==========================================================================
+   GELOMBANG E — sapuan responsif (26 Nov 2026, append-only).
+   ========================================================================== */
+@media (max-width: 480px) {
+  /* E-L1 (TINGGI): popover notifikasi .lap-pop lebar min(340px, 86vw)
+     = 309px di 360px, berjangkar left:0 pada tombol lonceng yang
+     berada di x~192 (setelah tombol "Kirim laporan"), sehingga
+     berakhir di x~501 — meluber ~141px dan terpotong
+     .portal-shell (overflow hidden). Dijangkar ke viewport
+     (fixed, kiri-kanan 12px); posisi vertikal mengikuti posisi
+     statisnya di bawah tombol. */
+  .lap-pop { position: fixed; left: 12px; right: 12px; width: auto; max-height: 60dvh; }
+  /* E-L2: baris laporan — judul panjang tanpa min-width:0 pada anak
+     flex bisa memaksa badge keluar; izinkan anak mengecil dan kata
+     panjang membungkus di mana saja. */
+  .lap-row > div { min-width: 0; }
+  .lap-row b { overflow-wrap: anywhere; }
+  /* E-L3: tombol bintang rating ~30-35px -> 44px (5 x 44 + gap = 236px
+     < 286px lebar isi .lap-detail di 360px). */
+  .lap-stars button { min-width: 44px; min-height: 44px; }
+  /* E-L4: kontrol filter/bulk/formulir laporan ~37-40px -> 44px. */
+  .lap-filters input, .lap-filters select, .lap-bulk input, .lap-bulk select { min-height: 44px; }
+  .lap-form select, .lap-form input:not([type=checkbox]):not([type=radio]) { min-height: 44px; }
+}
+
+/* Gelombang A — kontras mode gelap: teks merah/amber gelap hanya
+   2,4–4,4:1 di atas kartu gelap #1B2F24; di tema gelap diganti ke
+   varian terang (#ffd0c8 merah, #f2c94c amber). Tema terang tidak
+   berubah (sudah ≥4,5:1 setelah penggelapan #b8860b → #8a6100 dan
+   #e5484d → #b42318 di atas). */
+:root[data-theme='dark'] .lap-error,
+:root[data-theme='dark'] .lap-urg-tinggi,
+:root[data-theme='dark'] .lap-summary .late b,
+:root[data-theme='dark'] .lap-danger { color: #ffd0c8; }
+:root[data-theme='dark'] .lap-urg-sedang,
+:root[data-theme='dark'] .lap-stars button.on { color: #f2c94c; }

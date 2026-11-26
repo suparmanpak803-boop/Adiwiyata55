@@ -13,6 +13,7 @@ import { SOAL_INSPEKSI } from '@/lib/apa-itu-adiwiyata/content/pertanyaan'
 import { INTERAKSI_MISI } from '@/lib/apa-itu-adiwiyata/content/interaksi'
 import type { MiniGameSlotProps } from '../misi-shell'
 import { KuisKilat, PetunjukMagi, TanganPenunjuk } from '../interaksi'
+import { TahapTidakTersedia } from '../tahap-tidak-tersedia'
 import { benar, getar, koin, nyawa, salah, tik } from '../suara'
 
 /** Petunjuk di data diawali 'Magi: "..."' — komponen PetunjukMagi sudah
@@ -78,8 +79,11 @@ function InspeksiTombol({ stageIndex, onStageComplete, terjeda = false }: MiniGa
   )
   const pertanyaan = soal[qIndex]
   const opsi = pertanyaan ? opsiPerSoal[qIndex] : null
-  // B-9: skor mentah maks 60 (4 soal × (10 + 5 bonus cepat)) — kirim persen.
-  const skorPersen = Math.min(100, Math.round((skor / 60) * 100))
+  // B-9 (Gelombang C): skor mentah maks 60 (4 soal × (10 + 5 bonus
+  // cepat)), tapi persen dihitung dari 40 (4 × 10) — semua benar =
+  // 100 walau lambat, seperti mode gestur (KuisKilat); bonus cepat
+  // hanya mempercepat ke 100 (dijepit), bukan syarat untuk 100.
+  const skorPersen = Math.min(100, Math.round((skor / 40) * 100))
 
   const selesai = (nilai: number) => {
     if (selesaiRef.current) return
@@ -114,11 +118,8 @@ function InspeksiTombol({ stageIndex, onStageComplete, terjeda = false }: MiniGa
   }, [waktu, fase, dijawab, nyawaSisa])
 
   if (!pertanyaan) {
-    return (
-      <div className="aia-card">
-        <p className="aia-muted">Soal tahap ini belum tersedia.</p>
-      </div>
-    )
+    // Gelombang C: jalan buntu diganti TahapTidakTersedia (residu K-4).
+    return <TahapTidakTersedia onLewati={() => selesai(0)} pesan="Soal tahap ini belum tersedia." />
   }
 
   const jawab = (index: number) => {
@@ -196,8 +197,11 @@ function InspeksiTombol({ stageIndex, onStageComplete, terjeda = false }: MiniGa
                   key={i}
                   aria-hidden="true"
                   size={20}
-                  color={i < nyawaSisa ? '#e11d48' : '#cbd5ce'}
-                  fill={i < nyawaSisa ? '#e11d48' : 'transparent'}
+                  // Gelombang B: hati terisi memakai merah tema (#e11d48
+                  // hanya 3,02:1 di gelap; hati kosong #cbd5ce hanya
+                  // 1,48:1 di terang) — var(--ink-soft) untuk kosong.
+                  color={i < nyawaSisa ? 'var(--aia-merah)' : 'var(--ink-soft)'}
+                  fill={i < nyawaSisa ? 'var(--aia-merah)' : 'transparent'}
                 />
               ))}
               <span style={{ marginLeft: 8, fontSize: 13, fontWeight: 700 }}>Skor: {skorPersen}</span>
@@ -214,11 +218,13 @@ function InspeksiTombol({ stageIndex, onStageComplete, terjeda = false }: MiniGa
                 <span
                   style={{
                     width: `${(waktu / totalWaktu) * 100}%`,
-                    background: waktu <= 5 ? '#b83232' : '#236b4d',
+                    // Gelombang B: isi bar memakai variabel tema — '#236b4d'
+                    // di atas trek gelap hanya ~2,1:1, '#b83232' ~2,5:1.
+                    background: waktu <= 5 ? 'var(--aia-merah)' : 'var(--aia-leaf)',
                   }}
                 />
               </div>
-              <span style={{ color: waktu <= 5 ? '#b83232' : undefined, fontWeight: waktu <= 5 ? 700 : undefined }}>
+              <span style={{ color: waktu <= 5 ? 'var(--aia-merah)' : undefined, fontWeight: waktu <= 5 ? 700 : undefined }}>
                 <Clock aria-hidden="true" style={{ verticalAlign: '-3px' }} /> {waktu} dtk
                 {waktu <= 5 && waktu > 0 ? ' · Cepat!' : ''}
               </span>
@@ -244,10 +250,10 @@ function InspeksiTombol({ stageIndex, onStageComplete, terjeda = false }: MiniGa
                 let border: string | undefined
                 if (dijawab && isJawaban) {
                   kelasUmpan = 'aia-umpan-benar'
-                  border = '2px solid #236b4d'
+                  border = '2px solid var(--aia-leaf)'
                 } else if (dijawab && isDipilih) {
                   kelasUmpan = 'aia-umpan-salah'
-                  border = '2px solid #b83232'
+                  border = '2px solid var(--aia-merah)'
                 }
                 return (
                   <button
@@ -409,11 +415,8 @@ function InspeksiGestur({
   }, [])
 
   if (soal.length === 0) {
-    return (
-      <div className="aia-card">
-        <p className="aia-muted">Soal tahap ini belum tersedia.</p>
-      </div>
-    )
+    // Gelombang C: jalan buntu diganti TahapTidakTersedia (residu K-4).
+    return <TahapTidakTersedia onLewati={() => onSelesai(0)} pesan="Soal tahap ini belum tersedia." />
   }
 
   return (

@@ -163,6 +163,10 @@ export function PanenKetuk({
     if (disabled || selesaiRef.current) return
     const a = aktifRef.current
     if (!a || a.petak !== petak) return
+    // Gelombang C: kosongkan ref SEBELUM render berikutnya, supaya
+    // ketukan kedua sebelum React me-render tidak menghitung objek
+    // yang sama dua kali (panen/salah + ronde +1 ganda).
+    aktifRef.current = null
     bersihkanTimer()
     setAktif(null)
     if (a.objek.matang) {

@@ -258,8 +258,8 @@ export function LayarAwal({
                     minHeight: 44,
                     textAlign: 'left',
                     borderWidth: 2,
-                    borderColor: dipilih ? '#2e7d32' : undefined,
-                    background: dipilih ? 'rgba(46,125,50,0.08)' : undefined,
+                    borderColor: dipilih ? 'var(--aia-leaf)' : undefined,
+                    background: dipilih ? 'color-mix(in srgb, var(--aia-leaf) 10%, transparent)' : undefined,
                   }}
                   onClick={() => {
                     klik()

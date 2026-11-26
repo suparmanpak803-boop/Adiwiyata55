@@ -224,9 +224,9 @@ export function ThrowAim({
         .aia-gi-lempar-benda { position: absolute; left: 24px; bottom: 24px; width: 64px; height: 64px; border-radius: 50%; border: 2px solid var(--green, #2f7d4f); background: var(--card, #fff); color: var(--foreground, #111); display: flex; align-items: center; justify-content: center; cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
         @media (hover: hover) { .aia-gi-lempar-benda:hover { box-shadow: 0 4px 14px rgba(0,0,0,.2); } }
         .aia-gi-lempar-benda:focus-visible { outline: 3px solid var(--green, #2f7d4f); outline-offset: 2px; }
-        .aia-gi-lempar-titik { position: absolute; width: 8px; height: 8px; margin: -4px 0 0 -4px; border-radius: 50%; background: #b45309; opacity: .8; pointer-events: none; }
+        .aia-gi-lempar-titik { position: absolute; width: 8px; height: 8px; margin: -4px 0 0 -4px; border-radius: 50%; background: var(--aia-amber, #b45309); opacity: .8; pointer-events: none; }
         .aia-gi-lempar-meter { height: 10px; border-radius: 999px; background: var(--line, #e5e7eb); overflow: hidden; }
-        .aia-gi-lempar-meter span { display: block; height: 100%; background: #b45309; transition: width .05s linear; }
+        .aia-gi-lempar-meter span { display: block; height: 100%; background: var(--aia-amber, #b45309); transition: width .05s linear; }
         @media (prefers-reduced-motion: reduce) { .aia-gi-lempar-meter span { transition: none; } }
       `}</style>
 

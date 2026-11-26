@@ -143,7 +143,7 @@ export function HiddenObject({
         @media (hover: hover) { .aia-gi-cari-objek:hover:not(:disabled) { opacity: .9; transform: translate(-50%, -50%) scale(1.12); } }
         .aia-gi-cari-objek:focus-visible { outline: 3px solid var(--green, #2f7d4f); outline-offset: 2px; opacity: 1; }
         .aia-gi-cari-objek.ditemukan { opacity: 1; border-color: var(--green, #2f7d4f); background: color-mix(in srgb, #2f7d4f 16%, var(--card, #fff)); }
-        .aia-gi-cari-objek.petunjuk { animation: aia-gi-kilau 0.6s ease-in-out infinite alternate; outline: 3px solid #b45309; }
+        .aia-gi-cari-objek.petunjuk { animation: aia-gi-kilau 0.6s ease-in-out infinite alternate; outline: 3px solid var(--aia-amber, #b45309); }
         @keyframes aia-gi-kilau { from { transform: translate(-50%, -50%) scale(1); } to { transform: translate(-50%, -50%) scale(1.18); } }
         .aia-gi-cari-tanda { position: absolute; top: -8px; right: -8px; width: 22px; height: 22px; border-radius: 50%; background: #2f7d4f; color: #fff; display: flex; align-items: center; justify-content: center; }
         .aia-gi-cari-tanda svg { width: 13px; height: 13px; }

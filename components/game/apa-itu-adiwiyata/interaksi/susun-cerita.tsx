@@ -135,7 +135,10 @@ export function SusunCerita({ frame, pengecoh, modeSatuKetukan = false, disabled
       <style>{`
         .aia-gi-cerita-slot { min-height: 64px; border: 2px dashed var(--line, #e5e7eb); border-radius: 12px; padding: 10px 12px; display: flex; align-items: center; gap: 10px; background: var(--card, #fff); color: var(--foreground, #111); }
         .aia-gi-cerita-slot.terisi { border-style: solid; border-color: var(--green, #2f7d4f); background: color-mix(in srgb, #2f7d4f 10%, var(--card, #fff)); }
-        .aia-gi-cerita-nomor { flex: none; width: 28px; height: 28px; border-radius: 50%; background: var(--green, #2f7d4f); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; }
+        /* Gelombang B: nomor memakai #2f7d4f tetap, bukan var(--green) —
+           di mode gelap --green = #9fd2ae sehingga teks putih di atasnya
+           hanya 1,71:1; #2f7d4f + #fff = 5,04:1 di kedua tema. */
+        .aia-gi-cerita-nomor { flex: none; width: 28px; height: 28px; border-radius: 50%; background: #2f7d4f; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; }
         .aia-gi-cerita-kartu { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 56px; padding: 12px; border-radius: 12px; border: 1px solid var(--line, #e5e7eb); background: var(--card, #fff); color: var(--foreground, #111); font-weight: 600; text-align: left; cursor: pointer; touch-action: manipulation; transition: transform .15s ease, outline .15s ease; }
         .aia-gi-cerita-kartu:active { transform: scale(.97); }
         @media (hover: hover) { .aia-gi-cerita-kartu:hover:not(:disabled) { transform: scale(1.01); box-shadow: 0 4px 14px rgba(0,0,0,.12); } }

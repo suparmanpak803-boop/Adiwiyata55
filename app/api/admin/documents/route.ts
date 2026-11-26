@@ -4,6 +4,7 @@ import { db } from '@/lib/db'
 import { adiwiyataDocuments } from '@/lib/db/schema'
 import { getPortalUser } from '@/lib/auth/access'
 import { matchesMagicBytes } from '@/lib/file-magic'
+import { allowRequest } from '@/lib/rate-limit'
 
 export const runtime = 'nodejs'
 
@@ -31,6 +32,9 @@ export async function POST(request: NextRequest) {
   const user = await getPortalUser()
   if (!user) return NextResponse.json({ error: 'Silakan masuk terlebih dahulu.' }, { status: 401 })
   if (user.role !== 'admin') return NextResponse.json({ error: 'Hanya admin yang dapat mengelola dokumen.' }, { status: 403 })
+  // B-04: batas laju unggah dokumen (30/menit per admin) — sebelumnya
+  // satu-satunya mutasi admin tanpa rate limit.
+  if (!(await allowRequest(`dokumen-unggah:${user.id}`, 30, 60))) return NextResponse.json({ error: 'Terlalu banyak unggahan. Coba lagi sebentar.' }, { status: 429 })
 
   try {
     const formData = await request.formData()

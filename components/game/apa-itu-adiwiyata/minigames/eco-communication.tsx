@@ -366,10 +366,10 @@ function EcoCommunicationTombol({ tugasId, stageIndex, onStageComplete }: MiniGa
           let border: string | undefined
           if (selesai && isJawaban) {
             kelasUmpan = 'aia-umpan-benar'
-            border = '2px solid #236b4d'
+            border = '2px solid var(--aia-leaf)'
           } else if (isSalah) {
             kelasUmpan = 'aia-umpan-salah'
-            border = '2px solid #b83232'
+            border = '2px solid var(--aia-merah)'
           }
           return (
             <button

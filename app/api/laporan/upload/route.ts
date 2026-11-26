@@ -1,5 +1,5 @@
 import { randomBytes } from 'node:crypto'
-import { put } from '@vercel/blob'
+import { del, put } from '@vercel/blob'
 import { NextResponse } from 'next/server'
 import { getPortalUser } from '@/lib/auth/access'
 import { pool } from '@/lib/db'
@@ -33,6 +33,15 @@ export async function POST(request: Request) {
   } catch {
     return NextResponse.json({ error: 'Foto belum dapat diunggah.' }, { status: 500 })
   }
-  await pool.query(`INSERT INTO public.laporan_foto_unggahan (pathname, user_id) VALUES ($1, $2)`, [pathname, user.id])
+  try {
+    await pool.query(`INSERT INTO public.laporan_foto_unggahan (pathname, user_id) VALUES ($1, $2)`, [pathname, user.id])
+  } catch (error) {
+    // Blob sudah terunggah tapi catatannya gagal disimpan: hapus blob
+    // supaya tidak jadi yatim, dan jawab JSON 500 (sebelumnya throw
+    // ini lolos tanpa handler sehingga klien tidak mendapat pesan).
+    console.error('[api/laporan/upload] gagal mencatat unggahan:', error)
+    await del(pathname).catch(() => undefined)
+    return NextResponse.json({ error: 'Foto belum dapat diunggah.' }, { status: 500 })
+  }
   return NextResponse.json({ pathname })
 }

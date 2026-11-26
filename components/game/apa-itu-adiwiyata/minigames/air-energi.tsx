@@ -96,7 +96,7 @@ function Biopori({
             aria-valuemax={100}
             aria-label="Tinggi genangan air"
           >
-            <span style={{ width: `${banjir}%`, background: '#3b7ea1' }} />
+            <span style={{ width: `${banjir}%`, background: 'var(--aia-sky)' }} />
           </div>
           <span>Genangan {banjir}%</span>
         </div>
@@ -142,7 +142,11 @@ function Biopori({
                 padding: 0,
                 borderRadius: '50%',
                 border: jadi ? '3px solid #236b4d' : '2px solid #8a6a3b',
-                background: jadi ? '#3b7ea1' : ketukan > 0 ? '#8a6a3b' : '#b08954',
+                // Gelombang B: tombol lubang memakai teks putih — latar
+                // awal #b08954 hanya 3,20:1 dan jadi #3b7ea1 hanya 4,48:1.
+                // #7d5f36 (5,90:1) dan #2e6b8a (5,86:1) tetap terbaca
+                // sebagai cokelat tanah dan biru air.
+                background: jadi ? '#2e6b8a' : ketukan > 0 ? '#8a6a3b' : '#7d5f36',
                 color: '#fff',
                 flexDirection: 'column',
                 gap: 0,
@@ -367,7 +371,7 @@ function TampungHujan({
             aria-valuemax={target}
             aria-label="Tetes hujan tertampung"
           >
-            <span style={{ width: `${Math.min(100, (tertangkap / target) * 100)}%`, background: '#3b7ea1' }} />
+            <span style={{ width: `${Math.min(100, (tertangkap / target) * 100)}%`, background: 'var(--aia-sky)' }} />
           </div>
           <span>
             {tertangkap}/{target} tetes
@@ -384,8 +388,12 @@ function TampungHujan({
       {fase === 'main' && (
         <>
           <style>{`
-            .aia-air-area:focus-visible { outline: 3px solid var(--green, #2f7d4f); outline-offset: 2px; }
-            .aia-air-tetes:focus-visible { outline: 3px solid #2b6cb0; outline-offset: 1px; border-radius: 50%; background: rgba(43,108,176,.12); }
+            /* Gelombang B: area + tetes berlatar langit terang hardcode,
+               jadi outline fokus memakai warna gelap tetap (#14532d /
+               #174a75) — var(--green) di mode gelap (#9fd2ae) hanya
+               ~1,7:1 di atas langit terang. */
+            .aia-air-area:focus-visible { outline: 3px solid #14532d; outline-offset: 2px; }
+            .aia-air-tetes:focus-visible { outline: 3px solid #174a75; outline-offset: 1px; border-radius: 50%; background: rgba(43,108,176,.12); }
             @media (hover: hover) { .aia-air-tetes:hover { transform: scale(1.15); } }
           `}</style>
           <div
@@ -416,7 +424,7 @@ function TampungHujan({
               cursor: 'crosshair',
             }}
           >
-            <CloudRain aria-hidden="true" style={{ position: 'absolute', top: 8, left: 8, color: '#236b4d' }} />
+            <CloudRain aria-hidden="true" style={{ position: 'absolute', top: 8, left: 8, color: '#14532d' }} />
             {tetesRef.current.map((t) => (
               <button
                 key={t.id}
@@ -443,7 +451,9 @@ function TampungHujan({
                   placeItems: 'center',
                   border: 0,
                   background: 'transparent',
-                  color: '#2b6cb0',
+                  // Gelombang B: tetes #2b6cb0 di atas langit #7fb3d5
+                  // hanya 2,40:1; #174a75 ≥4,10:1 di seluruh gradien.
+                  color: '#174a75',
                   cursor: 'pointer',
                 }}
               >
@@ -709,7 +719,7 @@ function CariBoros({
                     padding: 10,
                     borderRadius: 12,
                     border: sudahBenar
-                      ? '2px solid #236b4d'
+                      ? '2px solid var(--aia-leaf)'
                       : sudahSalah
                         ? '2px solid var(--line)'
                         : '1px solid var(--line)',
@@ -793,7 +803,7 @@ function BioporiGestur({
             aria-valuemax={100}
             aria-label="Tinggi genangan air"
           >
-            <span style={{ width: `${banjir}%`, background: '#3b7ea1' }} />
+            <span style={{ width: `${banjir}%`, background: 'var(--aia-sky)' }} />
           </div>
           <span>Genangan {banjir}%</span>
         </div>

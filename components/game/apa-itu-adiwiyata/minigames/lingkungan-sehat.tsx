@@ -322,9 +322,9 @@ function InspeksiGestur({
                     justifyContent: 'flex-start',
                     textAlign: 'left',
                     minHeight: 48,
-                    outline: sorot ? '2px dashed #b45309' : undefined,
+                    outline: sorot ? '2px dashed var(--aia-amber)' : undefined,
                     outlineOffset: 2,
-                    border: sudahBenar ? '2px solid #236b4d' : undefined,
+                    border: sudahBenar ? '2px solid var(--aia-leaf)' : undefined,
                     whiteSpace: 'normal',
                     height: 'auto',
                     padding: '12px 16px',
@@ -481,8 +481,8 @@ function InspeksiSehat({
                     key={i}
                     aria-hidden="true"
                     size={18}
-                    color={i < nyawaSisa ? '#e11d48' : '#cbd5ce'}
-                    fill={i < nyawaSisa ? '#e11d48' : 'transparent'}
+                    color={i < nyawaSisa ? 'var(--aia-merah)' : 'var(--ink-soft)'}
+                    fill={i < nyawaSisa ? 'var(--aia-merah)' : 'transparent'}
                     style={{ verticalAlign: '-3px' }}
                   />
                 ))}{' '}
@@ -507,10 +507,10 @@ function InspeksiSehat({
               let border: string | undefined
               if (umpan && isJawaban) {
                 kelasUmpan = 'aia-umpan-benar'
-                border = '2px solid #236b4d'
+                border = '2px solid var(--aia-leaf)'
               } else if (umpan && isDipilih) {
                 kelasUmpan = 'aia-umpan-salah'
-                border = '2px solid #b83232'
+                border = '2px solid var(--aia-merah)'
               }
               return (
                 <button
@@ -545,7 +545,7 @@ function InspeksiSehat({
             <div
               className="aia-dialog"
               aria-live="polite"
-              style={umpan.benar ? undefined : { borderLeftColor: '#b83232' }}
+              style={umpan.benar ? undefined : { borderLeftColor: 'var(--aia-merah)' }}
             >
               <strong>{umpan.benar ? 'Benar!' : 'Belum tepat.'}</strong>
               <p>{umpan.teks}</p>

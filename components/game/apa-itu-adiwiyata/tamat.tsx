@@ -33,7 +33,7 @@ export function Tamat({ onExit }: { onExit: () => void }) {
   return (
     <div className="aia-stack">
       <div className="aia-card" style={{ textAlign: 'center', padding: '28px 16px' }}>
-        <PartyPopper aria-hidden="true" size={40} color="#c98a2e" style={{ margin: '0 auto 8px' }} />
+        <PartyPopper aria-hidden="true" size={40} color="var(--aia-terra)" style={{ margin: '0 auto 8px' }} />
         <span className="aia-kicker" style={{ textAlign: 'center' }}>
           Kampanye selesai
         </span>
@@ -50,7 +50,7 @@ export function Tamat({ onExit }: { onExit: () => void }) {
       <section className="aia-card" aria-label="Sertifikat Sekolah Adiwiyata Mandiri">
         <div
           style={{
-            border: '3px double #236b4d',
+            border: '3px double var(--aia-leaf)',
             borderRadius: 12,
             padding: 20,
             textAlign: 'center',

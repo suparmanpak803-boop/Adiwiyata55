@@ -219,8 +219,8 @@ export function SiramRitme({
         .aia-gi-ritme-tombol:active { transform: scale(.96); }
         .aia-gi-ritme-nilai { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 32px; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--line, #e5e7eb); background: var(--card, #fff); font-weight: 700; font-size: 13px; }
         .aia-gi-ritme-nilai.Sempurna { border-color: var(--green, #2f7d4f); background: color-mix(in srgb, #2f7d4f 14%, var(--card, #fff)); }
-        .aia-gi-ritme-nilai.Bagus { border-color: #b45309; background: color-mix(in srgb, #b45309 12%, var(--card, #fff)); }
-        .aia-gi-ritme-nilai.Meleset { border-color: #b83232; background: color-mix(in srgb, #b83232 10%, var(--card, #fff)); }
+        .aia-gi-ritme-nilai.Bagus { border-color: var(--aia-amber, #b45309); background: color-mix(in srgb, #b45309 12%, var(--card, #fff)); }
+        .aia-gi-ritme-nilai.Meleset { border-color: var(--aia-merah, #b83232); background: color-mix(in srgb, #b83232 10%, var(--card, #fff)); }
         @media (prefers-reduced-motion: reduce) { .aia-gi-ritme-tombol.denyut { animation: none; } .aia-gi-ritme-tombol:active { transform: none; } }
       `}</style>
 

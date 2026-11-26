@@ -32,9 +32,12 @@ export async function PUT(request: Request) {
     const waAktif = body?.waAktif === true
     const rawWa = typeof body?.waNomor === 'string' ? body.waNomor.trim() : ''
     const waNomor = rawWa ? normalizeWaNumber(rawWa) : ''
-    if (waNomor === null) return NextResponse.json({ error: 'Nomor WhatsApp tidak valid. Contoh: 081234567890.' }, { status: 400 })
+    // Nomor tidak valid hanya menghalangi bila WA diaktifkan: admin
+    // yang mematikan WA sambil menyisakan nomor lama yang tidak valid
+    // sebelumnya terkunci tidak bisa menyimpan pengaturan apa pun.
+    if (waAktif && waNomor === null) return NextResponse.json({ error: 'Nomor WhatsApp tidak valid. Contoh: 081234567890.' }, { status: 400 })
     if (waAktif && !waNomor) return NextResponse.json({ error: 'Isi nomor WhatsApp untuk mengaktifkan tombol.' }, { status: 400 })
-    await saveLaporanSettings({ spreadsheetUrl, waAktif, waNomor })
+    await saveLaporanSettings({ spreadsheetUrl, waAktif, waNomor: waNomor ?? '' })
     return NextResponse.json({ ok: true })
   } catch (error) {
     return errorResponse(error)

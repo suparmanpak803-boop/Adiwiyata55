@@ -13,6 +13,7 @@
 import { del } from '@vercel/blob'
 import { pool } from '@/lib/db'
 import { KATEGORI, STATUS_LABEL } from '@/lib/laporan'
+import { tanggalIsoValid } from '@/lib/hari-sekolah'
 import { getAppsScriptConfig } from '@/lib/sheets-config'
 import type { PortalUser } from '@/lib/auth/access'
 
@@ -128,14 +129,21 @@ function isLate(status: string, dibuatPada: string): boolean {
 export function parseFilters(params: URLSearchParams): LaporanFilters {
   const page = Math.max(1, Number(params.get('page') ?? 1) || 1)
   const urut = params.get('urut') === 'terbaru' ? 'terbaru' : 'urgensi'
+  // Tanggal filter harus tanggal kalender yang benar: nilai seperti
+  // 'abc' atau '2026-02-30' sebelumnya lolos ke `$?::date` dan membuat
+  // query melempar (500). Nilai tidak valid dibuang (dianggap kosong).
+  const tanggal = (key: string) => {
+    const value = params.get(key) ?? ''
+    return tanggalIsoValid(value) ? value : ''
+  }
   return {
     status: params.get('status') ?? '',
     kategori: params.get('kategori') ?? '',
     urgensi: params.get('urgensi') ?? '',
     tingkat: params.get('tingkat') ?? '',
     lokasi: params.get('lokasi') ?? '',
-    dari: params.get('dari') ?? '',
-    sampai: params.get('sampai') ?? '',
+    dari: tanggal('dari'),
+    sampai: tanggal('sampai'),
     q: params.get('q') ?? '',
     urut,
     page,
@@ -159,8 +167,11 @@ function buildWhere(filters: LaporanFilters, user: PortalUser): { sql: string; p
   if (filters.dari) add('l.dibuat_pada >= $?::date', filters.dari)
   if (filters.sampai) add('l.dibuat_pada < ($?::date + interval \'1 day\')', filters.sampai)
   if (filters.q) {
-    params.push(`%${filters.q}%`)
-    conditions.push(`(l.nomor_tiket ILIKE $${params.length} OR l.judul ILIKE $${params.length} OR l.isi ILIKE $${params.length} OR l.nama_pelapor ILIKE $${params.length})`)
+    // Escape wildcard LIKE (% dan _) supaya pencarian '%'
+    // tidak cocok dengan semua baris.
+    const escaped = filters.q.replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_')
+    params.push(`%${escaped}%`)
+    conditions.push(`(l.nomor_tiket ILIKE $${params.length} ESCAPE '\\' OR l.judul ILIKE $${params.length} ESCAPE '\\' OR l.isi ILIKE $${params.length} ESCAPE '\\' OR l.nama_pelapor ILIKE $${params.length} ESCAPE '\\')`)
   }
   return { sql: conditions.length ? `WHERE ${conditions.join(' AND ')}` : '', params }
 }

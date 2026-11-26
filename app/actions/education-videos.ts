@@ -40,35 +40,45 @@ export async function saveEducationVideo(input: EducationVideoInput) {
   const validated = validateVideoInput(input)
   const originalVideoId = input.originalVideoId?.trim()
 
-  await db.transaction(async (transaction) => {
-    if (originalVideoId) {
-      const updated = await transaction.update(adiwiyataEducationVideos).set({
-        videoId: validated.videoId,
-        youtubeUrl: validated.youtubeUrl,
-        title: validated.title,
-        category: validated.category,
-        description: validated.description,
-        displayOrder: validated.displayOrder,
-        isEnabled: validated.enabled,
-        updatedAt: new Date(),
-      }).where(eq(adiwiyataEducationVideos.videoId, originalVideoId)).returning({ videoId: adiwiyataEducationVideos.videoId })
-      if (!updated.length) throw new Error('Video tidak ditemukan. Muat ulang halaman lalu coba lagi.')
-      if (originalVideoId !== validated.videoId) {
-        await transaction.delete(adiwiyataVideoDisplaySettings).where(eq(adiwiyataVideoDisplaySettings.videoId, originalVideoId))
+  try {
+    await db.transaction(async (transaction) => {
+      if (originalVideoId) {
+        const updated = await transaction.update(adiwiyataEducationVideos).set({
+          videoId: validated.videoId,
+          youtubeUrl: validated.youtubeUrl,
+          title: validated.title,
+          category: validated.category,
+          description: validated.description,
+          displayOrder: validated.displayOrder,
+          isEnabled: validated.enabled,
+          updatedAt: new Date(),
+        }).where(eq(adiwiyataEducationVideos.videoId, originalVideoId)).returning({ videoId: adiwiyataEducationVideos.videoId })
+        if (!updated.length) throw new Error('Video tidak ditemukan. Muat ulang halaman lalu coba lagi.')
+        if (originalVideoId !== validated.videoId) {
+          await transaction.delete(adiwiyataVideoDisplaySettings).where(eq(adiwiyataVideoDisplaySettings.videoId, originalVideoId))
+        }
+      } else {
+        await transaction.insert(adiwiyataEducationVideos).values({
+          videoId: validated.videoId,
+          youtubeUrl: validated.youtubeUrl,
+          title: validated.title,
+          category: validated.category,
+          description: validated.description,
+          displayOrder: validated.displayOrder,
+          isEnabled: validated.enabled,
+          publishedAt: new Date().toISOString().slice(0, 10),
+        })
       }
-    } else {
-      await transaction.insert(adiwiyataEducationVideos).values({
-        videoId: validated.videoId,
-        youtubeUrl: validated.youtubeUrl,
-        title: validated.title,
-        category: validated.category,
-        description: validated.description,
-        displayOrder: validated.displayOrder,
-        isEnabled: validated.enabled,
-        publishedAt: new Date().toISOString().slice(0, 10),
-      })
-    }
-  })
+    })
+  } catch (error) {
+    // video_id adalah PRIMARY KEY: tautan yang sama sudah tersimpan
+    // sebelumnya melempar pesan driver mentah ke klien bila tidak
+    // diterjemahkan di sini.
+    const code = (error as { code?: string }).code
+    const message = error instanceof Error ? error.message : ''
+    if (code === '23505' || message.includes('duplicate key')) throw new Error('Video ini sudah terdaftar. Ubah video yang sudah ada, bukan menambah baru.')
+    throw error
+  }
 
   revalidateTag('education-videos', 'max')
   revalidatePath('/edukasi')

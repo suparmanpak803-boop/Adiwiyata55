@@ -7,6 +7,7 @@ import { pool } from '@/lib/db'
 import { allowRequest } from '@/lib/rate-limit'
 import { getClassMasterData, getFallbackClassMaster, isActiveClassCode } from '@/lib/class-master'
 import { normalizeClassCode } from '@/lib/class-codes'
+import { tanggalIsoValid } from '@/lib/hari-sekolah'
 import { GENERAL_LOCATIONS } from '@/lib/general-locations'
 
 export type DepositRow = {
@@ -67,7 +68,9 @@ function todayInJakarta() {
 }
 
 async function validateInput(input: DepositInput) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(input.date) || input.date > todayInJakarta()) {
+  // Tanggal harus tanggal kalender yang benar: '2026-02-30' lolos
+  // regex lama lalu gagal di cast `$2::date` saat INSERT.
+  if (!tanggalIsoValid(input.date) || input.date > todayInJakarta()) {
     throw new Error('Tanggal tidak valid atau tidak boleh melewati hari ini.')
   }
   const classCode = normalizeClassCode(input.className)
@@ -187,10 +190,12 @@ export async function saveDeposit(input: DepositInput) {
   input = await validateInput(input)
   // M-05: tanggal mundur maksimal 30 hari (tanggal lebih lama hanya
   // lewat admin) agar leaderboard tidak bisa digelembungkan backfill.
+  // Batas dihitung dari tanggal Jakarta (bukan UTC): di 00:00–07:00 WIB
+  // tanggal UTC masih hari kemarin sehingga batas mundur molor 1 hari.
   if (user.role !== 'admin') {
-    const earliest = new Date()
-    earliest.setDate(earliest.getDate() - 30)
-    if (input.date < earliest.toISOString().slice(0, 10)) {
+    const hariIni = new Date(`${todayInJakarta()}T00:00:00Z`)
+    hariIni.setUTCDate(hariIni.getUTCDate() - 30)
+    if (input.date < hariIni.toISOString().slice(0, 10)) {
       throw new Error('Tanggal setoran maksimal 30 hari ke belakang. Untuk tanggal yang lebih lama, minta admin.')
     }
   }

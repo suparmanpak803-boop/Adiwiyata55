@@ -96,7 +96,7 @@ function SectionContent({ section }: { section: (typeof EDU_DEFAULTS.sections)[n
     return (
       <div className="education-copy">
         <p>{section.introduction}</p>
-        <motion.div className="pillar-grid" variants={staggerParent} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-40px' }}>
+        <motion.div className="pillar-grid" variants={staggerParent} initial="hidden" animate="show">
           {section.pillars.map((pillar, index) => (
             <motion.article className="pillar-card" key={pillar.title} variants={fadeUpChild} whileHover={{ y: -4 }}>
               <span className="number-chip">0{index + 1}</span>
@@ -118,7 +118,7 @@ function SectionContent({ section }: { section: (typeof EDU_DEFAULTS.sections)[n
           <span className="count-pill">{KADER_LIST.length} kader</span>
         </div>
         <p>Untuk menjalankan program harian secara terfokus, SMAN 55 Jakarta membentuk {KADER_LIST.length} kader:</p>
-        <motion.ol className="kader-grid" variants={staggerParent} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-40px' }}>
+        <motion.ol className="kader-grid" variants={staggerParent} initial="hidden" animate="show">
           {KADER_LIST.map((kader, index) => <motion.li key={kader} variants={fadeUpChild}><span>{String(index + 1).padStart(2, '0')}</span>{kader}</motion.li>)}
         </motion.ol>
       </div>
@@ -128,7 +128,7 @@ function SectionContent({ section }: { section: (typeof EDU_DEFAULTS.sections)[n
   return (
     <div className="education-copy">
       <div className="joss-callout"><span className="joss-mark">JOSS</span><div><h3>Jaga & Olah Sampah Sekolah</h3><p>{section.joss}</p></div></div>
-      <motion.div className="impact-grid" variants={staggerParent} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-40px' }}>
+      <motion.div className="impact-grid" variants={staggerParent} initial="hidden" animate="show">
         {section.impact.map((item) => <motion.article className="impact-card" key={item.value} variants={fadeUpChild} whileHover={{ y: -4 }}><strong><CountUp value={Number(item.value)} /><small>{item.unit}</small></strong><p>{item.description}</p></motion.article>)}
       </motion.div>
       <div className="zero-rule"><ShieldCheck aria-hidden="true" /><div><span className="eyebrow">KEBIASAAN BAIK</span><h3>Aturan Zero Waste Harian</h3><p>{section.dailyRule}</p></div></div>
@@ -156,7 +156,7 @@ function EducationSections() {
         <div><span className="eyebrow">BELAJAR & BERGERAK</span><h2 id="education-title" aria-label="Kenali gerakan Adiwiyata"><WordReveal text="Kenali gerakan Adiwiyata" /></h2></div>
         <p>Memahami lingkungan adalah langkah pertama untuk merawatnya bersama.</p>
       </div>
-      <motion.div className="education-list" variants={staggerParent} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-40px' }}>
+      <motion.div className="education-list" variants={staggerParent} initial="hidden" animate="show">
         {EDU_DEFAULTS.sections.map((section, index) => {
           const isOpen = openSections.includes(section.id); const Icon = EDU_SECTION_ICONS[section.icon] ?? Leaf
           return (
@@ -347,7 +347,7 @@ export function AdiwiyataPortal({ user, depositData, sheetsConfig, educationVide
           <div className="hero-bottom"><span>01 · MASALAH</span><span>GULIR UNTUK MENJELAJAHI <ChevronDown aria-hidden="true" /></span></div>
         </section>
         <EducationSections />
-        <section className="portal-bento" aria-labelledby="portal-title"><div className="bento-heading"><div><span className="eyebrow">JAWABAN KAMI</span><h2 id="portal-title" aria-label="Gerakan yang bisa kita mulai"><WordReveal text="Gerakan yang bisa kita mulai" /></h2></div><p>Jawaban kami atas masalah sampah: gerakan yang bisa diikuti, bukti yang bisa dilihat, dan orang-orang di baliknya.</p></div><motion.div className="bento-grid" variants={staggerParent} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-40px' }}><motion.button className="bento-card bento-class" variants={fadeUpChild} whileHover={{ y: -4 }} whileTap={{ scale: 0.98 }} onClick={() => selectView('kelas')}><span className="bento-icon"><Users aria-hidden="true" /></span><span className="eyebrow">ORANG-ORANGNYA</span><strong>Kenali kelas<br />dan kadernya.</strong><span className="bento-link">Buka daftar kelas <ArrowRight aria-hidden="true" /></span><span className="bento-decoration"><CountUp value={depositData.classes.length} /></span></motion.button><motion.button className="bento-card bento-monitor" variants={fadeUpChild} whileHover={{ y: -4 }} whileTap={{ scale: 0.98 }} onClick={() => selectView('monitoring')}><span className="bento-icon"><BarChart3 aria-hidden="true" /></span><span className="eyebrow">BUKTI NYATA</span><strong>{totalKg > 0 ? <>{pilahPct}% sampah<br />sudah terpilah.</> : <>Pantau aksi<br />bersama.</>}</strong><span className="bento-link">Lihat dashboard <ArrowRight aria-hidden="true" /></span></motion.button><motion.article className="bento-card bento-note" variants={fadeUpChild} whileHover={{ y: -4 }}><span className="eyebrow">KOMITMEN KITA</span><strong>Lebih bijak<br />memilah.</strong><p>Kenali jenis sampah, kurangi yang sekali pakai, dan bawa wadah makan dari rumah.</p><Leaf className="bento-leaf" aria-hidden="true" /></motion.article></motion.div></section>
+        <section className="portal-bento" aria-labelledby="portal-title"><div className="bento-heading"><div><span className="eyebrow">JAWABAN KAMI</span><h2 id="portal-title" aria-label="Gerakan yang bisa kita mulai"><WordReveal text="Gerakan yang bisa kita mulai" /></h2></div><p>Jawaban kami atas masalah sampah: gerakan yang bisa diikuti, bukti yang bisa dilihat, dan orang-orang di baliknya.</p></div><motion.div className="bento-grid" variants={staggerParent} initial="hidden" animate="show"><motion.button className="bento-card bento-class" variants={fadeUpChild} whileHover={{ y: -4 }} whileTap={{ scale: 0.98 }} onClick={() => selectView('kelas')}><span className="bento-icon"><Users aria-hidden="true" /></span><span className="eyebrow">ORANG-ORANGNYA</span><strong>Kenali kelas<br />dan kadernya.</strong><span className="bento-link">Buka daftar kelas <ArrowRight aria-hidden="true" /></span><span className="bento-decoration"><CountUp value={depositData.classes.length} /></span></motion.button><motion.button className="bento-card bento-monitor" variants={fadeUpChild} whileHover={{ y: -4 }} whileTap={{ scale: 0.98 }} onClick={() => selectView('monitoring')}><span className="bento-icon"><BarChart3 aria-hidden="true" /></span><span className="eyebrow">BUKTI NYATA</span><strong>{totalKg > 0 ? <>{pilahPct}% sampah<br />sudah terpilah.</> : <>Pantau aksi<br />bersama.</>}</strong><span className="bento-link">Lihat dashboard <ArrowRight aria-hidden="true" /></span></motion.button><motion.article className="bento-card bento-note" variants={fadeUpChild} whileHover={{ y: -4 }}><span className="eyebrow">KOMITMEN KITA</span><strong>Lebih bijak<br />memilah.</strong><p>Kenali jenis sampah, kurangi yang sekali pakai, dan bawa wadah makan dari rumah.</p><Leaf className="bento-leaf" aria-hidden="true" /></motion.article></motion.div></section>
         <section className="story-cta" aria-labelledby="story-cta-title"><span className="eyebrow">AJAKAN</span><h2 id="story-cta-title" aria-label="Bumi ini kita pinjam dari generasi mendatang."><WordReveal text="Bumi ini kita pinjam dari generasi mendatang." /></h2><p>Gerakan ini butuh kamu. Mainkan gamenya, kirim laporanmu, dan ajak kelasmu memilah lebih baik minggu ini.</p><div className="hero-actions"><button className="primary-button" onClick={() => selectView('main')}>Main Game <ArrowRight aria-hidden="true" /></button><button className="text-button" onClick={() => selectView('laporan')}>Kirim Laporan <ArrowRight aria-hidden="true" /></button></div></section>
       </>}
 

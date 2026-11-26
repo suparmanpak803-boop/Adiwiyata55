@@ -146,6 +146,10 @@ export function SortirCepat({
 
   const jawab = (targetId: string) => {
     if (disabled || selesaiRef.current) return
+    // Gelombang C: abaikan jawaban untuk item yang sudah dilanjutkan
+    // (ketukan ganda / keyboard + klik dalam satu tick bisa menghitung
+    // benar dua kali sebelum `lanjut()` sempat mengunci).
+    if (sudahLanjutRef.current === idxRef.current) return
     const kini = item[idxRef.current]
     if (!kini) return
     if (targetId === kini.target) {

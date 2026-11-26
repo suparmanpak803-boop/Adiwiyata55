@@ -18,13 +18,16 @@ interface KejadianInfo {
   sfx: () => void
 }
 
+// Gelombang B: `warna` memakai variabel tema (bukan hex mentah) supaya
+// ikon judul + tombol target tetap ≥3:1 di mode gelap — hex mentah
+// #a13b3b hanya 2,17:1 di atas kartu gelap.
 const KEJADIAN: Record<ChapterId, KejadianInfo> = {
   gerbang: {
     jenis: 'hujan',
     judul: 'Hujan Deras',
     deskripsi: 'Hujan deras turun di gerbang! Ketuk 5 tetes hujan untuk berteduh di bawah atap.',
     target: 'tetes hujan',
-    warna: '#3b7ea1',
+    warna: 'var(--aia-sky)',
     ikon: CloudRain,
     sfx: hujan,
   },
@@ -33,7 +36,7 @@ const KEJADIAN: Record<ChapterId, KejadianInfo> = {
     judul: 'Badai Sampah',
     deskripsi: 'Angin kencang menerbangkan sampah di kantin! Ketuk 5 sampah beterbangan untuk menangkapnya.',
     target: 'sampah beterbangan',
-    warna: '#7a7a7a',
+    warna: 'var(--ink-soft)',
     ikon: Wind,
     sfx: badai,
   },
@@ -42,7 +45,7 @@ const KEJADIAN: Record<ChapterId, KejadianInfo> = {
     judul: 'Serangan Lalat',
     deskripsi: 'Lalat datang mengerumuni kotak maggot! Ketuk 5 lalat untuk mengusirnya.',
     target: 'lalat',
-    warna: '#a13b3b',
+    warna: 'var(--aia-merah)',
     ikon: Bug,
     sfx: lalat,
   },
@@ -51,7 +54,7 @@ const KEJADIAN: Record<ChapterId, KejadianInfo> = {
     judul: 'Hujan Deras',
     deskripsi: 'Hujan deras mengguyur kebun! Ketuk 5 tetes hujan untuk meneduh di bawah pohon.',
     target: 'tetes hujan',
-    warna: '#3b7ea1',
+    warna: 'var(--aia-sky)',
     ikon: CloudRain,
     sfx: hujan,
   },
@@ -60,7 +63,7 @@ const KEJADIAN: Record<ChapterId, KejadianInfo> = {
     judul: 'Badai Sampah',
     deskripsi: 'Angin kencang menerbangkan sampah di taman air! Ketuk 5 sampah beterbangan untuk menangkapnya.',
     target: 'sampah beterbangan',
-    warna: '#7a7a7a',
+    warna: 'var(--ink-soft)',
     ikon: Wind,
     sfx: badai,
   },
@@ -69,7 +72,7 @@ const KEJADIAN: Record<ChapterId, KejadianInfo> = {
     judul: 'Serangan Lalat',
     deskripsi: 'Lalat berdatangan ke taman! Ketuk 5 lalat untuk mengusirnya supaya kupu-kupu betah.',
     target: 'lalat',
-    warna: '#a13b3b',
+    warna: 'var(--aia-merah)',
     ikon: Bug,
     sfx: lalat,
   },

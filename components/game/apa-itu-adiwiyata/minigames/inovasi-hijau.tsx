@@ -207,7 +207,7 @@ function VersiGestur({
                         justifyContent: 'flex-start',
                         textAlign: 'left',
                         minHeight: 48,
-                        border: isSalah ? '2px solid #b83232' : undefined,
+                        border: isSalah ? '2px solid var(--aia-merah)' : undefined,
                         whiteSpace: 'normal',
                         height: 'auto',
                         padding: '12px 16px',
@@ -370,10 +370,10 @@ function VersiTombol({ tugasId, stageIndex, onStageComplete }: TugasMiniGameSlot
                 let border: string | undefined
                 if (isBenarDipilih) {
                   kelasUmpan = 'aia-umpan-benar'
-                  border = '2px solid #236b4d'
+                  border = '2px solid var(--aia-leaf)'
                 } else if (isSalah) {
                   kelasUmpan = 'aia-umpan-salah'
-                  border = '2px solid #b83232'
+                  border = '2px solid var(--aia-merah)'
                 }
                 return (
                   <button

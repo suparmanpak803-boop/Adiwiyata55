@@ -229,11 +229,9 @@ function EduLingkunganTombol({ tugasId, stageIndex, onStageComplete }: TugasMini
   }
 
   if (!tahap || tahap.jenis !== 'kuis' || !pertanyaan) {
-    return (
-      <div className="aia-card">
-        <p className="aia-muted">Soal tahap ini belum tersedia.</p>
-      </div>
-    )
+    // Gelombang C: jalan buntu diganti TahapTidakTersedia (residu K-4) —
+    // selesai() tanpa argumen mengirim skor saat itu (0, belum ada soal).
+    return <TahapTidakTersedia onLewati={() => selesai()} pesan="Soal tahap ini belum tersedia." />
   }
 
   const jawab = (index: number) => {
@@ -288,10 +286,10 @@ function EduLingkunganTombol({ tugasId, stageIndex, onStageComplete }: TugasMini
                 let border: string | undefined
                 if (dijawab && isJawaban) {
                   kelasUmpan = 'aia-umpan-benar'
-                  border = '2px solid #236b4d'
+                  border = '2px solid var(--aia-leaf)'
                 } else if (dijawab && isDipilih) {
                   kelasUmpan = 'aia-umpan-salah'
-                  border = '2px solid #b83232'
+                  border = '2px solid var(--aia-merah)'
                 }
                 return (
                   <button

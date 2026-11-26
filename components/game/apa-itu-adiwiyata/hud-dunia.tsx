@@ -100,7 +100,7 @@ function BarKebutuhan({
         aria-valuemin={0}
         aria-valuemax={100}
       >
-        <span style={{ width: `${nilai}%`, background: rendah ? '#c62828' : warna }} />
+        <span style={{ width: `${nilai}%`, background: rendah ? 'var(--aia-merah)' : warna }} />
       </span>
     </span>
   )

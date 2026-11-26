@@ -543,10 +543,10 @@ function VersiTombol({ stageIndex, onStageComplete }: TugasMiniGameSlotProps) {
                 let border: string | undefined
                 if (dijawab && isJawaban) {
                   kelasUmpan = 'aia-umpan-benar'
-                  border = '2px solid #236b4d'
+                  border = '2px solid var(--aia-leaf)'
                 } else if (dijawab && isDipilih) {
                   kelasUmpan = 'aia-umpan-salah'
-                  border = '2px solid #b83232'
+                  border = '2px solid var(--aia-merah)'
                 }
                 return (
                   <button

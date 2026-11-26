@@ -151,7 +151,7 @@ export function RotateDial({
         @media (hover: hover) { .aia-gi-putar:hover { box-shadow: 0 4px 14px rgba(0,0,0,.15); } }
         .aia-gi-putar:focus-visible { outline: 3px solid var(--green, #2f7d4f); outline-offset: 2px; }
         .aia-gi-putar-cakram { position: absolute; inset: 18px; border-radius: 50%; background: color-mix(in srgb, #2f7d4f 14%, var(--card, #fff)); border: 2px solid var(--green, #2f7d4f); display: flex; align-items: center; justify-content: center; pointer-events: none; }
-        .aia-gi-putar-tanda { position: absolute; top: 6px; left: 50%; width: 10px; height: 10px; margin-left: -5px; border-radius: 50%; background: #b45309; }
+        .aia-gi-putar-tanda { position: absolute; top: 6px; left: 50%; width: 10px; height: 10px; margin-left: -5px; border-radius: 50%; background: var(--aia-amber, #b45309); }
       `}</style>
       <button
         type="button"
@@ -179,7 +179,7 @@ export function RotateDial({
             cy={60}
             r={R}
             fill="none"
-            stroke="#2f7d4f"
+            stroke="var(--aia-leaf, #2f7d4f)"
             strokeWidth={8}
             strokeLinecap="round"
             strokeDasharray={KELILING}

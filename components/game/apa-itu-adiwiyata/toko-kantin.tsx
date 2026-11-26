@@ -58,7 +58,7 @@ function Bar({ label, nilai, warna }: { label: string; nilai: number; warna: str
         {label} {nilai}
       </span>
       <span
-        style={{ display: 'inline-block', width: 56, height: 8, borderRadius: 4, background: '#e0e0e0', overflow: 'hidden' }}
+        style={{ display: 'inline-block', width: 56, height: 8, borderRadius: 4, background: 'var(--muted)', overflow: 'hidden' }}
         role="progressbar"
         aria-label={label}
         aria-valuenow={nilai}

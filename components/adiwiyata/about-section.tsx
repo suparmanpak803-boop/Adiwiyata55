@@ -21,7 +21,7 @@ const features = [
 export function AboutSection() {
   return (
     <section className="adi-about" aria-label="Tentang Adiwiyata 55">
-      <motion.div className="adi-about-grid" variants={staggerParent} initial="hidden" whileInView="show" viewport={{ once: true, margin: '-40px' }}>
+      <motion.div className="adi-about-grid" variants={staggerParent} initial="hidden" animate="show">
         <motion.article className="adi-about-card adi-about-story" variants={fadeUpChild} whileHover={{ y: -4 }}>
           <span className="adi-about-kicker"><Leaf aria-hidden="true" /> PLATFORM DIGITAL · SMAN 55 JAKARTA</span>
           <h2>Data yang lebih jernih untuk sekolah yang lebih hijau.</h2>
@@ -61,7 +61,7 @@ export function AboutSection() {
           <p className="adi-about-team-note">Dikembangkan sebagai bagian dari penelitian karya tulis ilmiah sekolah.</p>
           <div className="adi-about-team-list">
             {team.map((member, index) => (
-              <div className="adi-about-member" key={member.name}>
+              <div className="adi-about-member" key={member.name} title={member.name}>
                 <span className={`adi-about-avatar avatar-${index + 1}`} aria-hidden="true">{member.initials}</span>
                 <span><strong>{member.name}</strong><small>{member.detail}</small></span>
                 <GraduationCap aria-hidden="true" />

@@ -87,8 +87,7 @@ export function WordReveal({ text, className }: { text: string; className?: stri
       className={className}
       variants={wordParent}
       initial="hidden"
-      whileInView="show"
-      viewport={{ once: true, margin: '-40px' }}
+      animate="show"
       aria-hidden="true"
     >
       {words.map((word, index) => (
@@ -178,8 +177,7 @@ export function BarFill({
         className={fillClassName}
         style={{ transformOrigin: 'left', willChange: 'transform' }}
         initial={{ scaleX: 0 }}
-        whileInView={{ scaleX: clamped }}
-        viewport={{ once: true, margin: '-20px' }}
+        animate={{ scaleX: clamped }}
         transition={{ duration: 0.6, ease: ANIM_EASE }}
       />
     </span>

@@ -750,7 +750,7 @@ button.bento-card { cursor: pointer; }
 .monitoring-table thead th { color: var(--ink-soft); font-size: 9px; font-weight: 700; letter-spacing: .7px; text-transform: uppercase; }
 .monitoring-table tbody th { font-weight: 700; }
 .rank-chip { display: grid; width: 27px; height: 27px; place-items: center; border-radius: 50%; background: var(--muted); color: var(--ink-soft); font-size: 9px; }
-.rank-highlight { background: var(--lime); color: var(--forest); }
+.rank-highlight { background: var(--lime); color: var(--solar-btn-text); }
 .monitoring-footnote { margin-top: 15px; line-height: 1.6; }
 .monitoring-actions, .preview-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
 .monitoring-actions svg, .spreadsheet-link svg { width: 15px; height: 15px; }
@@ -1042,7 +1042,7 @@ button.bento-card { cursor: pointer; }
 .slider-icon-button:hover:not(:disabled), .slider-order-controls button:hover:not(:disabled) { border-color: var(--green); color: var(--green); }
 .slider-icon-button.is-danger:hover:not(:disabled) { border-color: #d65c4d; color: #a7473d; }
 .slider-status-button { min-height: 32px; padding: 0 9px; border: 1px solid var(--line); border-radius: 6px; background: var(--card); color: var(--ink-soft); font-size: 9px; font-weight: 700; cursor: pointer; }
-.slider-status-button.is-on { border-color: #b8d6be; color: #286c4e; }
+.slider-status-button.is-on { border-color: #b8d6be; color: var(--green); }
 .slider-status-button:disabled { opacity: .5; cursor: wait; }
 .slider-storage-note { margin-top: 14px; }
 .slider-empty-list { min-height: 210px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 9px; border: 1px dashed var(--line); border-radius: 9px; color: var(--green); text-align: center; }
@@ -1230,7 +1230,7 @@ button.bento-card { cursor: pointer; }
 .kader-report-field textarea { min-height: 92px; resize: vertical; line-height: 1.6; }
 .kader-report-field input:focus, .kader-report-field select:focus, .kader-report-field textarea:focus { border-color: var(--green); outline: 3px solid color-mix(in srgb, var(--green) 19%, transparent); }
 .kader-report-field input[readonly] { color: var(--ink-soft); background: color-mix(in srgb, var(--sage) 28%, var(--background)); }
-.kader-report-field input::placeholder, .kader-report-field textarea::placeholder { color: var(--ink-soft); opacity: .75; }
+.kader-report-field input::placeholder, .kader-report-field textarea::placeholder { color: var(--ink-soft); opacity: 1; }
 .kader-report-hint { color: var(--ink-soft); font-size: 9px; font-weight: 400; line-height: 1.5; }
 .kader-report-notes .kader-report-field + .kader-report-field { margin-top: 15px; }
 .kader-report-progress, .kader-report-task-count { color: var(--green); font-size: 9px; font-weight: 700; }
@@ -1451,3 +1451,94 @@ button.bento-card { cursor: pointer; }
 .anim-bar-track { display: block; height: 5px; margin-top: 6px; overflow: hidden; border-radius: 999px; background: color-mix(in srgb, currentColor 16%, transparent); }
 .anim-bar-fill { display: block; height: 100%; border-radius: inherit; background: var(--green); }
 .anim-bar-track--slim { height: 4px; }
+
+/* ==========================================================================
+   GELOMBANG E — sapuan responsif (26 Nov 2026, append-only).
+   Hanya blok @media baru di akhir file; tidak ada baris lama yang diubah.
+   ========================================================================== */
+@media (max-width: 700px) {
+  /* E-G1: salinan slider vs panah atas-kanan — panah pindah ke atas
+     (top 18px, right 14px, dua tombol 44px = 96px) sementara salinan
+     selebar calc(100% - 116px) berakhir di x=604 (viewport 700) dan
+     x=264 (viewport 360), menabrak tombol kiri. Dipersempit 24px. */
+  .home-slider-copy { width: calc(100% - 140px); }
+  /* E-G15: tombol putar/jeda slider 30px -> 44px. Tidak menabrak titik
+     (titik berakhir x=287 di 360px; tombol mulai x=298) maupun salinan
+     (batas bawah salinan 54px; tombol berakhir 52px dari bawah). */
+  .home-slider-play { width: 44px; height: 44px; }
+  /* E-G14: tombol urut/aksi slider 30-32px -> 44px. Kolom auto kartu
+     menjadi 92px; kolom info minmax(0,1fr) tetap muat di 330px. */
+  .slider-order-controls button, .slider-icon-button { width: 44px; height: 44px; }
+  .slider-status-button { min-height: 44px; }
+}
+@media (max-width: 767px) {
+  /* E-G9: pemicu menu, tema, dan keluar 36px -> 44px. Total topbar di
+     360px: ~309px < 336px (lebar topbar-inner di <=390px). */
+  .menu-trigger, .theme-toggle, .signout-button { width: 44px; height: 44px; }
+}
+@media (max-width: 620px) {
+  /* E-G10: tombol menu/tema halaman edukasi 35px -> 44px; tombol Cari
+     di bilah pencari 33px -> 44px (bilah tumbuh 44px -> 52px). */
+  .education-menu-toggle, .education-theme-toggle { width: 44px; height: 44px; }
+  .education-search button { min-height: 44px; }
+  /* E-G11: tombol admin video 34-39px -> 44px. */
+  .video-icon-button { width: 44px; height: 44px; }
+  .video-editor-cancel, .video-visibility-button { min-height: 44px; }
+  .video-editor-form > .primary-button { min-height: 44px; }
+  /* E-G12: tombol aksi dokumen admin 34px -> 44px. */
+  .document-admin-actions a, .document-admin-actions button { width: 44px; height: 44px; }
+  /* E-G13: tombol hapus entri informasi 32px -> 44px. */
+  .information-entry-heading button { width: 44px; height: 44px; }
+}
+@media (max-width: 470px) {
+  /* E-G6: tajuk laporan kader — salinan (max 255px) + angka (80px) +
+     gap 30px = 365px > wadah 328px di 360px; kolom salinan dipersempit
+     dan diberi ruang mengecil (flex + min-width 0). */
+  .kader-report-heading { gap: 12px; }
+  .kader-report-heading-copy { flex: 1; min-width: 0; }
+}
+@media (max-width: 390px) {
+  /* E-G4: bento 2 kolom di 360px = kartu ~160px dengan judul 21px,
+     terlalu sempit; jadi 1 kolom. */
+  .bento-grid { grid-template-columns: 1fr; }
+  .bento-note { grid-column: 1; }
+  /* E-G5: formulir setoran + kartu admin kelas 2 kolom di 360px =
+     kolom ~143px; jadi 1 kolom. */
+  .deposit-form-grid { grid-template-columns: 1fr; }
+  .class-admin-grid { grid-template-columns: 1fr; }
+  /* E-G7 (pencegahan): kartu dampak 3 kolom di 360px = isi ~86px
+     untuk angka 25px; padding dan angka dikecilkan supaya angka
+     5-6 digit + satuan tidak membungkus. */
+  .impact-card { padding: 6px; }
+  .impact-card strong { font-size: 19px; }
+}
+
+/* Gelombang A — kontras mode gelap: teks merah/amber gelap (#b42318,
+   #a7473d, #a04c08) hanya 2,1–2,4:1 di atas kartu gelap #1B2F24, jadi
+   di tema gelap diganti ke varian terang yang sudah dipakai di tempat
+   lain (#ffd0c8 untuk merah, #f2c94c untuk amber). Tema terang tidak
+   berubah (merah/amber gelap di sana sudah ≥4,5:1). */
+:root[data-theme='dark'] .auth-error,
+:root[data-theme='dark'] .field-error,
+:root[data-theme='dark'] .sheets-settings-message.is-error,
+:root[data-theme='dark'] .slider-field b,
+:root[data-theme='dark'] .video-editor-field > span strong,
+:root[data-theme='dark'] .document-feedback.is-error,
+:root[data-theme='dark'] .information-feedback.is-error,
+:root[data-theme='dark'] .video-icon-button.is-danger,
+:root[data-theme='dark'] .document-admin-actions button:hover:not(:disabled),
+:root[data-theme='dark'] .information-entry-heading button:hover,
+:root[data-theme='dark'] .struktur-admin-card-actions button.struktur-admin-hapus:hover,
+:root[data-theme='dark'] .slider-icon-button.is-danger:hover:not(:disabled) { color: #ffd0c8; }
+:root[data-theme='dark'] .settings-status { color: #f2c94c; }
+
+/* Gelombang A — teks grafik Recharts: label Pie memakai warna isi
+   slice-nya, teks Legend memakai warna garisnya, dan tick sumbu di
+   admin-laporan-stats memakai default Recharts #808080 — semuanya
+   di bawah 4,5:1 di satu atau kedua tema (lihat laporan). Paksa ke
+   var(--ink-soft) yang lulus di kedua tema (5,61:1 terang,
+   7,08:1 gelap). !important dipakai karena Recharts menulis warna
+   sebagai gaya inline pada elemen teksnya sendiri. */
+.recharts-pie-label-text { fill: var(--ink-soft) !important; }
+.recharts-legend-item-text { color: var(--ink-soft) !important; }
+.recharts-cartesian-axis-tick text { fill: var(--ink-soft); }

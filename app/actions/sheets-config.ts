@@ -15,6 +15,9 @@ export async function saveSheetsConfig(input: { url: string; token: string }) {
   const admin = await requirePortalRole(['admin'])
   // B-04: batas laju perubahan konfigurasi Sheets (30/jam per admin).
   if (!(await allowRequest(`sheets-config:${admin.id}`, 30, 3600))) throw new Error('Terlalu banyak perubahan. Coba lagi nanti.')
+  if (!input || typeof input !== 'object' || typeof input.url !== 'string' || typeof input.token !== 'string') {
+    throw new Error('Data konfigurasi tidak valid.')
+  }
   const url = input.url.trim()
   const token = input.token.trim()
   if (!validateAppsScriptUrl(url)) throw new Error('Masukkan URL Web App Apps Script yang valid (script.google.com/macros/s/.../exec).')
