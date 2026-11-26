@@ -32,6 +32,7 @@ export function AboutSection() {
             <ArrowDownUp aria-hidden="true" />
             <span><BarChart3 aria-hidden="true" /> Monitoring digital</span>
           </div>
+          <p>Program yang dipantau platform ini bisa dilihat di halaman <a href="/adiwiyata/program">Program &amp; kegiatan</a>.</p>
         </motion.article>
 
         <motion.article className="adi-about-card adi-about-impact" variants={fadeUpChild} whileHover={{ y: -4 }}>

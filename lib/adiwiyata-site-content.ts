@@ -70,7 +70,7 @@ export const DEFAULT_ADIWIYATA_SITE_CONTENT: AdiwiyataSiteContent = {
     activitiesTitle: 'Aksi nyata warga sekolah',
     activitiesLink: 'Lihat semua kegiatan',
     profileEyebrow: 'TENTANG KAMI',
-    profileTitle: 'Sekolah yang belajar dari alam',
+    profileTitle: 'Apa itu Adiwiyata?',
     profileDescription:
       'Adiwiyata SMAN 55 Jakarta adalah gerakan warga sekolah untuk hidup bersih, memilah sampah, dan menjaga lingkungan sekolah tetap hijau.',
     footerText: 'Adiwiyata SMAN 55 Jakarta: Sekolah Peduli dan Berbudaya Lingkungan.',
@@ -78,25 +78,25 @@ export const DEFAULT_ADIWIYATA_SITE_CONTENT: AdiwiyataSiteContent = {
   pages: {
     profil: {
       title: 'Profil',
-      intro: 'Sejarah, praktik, dan komitmen SMAN 55 Jakarta sebagai sekolah Adiwiyata.',
+      intro: 'Adiwiyata SMAN 55 Jakarta adalah gerakan warga sekolah untuk hidup bersih, memilah sampah, dan menjaga lingkungan sekolah tetap hijau. Halaman ini merangkum sejarah, praktik harian, dan komitmen sekolah sebagai sekolah Adiwiyata.',
       historyEyebrow: 'SEJARAH',
-      historyTitle: 'Perjalanan Adiwiyata 55',
+      historyTitle: 'Bagaimana perjalanan Adiwiyata 55?',
       historyBody:
-        'Gerakan Adiwiyata di SMAN 55 Jakarta dimulai dari kebiasaan sederhana: memilah sampah di kelas, membawa tumbler, dan merawat taman sekolah. Dari kebiasaan itu tumbuh program yang melibatkan seluruh warga sekolah.',
+        'Gerakan Adiwiyata di SMAN 55 Jakarta dimulai dari kebiasaan sederhana: memilah sampah di kelas, membawa tumbler, dan merawat taman sekolah. Dari kebiasaan itu tumbuh program yang melibatkan seluruh warga sekolah. Kebiasaan memilah memakai lima kategori sampah — Organik, Anorganik, Residu, B3, dan Kertas — dan setiap kelas mencatat setoran hariannya, sehingga kebiasaan kecil itu tercatat dan bisa dipantau bersama.',
       programsEyebrow: 'PRAKTIK SEKOLAH',
-      programsTitle: 'Yang kami lakukan setiap hari',
+      programsTitle: 'Apa yang dilakukan warga sekolah setiap hari?',
       programsBody:
-        'Setiap kelas memilah sampah dan mencatat setoran hariannya. Kader lingkungan memantau kebersihan, drainase, dan taman. Hasilnya dipantau lewat dashboard dan diapresiasi lewat leaderboard.',
+        'Setiap kelas memilah sampah dan mencatat setoran hariannya. Kader lingkungan memantau kebersihan, drainase, dan taman. Hasilnya dipantau lewat dashboard dan diapresiasi lewat leaderboard. Pemantauan itu mencakup kebiasaan membawa tumbler dan tempat makan dari rumah, serta volume sampah yang terpilah ke dalam lima kategori. Dengan begitu, setiap kelas bisa melihat sendiri hasil kebiasaan baiknya — bukan hanya saat lomba, melainkan setiap hari.',
       noteTitle: 'Catatan kelengkapan',
       noteBody: 'Dokumen pendukung program Adiwiyata tersedia di halaman Dokumen & Arsip.',
     },
     program: {
       title: 'Program & kegiatan',
-      intro: 'Program dan kegiatan lingkungan yang dijalankan warga SMAN 55 Jakarta.',
+      intro: 'Program dan kegiatan lingkungan yang dijalankan warga SMAN 55 Jakarta. Lima belas kader membagi tugas — dari pemilahan sampah, kompos, dan maggot sampai TOGA, hidroponik, dan bank sampah — dan setiap kegiatan tercatat beserta tanggal dan foto dokumentasinya.',
     },
     dokumentasi: {
-      title: 'Kader Adiwiyata',
-      intro: 'Daftar 15 kader Adiwiyata SMAN 55 Jakarta beserta uraian tugas masing-masing (2026).',
+      title: 'Kader & dokumentasi',
+      intro: 'Daftar 15 kader Adiwiyata SMAN 55 Jakarta beserta uraian tugas masing-masing (2026). Di bawah daftar kader, halaman ini juga menampilkan foto dokumentasi kegiatan lingkungan warga sekolah, dari pembibitan TOGA sampai kerja bakti.',
     },
     struktur: {
       title: 'Struktur Petugas Adiwiyata',
@@ -104,11 +104,11 @@ export const DEFAULT_ADIWIYATA_SITE_CONTENT: AdiwiyataSiteContent = {
     },
     publikasi: {
       title: 'Artikel & berita',
-      intro: 'Artikel dan kabar terbaru seputar gerakan Adiwiyata SMAN 55 Jakarta.',
+      intro: 'Artikel dan kabar terbaru seputar gerakan Adiwiyata SMAN 55 Jakarta. Artikel ditulis oleh Tim Adiwiyata SMAN 55 Jakarta dan merangkum kegiatan yang sudah berjalan di sekolah, seperti pemilahan sampah, bank sampah, dan kebun sekolah.',
     },
     dokumen: {
       title: 'Dokumen & arsip',
-      intro: 'Arsip dokumen resmi program Adiwiyata SMAN 55 Jakarta.',
+      intro: 'Arsip dokumen resmi program Adiwiyata SMAN 55 Jakarta — rujukan kegiatan, laporan, dan bukti pendukung program yang diunggah oleh Admin.',
       noteTitle: 'Pemberitahuan',
       noteBody: 'Dokumen diunggah oleh Admin. Bila tautan tidak dapat dibuka, hubungi Admin Adiwiyata.',
     },

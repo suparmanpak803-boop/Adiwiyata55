@@ -147,3 +147,6 @@
   .pohon-chevron{transition:none!important}
   .pohon-chip,.pohon-orang-card,.pohon-koordinator,.pohon-anggota,.pohon-tim-kepala{transition:none!important}
 }
+.adi-gallery-intro a{color:var(--adi-green);font-weight:700}
+.adi-about-story>p a{color:var(--adi-green);font-weight:700}
+.adi-profile-content article a+a{margin-left:18px}

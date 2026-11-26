@@ -5,7 +5,7 @@ import { useCallback, useEffect, useRef, useState, type KeyboardEvent, type Poin
 import { ArrowLeft, ArrowRight, ArrowUpRight, Pause, Play } from 'lucide-react'
 import type { SliderPageData, SliderSlide } from '@/lib/slider/data'
 
-export function HomeSlider({ slides, settings, preview = false }: SliderPageData & { preview?: boolean }) {
+export function HomeSlider({ slides, settings, preview = false, titleAsH1 = false }: SliderPageData & { preview?: boolean; titleAsH1?: boolean }) {
   const [activeIndex, setActiveIndex] = useState(0)
   const [progress, setProgress] = useState(0)
   const [playing, setPlaying] = useState(settings.autoplay)
@@ -120,7 +120,7 @@ export function HomeSlider({ slides, settings, preview = false }: SliderPageData
           <div className="home-slider-overlay" />
           <div className="home-slider-copy">
             <span className="home-slider-kicker">SEKOLAH ADIWIYATA</span>
-            {current.judul && <h2>{current.judul}</h2>}
+            {current.judul && (titleAsH1 ? <h1>{current.judul}</h1> : <h2>{current.judul}</h2>)}
             {current.deskripsi && <p>{current.deskripsi}</p>}
             {current.ctaTeks && current.ctaUrl && <CtaLink slide={current} />}
           </div>
@@ -162,7 +162,7 @@ export function HomeSlider({ slides, settings, preview = false }: SliderPageData
         <div className="home-slider-empty">
           <span className="home-slider-empty-mark" aria-hidden="true"><span /><span /><span /></span>
           <span className="home-slider-kicker">ADIWIYATA · SMAN 55 JAKARTA</span>
-          <h2>Selamat datang</h2>
+          {titleAsH1 ? <h1>Selamat datang</h1> : <h2>Selamat datang</h2>}
           <p>Bersama merawat lingkungan sekolah, satu kebiasaan baik setiap hari.</p>
         </div>
       )}
