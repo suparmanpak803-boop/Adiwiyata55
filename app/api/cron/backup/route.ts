@@ -127,6 +127,18 @@ export async function GET(request: Request) {
       notes,
     })
     const gz = gzipSync(payload)
+    // Pencatatan cadangan (best-effort): satu baris ke public.backup_log
+    // agar /admin/diagnostik bisa menampilkan kapan cadangan terakhir
+    // dibuat. Kegagalan INSERT (mis. tabel belum dibuat) TIDAK BOLEH
+    // menggagalkan respons cadangan — hanya dicatat di log server.
+    try {
+      await pool.query(
+        `INSERT INTO public.backup_log (ukuran_byte, jumlah_tabel, status, catatan) VALUES ($1, $2, 'berhasil', $3)`,
+        [gz.byteLength, Object.keys(data).length, notes.join(' ')],
+      )
+    } catch (error) {
+      console.error('[api/cron/backup] backup_log gagal dicatat:', error)
+    }
     const stamp = new Date().toISOString().slice(0, 10)
     return new Response(gz, {
       headers: {

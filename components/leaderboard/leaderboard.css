@@ -107,6 +107,7 @@
 .diagnostic-status { font-weight: 700; }
 .diagnostic-status.ready { color: var(--green); }
 .diagnostic-status.missing { color: #a64a3f; }
+.diagnostic-status.warning { color: #9a5a18; }
 .diagnostics-seed { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; }
 .diagnostics-seed h2 { margin: 5px 0; font-family: Georgia, serif; font-weight: 400; }
 .diagnostics-seed p { max-width: 650px; color: var(--ink-soft); font-size: 11px; line-height: 1.6; }
@@ -160,4 +161,5 @@
 :root[data-theme='dark'] .diagnostic-status.missing,
 :root[data-theme='dark'] .admin-content-actions button.danger { color: #ffd0c8; }
 :root[data-theme='dark'] .admin-content-warning.is-warning { color: #f2c94c; }
+:root[data-theme='dark'] .diagnostic-status.warning { color: #f2c94c; }
 :root[data-theme='dark'] .admin-reset-controls button { color: #FFFDF6; }

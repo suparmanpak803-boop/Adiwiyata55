@@ -1,10 +1,12 @@
-// Dibuat otomatis dari db/semua-migrasi.sql (472 baris) — jangan edit manual.
+// Dibuat otomatis dari db/semua-migrasi.sql (531 baris) — jangan edit manual.
 // Dipakai tombol "Perbaiki tabel yang hilang" di /admin/diagnostik untuk
 // menjalankan ulang migrasi idempotent pada database yang dipakai aplikasi.
 // Isi file ini harus selalu sama dengan db/semua-migrasi.sql.
 export const MIGRATION_SQL = `-- ================================================================
 -- Adiwiyata 55 — SEMUA MIGRASI DALAM SATU FILE
 -- Dibuat otomatis dari 7 file migrasi, urutan sesuai db/README.md.
+-- Ditambah: migrations/0007_backup_log.sql (hanya di file gabungan
+-- ini, supaya tombol "Perbaiki tabel yang hilang" bisa membuatnya).
 -- Cara pakai: buka SQL Editor di Neon Console, tempel seluruh isi
 -- file ini, lalu klik Run. Aman dijalankan ulang (idempotent).
 -- ================================================================
@@ -511,5 +513,24 @@ CREATE TABLE IF NOT EXISTS public.arsip_tahun_ajaran (
   tahun_ajaran text PRIMARY KEY,
   dijalankan_pada timestamptz NOT NULL DEFAULT now(),
   ringkasan jsonb NOT NULL DEFAULT '{}'::jsonb
+);
+
+-- ---------- migrations/0007_backup_log.sql ----------
+-- Catatan pencatatan cadangan database (backup_log): setiap kali
+-- endpoint /api/cron/backup berhasil membuat file cadangan, satu
+-- baris dicatat di sini (best-effort — kegagalan pencatatan tidak
+-- pernah menggagalkan cadangan). /admin/diagnostik membaca baris
+-- terakhir untuk menampilkan kapan cadangan terakhir dibuat dan
+-- memperingatkan bila sudah lebih dari 10 hari (jadwal mingguan).
+-- Catatan jujur: tabel ini hanya membuktikan cadangan DIBUAT oleh
+-- aplikasi, bukan bahwa file sudah sampai di Google Drive (itu
+-- urusan pekerjaan terjadwal luar yang mengunduh dan mengunggah).
+CREATE TABLE IF NOT EXISTS public.backup_log (
+  id serial PRIMARY KEY,
+  dijalankan_pada timestamptz NOT NULL DEFAULT now(),
+  ukuran_byte bigint NOT NULL DEFAULT 0,
+  jumlah_tabel integer NOT NULL DEFAULT 0,
+  status text NOT NULL DEFAULT 'berhasil',
+  catatan text NOT NULL DEFAULT ''
 );
 `

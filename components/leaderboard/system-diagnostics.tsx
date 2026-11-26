@@ -10,6 +10,8 @@ type DiagnosticData = {
   database: { connected: boolean; responseMs: number }
   tables: { label: string; table: string; ready: boolean }[]
   activePeriod: { id: string; startedAt: string | null } | null
+  ukuranDatabase: { ukuranByte: number; batasByte: number; tabelTerbesar: { skema: string; tabel: string; ukuranByte: number }[] } | null
+  cadanganTerakhir: { dijalankanPada: string; ukuranByte: number; jumlahTabel: number; status: string; catatan: string } | null
 }
 type Envelope<T> = { galat: false; data: T }
 
@@ -36,6 +38,25 @@ type HasilPulihkan =
   | { ok: true; tahunAjaran: string; kelasDipulihkan: number; peranDipulihkan: number }
   | { ok: false; tahunAjaran: string; error: string }
 
+const BATAS_HARI_CADANGAN = 10
+
+function formatUkuran(byte: number): string {
+  if (byte >= 1073741824) return `${(byte / 1073741824).toLocaleString('id-ID', { maximumFractionDigits: 2 })} GB`
+  if (byte >= 1048576) return `${(byte / 1048576).toLocaleString('id-ID', { maximumFractionDigits: 2 })} MB`
+  if (byte >= 1024) return `${(byte / 1024).toLocaleString('id-ID', { maximumFractionDigits: 1 })} KB`
+  return `${byte.toLocaleString('id-ID')} B`
+}
+
+function formatWaktuWIB(iso: string): string {
+  return new Date(iso).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+}
+
+function statusUkuran(persen: number): { label: string; kelas: 'ready' | 'warning' | 'missing' } {
+  if (persen >= 90) return { label: 'Kritis', kelas: 'missing' }
+  if (persen >= 70) return { label: 'Waspada', kelas: 'warning' }
+  return { label: 'Aman', kelas: 'ready' }
+}
+
 export function SystemDiagnostics() {
   const { data, error, isLoading, mutate } = useSWR<Envelope<DiagnosticData>>('/api/admin/diagnostik', (url: string) => fetchJson<Envelope<DiagnosticData>>(url, { cache: 'no-store' }))
   const [busy, setBusy] = useState(false)
@@ -45,6 +66,12 @@ export function SystemDiagnostics() {
   const [paksaSiap, setPaksaSiap] = useState(false)
   const [pulihkanSiap, setPulihkanSiap] = useState(false)
   const [bulanArsip, setBulanArsip] = useState(() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}` })
+
+  const ukuran = data?.data.ukuranDatabase ?? null
+  const persenUkuran = ukuran ? (ukuran.ukuranByte / ukuran.batasByte) * 100 : 0
+  const status = statusUkuran(persenUkuran)
+  const cadangan = data?.data.cadanganTerakhir ?? null
+  const cadanganTerlambat = cadangan ? Date.now() - new Date(cadangan.dijalankanPada).getTime() > BATAS_HARI_CADANGAN * 24 * 3600 * 1000 : false
 
   async function repairTables() {
     setBusy(true); setNotice('')
@@ -179,7 +206,7 @@ export function SystemDiagnostics() {
   return (
     <main className="admin-game-page">
       <a className="leaderboard-back" href="/">← Kembali ke portal</a>
-      <header className="admin-game-header"><span className="leaderboard-mark"><Activity aria-hidden="true" /></span><div><span className="eyebrow">PANEL ADMINISTRATOR</span><h1>Diagnostik sistem</h1><p>Periksa koneksi database, tabel yang diperlukan, dan periode leaderboard aktif.</p><a className="leaderboard-back" href="/admin/game/konten">Kelola konten permainan →</a></div></header>
+      <header className="admin-game-header"><span className="leaderboard-mark"><Activity aria-hidden="true" /></span><div><span className="eyebrow">PANEL ADMINISTRATOR</span><h1>Diagnostik sistem</h1><p>Periksa koneksi dan ukuran database, tabel yang diperlukan, cadangan terakhir, dan periode leaderboard aktif.</p><a className="leaderboard-back" href="/admin/game/konten">Kelola konten permainan →</a></div></header>
       {isLoading && <div className="leaderboard-state">Memeriksa sistem…</div>}
       {error && <div className="leaderboard-state is-error" role="alert">{error.message}<button type="button" onClick={() => void mutate()}>Coba lagi</button></div>}
       {data && <>
@@ -190,6 +217,20 @@ export function SystemDiagnostics() {
         </section>
         <section className="admin-setting-card diagnostics-tables"><div className="admin-setting-heading"><div><span className="eyebrow">KESEHATAN SKEMA</span><h2>Status tabel wajib</h2></div><button className="leaderboard-refresh" type="button" onClick={() => void mutate()}><RefreshCw aria-hidden="true" /> Periksa ulang</button></div>
           <div className="leaderboard-table-wrap"><table className="leaderboard-table"><thead><tr><th scope="col">Tabel</th><th scope="col">Status</th></tr></thead><tbody>{data.data.tables.map((item) => <tr key={item.label}><th scope="row">{item.label}</th><td><span className={item.ready ? 'diagnostic-status ready' : 'diagnostic-status missing'}>{item.ready ? 'Tersedia' : 'Belum tersedia'}</span>{!item.ready && <small className="table-subtitle">Periksa migrasi: {item.table}</small>}</td></tr>)}</tbody></table></div>
+        </section>
+        <section className="admin-setting-card diagnostics-tables"><div className="admin-setting-heading"><div><span className="eyebrow">UKURAN DATABASE</span><h2>Ukuran database & tabel terbesar</h2></div></div>
+          {ukuran ? <>
+            <p>Ukuran database <strong>{formatUkuran(ukuran.ukuranByte)}</strong> dari batas paket gratis Neon 1 GB ({persenUkuran.toLocaleString('id-ID', { maximumFractionDigits: 1 })}%) — <span className={`diagnostic-status ${status.kelas}`}>{status.label}</span></p>
+            <p>Batas: Aman di bawah 70%, Waspada 70–89%, Kritis 90% ke atas. Bila kritis, tulis data bisa gagal — segera pindahkan gambar slider ke penyimpanan file atau naikkan paket Neon.</p>
+            <div className="leaderboard-table-wrap"><table className="leaderboard-table"><thead><tr><th scope="col">Tabel</th><th scope="col">Ukuran</th></tr></thead><tbody>{ukuran.tabelTerbesar.map((item) => <tr key={`${item.skema}.${item.tabel}`}><th scope="row">{item.skema}.{item.tabel}</th><td>{formatUkuran(item.ukuranByte)}</td></tr>)}</tbody></table></div>
+          </> : <p className="admin-content-warning is-warning" role="status">Ukuran database belum dapat dimuat.</p>}
+        </section>
+        <section className="admin-setting-card diagnostics-tables"><div className="admin-setting-heading"><div><span className="eyebrow">PEMANTAUAN CADANGAN</span><h2>Cadangan database terakhir</h2></div></div>
+          {cadangan ? <>
+            <p>Cadangan terakhir dibuat <strong>{formatWaktuWIB(cadangan.dijalankanPada)}</strong> — ukuran file {formatUkuran(cadangan.ukuranByte)}, {cadangan.jumlahTabel} tabel, status: {cadangan.status}{cadangan.catatan ? ` (${cadangan.catatan})` : ''}.</p>
+            {cadanganTerlambat && <p className="admin-content-warning is-warning" role="status">Cadangan terakhir sudah lebih dari {BATAS_HARI_CADANGAN} hari lalu (jadwal mingguan). Periksa pekerjaan terjadwal cadangan dan sambungan Google Drive.</p>}
+          </> : <p className="admin-content-warning is-warning" role="status">Belum pernah ada cadangan yang tercatat. Jalankan cadangan lewat pekerjaan terjadwal; bila tabel backup_log belum ada, ketuk “Perbaiki Tabel” di bawah.</p>}
+          <p>Catatan ini hanya membuktikan cadangan dibuat oleh aplikasi, bukan bahwa file sudah sampai di Google Drive — itu urusan pekerjaan terjadwal luar yang mengunduh dan mengunggah.</p>
         </section>
         {!data.data.activePeriod && <p className="admin-content-warning is-warning" role="status">Periode leaderboard belum tersedia. Tombol data awal akan menyiapkannya dengan aman.</p>}
       </>}

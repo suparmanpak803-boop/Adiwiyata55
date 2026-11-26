@@ -1,0 +1,200 @@
+-- ======================================================================
+-- RANCANGAN RLS — Adiwiyata55
+-- ======================================================================
+-- !! JANGAN JALANKAN DI PRODUKSI !!
+-- !! JANGAN JALANKAN DI DATABASE YANG DIPAKAI APLIKASI !!
+--
+-- File ini HANYA rancangan untuk pengujian di BRANCH Neon
+-- (lihat db/RLS-RANCANGAN.md bagian 4 untuk urutan amannya).
+-- SELURUH pernyataan di bawah ini BERKOMENTAR — tidak ada satu pun
+-- yang akan berjalan bila file ini ditempel apa adanya.
+--
+-- Alasan file ini berkomentar penuh:
+--   1. Daftar kebijakan per tabel BELUM lengkap (baru pola + contoh).
+--      Mengaktifkan RLS pada tabel tanpa kebijakan = akses ditolak
+--      = halaman 500.
+--   2. Peran di balik DATABASE_URL saat ini belum dicek (lihat
+--      RLS-RANCANGAN.md bagian 1.2). RLS tanpa ganti role = owner
+--      tetap bypass RLS = tidak ada efek.
+--   3. repairDatabase() butuh DDL dan akan mati bila peran aplikasi
+--      dipersempit tanpa disiapkan koneksi owner terpisah.
+--   4. Koneksi yang dipakai layanan Neon Auth belum dipastikan.
+--
+-- Jangan sertakan kredensial apa pun di file ini. Kata sandi role
+-- baru dibuat saat penerapan, di Neon Console, dan disimpan sebagai
+-- DATABASE_URL baru di Vercel — tidak pernah ditulis di repo.
+-- ======================================================================
+
+-- ======================================================================
+-- 0. PEMERIKSAAN AWAL (jalankan dulu, lewat koneksi APLIKASI —
+--    mis. psql dengan connection string yang sama dengan DATABASE_URL,
+--    BUKAN lewat SQL Editor Neon karena SQL Editor berjalan sebagai
+--    owner dan akan menampilkan owner, bukan peran aplikasi)
+-- ======================================================================
+-- SELECT current_user;
+-- SELECT rolname, rolsuper, rolcreaterole, rolcreatedb
+-- FROM pg_roles WHERE rolname = current_user;
+--
+-- Bila rolsuper = true: koneksi aplikasi hari ini superuser.
+-- Itulah yang rancangan ini perbaiki.
+
+-- ======================================================================
+-- 1. BUAT PERAN APLIKASI TERBATAS
+--    (ganti 'ISI_SANDI_DI_SINI' saat penerapan; jangan tulis sandi
+--    asli di file ini)
+-- ======================================================================
+-- CREATE ROLE app_adiwiyata LOGIN PASSWORD 'ISI_SANDI_DI_SINI'
+--   NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION;
+
+-- ======================================================================
+-- 2. HAK SKEMA (minimal)
+-- ======================================================================
+-- REVOKE ALL ON SCHEMA public FROM PUBLIC;
+-- REVOKE ALL ON SCHEMA neon_auth FROM PUBLIC;
+-- GRANT USAGE ON SCHEMA public TO app_adiwiyata;
+-- GRANT USAGE ON SCHEMA neon_auth TO app_adiwiyata;
+-- REVOKE CREATE ON SCHEMA public FROM app_adiwiyata;
+
+-- ======================================================================
+-- 3. HAK TABEL — BACA
+--    Aplikasi butuh SELECT pada semua tabel public yang dibaca +
+--    neon_auth."user". Tanpa GRANT ini, kebijakan RLS pun tidak
+--    menolong (RLS hanya memfilter, GRANT yang mengizinkan).
+-- ======================================================================
+-- GRANT SELECT ON ALL TABLES IN SCHEMA public TO app_adiwiyata;
+-- GRANT SELECT ON neon_auth."user" TO app_adiwiyata;
+-- -- Dengan sengaja TIDAK diberi hak:
+-- --   neon_auth.session, neon_auth.account, neon_auth.verification
+-- --   (tidak disentuh aplikasi; cadangan pun melewatinya — H-02)
+
+-- ======================================================================
+-- 4. HAK TABEL — TULIS (hanya yang terbukti dipakai; lengkapi
+--    setelah audit per route — lihat RLS-RANCANGAN.md bagian 2.2)
+-- ======================================================================
+-- GRANT INSERT, UPDATE ON public.game_scores TO app_adiwiyata;
+-- GRANT INSERT, UPDATE ON public.game_sessions TO app_adiwiyata;
+-- GRANT INSERT, UPDATE ON public.adiwiyata_deposits TO app_adiwiyata;
+-- GRANT INSERT, UPDATE ON public.laporan TO app_adiwiyata;
+-- GRANT INSERT ON public.laporan_foto TO app_adiwiyata;
+-- GRANT INSERT ON public.laporan_foto_unggahan TO app_adiwiyata;
+-- GRANT INSERT ON public.laporan_komentar TO app_adiwiyata;
+-- GRANT INSERT ON public.laporan_riwayat_status TO app_adiwiyata;
+-- GRANT INSERT, UPDATE ON public.notifikasi TO app_adiwiyata;
+-- GRANT INSERT ON public.log_aktivitas TO app_adiwiyata;
+-- GRANT INSERT, UPDATE ON public.rate_limits TO app_adiwiyata;
+-- GRANT INSERT, UPDATE ON public.arsip_tahun_ajaran TO app_adiwiyata;
+-- GRANT INSERT ON public.backup_log TO app_adiwiyata;
+-- -- Tulis admin (struktur_petugas, adiwiyata_user_roles, settings,
+-- -- slider, hari_libur, kelas) TIDAK di-GRANT di sini: tulis admin
+-- -- dilakukan lewat koneksi owner terpisah atau SQL Editor sampai
+-- -- diputuskan (lihat RLS-RANCANGAN.md bagian 3.4). Bila diputuskan
+-- -- tetap lewat aplikasi, tambahkan GRANT-nya di sini dan kebijakan
+-- -- tulis di bagian 6 — dengan sadar, bukan diam-diam.
+--
+-- -- Sequence (PK serial/identity): tanpa ini INSERT gagal.
+-- GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO app_adiwiyata;
+
+-- ======================================================================
+-- 5. AKTIFKAN RLS — SEMUA TABEL PUBLIC
+--    (lakukan satu kelompok per sekali uji; jangan sekaligus 36 tabel)
+-- ======================================================================
+-- ALTER TABLE public.adiwiyata_documents ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE public.adiwiyata_education_videos ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE public.adiwiyata_video_display_settings ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE public.slider_slides ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE public.slider_images ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE public.slider_settings ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE public.slider_activity_log ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE public.struktur_petugas ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE public.hari_libur ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE public.adiwiyata_classes ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE public.video_edukasi ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE public.item_sampah ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE public.kuis_soal ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE public.misi_mingguan ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE public.game_settings ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE public.app_settings ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE public.adiwiyata_settings ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE public.leaderboard_settings ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE public.leaderboard_periods ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE public.leaderboard_sampah_settings ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE public.leaderboard_archive ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE public.badges ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE public.user_badges ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE public.game_scores ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE public.game_sessions ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE public.adiwiyata_deposits ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE public.laporan ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE public.laporan_foto ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE public.laporan_foto_unggahan ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE public.laporan_komentar ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE public.laporan_riwayat_status ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE public.notifikasi ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE public.log_aktivitas ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE public.rate_limits ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE public.arsip_tahun_ajaran ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE public.backup_log ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE public.adiwiyata_user_roles ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE public.kebun_siram ENABLE ROW LEVEL SECURITY;
+--
+-- -- DENGAN SENGAJA TIDAK ADA RLS DI SKEMA neon_auth.
+-- -- Tabel auth dikelola layanan Neon Auth; RLS di sana berisiko
+-- -- merusak login. Perlindungannya adalah GRANT (bagian 3), bukan RLS.
+
+-- ======================================================================
+-- 6. KEBIJAKAN — CONTOH POLA (setingkat peran, bukan per pengguna)
+--    Pembatasan SIAPA (admin/petugas/pengunjung) tetap di lapisan
+--    aplikasi (requirePortalRole). Kebijakan di sini hanya memastikan
+--    peran aplikasi tidak bisa melakukan lebih dari yang di-GRANT.
+--    TODO: lengkapi satu kebijakan per tabel sebelum pengujian.
+-- ======================================================================
+
+-- -- 6a. Tabel baca-publik: SELECT untuk peran aplikasi.
+-- CREATE POLICY app_baca ON public.adiwiyata_documents
+--   FOR SELECT TO app_adiwiyata USING (true);
+-- -- (ulangi pola ini untuk semua tabel bagian 2.1 di RLS-RANCANGAN.md)
+
+-- -- 6b. Tabel tulis-pengguna: tulis diizinkan setingkat peran;
+-- --     kepemilikan baris tetap dicek di route aplikasi.
+-- CREATE POLICY app_baca ON public.game_scores
+--   FOR SELECT TO app_adiwiyata USING (true);
+-- CREATE POLICY app_tulis ON public.game_scores
+--   FOR INSERT TO app_adiwiyata WITH CHECK (true);
+-- CREATE POLICY app_ubah ON public.game_scores
+--   FOR UPDATE TO app_adiwiyata USING (true) WITH CHECK (true);
+-- -- (ulangi pola ini untuk game_sessions, adiwiyata_deposits,
+-- --  laporan + tabel turunannya, notifikasi, log_aktivitas,
+-- --  rate_limits, arsip_tahun_ajaran, backup_log)
+
+-- -- 6c. Tabel peran (dibaca tiap request login — JANGAN sampai lupa):
+-- CREATE POLICY app_baca_peran ON public.adiwiyata_user_roles
+--   FOR SELECT TO app_adiwiyata USING (true);
+-- -- Tanpa kebijakan ini, getPortalUser() gagal dan SEMUA halaman
+-- -- login ikut gagal. Tulis ke tabel ini tetap TANPA kebijakan
+-- -- (ditolak) sampai diputuskan di RLS-RANCANGAN.md bagian 3.4.
+
+-- -- 6d. backup_log: cron menulis, admin membaca (lewat API yang
+-- --    sudah admin-only). Tidak ada UPDATE/DELETE.
+-- CREATE POLICY app_baca ON public.backup_log
+--   FOR SELECT TO app_adiwiyata USING (true);
+-- CREATE POLICY app_tulis ON public.backup_log
+--   FOR INSERT TO app_adiwiyata WITH CHECK (true);
+
+-- ======================================================================
+-- 7. ROLLBACK (bila pengujian gagal — jalankan sebagai owner,
+--    di branch saja)
+-- ======================================================================
+-- -- Matikan RLS per tabel:
+-- -- ALTER TABLE public.<nama_tabel> DISABLE ROW LEVEL SECURITY;
+-- -- Hapus kebijakan:
+-- -- DROP POLICY IF EXISTS <nama_policy> ON public.<nama_tabel>;
+-- -- Cabut hak peran aplikasi:
+-- -- REVOKE ALL ON ALL TABLES IN SCHEMA public FROM app_adiwiyata;
+-- -- REVOKE ALL ON ALL SEQUENCES IN SCHEMA public FROM app_adiwiyata;
+-- -- REVOKE USAGE ON SCHEMA public, neon_auth FROM app_adiwiyata;
+-- -- Hapus peran (hanya bila sudah tidak dipakai koneksi apa pun):
+-- -- DROP ROLE IF EXISTS app_adiwiyata;
+-- --
+-- -- Rollback tercepat di produksi bila terjadi masalah setelah
+-- -- ganti DATABASE_URL: kembalikan env DATABASE_URL ke connection
+-- -- string lama (owner). Satu perubahan env, tanpa deploy ulang kode.
