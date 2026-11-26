@@ -198,7 +198,7 @@ function GuideDialog({ onClose, role }: { onClose: () => void; role: 'admin' | '
       <li><strong>Input Laporan</strong>: kirim setoran atau laporan sampah untuk kelas yang kamu ampu.</li>
       <li><strong>Laporan Kinerja Kader</strong>: isi laporan kinerja kader.</li>
       <li><strong>Kelola Laporan</strong>: lihat dan kelola laporan yang masuk.</li>
-      <li><strong>Syarat dan Ketentuan Petugas</strong>: syarat, tugas, dan ketentuan untuk petugas, termasuk tautan SK Kader Adiwiyata 2026–2027.</li>
+      <li><strong>Syarat dan Ketentuan Petugas</strong>: syarat, tugas, dan ketentuan untuk petugas.</li>
     </ul>
     <p>Akses petugas bisa diberi tanggal berakhir oleh admin. Bila tanggalnya lewat, akunmu kembali jadi pengunjung.</p></>}
     {role === 'pengunjung' && <><h3>Khusus pengunjung</h3>
@@ -219,9 +219,9 @@ function GuideDialog({ onClose, role }: { onClose: () => void; role: 'admin' | '
 // (dan admin). Daftar tugas tiap kader diambil dari
 // DEFAULT_ADIWIYATA_SITE_CONTENT (sumber yang sama dengan halaman
 // Kader Adiwiyata): satu baris fokus + ringkasan per kader, tanpa
-// menyalin seluruh uraian tugas. Tautan SK tetap lewat
-// /api/petugas/dokumen/sk-kader yang memeriksa peran, jadi pengunjung
-// tidak pernah melihat tautan ini maupun isi filenya.
+// Tautan SK dihapus dari halaman ini (26 Nov 2026). Berkas SK tetap
+// dilayani /api/petugas/dokumen/sk-kader yang memeriksa peran, tapi
+// tidak lagi ditautkan dari halaman mana pun.
 function SyaratPetugasView() {
   const kader = DEFAULT_ADIWIYATA_SITE_CONTENT.divisions
   return (
@@ -242,15 +242,6 @@ function SyaratPetugasView() {
         <li><article className="syarat-card"><span className="syarat-index" aria-hidden="true">06</span><h3>Poin dan leaderboard</h3><p>Poin diperoleh dari game dan aksi, dengan batas 300 poin per hari. Leaderboard menampilkan peringkat sesuai pengaturan tampil yang dipilih, yaitu nama atau inisial.</p></article></li>
         <li><article className="syarat-card"><span className="syarat-index" aria-hidden="true">07</span><h3>Masa berlaku dan perubahan peran</h3><p>Akses petugas berlaku sampai tanggal yang ditetapkan admin. Bila tanggalnya lewat, akun kembali menjadi pengunjung dan menu petugas tidak lagi tampil. Admin berhak meninjau dan mengubah peran serta masa berlaku kapan saja.</p></article></li>
         <li><article className="syarat-card"><span className="syarat-index" aria-hidden="true">08</span><h3>Kerahasiaan data</h3><p>Nama pengurus dan koordinator kader serta dokumen SK hanya untuk petugas dan admin. Jangan menyebarkan data pribadi warga sekolah ke luar sekolah.</p></article></li>
-        <li><article className="syarat-card"><span className="syarat-index" aria-hidden="true">09</span><h3>Dokumen pendukung</h3><p>Dokumen dasar penugasan kader adalah SK berikut. Ketuk judul dokumen untuk membukanya (hanya petugas dan admin).</p>
-          <div className="petugas-doc-list">
-            <article className="petugas-doc-card">
-              <span className="petugas-doc-index">01</span>
-              <h3><a className="petugas-doc-title" href="/api/petugas/dokumen/sk-kader" target="_blank" rel="noreferrer"><span>SK Kader Adiwiyata 2026–2027</span><ArrowRight aria-hidden="true" /></a></h3>
-              <p>Keputusan Kepala SMA Negeri 55 Jakarta Nomor 027 Tahun 2026 tentang Tim Kader Adiwiyata, ditetapkan 12 November 2026, beserta daftar nama kader.</p>
-            </article>
-          </div>
-        </article></li>
       </ol>
       <p className="syarat-note">Syarat dan ketentuan ini mengikuti SK Kepala SMA Negeri 55 Jakarta Nomor 027 Tahun 2026.</p>
     </section>
