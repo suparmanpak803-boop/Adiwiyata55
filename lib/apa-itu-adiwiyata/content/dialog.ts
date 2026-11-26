@@ -1,6 +1,9 @@
-// Dialog pembuka singkat tiap bab. Magi ramah dan membantu, Pak Plastik
-// pengacau lucu yang suka membuang sampah sembarangan tapi bisa diajak
-// berubah, Narator memberi konteks. Nada santai, tidak menggurui.
+// Dialog pembuka singkat tiap bab. Cerita baru: siswa baru yang pernah
+// ditertawakan karena peduli harus menjadikan sekolah barunya Adiwiyata,
+// sementara Pak Plastik, yang dulu juga pernah peduli lalu menyerah,
+// berusaha membuktikan bahwa peduli itu sia-sia. Magi bukti hidup tema,
+// Pak Plastik memegang kebohongan yang sama dengan pemain. Nada santai,
+// tidak menggurui.
 import type { ChapterId, PakPlastikStatus } from '../types'
 
 export interface DialogLine {
@@ -12,15 +15,15 @@ export const DIALOG_AWAL: Record<ChapterId, DialogLine[]> = {
   gerbang: [
     {
       tokoh: 'Narator',
-      teks: 'Hari pertama di sekolah baru. Gerbangnya ramai, tapi di pinggir jalan berserakan botol dan bungkus plastik.',
+      teks: 'Hari pertama di sekolah baru. Di depan gerbang, botol plastik dilempar ke jalan dan semua orang pura-pura tidak melihat.',
     },
     {
       tokoh: 'Magi',
-      teks: 'Hai! Aku Magi. Aku tinggal di Pos Maggot, di ujung sekolah. Kamu siswa baru yang ditugaskan bikin sekolah ini Adiwiyata, ya?',
+      teks: 'Hai! Aku Magi. Kamu siswa baru yang ditugaskan bikin sekolah ini Adiwiyata, ya? Di sini, satu orang yang berani duluan bisa mengubah semuanya.',
     },
     {
       tokoh: 'Pak Plastik',
-      teks: 'Hehehe, aku Pak Plastik! Botolku ada di mana-mana. Buang saja, nanti juga ada yang beresin. Eh, kok pada melotot?',
+      teks: 'Hehehe, aku Pak Plastik! Botolku ada di mana-mana. Buang saja, nanti juga ada yang beresin. Peduli itu capek, percuma.',
     },
     {
       tokoh: 'Magi',
@@ -30,7 +33,7 @@ export const DIALOG_AWAL: Record<ChapterId, DialogLine[]> = {
   kantin: [
     {
       tokoh: 'Narator',
-      teks: 'Jam istirahat. Kantin penuh, dan tempat sampahnya juga penuh. Tapi isinya tercampur semua.',
+      teks: 'Jam istirahat. Kantin penuh, dan tempat sampahnya juga penuh. Isinya tercampur semua, gara-gara iseng Pak Plastik kemarin.',
     },
     {
       tokoh: 'Pak Plastik',
@@ -52,7 +55,7 @@ export const DIALOG_AWAL: Record<ChapterId, DialogLine[]> = {
     },
     {
       tokoh: 'Magi',
-      teks: 'Ini rumahku! Kami makan sisa nasi dan sayur dari kantin. Tapi kalau dikasih yang berminyak atau plastik, perut kami langsung rewel.',
+      teks: 'Ini rumahku! Kami makan sisa nasi dan sayur dari kantin. Tapi sejak ada yang nyelipin bungkus berminyak, perutku rewel terus.',
     },
     {
       tokoh: 'Pak Plastik',
@@ -66,11 +69,11 @@ export const DIALOG_AWAL: Record<ChapterId, DialogLine[]> = {
   kompos: [
     {
       tokoh: 'Narator',
-      teks: 'Di kebun sekolah, tumpukan kompos menunggu diaduk. Cabai dan kangkung sudah mulai tumbuh di bedengan.',
+      teks: 'Di kebun sekolah, tumpukan kompos yang kemarin tercemar menunggu diaduk. Cabai dan kangkung sudah mulai tumbuh di bedengan.',
     },
     {
       tokoh: 'Magi',
-      teks: 'Kasgot dari panenku sudah sampai di sini. Campur dengan daun kering dan sisa sayur, lapis demi lapis.',
+      teks: 'Kasgot dari panenku sudah sampai di sini. Campur dengan daun kering dan sisa sayur, lapis demi lapis. Kalau ini jadi, kebun ini bukti pertamamu.',
     },
     {
       tokoh: 'Pak Plastik',
@@ -78,13 +81,13 @@ export const DIALOG_AWAL: Record<ChapterId, DialogLine[]> = {
     },
     {
       tokoh: 'Magi',
-      teks: 'Tanaman butuh air yang cukup, cahaya, dan pupuk yang benar. Rawat baik-baik, nanti sayurnya kembali ke kantin.',
+      teks: 'Tanaman butuh air yang cukup, cahaya, dan pupuk yang benar. Yang rusak masih bisa diperbaiki, asal ada yang mau mulai.',
     },
   ],
   'air-energi': [
     {
       tokoh: 'Narator',
-      teks: 'Hujan deras semalam membuat halaman tergenang. Di dalam sekolah, ada lampu menyala di kelas kosong dan keran yang menetes.',
+      teks: 'Hujan deras semalam membuat halaman tergenang. Di dalam sekolah, ada lampu menyala di kelas kosong dan keran yang menetes. Tidak ada yang melihat, tapi tetap harus dibereskan.',
     },
     {
       tokoh: 'Pak Plastik',
@@ -102,19 +105,19 @@ export const DIALOG_AWAL: Record<ChapterId, DialogLine[]> = {
   biodiversitas: [
     {
       tokoh: 'Narator',
-      teks: 'Pohon yang kamu tanam mulai rindang. Tapi halaman sekolah masih sepi, jarang ada burung atau kupu-kupu.',
+      teks: 'Hari ini tim penilai Adiwiyata datang. Semua mata tertuju padamu, dan kamu harus bicara di depan semua orang.',
     },
     {
       tokoh: 'Magi',
-      teks: 'Kalau pohonnya sehat dan tidak ada sampah berserakan, mereka akan datang sendiri. Coba tanam lagi dan lihat siapa yang mampir.',
+      teks: 'Kamu sudah berani duluan berkali-kali. Sekarang tinggal satu langkah lagi: bicara, supaya semua orang dengar.',
     },
     {
       tokoh: 'Pak Plastik',
-      teks: 'Aku tidak akan buang sampah sembarangan lagi. Boleh ikut inspeksi, kan? Aku sudah belajar memilah.',
+      teks: 'Aku tidak akan buang sampah sembarangan lagi. Boleh ikut inspeksi, kan? Botolku ini aku bawa sendiri ke bak yang benar.',
     },
     {
       tokoh: 'Narator',
-      teks: 'Hari ini tim Adiwiyata datang menilai sekolah. Buktikan semua yang kamu pelajari dari bab pertama sampai sekarang.',
+      teks: 'Tim penilai sudah di gerbang. Saatnya buktikan kalau peduli itu tidak sia-sia.',
     },
   ],
 }
@@ -140,18 +143,18 @@ export const DIALOG_AWAL: Record<ChapterId, DialogLine[]> = {
 
 /** Baris Pak Plastik di Gerbang per status (indeks 2 dari DIALOG_AWAL.gerbang). */
 const GERBANG_PAK_PLASTIK: Record<PakPlastikStatus, string> = {
-  netral: 'Hehehe, aku Pak Plastik! Botolku ada di mana-mana. Buang saja, nanti juga ada yang beresin. Eh, kok pada melotot?',
+  netral: 'Hehehe, aku Pak Plastik! Botolku ada di mana-mana. Buang saja, nanti juga ada yang beresin. Peduli itu capek, percuma.',
   dibujuk: 'Hehehe, aku Pak Plastik! Kamu ajak aku memilah, ya? Baiklah... botolku ada di mana-mana, ayo beresin bareng.',
   dilawan: 'Hehehe, aku Pak Plastik! Kamu tantang aku lomba pilah? Siap-siap kalah, ya!',
-  dijebak: 'Hehehe, aku Pak Plastik! Botolku ada di mana-mana. Buang saja, nanti juga ada yang beresin. Eh, kok pada melotot?',
+  dijebak: 'Hehehe, aku Pak Plastik! Botolku ada di mana-mana. Buang saja, nanti juga ada yang beresin. Peduli itu capek, percuma.',
 }
 
 /** Baris Pak Plastik di Biodiversitas per status (indeks 2 dari DIALOG_AWAL.biodiversitas). */
 const BAB6_PAK_PLASTIK: Record<PakPlastikStatus, string> = {
-  netral: 'Aku tidak akan buang sampah sembarangan lagi. Boleh ikut inspeksi, kan? Aku sudah belajar memilah.',
-  dibujuk: 'Aku tidak akan buang sampah sembarangan lagi. Boleh ikut inspeksi, kan? Sejak kamu ajak memilah, aku sudah belajar.',
-  dilawan: 'Aku tidak akan buang sampah sembarangan lagi. Boleh ikut inspeksi, kan? Lomba pilah kemarin bikin aku latihan tiap pagi.',
-  dijebak: 'Aku tidak akan buang sampah sembarangan lagi. Boleh ikut inspeksi, kan? Sejak keluar dari bak itu, aku jadi mikir sebelum mengacau.',
+  netral: 'Aku tidak akan buang sampah sembarangan lagi. Boleh ikut inspeksi, kan? Botolku ini aku bawa sendiri ke bak yang benar.',
+  dibujuk: 'Aku tidak akan buang sampah sembarangan lagi. Boleh ikut inspeksi, kan? Sejak kamu ajak memilah, aku sudah belajar. Botolku ini aku bawa sendiri ke bak yang benar.',
+  dilawan: 'Aku tidak akan buang sampah sembarangan lagi. Boleh ikut inspeksi, kan? Lomba pilah kemarin bikin aku latihan tiap pagi. Botolku ini aku bawa sendiri ke bak yang benar.',
+  dijebak: 'Aku tidak akan buang sampah sembarangan lagi. Boleh ikut inspeksi, kan? Sejak keluar dari bak itu, aku jadi mikir sebelum mengacau. Botolku ini aku bawa sendiri ke bak yang benar.',
 }
 
 /**

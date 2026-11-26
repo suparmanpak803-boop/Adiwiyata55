@@ -26,15 +26,15 @@ export const DIALOG_NPC: Record<string, DialogNpc> = {
     sapaan: 'Hai! Aku Magi, larva maggot yang tinggal di Pos Maggot.',
     baris: [
       'Aku makan sisa nasi dan sayur dari kantin. Yang berminyak atau plastik bikin perutku rewel, jadi jangan dikasih itu ya.',
-      'Kalau aku sehat, panenku bisa jadi pakan ikan dan pupuk buat kebun. Siklusnya jalan terus!',
-      'Kotakku harus pas: tidak terlalu basah, tidak terlalu panas, dan tidak bau.',
+      'Kalau aku sehat, panenku bisa jadi pakan ikan dan pupuk buat kebun. Sisa makanan jadi kehidupan, itu tugasku.',
+      'Kotakku harus pas: tidak terlalu basah, tidak terlalu panas, dan tidak bau. Kalau aku sampai sakit, tolong jangan buang aku.',
     ],
     tips: 'Sisa sayur dan buah yang bersih adalah pakan maggot paling bagus.',
   },
   'pak-plastik': {
     sapaan: 'Hehehe, aku Pak Plastik! Ketemu lagi, ya?',
     baris: [
-      'Dulu aku suka dibuang sembarangan. Sekarang aku lagi belajar berubah, pelan-pelan.',
+      'Dulu aku yang mengusulkan bank sampah, tapi tidak ada yang ikut. Programnya mati, dan sejak itu aku pikir peduli itu sia-sia.',
       'Botolku itu sebenarnya masih berguna kalau dibersihkan dan dipilah ke bak yang benar.',
       'Kamu sudah main Tas Pagi? Isi tasmu dengan barang yang bisa dipakai ulang, biar aku tidak nambah-nambah.',
     ],
@@ -56,7 +56,7 @@ export const DIALOG_NPC: Record<string, DialogNpc> = {
       'Kasgot dari maggot itu pupuk yang bagus. Tanaman di sini tumbuh karena itu.',
       'Cabai dan kangkung ini nanti kembali ke kantin. Begitu terus putarannya.',
     ],
-    tips: 'Kompos yang bau biasanya kurang udara — aduk dan tambah bahan kering.',
+    tips: 'Kompos yang bau biasanya kurang udara, aduk dan tambah bahan kering.',
   },
   'mbak-rani': {
     sapaan: 'Hai! Aku Mbak Rani, yang jagain air dan listrik sekolah.',
@@ -71,7 +71,7 @@ export const DIALOG_NPC: Record<string, DialogNpc> = {
     sapaan: 'Selamat pagi, Nak. Ibu Sari, guru di sini.',
     baris: [
       'Tim Adiwiyata itu bukan datang untuk menakut-nakuti. Mereka datang melihat kebiasaan baik yang sudah jalan.',
-      'Kalau setiap hari kamu memilah dan membawa tumbler, inspeksi itu cuma formalitas.',
+      'Tim penilai menilai kebiasaan sehari-hari, bukan sekali bersih-bersih. Kalau kamu sudah berani duluan, sisanya mengikuti.',
       'Ibu bangga sama kalian yang mau belajar dari bab pertama sampai sekarang.',
     ],
     tips: 'Sekolah Adiwiyata itu soal budaya, bukan soal sekali bersih-bersih.',
@@ -79,7 +79,7 @@ export const DIALOG_NPC: Record<string, DialogNpc> = {
   dimas: {
     sapaan: 'Eh, hai! Aku Dimas, kelas sebelah.',
     baris: [
-      'Aku baru mulai bawa tumbler minggu ini. Ternyata hemat juga, tidak beli minuman kemasan tiap hari.',
+      'Aku baru mulai bawa tumbler minggu ini, gara-gara lihat kamu bawa terus. Ternyata hemat juga, tidak beli minuman kemasan tiap hari.',
       'Tadi aku lihat Pak Plastik jalan-jalan di dekat gerbang. Dia lucu sih, tapi suka iseng.',
       'Kamu sudah sampai bab berapa? Aku masih belajar memilah, susah-susah gampang.',
     ],
@@ -88,7 +88,7 @@ export const DIALOG_NPC: Record<string, DialogNpc> = {
   sinta: {
     sapaan: 'Hai! Aku Sinta, biasa jajan di kantin.',
     baris: [
-      'Aku bawa tas kain ke mana-mana sekarang. Muat banyak dan tidak gampang sobek.',
+      'Aku bawa tas kain ke mana-mana sekarang, gara-gara lihat tasmu. Muat banyak dan tidak gampang sobek.',
       'Kadang aku masih bingung bedain Residu dan Anorganik. Bungkus berminyak itu Residu, kan?',
       'Eh, iya kan? Kalau ragu, tanya Kang Kantin saja, dia tahu semua.',
     ],
@@ -132,7 +132,7 @@ export function sapaanProgres(id: string, save: CampaignSave): string | null {
   switch (id) {
     case 'magi':
       return misiSelesai >= 6
-        ? 'Kamu benar-benar penjaga sekolah sekarang — Magi bangga!'
+        ? 'Kamu benar-benar penjaga sekolah sekarang. Magi bangga!'
         : 'Hai lagi! Sekolah sudah lebih hijau sejak kamu datang.'
     case 'dimas':
       return misiSelesai >= 3

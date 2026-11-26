@@ -41,8 +41,9 @@ export function Tamat({ onExit }: { onExit: () => void }) {
           Sekolah Adiwiyata Mandiri!
         </h2>
         <p className="aia-muted" style={{ margin: '8px auto 0', maxWidth: 420 }}>
-          Enam bab sudah kamu lewati. Gerbang, kantin, maggot, kebun, air, sampai inspeksi — sekolahmu
-          sekarang resmi jadi Sekolah Adiwiyata Mandiri. Kamu pahlawannya!
+          Dulu kamu ditertawakan karena peduli, lalu memilih diam. Enam bab kemudian, kamu bicara di depan
+          semua orang, dan botol Pak Plastik akhirnya masuk bak yang benar. Sekolah ini jadi rumah karena
+          kamu ikut merawatnya.
         </p>
       </div>
 

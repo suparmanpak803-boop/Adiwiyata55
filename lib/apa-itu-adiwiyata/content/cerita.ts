@@ -81,7 +81,7 @@ export const PILIHAN_CERITA: Record<ChapterId, [TitikPilihan, TitikPilihan]> = {
       id: 'titik-1',
       misi: 'gerbang',
       kapan: 'npc',
-      situasi: 'Pak Plastik menghadangmu di gerbang sambil memegang botol kosong.',
+      situasi: 'Pak Plastik membuang botolnya di depan semua orang sambil tertawa. Semua diam, menunggumu.',
       opsi: [
         {
           id: 'bujuk-pilah',
@@ -97,8 +97,8 @@ export const PILIHAN_CERITA: Record<ChapterId, [TitikPilihan, TitikPilihan]> = {
         },
         {
           id: 'lewati-saja',
-          teks: 'Lewati saja, fokus ke tas pagi',
-          akibat: 'Pak Plastik mendengus, lalu pergi mengacau ke tempat lain.',
+          teks: 'Diam saja, bukan urusanku',
+          akibat: 'Kamu lewat sambil menunduk. Botol itu tetap di jalan, dan rasanya seperti di sekolah lama.',
         },
       ],
     },
@@ -126,7 +126,7 @@ export const PILIHAN_CERITA: Record<ChapterId, [TitikPilihan, TitikPilihan]> = {
       id: 'titik-1',
       misi: 'kantin',
       kapan: 'npc',
-      situasi: 'Pak Plastik mengintip dari balik bak, dan Kang Kantin menantangmu memilah tumpukan hari ini.',
+      situasi: 'Pak Plastik mengintip dari balik bak. Tumpukan hari ini berantakan gara-gara isengnya kemarin, dan Kang Kantin menantangmu memilah.',
       opsi: [
         {
           id: 'jebak-tong',
@@ -170,7 +170,7 @@ export const PILIHAN_CERITA: Record<ChapterId, [TitikPilihan, TitikPilihan]> = {
       id: 'titik-1',
       misi: 'maggot',
       kapan: 'npc',
-      situasi: 'Magi menggeliat lapar, dan Pak Plastik mengintip kotak maggot dari jauh.',
+      situasi: 'Magi lemas dan perutnya rewel sejak ada bungkus berminyak nyasar ke kotaknya. Pak Plastik mengintip dari jauh.',
       opsi: [
         {
           id: 'bujuk-jaga',
@@ -237,7 +237,7 @@ export const PILIHAN_CERITA: Record<ChapterId, [TitikPilihan, TitikPilihan]> = {
         {
           id: 'aduk-kompos',
           teks: 'Aduk kompos dan tambah daun kering',
-          akibat: 'Udara masuk ke tumpukan, dan baunya perlahan hilang.',
+          akibat: 'Udara masuk ke tumpukan, baunya perlahan hilang, dan kamu membuktikan yang rusak bisa diperbaiki sendiri.',
         },
         {
           id: 'siram-eco',
@@ -252,7 +252,7 @@ export const PILIHAN_CERITA: Record<ChapterId, [TitikPilihan, TitikPilihan]> = {
       id: 'titik-1',
       misi: 'air-energi',
       kapan: 'npc',
-      situasi: 'Mbak Rani menunjukkan keran menetes dan panel surya di atap.',
+      situasi: 'Mbak Rani menunjukkan keran menetes dan panel surya di atap. Tidak ada yang melihat, tapi tetap harus dibereskan.',
       opsi: [
         {
           id: 'periksa-keran',
@@ -295,7 +295,7 @@ export const PILIHAN_CERITA: Record<ChapterId, [TitikPilihan, TitikPilihan]> = {
       id: 'titik-1',
       misi: 'biodiversitas',
       kapan: 'npc',
-      situasi: 'Bu Sari tersenyum: tim inspeksi datang sebentar lagi.',
+      situasi: 'Bu Sari tersenyum: tim inspeksi datang sebentar lagi, dan kamu yang harus bicara di depan semua orang.',
       opsi: [
         {
           id: 'cek-taman',
@@ -305,7 +305,7 @@ export const PILIHAN_CERITA: Record<ChapterId, [TitikPilihan, TitikPilihan]> = {
         {
           id: 'siapkan-cerita',
           teks: 'Siapkan cerita tentang kebun untuk tim inspeksi',
-          akibat: 'Kamu menyiapkan cerita kebun yang jujur, lengkap dengan jadwal piketmu.',
+          akibat: 'Kamu menyiapkan cerita yang jujur: tentang botol, Magi, dan kenapa peduli itu tidak sia-sia.',
         },
       ],
     },
@@ -352,15 +352,15 @@ export const EPILOG_MISI: Record<ChapterId, EpilogMisi> = {
   gerbang: {
     kunci: 'gerbang:titik-1',
     opsiBaik: 'bujuk-pilah',
-    teksBaik: 'Pak Plastik ikut memilah sampai akhir, dan gerbang pagi ini terasa lebih ringan.',
-    teksLain: 'Gerbang sudah rapi, tapi Pak Plastik masih mengintip dari kejauhan — mungkin lain kali ia ikut.',
+    teksBaik: 'Kamu tidak diam seperti dulu. Pak Plastik ikut memilah, dan gerbang pagi ini terasa lebih ringan.',
+    teksLain: 'Gerbang sudah rapi, tapi Pak Plastik masih mengintip dari kejauhan. Lain kali, ajak dia ikut.',
     bonusBaik: BONUS_EPILOG_BAIK,
     bonusLain: BONUS_EPILOG_LAIN,
   },
   kantin: {
     kunci: 'kantin:titik-1',
     opsiBaik: 'minta-bantuan',
-    teksBaik: 'Pak Plastik akhirnya melempar botol ke bak yang benar, dan Kang Kantin mengangguk puas.',
+    teksBaik: 'Pak Plastik akhirnya melempar botol ke bak yang benar di depan semua orang, dan Kang Kantin mengangguk puas.',
     teksLain: 'Kantin sudah bersih, meski Pak Plastik pergi dengan caranya sendiri.',
     bonusBaik: BONUS_EPILOG_BAIK,
     bonusLain: BONUS_EPILOG_LAIN,
@@ -368,7 +368,7 @@ export const EPILOG_MISI: Record<ChapterId, EpilogMisi> = {
   maggot: {
     kunci: 'maggot:titik-2',
     opsiBaik: 'pisah-minyak',
-    teksBaik: 'Magi sehat dan lahap, dan kotak maggotmu jadi contoh buat yang lain.',
+    teksBaik: 'Magi sehat dan lahap lagi. Ternyata peduli itu tidak sia-sia, dan kotak maggotmu jadi contoh buat yang lain.',
     teksLain: 'Magi tetap makan, tapi kamu mencatat untuk lebih teliti lain kali.',
     bonusBaik: BONUS_EPILOG_BAIK,
     bonusLain: BONUS_EPILOG_LAIN,
@@ -376,7 +376,7 @@ export const EPILOG_MISI: Record<ChapterId, EpilogMisi> = {
   kompos: {
     kunci: 'kompos:titik-2',
     opsiBaik: 'aduk-kompos',
-    teksBaik: 'Komposmu tidak bau lagi dan siap jadi pupuk kebun minggu depan.',
+    teksBaik: 'Kompos yang bau itu sudah kamu perbaiki sendiri, dan kebun ini bukti pertamamu: yang rusak bisa dibetulkan.',
     teksLain: 'Kompos sudah jadi, meski aromanya sempat bikin Pak Kebun menahan napas.',
     bonusBaik: BONUS_EPILOG_BAIK,
     bonusLain: BONUS_EPILOG_LAIN,
@@ -384,7 +384,7 @@ export const EPILOG_MISI: Record<ChapterId, EpilogMisi> = {
   'air-energi': {
     kunci: 'air-energi:titik-2',
     opsiBaik: 'tutup-dulu',
-    teksBaik: 'Keran berhenti menetes, lampu padam, dan Mbak Rani mencatat penghematan hari ini.',
+    teksBaik: 'Tidak ada yang melihat, tapi kamu tetap berbuat benar. Keran berhenti menetes, lampu padam, dan Mbak Rani mencatat penghematan hari ini.',
     teksLain: 'Air dan listrik sudah aman, meski semuanya sempat menunggu laporanmu.',
     bonusBaik: BONUS_EPILOG_BAIK,
     bonusLain: BONUS_EPILOG_LAIN,
@@ -392,7 +392,7 @@ export const EPILOG_MISI: Record<ChapterId, EpilogMisi> = {
   biodiversitas: {
     kunci: 'biodiversitas:titik-1',
     opsiBaik: 'cek-taman',
-    teksBaik: 'Tim inspeksi tersenyum melihat taman yang terawat, dan Bu Sari bangga.',
+    teksBaik: 'Tim inspeksi tersenyum melihat taman yang terawat. Kamu bicara di depan semua orang, dan Bu Sari bangga.',
     teksLain: 'Inspeksi berjalan lancar, dan kamu belajar bahwa persiapan tidak bisa dadakan.',
     bonusBaik: BONUS_EPILOG_BAIK,
     bonusLain: BONUS_EPILOG_LAIN,
@@ -423,7 +423,7 @@ export const DIALOG_PAK_PLASTIK: Record<PakPlastikStatus, DialogPakPlastik> = {
   netral: {
     sapaan: 'Hehehe, aku Pak Plastik! Ketemu lagi, ya?',
     baris: [
-      'Dulu aku suka dibuang sembarangan. Sekarang aku lagi belajar berubah, pelan-pelan.',
+      'Dulu aku yang mengusulkan bank sampah, tapi tidak ada yang ikut. Programnya mati, dan sejak itu aku pikir peduli itu sia-sia.',
       'Botolku itu sebenarnya masih berguna kalau dibersihkan dan dipilah ke bak yang benar.',
       'Kamu sudah main Tas Pagi? Isi tasmu dengan barang yang bisa dipakai ulang, biar aku tidak nambah-nambah.',
     ],
@@ -432,7 +432,7 @@ export const DIALOG_PAK_PLASTIK: Record<PakPlastikStatus, DialogPakPlastik> = {
     sapaan: 'Hehehe, aku Pak Plastik! Sekarang aku tim pilah, ya?',
     baris: [
       'Sejak kamu ajak memilah, aku jadi tahu botolku itu masih berguna kalau dibersihkan.',
-      'Aku sekarang jagain bak Anorganik. Ada yang buang sembarangan, langsung aku tegur — dengan sopan, kok.',
+      'Dulu aku menyerah karena merasa sendirian. Ternyata aku cuma butuh satu orang yang berani duluan.',
       'Magi bilang aku sudah lumayan. Lumayan itu pujian besar dari seekor maggot, tahu.',
     ],
   },
@@ -440,7 +440,7 @@ export const DIALOG_PAK_PLASTIK: Record<PakPlastikStatus, DialogPakPlastik> = {
     sapaan: 'Hehehe, aku Pak Plastik! Ayo, lomba lagi kapan-kapan!',
     baris: [
       'Kamu menang lomba pilah kemarin, tapi aku masih simpan botol tercepatku untuk balas dendam.',
-      'Aku kalah, tapi kalah yang seru. Sekarang aku latihan memilah tiap pagi sebelum kamu datang.',
+      'Aku kalah, tapi kalah yang seru. Dulu aku berhenti karena tidak ada yang ikut, sekarang aku latihan memilah tiap pagi sebelum kamu datang.',
       'Lomba berikutnya, aku yang menang. Sudah aku latih lemparanku ke bak Anorganik!',
     ],
   },
@@ -461,7 +461,7 @@ export const DIALOG_PAK_PLASTIK: Record<PakPlastikStatus, DialogPakPlastik> = {
 export const DIALOG_MAGI_PAK_PLASTIK: Record<'dibujuk' | 'dilawan' | 'dijebak', string[]> = {
   dibujuk: [
     'Pak Plastik sekarang suka memilah, lho. Aku sampai tidak percaya waktu pertama kali lihat.',
-    'Dia yang dibujuk malah jadi teman pilah. Kadang yang paling berisik itu yang paling cepat berubah.',
+    'Dia dulu menyerah karena merasa sendirian. Ternyata dia cuma butuh satu orang yang mengajak duluan.',
     'Kalau dia datang ke Pos Maggot, dia cuma lihat-lihat. Tidak mengacau lagi, sungguh.',
   ],
   dilawan: [
