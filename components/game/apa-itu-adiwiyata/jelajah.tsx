@@ -18,7 +18,7 @@ import { jumlahTugasSelesai, LOKASI_PEMBERI, misiSaatIni, pemberiMisi } from '@/
 import { selectChapterUnlocked, useCampaign } from '@/lib/apa-itu-adiwiyata/context'
 import { kunciCerita, PILIHAN_CERITA } from '@/lib/apa-itu-adiwiyata/content/cerita'
 import { dialogDenganIngatan, sapaanProgres } from '@/lib/apa-itu-adiwiyata/content/npc'
-import { warnaKostum } from '@/lib/apa-itu-adiwiyata/content/toko'
+import { buffAktif, warnaKostum } from '@/lib/apa-itu-adiwiyata/content/toko'
 import { gambarBayangan, gambarPemain, rr, type PemainState } from '@/lib/apa-itu-adiwiyata/gambar-pemain'
 import { buatKamera, offsetPusat, perbaruiKamera, resetKamera } from '@/lib/apa-itu-adiwiyata/kamera'
 import {
@@ -1410,10 +1410,10 @@ export function Jelajah({
       if (bergerak) {
         vx /= Math.max(1, panjang)
         vy /= Math.max(1, panjang)
-        // Sepatu Eco-Runner: kecepatan gerak +35% permanen. Hanya gerak
-        // pemain yang dikali — animasi jalan (p.fase) dan timer misi tidak
-        // ikut berubah.
-        const kecepatan = KECEPATAN * (saveRef.current.sepatuEco ? 1.35 : 1)
+        // Sepatu Eco-Runner: kecepatan gerak +35% selama buff 10 menit
+        // sejak dibeli. Hanya gerak pemain yang dikali — animasi jalan
+        // (p.fase) dan timer misi tidak ikut berubah.
+        const kecepatan = KECEPATAN * (saveRef.current.sepatuEco && buffAktif(saveRef.current, 'sepatu-eco') ? 1.35 : 1)
         const xLama = p.x
         const yLama = p.y
         const nx = p.x + vx * kecepatan * dt
@@ -1777,9 +1777,9 @@ export function Jelajah({
             reduced,
             warnaKostum(saveSekarang.kostumDipakai),
             saveSekarang.jenisKelamin,
-            saveSekarang.pinDuta,
+            saveSekarang.pinDuta && buffAktif(saveSekarang, 'pin-duta'),
             // Kecepatan gerak saat ini: bayangan mengecil sedikit saat cepat.
-            p.bergerak ? KECEPATAN * (saveSekarang.sepatuEco ? 1.35 : 1) : 0,
+            p.bergerak ? KECEPATAN * (saveSekarang.sepatuEco && buffAktif(saveSekarang, 'sepatu-eco') ? 1.35 : 1) : 0,
           ),
       })
       aktor.sort((a, b) => a.y - b.y)

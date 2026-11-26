@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { ArrowLeft, Heart, LogOut, MoveHorizontal, Pause, Play, Target, Timer, Trash2, Volume2, VolumeX, Zap } from 'lucide-react'
 import { BINS, WASTE_ITEMS, type Bin } from '@/lib/waste-items'
 import { useCampaign } from '@/lib/apa-itu-adiwiyata/context'
-import { koinTangkapSampah } from '@/lib/apa-itu-adiwiyata/arkade'
+import { BATAS_KOIN_ARKADE_HARIAN, koinArkadeDiberikan, koinTangkapSampah, tanggalHariIni } from '@/lib/apa-itu-adiwiyata/arkade'
 
 const W = 360, H = 480, BASKET_W = 84, BASKET_Y = H - 34
 const DURASI_DETIK = 60
@@ -70,6 +70,10 @@ export function TangkapSampah({ onExit, onFinished }: { onExit: () => void; onFi
   const [paused, setPaused] = useState(false)
   const [skorAkhir, setSkorAkhir] = useState(0)
   const [terbaikLama, setTerbaikLama] = useState(0)
+  // F13: koin yang benar-benar diberikan (dijepit batas harian) + yang
+  // diminta — dijepret saat selesai dari save SEBELUM hadiah runner,
+  // supaya angka di layar hasil sama dengan yang masuk ke saldo.
+  const [koinHasil, setKoinHasil] = useState<{ diminta: number; diberikan: number } | null>(null)
   const pausedRef = useRef(false)
   const rondeRef = useRef(0)
   const [ronde, setRonde] = useState(0)
@@ -86,6 +90,16 @@ export function TangkapSampah({ onExit, onFinished }: { onExit: () => void; onFi
     if (selesaiRef.current) return
     selesaiRef.current = true
     setTerbaikLama(saveRef.current.arkade?.tangkap ?? 0)
+    const koinDiminta = koinTangkapSampah(score)
+    setKoinHasil({
+      diminta: koinDiminta,
+      diberikan: koinArkadeDiberikan(
+        koinDiminta,
+        saveRef.current.arkadeTanggal ?? null,
+        saveRef.current.arkadeKoinHariIni ?? 0,
+        tanggalHariIni(),
+      ),
+    })
     setSkorAkhir(score)
     sound.playEnd()
     setStage('selesai')
@@ -249,13 +263,15 @@ export function TangkapSampah({ onExit, onFinished }: { onExit: () => void; onFi
   }
 
   if (stage === 'selesai') {
-    const koin = koinTangkapSampah(skorAkhir)
     const rekorBaru = skorAkhir > terbaikLama
     return (
       <section className="game-stage" aria-labelledby="tangkap-selesai">
         <h2 id="tangkap-selesai">Permainan selesai</h2>
         <p className="game-big">Skor {skorAkhir}</p>
-        <p className="game-hint">Kamu mendapat <b>+{koin} Koin Hijau</b>.</p>
+        <p className="game-hint">Kamu mendapat <b>+{koinHasil?.diberikan ?? 0} Koin Hijau</b>.</p>
+        {koinHasil && koinHasil.diberikan < koinHasil.diminta && (
+          <p className="game-hint">Batas harian arkade tercapai ({BATAS_KOIN_ARKADE_HARIAN} Koin Hijau/hari). Coba lagi besok.</p>
+        )}
         <p className="game-hint">
           Rekor terbaik: <b>{Math.max(terbaikLama, skorAkhir)}</b>
           {rekorBaru && ' — Rekor baru!'}

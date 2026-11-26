@@ -104,6 +104,11 @@ export interface CampaignSave {
   pakPlastik: PakPlastikStatus
   /** Skor terbaik dua game arkade di dunia (Tangkap Sampah, Kuis Adiwiyata). */
   arkade: { tangkap: number; kuis: number }
+  /** Batas harian arkade (F13): tanggal lokal (YYYY-MM-DD) terakhir koin
+   * arkade diberikan + total Koin Hijau arkade hari itu (maks 150/hari
+   * gabungan kedua game). Save lama tanpa field ini -> null / 0. */
+  arkadeTanggal: string | null
+  arkadeKoinHariIni: number
   /** Bar lapar & haus (0-100). Berkurang tiap tahap selesai dan tiap hari
    * berlalu di Dunia Hidup; dipulihkan lewat Kantin / bekal / air keran.
    * Bila salah satunya 0, pemain "lemas" dan tidak bisa mulai tahap baru
@@ -124,12 +129,24 @@ export interface CampaignSave {
    * selesai pertama kali +5. Save lama tanpa field ini -> pohonDitanam*5
    * (lihat loadSave). */
   skorAdiwiyata: number
-  /** Eco-Shop (bayar Koin Hijau, sekali beli, flag false di save lama):
-   * sepatu = jalan +35%, pin = aura hijau + diskon kantin 25%,
-   * panel = panel biru di atap sekolah. */
+  /** Eco-Shop (bayar Koin Hijau): sepatu = jalan +35%, pin = aura hijau +
+   * diskon kantin 25% — keduanya BUFF 10 menit sejak dibeli (lihat
+   * buffBerakhir), bukan permanen; panel = panel biru di atap sekolah,
+   * sekali beli, Skor Adiwiyata +20 langsung masuk dan tetap. */
   sepatuEco: boolean
   pinDuta: boolean
   panelSurya: boolean
+  /** Batas akhir buff gear (epoch ms, Date.now()): kunci = id gear
+   * ('tumbler', 'tas-kain', 'lunch-box', 'sepatu-eco', 'pin-duta').
+   * Buff aktif bila Date.now() < buffBerakhir[id] — tetap berjalan walau
+   * game ditutup. Beli ulang memperbarui batas akhir ke sekarang+10 menit.
+   * Save lama tanpa field ini -> {} (buff tidak aktif sampai beli ulang);
+   * nilai kedaluwarsa tetap tersimpan, hanya dianggap tidak aktif. */
+  buffBerakhir: Record<string, number>
+  /** Bekal darurat di layar lemas: tanggal lokal (YYYY-MM-DD) terakhir
+   * bekal darurat dipakai (1x per hari kalender WIB, lihat
+   * PAKAI_BEKAL_DARURAT). Save lama tanpa field ini -> null. */
+  bekalDaruratTanggal: string | null
   /** Bekal gratis harian: tanggal lokal terakhir bekal diambil + berapa
    * kali diambil hari itu (jatah 1x/hari, 2x/hari bila punya Lunch Box). */
   bekalTanggal: string | null

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { readJsonResponse } from '@/lib/api-client'
+import { fetchJson } from '@/lib/api-client'
 import { KATEGORI, LOKASI_KELAS, LOKASI_UMUM, MAX_PHOTOS, MAX_PHOTO_BYTES, PHOTO_TYPES, URGENSI } from '@/lib/laporan'
 import '@/components/leaderboard/leaderboard.css'
 import '@/components/game/game.css'
@@ -47,6 +47,11 @@ export function LaporanForm({ defaultName }: { defaultName: string }) {
     setPhotos(next)
   }
 
+  function removePhoto(index: number) {
+    URL.revokeObjectURL(photos[index].preview)
+    setPhotos(photos.filter((_, n) => n !== index))
+  }
+
   async function submit(event: React.FormEvent) {
     event.preventDefault()
     setError('')
@@ -62,12 +67,14 @@ export function LaporanForm({ defaultName }: { defaultName: string }) {
         if (file.size > MAX_PHOTO_BYTES) throw new Error('Ukuran foto maksimal 3 MB.')
         const data = new FormData()
         data.append('file', file)
-        const upload = await fetch('/api/laporan/upload', { method: 'POST', body: data })
-        const result = await readJsonResponse<{ pathname: string }>(upload)
+        // fetchJson melempar bila unggah gagal (!ok): submit dibatalkan dan
+        // pesan error server ditampilkan, jadi laporan tidak terkirim diam-diam
+        // tanpa foto seperti sebelumnya (pathname undefined -> null).
+        const result = await fetchJson<{ pathname: string }>('/api/laporan/upload', { method: 'POST', body: data })
         paths.push(result.pathname)
       }
-      const response = await fetch('/api/laporan', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ kategori, lokasi, judul, isi, urgensi, anonim, foto: paths }) })
-      const result = await readJsonResponse<{ id: string; nomorTiket: string }>(response)
+      const result = await fetchJson<{ id: string; nomorTiket: string }>('/api/laporan', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ kategori, lokasi, judul, isi, urgensi, anonim, foto: paths }) })
+      for (const photo of photos) URL.revokeObjectURL(photo.preview)
       setDone(result)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Laporan belum dapat dikirim.')
@@ -116,7 +123,7 @@ export function LaporanForm({ defaultName }: { defaultName: string }) {
           <input type="file" accept={PHOTO_TYPES.join(',')} multiple disabled={photos.length >= MAX_PHOTOS} onChange={(e) => { addFiles(e.target.files); e.target.value = '' }} />
         </label>
         {photos.length > 0 && <div className="lap-photos">{photos.map((p, i) => (
-          <div key={p.preview} className="lap-thumb"><img src={p.preview} alt={`Pratinjau foto ${i + 1}`} /><button type="button" className="game-ghost" onClick={() => setPhotos(photos.filter((_, n) => n !== i))}>Hapus</button></div>
+          <div key={p.preview} className="lap-thumb"><img src={p.preview} alt={`Pratinjau foto ${i + 1}`} /><button type="button" className="game-ghost" onClick={() => removePhoto(i)}>Hapus</button></div>
         ))}</div>}
         <label className="lap-check"><input type="checkbox" checked={anonim} onChange={(e) => setAnonim(e.target.checked)} /> Kirim sebagai anonim
           <small>{anonim ? 'Nama Anda disembunyikan dari semua tampilan.' : `Dikirim atas nama ${defaultName}.`}</small>

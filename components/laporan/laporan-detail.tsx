@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { Star } from 'lucide-react'
 import useSWR from 'swr'
-import { readJsonResponse } from '@/lib/api-client'
+import { fetchJson } from '@/lib/api-client'
 import { KATEGORI, STATUS_LABEL, URGENSI } from '@/lib/laporan'
 import { StatusBadge, fetcher, formatDate } from './shared'
 
@@ -22,7 +22,10 @@ export function LaporanDetail({ id }: { id: string }) {
   async function act(body: object) {
     setMessage('')
     try {
-      await readJsonResponse(await fetch(`/api/laporan/${id}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }))
+      // fetchJson melempar bila server menolak (!ok, mis. 409 laporan sudah
+      // ditutup atau 429 rate limit): komentar tidak dikosongkan, mutate()
+      // tidak dipanggil, dan pesan error server ditampilkan ke pengguna.
+      await fetchJson(`/api/laporan/${id}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
     } catch (cause) { setMessage(cause instanceof Error ? cause.message : 'Gagal menyimpan.'); return }
     setComment('')
     await mutate()

@@ -32,7 +32,7 @@ import { MisiShell } from './misi-shell'
 import { Tamat } from './tamat'
 import { TangkapSampah } from '../tangkap-sampah'
 import { KuisAdiwiyata } from '../kuis-adiwiyata'
-import { koinArkade } from '@/lib/apa-itu-adiwiyata/arkade'
+import { BATAS_KOIN_ARKADE_HARIAN, koinArkade, koinArkadeDiberikan, tanggalHariIni } from '@/lib/apa-itu-adiwiyata/arkade'
 import { Ensiklopedia } from './ensiklopedia'
 import { Leaderboard } from './leaderboard'
 import { Profil } from './profil'
@@ -206,19 +206,30 @@ function Shell() {
   // onFinished dipanggil tepat satu kali per permainan oleh komponen game,
   // jadi koin tidak dobel. `save` di closure masih keadaan sebelum hadiah.
   const selesaiTangkap = (skor: number) => {
-    const koin = koinArkade('tangkap', skor)
+    const koinDiminta = koinArkade('tangkap', skor)
+    // F13: jepit ke sisa batas harian arkade (150 koin/hari gabungan).
+    // Satu dispatch atomik ARKADE_KOIN: koin + total harian + rekor.
+    const koin = koinArkadeDiberikan(koinDiminta, save.arkadeTanggal ?? null, save.arkadeKoinHariIni ?? 0, tanggalHariIni())
     const rekorBaru = skor > (save.arkade?.tangkap ?? 0)
-    dispatch({ type: 'EARN_COINS', amount: koin })
-    dispatch({ type: 'ARKADE_TERBAIK', game: 'tangkap', skor })
-    setPesanMisi(`Tangkap Sampah selesai! Skor ${skor}, +${koin} Koin Hijau.${rekorBaru ? ' Rekor baru!' : ''}`)
+    dispatch({ type: 'ARKADE_KOIN', game: 'tangkap', skor, koin })
+    setPesanMisi(
+      `Tangkap Sampah selesai! Skor ${skor}, +${koin} Koin Hijau.${rekorBaru ? ' Rekor baru!' : ''}${
+        koin < koinDiminta ? ` Batas harian arkade tercapai (${BATAS_KOIN_ARKADE_HARIAN} Koin Hijau/hari), coba lagi besok.` : ''
+      }`,
+    )
   }
 
   const selesaiKuis = (benar: number) => {
-    const koin = koinArkade('kuis', benar)
+    const koinDiminta = koinArkade('kuis', benar)
+    // F13: jepit ke sisa batas harian arkade (150 koin/hari gabungan).
+    const koin = koinArkadeDiberikan(koinDiminta, save.arkadeTanggal ?? null, save.arkadeKoinHariIni ?? 0, tanggalHariIni())
     const rekorBaru = benar > (save.arkade?.kuis ?? 0)
-    dispatch({ type: 'EARN_COINS', amount: koin })
-    dispatch({ type: 'ARKADE_TERBAIK', game: 'kuis', skor: benar })
-    setPesanMisi(`Kuis Adiwiyata selesai! Benar ${benar} dari 12, +${koin} Koin Hijau.${rekorBaru ? ' Rekor baru!' : ''}`)
+    dispatch({ type: 'ARKADE_KOIN', game: 'kuis', skor: benar, koin })
+    setPesanMisi(
+      `Kuis Adiwiyata selesai! Benar ${benar} dari 12, +${koin} Koin Hijau.${rekorBaru ? ' Rekor baru!' : ''}${
+        koin < koinDiminta ? ` Batas harian arkade tercapai (${BATAS_KOIN_ARKADE_HARIAN} Koin Hijau/hari), coba lagi besok.` : ''
+      }`,
+    )
   }
 
   // Dari Layar Awal: masuk dunia dengan progres yang ada (atau permainan

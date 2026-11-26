@@ -36,7 +36,32 @@ const fetcher = (url: string) => fetchJson<ApiResult<Row[]>>(url)
 
 function csvEscape(value: unknown) {
   const text = value == null ? '' : String(value)
-  return /[",\r\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text
+  // Prefix ' supaya sel berawalan =, +, - atau @ tidak dijalankan
+  // sebagai formula saat CSV dibuka di Excel.
+  const safe = /^[=+\-@]/.test(text) ? `'${text}` : text
+  return /[",\r\n]/.test(safe) ? `"${safe.replaceAll('"', '""')}"` : safe
+}
+
+// Jam dinding WIB (UTC+7, tanpa DST) — pola yang sama dengan
+// jakartaWallToDate di lib/leaderboard-data.ts: nilai datetime-local
+// dibaca admin sebagai jam WIB, jadi jam dinding itu yang digeser
+// 7 jam ke UTC saat disimpan, dan sebaliknya saat ditampilkan.
+const WIB_OFFSET_MS = 7 * 3_600_000
+
+// "2026-11-26T08:00" (jam dinding WIB) -> ISO UTC
+// ("2026-11-26T01:00:00.000Z"). null bila formatnya tidak dikenal.
+function wibInputToIso(value: string): string | null {
+  const cocok = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(value)
+  if (!cocok) return null
+  const tanggal = new Date(Date.UTC(Number(cocok[1]), Number(cocok[2]) - 1, Number(cocok[3]), Number(cocok[4]), Number(cocok[5])) - WIB_OFFSET_MS)
+  return Number.isNaN(tanggal.getTime()) ? null : tanggal.toISOString()
+}
+
+// ISO UTC -> "YYYY-MM-DDTHH:mm" jam dinding WIB untuk datetime-local.
+function isoToWibInput(value: string): string {
+  const tanggal = new Date(value)
+  if (Number.isNaN(tanggal.getTime())) return ''
+  return new Date(tanggal.getTime() + WIB_OFFSET_MS).toISOString().slice(0, 16)
 }
 
 function parseCsv(source: string) {
@@ -72,7 +97,7 @@ function initialValue(kind: ContentKind): Record<string, string | boolean> {
 
 function toInputValue(key: string, value: unknown) {
   if (typeof value === 'boolean') return value
-  if (['mulai', 'selesai'].includes(key) && typeof value === 'string') return new Date(value).toISOString().slice(0, 16)
+  if (['mulai', 'selesai'].includes(key) && typeof value === 'string') return isoToWibInput(value)
   return value == null ? '' : String(value)
 }
 
@@ -115,7 +140,13 @@ export function GameContentManager() {
   async function save(event: FormEvent) {
     event.preventDefault(); setBusy(true); setNotice('')
     const payload = { ...form }
-    for (const key of ['mulai', 'selesai']) if (typeof payload[key] === 'string' && payload[key]) payload[key] = new Date(payload[key] as string).toISOString()
+    for (const key of ['mulai', 'selesai']) {
+      if (typeof payload[key] === 'string' && payload[key]) {
+        // Nilai datetime-local adalah jam dinding WIB, bukan UTC.
+        const iso = wibInputToIso(payload[key] as string)
+        if (iso) payload[key] = iso
+      }
+    }
     if (kind === 'kuis' && typeof payload.link_video === 'string' && !payload.link_video.trim()) payload.link_video = null as unknown as string
     if (kind === 'sampah' && typeof payload.gambar_url === 'string' && !payload.gambar_url.trim()) payload.gambar_url = null as unknown as string
     try {

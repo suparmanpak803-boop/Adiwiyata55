@@ -4,11 +4,11 @@
 // dan pengaturan suara (slider Musik/Efek + Mute semua).
 // Pengaturan suara tersimpan di save kampanye; provider sudah memanggil
 // syncSettings otomatis setiap pengaturan berubah.
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Award, Banknote, BookOpen, Coins, Flame, Footprints, Leaf, Store, Sun, TreePine, Volume2, VolumeX } from 'lucide-react'
 import { useCampaign } from '@/lib/apa-itu-adiwiyata/context'
 import { CHAPTER_ORDER } from '@/lib/apa-itu-adiwiyata/chapters'
-import { ECO_SHOP, GEAR, KOSTUM, SKOR_MISI_PERTAMA, SKOR_PANEL_SURYA, SKOR_POHON } from '@/lib/apa-itu-adiwiyata/content/toko'
+import { ECO_SHOP, GEAR, KOSTUM, SKOR_MISI_PERTAMA, SKOR_PANEL_SURYA, SKOR_POHON, teksSisaBuff } from '@/lib/apa-itu-adiwiyata/content/toko'
 import { HadiahHarian } from './hadiah-harian'
 import { KoleksiSpesies } from './koleksi-spesies'
 import { Lencana } from './lencana'
@@ -28,6 +28,13 @@ export function Profil({
   const [pesan, setPesan] = useState<string | null>(null)
   const [pesanKarakter, setPesanKarakter] = useState<string | null>(null)
   const [pesanKoleksi, setPesanKoleksi] = useState<string | null>(null)
+  // Hitung ulang tampilan tiap 30 detik supaya "tersisa N mnt" pada buff
+  // gear tidak basi selama Profil dibiarkan terbuka.
+  const [, setDetik] = useState(0)
+  useEffect(() => {
+    const id = setInterval(() => setDetik((t) => t + 1), 30_000)
+    return () => clearInterval(id)
+  }, [])
 
   const inventaris = save.inventaris ?? []
   const gearDimiliki = GEAR.filter((g) => inventaris.includes(g.id))
@@ -107,6 +114,7 @@ export function Profil({
             {ecoDimiliki.map((item) => (
               <p key={item.id} className="aia-muted" style={{ margin: 0 }}>
                 {ikonEco(item.id)} <strong>{item.nama}</strong> — {item.efek}
+                {item.id !== 'panel-surya' && <> (buff {teksSisaBuff(save, item.id)})</>}
               </p>
             ))}
           </div>
@@ -120,7 +128,7 @@ export function Profil({
           <div className="aia-stack">
             {gearDimiliki.map((gear) => (
               <p key={gear.id} className="aia-muted" style={{ margin: 0 }}>
-                <strong>{gear.nama}</strong> — {gear.efek}
+                <strong>{gear.nama}</strong> — {gear.efek} (buff {teksSisaBuff(save, gear.id)})
               </p>
             ))}
           </div>

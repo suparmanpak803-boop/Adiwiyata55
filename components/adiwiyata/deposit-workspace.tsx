@@ -43,6 +43,10 @@ export function DepositWorkspace({ data }: { data: DepositPageData }) {
   const [preview, setPreview] = useState<PendingSubmission | null>(null)
   const [pendingSync, setPendingSync] = useState<PendingSubmission | null>(null)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
+  // D-F08: id laporan yang sedang dihapus — guard klik ganda supaya
+  // panggilan hapus kedua tidak melempar "tidak ditemukan" setelah
+  // pesan sukses (pola guard `busy` seperti di file admin lain).
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
   async function sendToSpreadsheet(records: SheetRecord[]) {
     const result = await fetchJson<{ success?: boolean; error?: string }>('/api/submit', {
@@ -175,7 +179,10 @@ export function DepositWorkspace({ data }: { data: DepositPageData }) {
   }, [])
 
   function removeDeposit(id: string) {
+    if (deletingId) return
     if (!window.confirm('Hapus laporan ini? Tindakan ini tidak dapat dibatalkan.')) return
+    setDeletingId(id)
+    setError('')
     startTransition(async () => {
       try {
         await deleteDeposit(id)
@@ -183,6 +190,8 @@ export function DepositWorkspace({ data }: { data: DepositPageData }) {
         router.refresh()
       } catch (cause) {
         setError(cause instanceof Error ? cause.message : 'Setoran belum berhasil dihapus.')
+      } finally {
+        setDeletingId(null)
       }
     })
   }
@@ -225,7 +234,7 @@ export function DepositWorkspace({ data }: { data: DepositPageData }) {
             <div><strong>{row.class_name}</strong><span>{new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium', timeZone: 'Asia/Jakarta' }).format(new Date(`${row.date}T12:00:00+07:00`))}</span></div>
             <p>{Number(row.organic) + Number(row.inorganic) + Number(row.residual) + Number(row.hazardous) + Number(row.paper)} kg total · {row.tumbler} tumbler · {row.lunchbox} lunch box</p>
             <small>Dicatat oleh {row.submitter_name}</small>
-            {(data.role === 'admin' || row.user_id === data.userId) && <button className="text-button" type="button" disabled={pending} onClick={() => removeDeposit(row.id)}>Hapus</button>}
+            {(data.role === 'admin' || row.user_id === data.userId) && <button className="text-button" type="button" disabled={pending || deletingId !== null} onClick={() => removeDeposit(row.id)}>{deletingId === row.id ? 'Menghapus…' : 'Hapus'}</button>}
           </article>)}</div>
         )}
       </div>

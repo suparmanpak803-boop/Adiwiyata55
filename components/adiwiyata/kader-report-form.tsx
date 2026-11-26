@@ -43,7 +43,15 @@ export function KaderReportForm({ staffName, className }: KaderReportFormProps) 
   }, [])
 
   useEffect(() => {
+    // D-F09: simpan tema sebelumnya; pulihkan saat unmount (atau saat
+    // tema diganti) agar pilihan tema halaman ini tidak bertahan ke
+    // halaman lain.
+    const previousTheme = document.documentElement.dataset.theme
     document.documentElement.dataset.theme = dark ? 'dark' : 'light'
+    return () => {
+      if (previousTheme) document.documentElement.dataset.theme = previousTheme
+      else delete document.documentElement.dataset.theme
+    }
   }, [dark])
 
   const toggleTask = (task: string) => {

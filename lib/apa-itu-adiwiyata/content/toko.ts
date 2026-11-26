@@ -2,6 +2,55 @@
 // Harga dan efek sudah diputuskan user (25 Nov 2026). Angka di sini adalah
 // harga permainan, bukan harga asli kantin sekolah.
 
+import type { CampaignSave } from '../types'
+
+/** Durasi buff gear: 10 menit waktu nyata sejak dibeli (Date.now()).
+ * Berlaku untuk semua gear yang efeknya berjalan (bukan sekali pakai):
+ * tumbler, tas-kain, lunch-box, sepatu-eco, pin-duta. */
+export const BUFF_GEAR_MS = 10 * 60 * 1000
+
+/** Id gear yang efeknya berupa buff 10 menit (bukan sekali pakai). */
+export type BuffGearId = 'tumbler' | 'tas-kain' | 'lunch-box' | 'sepatu-eco' | 'pin-duta'
+
+/** True bila buff gear masih berlaku: batas akhirnya tersimpan dan
+ * Date.now() masih di bawahnya. Tanpa batas akhir (belum pernah dibeli /
+ * save lama) atau sudah lewat -> false. Kedaluwarsa = tidak aktif, bukan
+ * dihapus paksa — kepemilikan gear di inventaris tetap ada. */
+export function buffAktif(
+  save: Pick<CampaignSave, 'buffBerakhir'> | null | undefined,
+  gearId: string,
+): boolean {
+  if (!save) return false
+  const berakhir = (save.buffBerakhir ?? {})[gearId]
+  return typeof berakhir === 'number' && Number.isFinite(berakhir) && Date.now() < berakhir
+}
+
+/** Sisa waktu buff dalam menit (dibulatkan ke atas, 0 bila tidak aktif).
+ * Dipakai tampilan "tersisa N mnt" di Toko dan Profil. */
+export function sisaBuffMenit(
+  save: Pick<CampaignSave, 'buffBerakhir'> | null | undefined,
+  gearId: string,
+): number {
+  if (!save) return 0
+  const berakhir = (save.buffBerakhir ?? {})[gearId]
+  if (typeof berakhir !== 'number' || !Number.isFinite(berakhir)) return 0
+  return Math.max(0, Math.ceil((berakhir - Date.now()) / 60_000))
+}
+
+/** Teks sisa buff untuk gear yang dimiliki: "tersisa N mnt" bila aktif,
+ * "kedaluwarsa" bila batas akhirnya sudah lewat (atau tidak tercatat —
+ * mis. save lama dari masa efek gear masih permanen). */
+export function teksSisaBuff(
+  save: Pick<CampaignSave, 'buffBerakhir'> | null | undefined,
+  gearId: string,
+): string {
+  return buffAktif(save, gearId) ? `tersisa ${sisaBuffMenit(save, gearId)} mnt` : 'kedaluwarsa'
+}
+
+/** Bekal darurat di layar lemas: +20 lapar, 1x per hari kalender lokal
+ * (lihat PAKAI_BEKAL_DARURAT di context). */
+export const BEKAL_DARURAT_LAPAR = 20
+
 export interface MakananToko {
   id: string
   nama: string
@@ -59,27 +108,28 @@ export const BEKAL_LAPAR_LUNCH_BOX = 50
 export const BEKAL_JATAH = 1
 export const BEKAL_JATAH_LUNCH_BOX = 2
 
-/** Gear (bayar Koin Daun, sekali beli, efek permanen). */
+/** Gear (bayar Koin Daun; efeknya buff 10 menit sejak dibeli, bisa dibeli
+ * lagi untuk memperpanjang 10 menit — lihat buffBerakhir di types.ts). */
 export const GEAR: GearToko[] = [
   {
     id: 'tumbler',
     nama: 'Tumbler',
     hargaKoinDaun: 30,
-    efek: 'Haus berkurang setengah tiap tahap selesai.',
+    efek: 'Haus berkurang setengah tiap tahap selesai, selama 10 menit sejak dibeli.',
     deskripsi: 'Tumbler guna ulang. Bawa minum sendiri, hemat dan tidak menambah sampah.',
   },
   {
     id: 'tas-kain',
     nama: 'Tas Kain',
     hargaKoinDaun: 25,
-    efek: '+5 Koin Hijau tiap tahap selesai.',
+    efek: '+5 Koin Hijau tiap tahap selesai, selama 10 menit sejak dibeli.',
     deskripsi: 'Tas kain kuat untuk belanja dan membawa bekal, ganti kantong plastik.',
   },
   {
     id: 'lunch-box',
     nama: 'Lunch Box',
     hargaKoinDaun: 30,
-    efek: 'Bekal rumah jadi +50 lapar dan 2x sehari.',
+    efek: 'Bekal rumah jadi +50 lapar dan 2x sehari, selama 10 menit sejak dibeli.',
     deskripsi: 'Kotak bekal guna ulang. Bekal dari rumah lebih mengenyangkan dan lebih sering.',
   },
 ]
@@ -94,7 +144,10 @@ export const SKOR_POHON = 5
 export const SKOR_PANEL_SURYA = 20
 export const SKOR_MISI_PERTAMA = 5
 
-/** Item Eco-Shop (bayar Koin Hijau, sekali beli, efek permanen). */
+/** Item Eco-Shop (bayar Koin Hijau). Sepatu Eco-Runner dan Pin Duta:
+ * buff 10 menit sejak dibeli, bisa dibeli lagi untuk memperpanjang.
+ * Panel Surya: sekali beli — Skor Adiwiyata +20 langsung masuk saat
+ * pembelian dan tetap (bukan buff, jadi tidak kedaluwarsa). */
 export interface ItemEcoShop {
   id: string
   nama: string
@@ -108,14 +161,14 @@ export const ECO_SHOP: ItemEcoShop[] = [
     id: 'sepatu-eco',
     nama: 'Sepatu Eco-Runner',
     hargaKoinHijau: 150,
-    efek: 'Kecepatan jalan +35% selamanya.',
+    efek: 'Kecepatan jalan +35%, selama 10 menit sejak dibeli.',
     deskripsi: 'Sepatu lari ringan dari bahan daur ulang. Jalanmu di rumah dan di sekolah jadi lebih cepat.',
   },
   {
     id: 'pin-duta',
     nama: 'Pin Duta Adiwiyata',
     hargaKoinHijau: 100,
-    efek: 'Aura hijau di sekitarmu + diskon 25% di kantin.',
+    efek: 'Aura hijau di sekitarmu + diskon 25% di kantin, selama 10 menit sejak dibeli.',
     deskripsi: 'Pin hijau Duta Adiwiyata. Makanan dan minuman di kantin jadi lebih murah.',
   },
   {

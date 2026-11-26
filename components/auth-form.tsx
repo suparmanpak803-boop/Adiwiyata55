@@ -10,6 +10,9 @@ import { authClient } from '@/lib/auth/client'
 
 type AuthFormProps = {
   mode: 'sign-in' | 'sign-up'
+  // D-F06: ditampilkan saat pengguna mendarat dari reset kata sandi
+  // (`/sign-in?password-reset=success`, dikirim AuthRecoveryForm).
+  passwordResetSuccess?: boolean
 }
 
 function getAuthErrorMessage(error: unknown, mode: AuthFormProps['mode']) {
@@ -33,7 +36,7 @@ function getAuthErrorMessage(error: unknown, mode: AuthFormProps['mode']) {
   return 'Layanan autentikasi sedang tidak tersedia. Silakan coba kembali.'
 }
 
-export function AuthForm({ mode }: AuthFormProps) {
+export function AuthForm({ mode, passwordResetSuccess = false }: AuthFormProps) {
   const router = useRouter()
   const [pending, setPending] = useState(false)
   const [googlePending, setGooglePending] = useState(false)
@@ -264,6 +267,11 @@ export function AuthForm({ mode }: AuthFormProps) {
           </>
         ) : (
           <>
+            {passwordResetSuccess && (
+              <div className="auth-success" role="status">
+                <p>Kata sandi berhasil diubah. Silakan masuk dengan kata sandi baru Anda.</p>
+              </div>
+            )}
             <div className="auth-social">
               <button
                 className="auth-google"

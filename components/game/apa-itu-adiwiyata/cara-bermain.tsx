@@ -196,13 +196,15 @@ export function CaraBermain({ onTutup }: { onTutup: () => void }) {
           <li>Bicara dengan Kang Kantin atau Mbak Dewi, lalu ketuk &quot;Buka Kantin&quot; untuk membuka Toko Kantin.</li>
           <li>Di kantin: beli makanan dan minuman pakai uang (Rp). Air keran gratis (+15 haus), bekal dari rumah gratis 1x sehari (+30 lapar).</li>
           <li>Tiap misi yang selesai memberi uang dan Koin Daun (pertama kali: Rp5.000 + 20 Koin Daun).</li>
-          <li>Koin Daun ditukar di kantin untuk gear (tumbler, tas kain, lunch box — efeknya permanen), menanam 1 pohon di kebun (100 Koin Daun, rapor hijau +5), dan kostum untuk tokohmu.</li>
+          <li>Koin Daun ditukar di kantin untuk gear (tumbler, tas kain, lunch box — efeknya berlaku 10 menit sejak dibeli, beli lagi untuk memperpanjang), menanam 1 pohon di kebun (100 Koin Daun, rapor hijau +5), dan kostum untuk tokohmu.</li>
+          <li>Saat lemas, ada bekal darurat (+20 lapar) 1x sehari — air keran gratis tetap tanpa batas.</li>
         </ul>
 
         <h3 className="aia-section-title">Eco-Shop &amp; Skor Adiwiyata</h3>
         <p className="aia-muted" style={{ marginTop: 0 }}>
           Di Kebun ada Booth Eco-Shop (di bawah meja Bank Sampah) — dekati, lalu ketuk &quot;Eco-Shop&quot; (atau tekan E di laptop).
-          Itemnya dibeli sekali pakai Koin Hijau, efeknya permanen:
+          Sepatu Eco-Runner dan Pin Duta berlaku 10 menit sejak dibeli (bisa dibeli lagi untuk memperpanjang 10 menit);
+          Panel Surya sekali beli dan Skor Adiwiyata +{SKOR_PANEL_SURYA}-nya tetap:
         </p>
         <ul style={{ margin: '0 0 12px', paddingLeft: 20 }}>
           {ECO_SHOP.map((item) => (
@@ -212,7 +214,9 @@ export function CaraBermain({ onTutup }: { onTutup: () => void }) {
           ))}
           <li>
             Pin Duta juga memberi diskon 25% di kantin: harga makanan dan minuman dikali 0,75 lalu dibulatkan ke
-            bawah ke kelipatan 100 — mis. Nasi Lauk Rp8.000 jadi Rp6.000.
+            bawah ke kelipatan 100 — mis. Nasi Lauk Rp8.000 jadi Rp6.000. Diskon ini hanya berlaku selama buff
+            Pin Duta 10 menit masih aktif, dan tidak berlaku saat kamu lemas
+            (lapar atau haus 0) — harganya kembali penuh sampai lapar dan hausmu pulih.
           </li>
         </ul>
         <p className="aia-muted" style={{ marginTop: 0 }}>

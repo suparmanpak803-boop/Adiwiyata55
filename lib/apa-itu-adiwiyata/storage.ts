@@ -70,6 +70,8 @@ export function freshSave(nickname = ''): CampaignSave {
     cerita: {},
     pakPlastik: 'netral',
     arkade: { tangkap: 0, kuis: 0 },
+    arkadeTanggal: null,
+    arkadeKoinHariIni: 0,
     lapar: 100,
     haus: 100,
     uang: 0,
@@ -85,6 +87,8 @@ export function freshSave(nickname = ''): CampaignSave {
     sepatuEco: false,
     pinDuta: false,
     panelSurya: false,
+    buffBerakhir: {},
+    bekalDaruratTanggal: null,
     petaAktif: 'rumah',
     ibuTanggal: null,
     kasurTanggal: null,
@@ -258,6 +262,19 @@ export function loadSave(): CampaignSave {
     ) {
       merged.arkade = { tangkap: 0, kuis: 0 }
     }
+    // Pengaman batas harian arkade (F13): pola yang sama seperti
+    // ibuTanggal/kasurTanggal — hanya tanggal lokal YYYY-MM-DD atau null,
+    // dan total koin hari ini berupa bilangan bulat >= 0 (save lama -> null/0).
+    const arkadeTanggalTersimpan = (parsed as Partial<CampaignSave>).arkadeTanggal
+    merged.arkadeTanggal =
+      typeof arkadeTanggalTersimpan === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(arkadeTanggalTersimpan)
+        ? arkadeTanggalTersimpan
+        : null
+    const arkadeKoinTersimpan = (parsed as Partial<CampaignSave>).arkadeKoinHariIni
+    merged.arkadeKoinHariIni =
+      typeof arkadeKoinTersimpan === 'number' && Number.isFinite(arkadeKoinTersimpan) && arkadeKoinTersimpan >= 0
+        ? Math.floor(arkadeKoinTersimpan)
+        : 0
     // Pengaman jenis kelamin: save lama TANPA field ini (kunci tidak ada
     // di data tersimpan) mendapat default 'siswa' supaya pemain lama tidak
     // dipaksa memilih; permainan baru yang tersimpan dengan null tetap null
@@ -351,6 +368,31 @@ export function loadSave(): CampaignSave {
     merged.sepatuEco = (parsed as Partial<CampaignSave>).sepatuEco === true
     merged.pinDuta = (parsed as Partial<CampaignSave>).pinDuta === true
     merged.panelSurya = (parsed as Partial<CampaignSave>).panelSurya === true
+    // Pengaman buff gear: hanya peta id -> epoch ms positif yang disimpan;
+    // nilai bukan angka / negatif / bukan objek dibuang. Entri yang sudah
+    // kedaluwarsa tetap tersimpan (tidak dihapus paksa) — buffAktif yang
+    // menilainya tidak aktif.
+    const buffTersimpan = (parsed as Partial<CampaignSave>).buffBerakhir
+    if (
+      typeof buffTersimpan !== 'object' ||
+      buffTersimpan === null ||
+      Array.isArray(buffTersimpan)
+    ) {
+      merged.buffBerakhir = {}
+    } else {
+      const bersih: Record<string, number> = {}
+      for (const [k, v] of Object.entries(buffTersimpan)) {
+        if (typeof v === 'number' && Number.isFinite(v) && v > 0) bersih[k] = Math.floor(v)
+      }
+      merged.buffBerakhir = bersih
+    }
+    // Pengaman bekal darurat: pola yang sama seperti kasurTanggal —
+    // hanya tanggal lokal YYYY-MM-DD atau null.
+    const bekalDaruratTersimpan = (parsed as Partial<CampaignSave>).bekalDaruratTanggal
+    merged.bekalDaruratTanggal =
+      typeof bekalDaruratTersimpan === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(bekalDaruratTersimpan)
+        ? bekalDaruratTersimpan
+        : null
     return merged
   } catch {
     // JSON rusak, storage tidak bisa dibaca, atau mode privat yang menolak akses.

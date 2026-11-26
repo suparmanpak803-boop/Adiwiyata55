@@ -5,7 +5,8 @@ import { ArrowLeft, Banknote, Check, Droplets, Flag, Leaf, LogOut, Pause, Play, 
 import { CHAPTERS, CHAPTER_ORDER } from '@/lib/apa-itu-adiwiyata/chapters'
 import { TUGAS } from '@/lib/apa-itu-adiwiyata/tugas'
 import { kunciCerita, PILIHAN_CERITA, pilihEpilog } from '@/lib/apa-itu-adiwiyata/content/cerita'
-import { AIR_KERAN_HAUS } from '@/lib/apa-itu-adiwiyata/content/toko'
+import { AIR_KERAN_HAUS, BEKAL_DARURAT_LAPAR, buffAktif } from '@/lib/apa-itu-adiwiyata/content/toko'
+import { hariIniLokal } from '@/lib/apa-itu-adiwiyata/content/hadiah-harian'
 import { dialogAwalUntuk } from '@/lib/apa-itu-adiwiyata/content/dialog'
 import { INTERAKSI_MISI } from '@/lib/apa-itu-adiwiyata/content/interaksi'
 import { useCampaign } from '@/lib/apa-itu-adiwiyata/context'
@@ -179,6 +180,9 @@ export function MisiShell({
   // hanya menahan tombol "Mulai Misi" (misi yang sedang berjalan dan
   // Pos Hijau tidak diblokir, supaya tidak ada jalan buntu).
   const lemas = (save.lapar ?? 100) <= 0 || (save.haus ?? 100) <= 0
+  /** Bekal darurat 1x per hari kalender lokal (WIB): sudah dipakai hari
+   * ini -> tombolnya disabled sampai besok. */
+  const bekalDaruratDipakai = (save.bekalDaruratTanggal ?? null) === hariIniLokal()
   // Titik pilihan 2 (Cerita Bercabang, hanya bab utama): tampil sebelum
   // tahap ke-3, menggantikan slot mini-game sampai pemain memilih.
   const titikPilihan2 = kind === 'bab' && chapterId ? PILIHAN_CERITA[chapterId][1] : null
@@ -281,12 +285,22 @@ export function MisiShell({
       dispatch({ type: 'COMPLETE_TUGAS_STAGE', tugasId, stageIndex, score })
     }
     setReplayStage(null)
-    // Jumlah Koin Hijau sama seperti di reducer (pengali streak + bonus
-    // Tas Kain), supaya pesan suksesnya cocok dengan saldo yang masuk.
+    // Jumlah Koin Hijau sama seperti di reducer (F2: hanya selisih skor
+    // terbaik × pengali streak + bonus Tas Kain bila selisih > 0), supaya
+    // pesan suksesnya cocok dengan saldo yang masuk. `progress` di sini
+    // masih keadaan sebelum dispatch, jadi bestScore-nya = terbaik lama.
+    const terbaikLama = progress.stages[stageIndex]?.bestScore ?? 0
+    const selisih = Math.max(0, score - terbaikLama)
     const koinTahap =
-      Math.max(0, score) * (save.streak.multiplierActive ? 2 : 1) +
-      ((save.inventaris ?? []).includes('tas-kain') ? 5 : 0)
-    setPesanSukses(`Tahap ${stageIndex + 1} selesai! +${koinTahap} Koin Hijau.`)
+      selisih > 0
+        ? selisih * (save.streak.multiplierActive ? 2 : 1) +
+          ((save.inventaris ?? []).includes('tas-kain') && buffAktif(save, 'tas-kain') ? 5 : 0)
+        : 0
+    setPesanSukses(
+      koinTahap > 0
+        ? `Tahap ${stageIndex + 1} selesai! +${koinTahap} Koin Hijau.`
+        : `Tahap ${stageIndex + 1} selesai! Skor terbaik tidak naik, jadi tidak ada Koin Hijau tambahan.`,
+    )
     bendera()
     // Satu kejadian acak per kunjungan bab, muncul setelah tahap pertama
     // yang diselesaikan di kunjungan ini (sama seperti bab-shell).
@@ -566,14 +580,21 @@ export function MisiShell({
                 type="button"
                 className="aia-btn"
                 style={{ minHeight: 44 }}
+                disabled={bekalDaruratDipakai}
                 onClick={() => {
                   klik()
-                  dispatch({ type: 'PULIHKAN', lapar: 20 })
-                  setPesanSukses('Bekal darurat dimakan. Lapar +20.')
+                  if (bekalDaruratDipakai) return
+                  dispatch({ type: 'PAKAI_BEKAL_DARURAT', hariIni: hariIniLokal() })
+                  setPesanSukses(`Bekal darurat dimakan. Lapar +${BEKAL_DARURAT_LAPAR}.`)
                 }}
               >
                 <UtensilsCrossed aria-hidden="true" /> Bekal darurat
               </button>
+            )}
+            {(save.lapar ?? 100) <= 0 && bekalDaruratDipakai && (
+              <p className="aia-muted" style={{ margin: 0 }}>
+                Bekal darurat sudah dipakai hari ini — coba lagi besok.
+              </p>
             )}
           </div>
         </section>

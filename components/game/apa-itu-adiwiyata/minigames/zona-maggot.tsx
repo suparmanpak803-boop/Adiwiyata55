@@ -188,6 +188,11 @@ function FasePakan({
   const { save, dispatch } = useCampaign()
   const [diberi, setDiberi] = useState<string[]>([])
   const [bau, setBau] = useState(() => (save.carryover.maggotKenaMinyak ? 2 : 0))
+  // F7: cermin state untuk guard ketuk ganda (pola F4/F5) — ref diperbarui
+  // sinkron di dalam `beri`, jadi ketuk ganda pada pakan yang sama sebelum
+  // render tidak memberi skor/bau dua kali.
+  const diberiRef = useRef<string[]>([])
+  const bauRef = useRef(save.carryover.maggotKenaMinyak ? 2 : 0)
   const [pesan, setPesan] = useState<string | null>(
     save.carryover.maggotKenaMinyak
       ? 'Maggot kena minyak dari kantin! Baunya sudah tinggi. Beri pakan bersih untuk memulihkan.'
@@ -203,15 +208,19 @@ function FasePakan({
   )
 
   const beri = (pakan: Pakan) => {
-    if (diberi.length >= 5) return
+    // Guard ref (bukan state `diberi` yang masih basi sampai render):
+    // pakan yang sama tidak bisa diberi dua kali, maks 5 pakan.
+    if (diberiRef.current.includes(pakan.id) || diberiRef.current.length >= 5) return
     sfxMaggot()
-    const baru = [...diberi, pakan.id]
+    const baru = [...diberiRef.current, pakan.id]
+    diberiRef.current = baru
     setDiberi(baru)
     if (pakan.benar) {
       tambahSkor(10)
       benar()
       // K-2: pakan bersih menurunkan bau 1 (min 0), sesuai teks petunjuk.
-      setBau((b) => Math.max(0, b - 1))
+      bauRef.current = Math.max(0, bauRef.current - 1)
+      setBau(bauRef.current)
       setPesan(pakan.penjelasan)
     } else {
       salah()
@@ -223,7 +232,8 @@ function FasePakan({
         if (PAKAN_PENCEMAR_KOMPOS.includes(pakan.id)) {
           dispatch({ type: 'SET_CARRYOVER', patch: { komposBau: true } })
         }
-        const bauBaru = bau + 1
+        const bauBaru = bauRef.current + 1
+        bauRef.current = bauBaru
         setBau(bauBaru)
         if (bauBaru >= 1) lalat()
         if (bauBaru >= BAU_MAKS_GAGAL) {
@@ -621,6 +631,9 @@ function FaseJaga({
   const [ronde, setRonde] = useState(0)
   const [nilai, setNilai] = useState({ kelembapan: 55, suhu: 50, bau: 45 })
   const [pesan, setPesan] = useState<string | null>(null)
+  // F8: cermin nilai untuk guard ketuk ganda (pola F4/F5) — jawaban salah
+  // berturut-turut sebelum render tetap menaikkan indikator +5 tiap ketuk.
+  const nilaiRef = useRef({ kelembapan: 55, suhu: 50, bau: 45 })
   // B-10: kunci jawaban begitu satu jawaban benar dipilih — selama jeda
   // 700 ms menuju ronde berikutnya, tombol tidak boleh diklik lagi
   // (klik ganda memberi skor dua kali; klik salah bisa memicu timer
@@ -633,6 +646,7 @@ function FaseJaga({
   useEffect(() => {
     const kunci = RONDE_JAGA[ronde].indikator
     const nilaiAwal = RONDE_JAGA[ronde].nilaiAwal
+    nilaiRef.current = { ...nilaiRef.current, [kunci]: nilaiAwal }
     setNilai((lama) => ({ ...lama, [kunci]: nilaiAwal }))
   }, [ronde])
 
@@ -649,6 +663,7 @@ function FaseJaga({
       setTerkunci(true)
       tambahSkor(10)
       benar()
+      nilaiRef.current = { ...nilaiRef.current, [aktif.indikator]: 55 }
       setNilai((lama) => ({ ...lama, [aktif.indikator]: 55 }))
       setPesan('Tepat! Indikator kembali ke zona aman.')
       timerRef.current = setTimeout(() => {
@@ -663,8 +678,9 @@ function FaseJaga({
       setPesan(aktif.penjelasanSalah)
       if (mudah) return
       const kunci = aktif.indikator
-      const baru = Math.min(100, nilai[kunci] + 5)
-      setNilai((lama) => ({ ...lama, [kunci]: baru }))
+      const baru = Math.min(100, nilaiRef.current[kunci] + 5)
+      nilaiRef.current = { ...nilaiRef.current, [kunci]: baru }
+      setNilai(nilaiRef.current)
       if (baru >= 100) {
         timerRef.current = setTimeout(
           () => onGagal('Kotak maggot sudah tidak tertolong: indikatornya melewati batas aman. Ulangi penjagaan kotak dari awal ronde ini.'),
@@ -1079,7 +1095,7 @@ export function ZonaMaggot({
   modeSatuKetukan = false,
   terjeda = false,
 }: MiniGameSlotProps & { modeSatuKetukan?: boolean }) {
-  const { save, dispatch } = useCampaign()
+  const { save } = useCampaign()
   // Fase = tahap yang sedang dimainkan (dipilih kerangka bab).
   const fase = stageIndex
   const [skor, setSkor] = useState(0)
@@ -1123,10 +1139,8 @@ export function ZonaMaggot({
   const selesaiFase = () => {
     if (selesaiRef.current) return
     selesaiRef.current = true
-    // Bonus rapor hanya sekali, di tahap terakhir saat pertama kali selesai.
-    if (stageIndex === 2 && save.chapters.maggot.stages[2].status !== 'done') {
-      dispatch({ type: 'SET_REPORT', patch: { hijau: save.report.hijau + 10 } })
-    }
+    // F11: bonus rapor hanya dari BONUS_RAPOR di misi-shell (hijau +20
+    // saat bab pertama selesai) — tidak ada SET_REPORT tambahan di sini.
     // B-9: normalisasi skor mentah mode tombol ke persen 0–100.
     const persen = modeSatuKetukan
       ? Math.min(100, Math.round((skor / MAKS_SKOR_TOMBOL[stageIndex]) * 100))

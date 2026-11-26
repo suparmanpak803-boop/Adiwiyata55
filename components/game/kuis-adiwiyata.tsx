@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Brain, Coins, Info, ListChecks, LogOut, Pause, Play, Timer } from 'lucide-react'
 import { SOAL_INSPEKSI } from '@/lib/apa-itu-adiwiyata/content/pertanyaan'
 import { useCampaign } from '@/lib/apa-itu-adiwiyata/context'
-import { koinKuis } from '@/lib/apa-itu-adiwiyata/arkade'
+import { BATAS_KOIN_ARKADE_HARIAN, koinArkadeDiberikan, koinKuis, tanggalHariIni } from '@/lib/apa-itu-adiwiyata/arkade'
 
 const WAKTU_PER_SOAL = 20
 
@@ -43,6 +43,10 @@ export function KuisAdiwiyata({ onExit, onFinished }: { onExit: () => void; onFi
   const [jeda, setJeda] = useState(false)
   const [skorAkhir, setSkorAkhir] = useState(0)
   const [terbaikLama, setTerbaikLama] = useState(0)
+  // F13: koin yang benar-benar diberikan (dijepit batas harian) + yang
+  // diminta — dijepret saat selesai dari save SEBELUM hadiah runner,
+  // supaya angka di layar hasil sama dengan yang masuk ke saldo.
+  const [koinHasil, setKoinHasil] = useState<{ diminta: number; diberikan: number } | null>(null)
   const selesaiRef = useRef(false)
   const onFinishedRef = useRef(onFinished)
   onFinishedRef.current = onFinished
@@ -55,6 +59,16 @@ export function KuisAdiwiyata({ onExit, onFinished }: { onExit: () => void; onFi
     if (selesaiRef.current) return
     selesaiRef.current = true
     setTerbaikLama(saveRef.current.arkade?.kuis ?? 0)
+    const koinDiminta = koinKuis(benar)
+    setKoinHasil({
+      diminta: koinDiminta,
+      diberikan: koinArkadeDiberikan(
+        koinDiminta,
+        saveRef.current.arkadeTanggal ?? null,
+        saveRef.current.arkadeKoinHariIni ?? 0,
+        tanggalHariIni(),
+      ),
+    })
     setSkorAkhir(benar)
     setStage('selesai')
     onFinishedRef.current(benar)
@@ -118,13 +132,15 @@ export function KuisAdiwiyata({ onExit, onFinished }: { onExit: () => void; onFi
   }
 
   if (stage === 'selesai') {
-    const koin = koinKuis(skorAkhir)
     const rekorBaru = skorAkhir > terbaikLama
     return (
       <section className="game-stage" aria-labelledby="kuis-selesai">
         <h2 id="kuis-selesai">Kuis selesai</h2>
         <p className="game-big">Benar {skorAkhir} dari {questions.length || SOAL_INSPEKSI.length}</p>
-        <p className="game-hint">Kamu mendapat <b>+{koin} Koin Hijau</b>.</p>
+        <p className="game-hint">Kamu mendapat <b>+{koinHasil?.diberikan ?? 0} Koin Hijau</b>.</p>
+        {koinHasil && koinHasil.diberikan < koinHasil.diminta && (
+          <p className="game-hint">Batas harian arkade tercapai ({BATAS_KOIN_ARKADE_HARIAN} Koin Hijau/hari). Coba lagi besok.</p>
+        )}
         <p className="game-hint">
           Rekor terbaik: <b>{Math.max(terbaikLama, skorAkhir)} benar</b>
           {rekorBaru && ' — Rekor baru!'}

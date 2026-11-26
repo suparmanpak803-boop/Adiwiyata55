@@ -185,7 +185,11 @@ function FaseLapis({
   const [perluPerbaikan, setPerluPerbaikan] = useState(save.carryover.komposBau)
   const [perbaikan, setPerbaikan] = useState({ cokelat: false, aduk: false })
   const [lapis, setLapis] = useState<JenisBahan[]>([])
-  const [ditolak, setDitolak] = useState(0)
+  // F6: cermin state untuk guard ketuk ganda (pola F4/F5) — ref diperbarui
+  // sinkron di dalam `tambah`, jadi ketukan kedua sebelum render tetap
+  // melihat lapis/penolakan terbaru (bukan state basi).
+  const lapisRef = useRef<JenisBahan[]>([])
+  const ditolakRef = useRef(0)
   const [pesan, setPesan] = useState<string | null>(
     save.carryover.komposBau
       ? 'Kompos bau! Maggot kemarin memberi pakan yang salah. Perbaiki dulu sebelum menyusun lapis baru.'
@@ -217,13 +221,16 @@ function FaseLapis({
   }
 
   const tambah = (bahan: Bahan) => {
-    if (perluPerbaikan || lapis.length >= TARGET_LAPIS) return
+    // Baca dari ref (bukan state `lapis`/`ditolak` yang masih basi sampai render).
+    const lapisSaatIni = lapisRef.current
+    if (perluPerbaikan || lapisSaatIni.length >= TARGET_LAPIS) return
     // B-18: rasio sungguhan — tolak bahan hijau bila kuota hijaunya sudah
     // habis (2 dari 8 lapis), supaya hasil akhir benar-benar 3 : 1.
-    if (bahan.jenis === 'hijau' && jumlahHijau >= MAKS_HIJAU) {
+    const jumlahHijauSaatIni = lapisSaatIni.filter((l) => l === 'hijau').length
+    if (bahan.jenis === 'hijau' && jumlahHijauSaatIni >= MAKS_HIJAU) {
       salah()
-      const tolakBaru = ditolak + 1
-      setDitolak(tolakBaru)
+      const tolakBaru = ditolakRef.current + 1
+      ditolakRef.current = tolakBaru
       setPesan(
         'Rasio kompos 3 cokelat : 1 hijau — lapis hijaunya sudah cukup (2 dari 8). Tambah bahan cokelat, lapis ini tidak dihitung.',
       )
@@ -235,7 +242,8 @@ function FaseLapis({
       }
       return
     }
-    const baru = [...lapis, bahan.jenis]
+    const baru = [...lapisSaatIni, bahan.jenis]
+    lapisRef.current = baru
     setLapis(baru)
     tambahSkor(10)
     benar()
@@ -836,6 +844,10 @@ function FasePanenSayur({
 }) {
   const [matang, setMatang] = useState(0)
   const [dipanen, setDipanen] = useState<number[]>([])
+  // F6: cermin state untuk guard ketuk ganda (pola F4/F5) — ref diperbarui
+  // sinkron di dalam `panenSayur`, jadi ketuk ganda pada sayur yang sama
+  // sebelum render tidak memberi skor dua kali.
+  const dipanenRef = useRef<number[]>([])
   const [selesaiPanen, setSelesaiPanen] = useState(false)
   const [pesan, setPesan] = useState<string | null>('Sayur sedang tumbuh. Tunggu sampai matang, lalu ketuk untuk memanen.')
   // Cermin terjeda untuk dibaca di dalam tick interval (hindari closure basi).
@@ -863,8 +875,9 @@ function FasePanenSayur({
       setPesan('Belum matang, tunggu sebentar.')
       return
     }
-    if (dipanen.includes(index)) return
-    const baru = [...dipanen, index]
+    if (dipanenRef.current.includes(index)) return
+    const baru = [...dipanenRef.current, index]
+    dipanenRef.current = baru
     setDipanen(baru)
     tambahSkor(10)
     panen()
@@ -1033,7 +1046,6 @@ export function KomposKebun({
   modeSatuKetukan = false,
   terjeda = false,
 }: MiniGameSlotProps & { modeSatuKetukan?: boolean }) {
-  const { save, dispatch } = useCampaign()
   // Fase = tahap yang sedang dimainkan (dipilih kerangka bab).
   const fase = stageIndex
   const [skor, setSkor] = useState(0)
@@ -1077,10 +1089,8 @@ export function KomposKebun({
   const selesaiFase = () => {
     if (selesaiRef.current) return
     selesaiRef.current = true
-    // Bonus rapor hanya sekali, di tahap terakhir saat pertama kali selesai.
-    if (stageIndex === 2 && save.chapters.kompos.stages[2].status !== 'done') {
-      dispatch({ type: 'SET_REPORT', patch: { hijau: save.report.hijau + 10, sampah: save.report.sampah + 5 } })
-    }
+    // F11: bonus rapor hanya dari BONUS_RAPOR di misi-shell (hijau +20
+    // saat bab pertama selesai) — tidak ada SET_REPORT tambahan di sini.
     // B-9: normalisasi skor mentah mode tombol ke persen 0–100.
     const persen = modeSatuKetukan
       ? Math.min(100, Math.round((skor / MAKS_SKOR_TOMBOL[stageIndex]) * 100))

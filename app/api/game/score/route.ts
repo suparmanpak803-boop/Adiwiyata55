@@ -109,9 +109,14 @@ export async function POST(request: Request) {
     if (!periodId) { await client.query('ROLLBACK'); return NextResponse.json({ error: 'Periode leaderboard belum siap.' }, { status: 503 }) }
 
     // H-03: batas poin harian per pengguna (maks 300/hari) agar farming
-    // tetap terbatas meski penyerang lolos heuristik.
+    // tetap terbatas meski penyerang lolos heuristik. "Harian" di sini
+    // hari kalender WIB (Asia/Jakarta), bukan jendela geser 24 jam:
+    // `date_trunc('day', now() AT TIME ZONE 'Asia/Jakarta')` memotong
+    // ke 00:00 WIB, lalu `AT TIME ZONE 'Asia/Jakarta'` mengembalikannya
+    // ke timestamptz awal hari itu (pola yang sama dengan batas
+    // laporan harian di app/api/laporan/route.ts).
     const todayPoints = await client.query<{ total: string }>(
-      `SELECT COALESCE(SUM(poin_didapat), 0)::text AS total FROM public.game_scores WHERE user_id = $1 AND dibuat_pada >= now() - interval '1 day'`,
+      `SELECT COALESCE(SUM(poin_didapat), 0)::text AS total FROM public.game_scores WHERE user_id = $1 AND dibuat_pada >= date_trunc('day', now() AT TIME ZONE 'Asia/Jakarta') AT TIME ZONE 'Asia/Jakarta'`,
       [user.id],
     )
     if (Number(todayPoints.rows[0]?.total ?? 0) + points > 300) {

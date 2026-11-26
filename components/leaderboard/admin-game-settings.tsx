@@ -20,6 +20,10 @@ function formatTanggalLibur(value: string) {
 const gameLabels: Record<string, string> = {
   tangkap_sampah: 'Tangkap Sampah',
   kuis_adiwiyata: 'Kuis Adiwiyata',
+  pilah_sampah: 'Pilah Sampah',
+  memory_daur_ulang: 'Memori Daur Ulang',
+  kebun_virtual: 'Kebun Virtual',
+  lama_terurai: 'Lama Terurai',
 }
 const gameKeys = Object.keys(gameLabels)
 
@@ -38,6 +42,8 @@ export function AdminGameSettings({ initialData }: { initialData: AdminData }) {
   const [autoRewards, setAutoRewards] = useState(setting.hadiah_otomatis !== false)
   const [wasteMetric, setWasteMetric] = useState(String(initialData.waste?.metrik_default ?? 'total'))
   const [minimumDays, setMinimumDays] = useState(Number(initialData.waste?.min_hari_input ?? 3))
+  const [showMost, setShowMost] = useState(initialData.waste?.tampil_terbanyak !== false)
+  const [showLeast, setShowLeast] = useState(initialData.waste?.tampil_tersedikit !== false)
   const quizSettings = initialData.games.find((item) => item.game_key === 'kuis_adiwiyata')?.konfigurasi as Record<string, unknown> | undefined
   const [quizCount, setQuizCount] = useState(Number(quizSettings?.jumlah_soal ?? 10))
   const [quizSeconds, setQuizSeconds] = useState(Number(quizSettings?.waktu_per_soal ?? 20))
@@ -59,7 +65,7 @@ export function AdminGameSettings({ initialData }: { initialData: AdminData }) {
     try {
       await fetchJson('/api/admin/game', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mode, hari, tanggal, jam, tanggal_mulai_semester: semesterStart || null, tanggal_akhir_semester: semesterEnd || null, cakupan: scope, game_key: gameKey, reset_poin_total: resetPoints, reset_lencana: resetBadges, hadiah_otomatis: autoRewards, games: { ...games, kuis_adiwiyata: { ...games.kuis_adiwiyata, konfigurasi: { jumlah_soal: quizCount, waktu_per_soal: quizSeconds } } }, waste: { metrik_default: wasteMetric, min_hari_input: minimumDays, periode_default: 'bulan_ini', tampil_terbanyak: true, tampil_tersedikit: true } }),
+        body: JSON.stringify({ mode, hari, tanggal, jam, tanggal_mulai_semester: semesterStart || null, tanggal_akhir_semester: semesterEnd || null, cakupan: scope, game_key: gameKey, reset_poin_total: resetPoints, reset_lencana: resetBadges, hadiah_otomatis: autoRewards, games: { ...games, kuis_adiwiyata: { ...games.kuis_adiwiyata, konfigurasi: { jumlah_soal: quizCount, waktu_per_soal: quizSeconds } } }, waste: { metrik_default: wasteMetric, min_hari_input: minimumDays, periode_default: 'bulan_ini', tampil_terbanyak: showMost, tampil_tersedikit: showLeast } }),
       })
       setMessage('Pengaturan leaderboard berhasil disimpan.')
     } catch (error) { setMessage(error instanceof Error ? error.message : 'Terjadi gangguan saat menyimpan.') }
@@ -119,7 +125,7 @@ export function AdminGameSettings({ initialData }: { initialData: AdminData }) {
         <section className="admin-setting-card"><div className="admin-setting-heading"><div><span className="eyebrow">02 / PERMAINAN</span><h2>Durasi, kesulitan & status</h2></div></div>
           <div className="game-settings-grid">{gameKeys.map((key) => <article className="game-setting-row" key={key}><div className="game-setting-title"><strong>{gameLabels[key]}</strong><label><input type="checkbox" checked={games[key].aktif} onChange={(event) => setGames((current) => ({ ...current, [key]: { ...current[key], aktif: event.target.checked } }))} /> Aktif</label></div><label>Durasi (detik)<input type="number" min={15} max={600} value={games[key].durasi_detik} onChange={(event) => setGames((current) => ({ ...current, [key]: { ...current[key], durasi_detik: Number(event.target.value) } }))} /></label><label>Kesulitan<select value={games[key].tingkat_kesulitan} onChange={(event) => setGames((current) => ({ ...current, [key]: { ...current[key], tingkat_kesulitan: Number(event.target.value) } }))}><option value={1}>Mudah</option><option value={2}>Menengah</option><option value={3}>Standar</option><option value={4}>Sulit</option><option value={5}>Tantangan</option></select></label>{key === 'kuis_adiwiyata' && <div className="admin-quiz-config"><label>Jumlah soal<input type="number" min={5} max={20} value={quizCount} onChange={(event) => setQuizCount(Number(event.target.value))} /></label><label>Waktu per soal (detik)<input type="number" min={5} max={20} value={quizSeconds} onChange={(event) => setQuizSeconds(Number(event.target.value))} /></label></div>}</article>)}</div>
         </section>
-        <section className="admin-setting-card"><div className="admin-setting-heading"><div><span className="eyebrow">03 / DATA SAMPAH</span><h2>Persyaratan leaderboard sampah</h2></div></div><div className="admin-form-grid"><label>Metrik awal<select value={wasteMetric} onChange={(event) => setWasteMetric(event.target.value)}><option value="total">Total kg</option><option value="per_siswa">Kg per siswa</option></select></label><label>Minimal hari input untuk masuk peringkat<input type="number" min={1} max={31} value={minimumDays} onChange={(event) => setMinimumDays(Number(event.target.value))} /></label></div><p className="admin-setting-note"><ShieldCheck aria-hidden="true" /> Peringkat sampah menggunakan data laporan tersimpan, terpisah dari reset leaderboard game.</p></section>
+        <section className="admin-setting-card"><div className="admin-setting-heading"><div><span className="eyebrow">03 / DATA SAMPAH</span><h2>Persyaratan leaderboard sampah</h2></div></div><div className="admin-form-grid"><label>Metrik awal<select value={wasteMetric} onChange={(event) => setWasteMetric(event.target.value)}><option value="total">Total kg</option><option value="per_siswa">Kg per siswa</option></select></label><label>Minimal hari input untuk masuk peringkat<input type="number" min={1} max={31} value={minimumDays} onChange={(event) => setMinimumDays(Number(event.target.value))} /></label></div><div className="admin-check-list"><label><input type="checkbox" checked={showMost} onChange={(event) => setShowMost(event.target.checked)} /> Tampilkan urutan terbanyak</label><label><input type="checkbox" checked={showLeast} onChange={(event) => setShowLeast(event.target.checked)} /> Tampilkan urutan tersedikit</label></div><p className="admin-setting-note"><ShieldCheck aria-hidden="true" /> Peringkat sampah menggunakan data laporan tersimpan, terpisah dari reset leaderboard game.</p></section>
         <section className="admin-setting-card"><div className="admin-setting-heading"><div><span className="eyebrow">04 / HARI LIBUR</span><h2>Hari libur sekolah</h2></div></div>
           <p className="admin-setting-note">Tanggal merah dan libur sekolah mengurangi hitungan hari sekolah efektif untuk rata-rata pengumpulan sampah per hari sekolah. Daftar mulai kosong; bila kosong, hitungan memakai Senin–Jumat saja.</p>
           <div className="admin-form-grid"><label>Tanggal libur<input type="date" value={newTanggal} onChange={(event) => setNewTanggal(event.target.value)} /></label><label>Keterangan<input value={newKeterangan} onChange={(event) => setNewKeterangan(event.target.value)} maxLength={100} placeholder="Mis. Hari Raya Idulfitri" /></label><button type="button" className="admin-save-button" onClick={() => void tambahLibur()} disabled={liburBusy || !newTanggal}>Tambah hari libur</button></div>

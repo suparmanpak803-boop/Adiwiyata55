@@ -336,6 +336,15 @@ function TampungHujan({
 
   const tangkapLangsung = (idTetes: number) => {
     if (fase !== 'main') return
+    // F12: guard race tick-vs-klik — tetes yang sudah dihitung tick
+    // (atau klik sebelumnya) sudah tidak ada lagi di tetesRef, walau
+    // tombolnya masih tampil sampai React me-render ulang. Tanpa cek
+    // ini, klik yang mendarat di jendela itu menghitung tetes yang sama
+    // sekali lagi (+1 tetes / +10 skor). Keanggotaan di tetesRef inilah
+    // penandanya (tidak perlu Set terpisah yang harus dibersihkan saat
+    // ulangi): cek + hapus berjalan sinkron, jadi tick 50 ms tidak bisa
+    // menyela di antaranya.
+    if (!tetesRef.current.some((t) => t.id === idTetes)) return
     tetesRef.current = tetesRef.current.filter((t) => t.id !== idTetes)
     tertangkapRef.current += 1
     setTertangkap(tertangkapRef.current)

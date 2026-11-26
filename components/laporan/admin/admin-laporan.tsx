@@ -34,6 +34,9 @@ export function AdminLaporan({ role }: { role: 'admin' | 'petugas' }) {
   const [bulkStatus, setBulkStatus] = useState('diproses')
   const [bulkReason, setBulkReason] = useState('')
   const [notice, setNotice] = useState<{ ok: boolean; text: string } | null>(null)
+  // D-F10: guard klik ganda untuk syncNow/runBulk (pola `busy` seperti
+  // di file admin lain); SettingsForm punya guard sendiri di bawah.
+  const [busy, setBusy] = useState(false)
 
   const query = useMemo(() => {
     const params = new URLSearchParams()
@@ -50,8 +53,9 @@ export function AdminLaporan({ role }: { role: 'admin' | 'petugas' }) {
   const pages = data ? Math.max(1, Math.ceil(data.total / data.pageSize)) : 1
 
   async function runBulk() {
-    if (!selected.length) return
+    if (busy || !selected.length) return
     if (bulkStatus === 'ditolak' && bulkReason.trim().length < 5) { setNotice({ ok: false, text: 'Isi alasan penolakan (minimal 5 karakter).' }); return }
+    setBusy(true)
     try {
       const body = await fetchJson<{ diperbarui: number }>('/api/admin/laporan/bulk', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids: selected, status: bulkStatus, alasan: bulkReason }) })
       setNotice({ ok: true, text: `${body.diperbarui} laporan diperbarui.` })
@@ -60,10 +64,14 @@ export function AdminLaporan({ role }: { role: 'admin' | 'petugas' }) {
       void mutate()
     } catch (cause) {
       setNotice({ ok: false, text: cause instanceof Error ? cause.message : 'Perubahan massal gagal.' })
+    } finally {
+      setBusy(false)
     }
   }
 
   async function syncNow() {
+    if (busy) return
+    setBusy(true)
     setNotice({ ok: true, text: 'Menyinkronkan ke Spreadsheet…' })
     try {
       const body = await fetchJson<{ message?: string }>('/api/admin/laporan/sync', { method: 'POST' })
@@ -71,6 +79,8 @@ export function AdminLaporan({ role }: { role: 'admin' | 'petugas' }) {
       void mutate()
     } catch (cause) {
       setNotice({ ok: false, text: cause instanceof Error ? cause.message : 'Sinkronisasi belum berhasil.' })
+    } finally {
+      setBusy(false)
     }
   }
 
@@ -126,7 +136,7 @@ export function AdminLaporan({ role }: { role: 'admin' | 'petugas' }) {
               <a className="game-ghost" href={exportHref('csv')}><Download size={14} aria-hidden="true" /> CSV</a>
               <a className="game-ghost" href={exportHref('xlsx')}><Download size={14} aria-hidden="true" /> Excel</a>
               {settings?.spreadsheetUrl && <a className="game-ghost" href={settings.spreadsheetUrl} target="_blank" rel="noreferrer"><ExternalLink size={14} aria-hidden="true" /> Buka Spreadsheet</a>}
-              {role === 'admin' && <button type="button" className="game-ghost" onClick={syncNow}><RefreshCw size={14} aria-hidden="true" /> Sinkronkan{summary?.tertunda ? ` (${summary.tertunda} tertunda)` : ''}</button>}
+              {role === 'admin' && <button type="button" className="game-ghost" disabled={busy} onClick={syncNow}><RefreshCw size={14} aria-hidden="true" /> {busy ? 'Menyinkronkan…' : <>Sinkronkan{summary?.tertunda ? ` (${summary.tertunda} tertunda)` : ''}</>}</button>}
             </div>
 
             {selected.length > 0 && (
@@ -134,7 +144,7 @@ export function AdminLaporan({ role }: { role: 'admin' | 'petugas' }) {
                 <b>{selected.length} dipilih</b>
                 <select aria-label="Status baru" value={bulkStatus} onChange={(e) => setBulkStatus(e.target.value)}>{Object.entries(STATUS_LABEL).map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select>
                 {bulkStatus === 'ditolak' && <input aria-label="Alasan penolakan" placeholder="Alasan penolakan" value={bulkReason} onChange={(e) => setBulkReason(e.target.value)} maxLength={500} />}
-                <button type="button" className="game-play" onClick={runBulk}>Ubah status</button>
+                <button type="button" className="game-play" disabled={busy} onClick={runBulk}>{busy ? 'Mengubah…' : 'Ubah status'}</button>
               </div>
             )}
 
@@ -186,15 +196,22 @@ export function AdminLaporan({ role }: { role: 'admin' | 'petugas' }) {
 
 function SettingsForm({ settings, onSaved, setNotice }: { settings?: Settings; onSaved: () => void; setNotice: (n: { ok: boolean; text: string }) => void }) {
   const [draft, setDraft] = useState<Settings | null>(null)
+  // D-F10: guard klik ganda untuk save (komponen ini terpisah dari
+  // AdminLaporan, jadi memakai state busy sendiri).
+  const [busy, setBusy] = useState(false)
   const value = draft ?? settings ?? { spreadsheetUrl: '', waAktif: false, waNomor: '' }
   async function save(event: React.FormEvent) {
     event.preventDefault()
+    if (busy) return
+    setBusy(true)
     try {
       await fetchJson('/api/admin/laporan/settings', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ spreadsheetUrl: value.spreadsheetUrl ?? '', waAktif: value.waAktif, waNomor: value.waNomor ?? '' }) })
       setNotice({ ok: true, text: 'Pengaturan tersimpan.' })
       setDraft(null); onSaved()
     } catch (cause) {
       setNotice({ ok: false, text: cause instanceof Error ? cause.message : 'Pengaturan belum tersimpan.' })
+    } finally {
+      setBusy(false)
     }
   }
   return (
@@ -207,7 +224,7 @@ function SettingsForm({ settings, onSaved, setNotice }: { settings?: Settings; o
         <input inputMode="tel" placeholder="081234567890" value={value.waNomor ?? ''} onChange={(e) => setDraft({ ...value, waNomor: e.target.value })} />
         <small>Sinkronisasi memakai URL Apps Script dan token yang sudah diatur di Pengaturan Sheets.</small>
       </label>
-      <button className="game-play">Simpan pengaturan</button>
+      <button className="game-play" disabled={busy}>{busy ? 'Menyimpan…' : 'Simpan pengaturan'}</button>
     </form>
   )
 }

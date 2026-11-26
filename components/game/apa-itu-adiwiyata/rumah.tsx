@@ -24,7 +24,7 @@ import {
   X,
 } from 'lucide-react'
 import { hariIniLokal } from '@/lib/apa-itu-adiwiyata/content/hadiah-harian'
-import { warnaKostum } from '@/lib/apa-itu-adiwiyata/content/toko'
+import { buffAktif, warnaKostum } from '@/lib/apa-itu-adiwiyata/content/toko'
 import { KULKAS_JEDA_MS, useCampaign } from '@/lib/apa-itu-adiwiyata/context'
 import { gambarBayangan, gambarPemain, rr, type PemainState } from '@/lib/apa-itu-adiwiyata/gambar-pemain'
 import { buatKamera, offsetPusat, perbaruiKamera } from '@/lib/apa-itu-adiwiyata/kamera'
@@ -616,9 +616,10 @@ export function Rumah({
       if (bergerak) {
         vx /= Math.max(1, panjang)
         vy /= Math.max(1, panjang)
-        // Sepatu Eco-Runner: kecepatan gerak +35% permanen. Hanya gerak
-        // pemain yang dikali — animasi jalan (p.fase) tidak ikut berubah.
-        const kecepatan = KECEPATAN * (saveRef.current.sepatuEco ? 1.35 : 1)
+        // Sepatu Eco-Runner: kecepatan gerak +35% selama buff 10 menit
+        // sejak dibeli. Hanya gerak pemain yang dikali — animasi jalan
+        // (p.fase) tidak ikut berubah.
+        const kecepatan = KECEPATAN * (saveRef.current.sepatuEco && buffAktif(saveRef.current, 'sepatu-eco') ? 1.35 : 1)
         const xLama = p.x
         const yLama = p.y
         const nx = p.x + vx * kecepatan * dt
@@ -719,9 +720,9 @@ export function Rumah({
         reducedRef.current,
         warnaKostum(saveRef.current.kostumDipakai),
         saveRef.current.jenisKelamin,
-        saveRef.current.pinDuta,
+        saveRef.current.pinDuta && buffAktif(saveRef.current, 'pin-duta'),
         // Kecepatan gerak saat ini: bayangan mengecil sedikit saat cepat.
-        p.bergerak ? KECEPATAN * (saveRef.current.sepatuEco ? 1.35 : 1) : 0,
+        p.bergerak ? KECEPATAN * (saveRef.current.sepatuEco && buffAktif(saveRef.current, 'sepatu-eco') ? 1.35 : 1) : 0,
       )
       ctx.restore()
 

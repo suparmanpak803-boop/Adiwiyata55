@@ -26,6 +26,7 @@ import {
   AIR_KERAN_HAUS,
   BEKAL_LAPAR,
   BEKAL_LAPAR_LUNCH_BOX,
+  buffAktif,
   ECO_SHOP,
   GEAR,
   HARGA_POHON_KOIN_DAUN,
@@ -36,6 +37,7 @@ import {
   SKOR_PANEL_SURYA,
   SKOR_POHON,
   sisaBekal,
+  teksSisaBuff,
 } from '@/lib/apa-itu-adiwiyata/content/toko'
 import { klik } from './suara'
 
@@ -84,6 +86,13 @@ export function TokoKantin({
   const { save, dispatch } = useCampaign()
   const [pesan, setPesan] = useState<string | null>(null)
   const ecoRef = useRef<HTMLElement | null>(null)
+  // Hitung ulang tampilan tiap 30 detik supaya "tersisa N mnt" pada buff
+  // gear tidak basi selama toko dibiarkan terbuka.
+  const [, setDetik] = useState(0)
+  useEffect(() => {
+    const id = setInterval(() => setDetik((t) => t + 1), 30_000)
+    return () => clearInterval(id)
+  }, [])
 
   // Dibuka dari Booth Eco-Shop: gulir ke seksi Eco-Shop supaya itemnya
   // langsung terlihat (tanpa mengubah urutan seksi toko).
@@ -99,10 +108,19 @@ export function TokoKantin({
   const skorAdiwiyata = save.skorAdiwiyata ?? 0
   const inventaris = save.inventaris ?? []
   const punya = (id: string) => inventaris.includes(id)
-  const punyaPinDuta = save.pinDuta === true
-  /** Harga kantin yang berlaku: diskon Duta 25% bila punya Pin Duta. */
-  const hargaKantin = (harga: number) => (punyaPinDuta ? hargaDiskonDuta(harga) : harga)
-  const punyaLunchBox = punya('lunch-box')
+  /** Pin Duta memberi diskon hanya bila buff 10 menitnya masih aktif
+   * (sama syaratnya dengan reducer BELI, supaya tampil = tagih). */
+  const punyaPinDuta = save.pinDuta === true && buffAktif(save, 'pin-duta')
+  /** Buff Pin Duta habis tapi pin sudah pernah dibeli (info di intro). */
+  const pinDutaKedaluwarsa = save.pinDuta === true && !punyaPinDuta
+  /** Lemas (lapar atau haus 0): diskon Duta tidak berlaku — kelemahan lunak
+   * karena mencapai 0; jalan keluar darurat (air keran + bekal) tetap ada. */
+  const lemas = lapar <= 0 || haus <= 0
+  /** Harga kantin yang berlaku: diskon Duta 25% bila buff Pin Duta aktif
+   * dan tidak lemas; saat lemas harga penuh. */
+  const hargaKantin = (harga: number) => (punyaPinDuta && !lemas ? hargaDiskonDuta(harga) : harga)
+  /** Lunch Box memberi jatah bekal 2x hanya bila buff-nya masih aktif. */
+  const punyaLunchBox = punya('lunch-box') && buffAktif(save, 'lunch-box')
   const sisa = sisaBekal(save.bekalTanggal, save.bekalDipakai, hariIniLokal(), punyaLunchBox)
   const bekalPulih = punyaLunchBox ? BEKAL_LAPAR_LUNCH_BOX : BEKAL_LAPAR
   /** Item Eco-Shop yang sudah dimiliki (flag save, bukan inventaris). */
@@ -114,19 +132,87 @@ export function TokoKantin({
   const ikonEco = (id: string) =>
     id === 'sepatu-eco' ? <Footprints aria-hidden="true" /> : id === 'pin-duta' ? <Award aria-hidden="true" /> : <Sun aria-hidden="true" />
 
+  // F14: guard klik ganda — tombol menjadi disabled / item menjadi
+  // "Dimiliki" hanya sesudah re-render, jadi klik kedua yang mendarat
+  // sebelum itu menjalankan dispatch kedua. Reducer menolaknya (dana
+  // kurang / sudah dimiliki -> return save tanpa perubahan), tapi pesan
+  // sukses tetap tampil bila tidak dijaga. Guard ini mencatat pembelian
+  // terakhir beserta referensi save saat itu: klik ulang dengan kunci
+  // yang sama dan save yang sama (belum re-render) ditolak; sesudah
+  // re-render save berupa objek baru sehingga pembelian sah berikutnya
+  // tetap bisa jalan. Reducer mengembalikan referensi save yang sama
+  // bila menolak, jadi guard tidak pernah "macet" pada pembelian sah —
+  // pembelian yang ditolak pun akan ditolak lagi selama save tak berubah.
+  const pembelianTerakhirRef = useRef<{ kunci: string; save: typeof save } | null>(null)
+  const pembelianBaru = (kunci: string): boolean => {
+    const terakhir = pembelianTerakhirRef.current
+    if (terakhir !== null && terakhir.kunci === kunci && terakhir.save === save) return false
+    pembelianTerakhirRef.current = { kunci, save }
+    return true
+  }
+
+  /** Validasi yang sama dengan reducer BELI di context.tsx (dana dan
+   * status dimiliki, dari save render ini). Mengembalikan pesan gagal
+   * bila pembelian akan ditolak reducer, atau null bila diterima. */
+  const alasanGagalBeli = (jenis: 'makanan' | 'minuman' | 'gear' | 'kostum', id: string): string | null => {
+    if (jenis === 'makanan') {
+      const item = MAKANAN.find((m) => m.id === id)
+      if (!item) return 'Item tidak ditemukan.'
+      return uang < hargaKantin(item.harga) ? 'Uang tidak cukup untuk membeli ini.' : null
+    }
+    if (jenis === 'minuman') {
+      const item = MINUMAN.find((m) => m.id === id)
+      if (!item) return 'Item tidak ditemukan.'
+      return uang < hargaKantin(item.harga) ? 'Uang tidak cukup untuk membeli ini.' : null
+    }
+    if (jenis === 'gear') {
+      const item = GEAR.find((g) => g.id === id)
+      if (!item) return 'Item tidak ditemukan.'
+      // Gear bisa dibeli ulang (memperpanjang buff 10 menit), jadi
+      // "sudah dimiliki" bukan penolakan — hanya dana yang diperiksa.
+      return koinDaun < item.hargaKoinDaun ? 'Koin Daun tidak cukup untuk membeli ini.' : null
+    }
+    const item = KOSTUM.find((k) => k.id === id)
+    if (!item) return 'Item tidak ditemukan.'
+    if (punya(item.id)) return 'Kamu sudah memiliki item ini.'
+    return koinDaun < item.hargaKoinDaun ? 'Koin Daun tidak cukup untuk membeli ini.' : null
+  }
+
+  /** Validasi yang sama dengan reducer BELI_ECO di context.tsx.
+   * Sepatu Eco-Runner dan Pin Duta bisa dibeli ulang (memperpanjang buff);
+   * Panel Surya tetap sekali beli. */
+  const alasanGagalEco = (id: string): string | null => {
+    const item = ECO_SHOP.find((e) => e.id === id)
+    if (!item) return 'Item tidak ditemukan.'
+    if (id === 'panel-surya' && punyaEco(id)) return 'Kamu sudah memiliki item ini.'
+    return koinHijau < item.hargaKoinHijau ? 'Koin Hijau tidak cukup untuk membeli ini.' : null
+  }
+
   const beli = (jenis: 'makanan' | 'minuman' | 'gear' | 'kostum', id: string, teks: string) => {
     klik()
+    if (!pembelianBaru(`BELI:${jenis}:${id}`)) return
+    const gagal = alasanGagalBeli(jenis, id)
+    if (gagal) {
+      setPesan(gagal)
+      return
+    }
     dispatch({ type: 'BELI', jenis, id })
     setPesan(teks)
   }
 
   const beliEco = (id: string, nama: string) => {
     klik()
+    if (!pembelianBaru(`BELI_ECO:${id}`)) return
+    const gagal = alasanGagalEco(id)
+    if (gagal) {
+      setPesan(gagal)
+      return
+    }
     dispatch({ type: 'BELI_ECO', id })
     setPesan(
       id === 'panel-surya'
         ? `Kamu membeli ${nama}! Panel biru muncul di atap sekolah. Skor Adiwiyata +${SKOR_PANEL_SURYA}.`
-        : `Kamu membeli ${nama}!`,
+        : `Kamu membeli ${nama}! Efeknya aktif 10 menit sejak sekarang.`,
     )
   }
 
@@ -140,7 +226,9 @@ export function TokoKantin({
         <p className="aia-muted" style={{ marginTop: 0 }}>
           Beli makanan dan minuman pakai uang, gear dan kostum pakai Koin Daun, dan item Eco-Shop pakai Koin Hijau.
           Uang, Koin Daun, dan Koin Hijau didapat dari menyelesaikan misi.
-          {punyaPinDuta && ' Kamu punya Pin Duta — harga kantin diskon 25%.'}
+          {punyaPinDuta && !lemas && ' Kamu punya Pin Duta — harga kantin diskon 25%.'}
+          {punyaPinDuta && lemas && ' Kamu lemas — diskon Duta tidak berlaku sampai lapar dan hausmu pulih.'}
+          {pinDutaKedaluwarsa && ' Pin Dutamu sudah kedaluwarsa — beli lagi di Eco-Shop supaya diskon 25% aktif 10 menit.'}
         </p>
         <div className="aia-progress-row">
           <Bar label="Lapar" nilai={lapar} warna="#e65100" />
@@ -178,8 +266,11 @@ export function TokoKantin({
               <div key={item.id} className="aia-toko-item" style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
                 <div>
                   <strong>{item.nama}</strong> — Lapar +{item.lapar}
-                  {punyaPinDuta && (
+                  {punyaPinDuta && !lemas && (
                     <span className="aia-chip done"> Diskon Duta 25%</span>
+                  )}
+                  {punyaPinDuta && lemas && (
+                    <span className="aia-chip"> Diskon Duta tidak berlaku saat lemas</span>
                   )}
                   <p className="aia-muted" style={{ margin: 0 }}>
                     {item.deskripsi}
@@ -193,7 +284,7 @@ export function TokoKantin({
                   onClick={() => beli('makanan', item.id, `Kamu makan ${item.nama}. Lapar +${item.lapar}.`)}
                 >
                   Beli{' '}
-                  {punyaPinDuta ? (
+                  {punyaPinDuta && !lemas ? (
                     <>
                       <s>{formatRp(item.harga)}</s> {formatRp(hargaBayar)}
                     </>
@@ -218,8 +309,11 @@ export function TokoKantin({
               <div key={item.id} className="aia-toko-item" style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
                 <div>
                   <strong>{item.nama}</strong> — Haus +{item.haus}
-                  {punyaPinDuta && (
+                  {punyaPinDuta && !lemas && (
                     <span className="aia-chip done"> Diskon Duta 25%</span>
+                  )}
+                  {punyaPinDuta && lemas && (
+                    <span className="aia-chip"> Diskon Duta tidak berlaku saat lemas</span>
                   )}
                   <p className="aia-muted" style={{ margin: 0 }}>
                     {item.deskripsi}
@@ -233,7 +327,7 @@ export function TokoKantin({
                   onClick={() => beli('minuman', item.id, `Kamu minum ${item.nama}. Haus +${item.haus}.`)}
                 >
                   Beli{' '}
-                  {punyaPinDuta ? (
+                  {punyaPinDuta && !lemas ? (
                     <>
                       <s>{formatRp(item.harga)}</s> {formatRp(hargaBayar)}
                     </>
@@ -277,7 +371,11 @@ export function TokoKantin({
               <strong>Bekal Rumah</strong> — Lapar +{bekalPulih}
               <p className="aia-muted" style={{ margin: 0 }}>
                 Bekal dari rumah, gratis {sisa > 0 ? `${sisa}x lagi hari ini` : '— jatah hari ini habis'}
-                {punyaLunchBox ? ' (Lunch Box: 2x sehari).' : '.'}
+                {punyaLunchBox
+                  ? ' (Lunch Box: 2x sehari).'
+                  : punya('lunch-box')
+                    ? ' (Lunch Box kedaluwarsa — beli lagi untuk 2x sehari).'
+                    : '.'}
               </p>
             </div>
             <button
@@ -287,6 +385,11 @@ export function TokoKantin({
               disabled={sisa <= 0}
               onClick={() => {
                 klik()
+                if (!pembelianBaru('PAKAI_BEKAL')) return
+                if (sisa <= 0) {
+                  setPesan('Jatah bekal hari ini sudah habis.')
+                  return
+                }
                 dispatch({ type: 'PAKAI_BEKAL' })
                 setPesan(`Kamu makan bekal rumah. Lapar +${bekalPulih}.`)
               }}
@@ -299,19 +402,34 @@ export function TokoKantin({
 
       <section className="aia-card" aria-label="Gear">
         <h3 className="aia-section-title" style={{ marginTop: 0 }}>
-          Gear — sekali beli, efeknya permanen
+          Gear — efeknya 10 menit sejak dibeli, beli lagi untuk memperpanjang
         </h3>
         <div className="aia-stack">
-          {GEAR.map((item) => (
+          {GEAR.map((item) => {
+            const dimiliki = punya(item.id)
+            return (
             <div key={item.id} className="aia-toko-item" style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
               <div>
                 <strong>{item.nama}</strong> — {item.efek}
+                {dimiliki && (
+                  <span className="aia-chip done"> Dimiliki — buff {teksSisaBuff(save, item.id)}</span>
+                )}
                 <p className="aia-muted" style={{ margin: 0 }}>
                   {item.deskripsi}
                 </p>
               </div>
-              {punya(item.id) ? (
-                <span className="aia-chip done">Dimiliki</span>
+              {dimiliki ? (
+                <button
+                  type="button"
+                  className="aia-btn"
+                  style={{ minHeight: 44, whiteSpace: 'nowrap' }}
+                  disabled={koinDaun < item.hargaKoinDaun}
+                  onClick={() =>
+                    beli('gear', item.id, `Kamu membeli ${item.nama} lagi! Efeknya aktif 10 menit sejak sekarang.`)
+                  }
+                >
+                  <Leaf aria-hidden="true" /> Beli lagi {item.hargaKoinDaun}
+                </button>
               ) : (
                 <button
                   type="button"
@@ -326,28 +444,47 @@ export function TokoKantin({
                 </button>
               )}
             </div>
-          ))}
+            )
+          })}
         </div>
       </section>
 
       <section className="aia-card" aria-label="Eco-Shop (Koin Hijau)" ref={ecoRef}>
         <h3 className="aia-section-title" style={{ marginTop: 0 }}>
-          <Coins aria-hidden="true" /> Eco-Shop (Koin Hijau) — sekali beli, efeknya permanen
+          <Coins aria-hidden="true" /> Eco-Shop (Koin Hijau) — Sepatu &amp; Pin berlaku 10 menit sejak dibeli, Panel Surya sekali beli
         </h3>
         <p className="aia-muted" style={{ marginTop: 0 }}>
           Bayar pakai Koin Hijau. Bisa juga dibuka dari Booth Eco-Shop di antara bedeng kebun.
         </p>
         <div className="aia-stack">
-          {ECO_SHOP.map((item) => (
+          {ECO_SHOP.map((item) => {
+            const dimiliki = punyaEco(item.id)
+            const bisaBeliLagi = item.id === 'sepatu-eco' || item.id === 'pin-duta'
+            return (
             <div key={item.id} className="aia-toko-item" style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
               <div>
                 <strong>{item.nama}</strong> — {item.efek}
+                {dimiliki && bisaBeliLagi && (
+                  <span className="aia-chip done"> Dimiliki — buff {teksSisaBuff(save, item.id)}</span>
+                )}
                 <p className="aia-muted" style={{ margin: 0 }}>
                   {item.deskripsi}
                 </p>
               </div>
-              {punyaEco(item.id) ? (
-                <span className="aia-chip done">Dimiliki</span>
+              {dimiliki ? (
+                bisaBeliLagi ? (
+                  <button
+                    type="button"
+                    className="aia-btn"
+                    style={{ minHeight: 44, whiteSpace: 'nowrap' }}
+                    disabled={koinHijau < item.hargaKoinHijau}
+                    onClick={() => beliEco(item.id, item.nama)}
+                  >
+                    {ikonEco(item.id)} Beli lagi {item.hargaKoinHijau} KH
+                  </button>
+                ) : (
+                  <span className="aia-chip done">Dimiliki</span>
+                )
               ) : (
                 <button
                   type="button"
@@ -360,7 +497,8 @@ export function TokoKantin({
                 </button>
               )}
             </div>
-          ))}
+            )
+          })}
         </div>
       </section>
 
@@ -380,6 +518,11 @@ export function TokoKantin({
             disabled={koinDaun < HARGA_POHON_KOIN_DAUN}
             onClick={() => {
               klik()
+              if (!pembelianBaru('TANAM_POHON')) return
+              if (koinDaun < HARGA_POHON_KOIN_DAUN) {
+                setPesan('Koin Daun tidak cukup untuk menanam pohon.')
+                return
+              }
               dispatch({ type: 'TANAM_POHON' })
               setPesan(`Kamu menanam 1 pohon di kebun sekolah! Rapor hijau +5, Skor Adiwiyata +${SKOR_POHON}.`)
             }}

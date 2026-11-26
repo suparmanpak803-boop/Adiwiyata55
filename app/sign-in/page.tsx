@@ -10,9 +10,12 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 }
 
-export default async function SignInPage() {
+export default async function SignInPage({ searchParams }: { searchParams?: Promise<{ 'password-reset'?: string }> }) {
   const { data: session } = await getAuth().getSession()
   if (session?.user) redirect('/')
 
-  return <AuthForm mode="sign-in" />
+  // D-F06: teruskan penanda reset berhasil ke AuthForm agar pesan
+  // sukses tampil setelah pengguna mendarat dari reset kata sandi.
+  const params = await searchParams
+  return <AuthForm mode="sign-in" passwordResetSuccess={params?.['password-reset'] === 'success'} />
 }

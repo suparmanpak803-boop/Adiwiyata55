@@ -19,3 +19,31 @@ export function koinKuis(benar: number): number {
 export function koinArkade(game: ArkadeGame, skor: number): number {
   return game === 'tangkap' ? koinTangkapSampah(skor) : koinKuis(skor)
 }
+
+/** Batas harian koin arkade (F13): 150 Koin Hijau/hari gabungan kedua
+ * game arkade (Tangkap Sampah + Kuis Adiwiyata). */
+export const BATAS_KOIN_ARKADE_HARIAN = 150
+
+/** Tanggal lokal hari ini (YYYY-MM-DD, bukan UTC — hari berganti tengah
+ * malam waktu setempat, sama seperti streak/kasur/uang saku). */
+export function tanggalHariIni(): string {
+  const d = new Date()
+  const bulan = String(d.getMonth() + 1).padStart(2, '0')
+  const tanggal = String(d.getDate()).padStart(2, '0')
+  return `${d.getFullYear()}-${bulan}-${tanggal}`
+}
+
+/** Koin arkade yang benar-benar diberikan: koin yang diminta dijepit ke
+ * sisa batas harian. Hari baru (tanggal tersimpan != hari ini) memulai
+ * hitungan dari 0. Fungsi murni — dipakai runner, layar hasil game, dan
+ * (sebagai validasi ulang) reducer ARKADE_KOIN supaya angka yang
+ * ditampilkan selalu sama dengan yang masuk ke saldo. */
+export function koinArkadeDiberikan(
+  koinDiminta: number,
+  tanggalTersimpan: string | null,
+  koinHariIni: number,
+  hariIni: string,
+): number {
+  const sudah = tanggalTersimpan === hariIni ? Math.max(0, koinHariIni) : 0
+  return Math.max(0, Math.min(Math.max(0, koinDiminta), BATAS_KOIN_ARKADE_HARIAN - sudah))
+}

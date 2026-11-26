@@ -77,11 +77,19 @@ export function AuthRecoveryForm({ mode, token }: AuthRecoveryFormProps) {
             : 'Masukkan kata sandi baru untuk akun Adiwiyata Anda.'}
         </p>
 
-        {complete && isRequest ? (
-          <div className="auth-success" role="status">
-            <p>Jika email terdaftar, tautan pemulihan akan segera dikirim. Periksa kotak masuk dan folder spam.</p>
-            <Link href="/sign-in">Kembali ke halaman masuk</Link>
-          </div>
+        {complete ? (
+          isRequest ? (
+            <div className="auth-success" role="status">
+              <p>Jika email terdaftar, tautan pemulihan akan segera dikirim. Periksa kotak masuk dan folder spam.</p>
+              <Link href="/sign-in">Kembali ke halaman masuk</Link>
+            </div>
+          ) : (
+            // D-F07: kata sandi sudah berhasil diubah — tampilkan status
+            // pengalihan, bukan form utuh, selama navigasi ke /sign-in.
+            <div className="auth-success" role="status">
+              <p><LoaderCircle aria-hidden="true" className="auth-spinner" /> Kata sandi berhasil diubah. Mengalihkan ke halaman masuk…</p>
+            </div>
+          )
         ) : (
           <form className="auth-form" onSubmit={handleSubmit}>
             {isRequest ? (

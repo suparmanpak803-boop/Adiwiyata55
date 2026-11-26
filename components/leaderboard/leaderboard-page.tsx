@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import useSWR from 'swr'
 import { motion } from 'motion/react'
 import { ArrowDown, ArrowUp, Download, Leaf, Medal, RefreshCw, ShieldCheck, Trophy } from 'lucide-react'
@@ -18,6 +18,10 @@ const tabs = [
 const games = [
   ['tangkap_sampah', 'Tangkap Sampah'],
   ['kuis_adiwiyata', 'Kuis Adiwiyata'],
+  ['pilah_sampah', 'Pilah Sampah'],
+  ['memory_daur_ulang', 'Memori Daur Ulang'],
+  ['kebun_virtual', 'Kebun Virtual'],
+  ['lama_terurai', 'Lama Terurai'],
 ] as const
 const wasteTypes = [['all', 'Semua jenis'], ['organic', 'Organik'], ['inorganic', 'Anorganik'], ['paper', 'Kertas'], ['residual', 'Residu'], ['hazardous', 'B3']] as const
 const fetcher = (url: string) => fetchJson<LeaderboardPayload>(url, { cache: 'no-store' })
@@ -34,6 +38,7 @@ type LeaderboardPayload = {
   currentRank?: number | null
   period?: string
   metric?: string
+  sort?: string
   settings?: { tampil_tersedikit: boolean; tampil_terbanyak: boolean; metrik_default: string } | null
 }
 
@@ -44,11 +49,28 @@ function formatDate(value: string | null | undefined) {
   if (!value) return 'Belum dijadwalkan'
   return new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Jakarta' }).format(new Date(value)) + ' WIB'
 }
+// Validasi tanggal kalender (YYYY-MM-DD yang benar-benar ada) —
+// lib/hari-sekolah bersifat server-only, jadi diperiksa lokal di sini.
+function tanggalIsoValid(value: string): boolean {
+  const cocok = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value)
+  if (!cocok) return false
+  const tanggal = new Date(Date.UTC(Number(cocok[1]), Number(cocok[2]) - 1, Number(cocok[3])))
+  return tanggal.getUTCFullYear() === Number(cocok[1]) && tanggal.getUTCMonth() === Number(cocok[2]) - 1 && tanggal.getUTCDate() === Number(cocok[3])
+}
+
+function csvCell(value: unknown) {
+  const text = String(value ?? '')
+  // Prefix ' supaya sel berawalan =, +, - atau @ tidak dijalankan
+  // sebagai formula saat CSV dibuka di Excel.
+  const safe = /^[=+\-@]/.test(text) ? `'${text}` : text
+  return `"${safe.replaceAll('"', '""')}"`
+}
+
 function downloadCsv(rows: Record<string, unknown>[]) {
   if (!rows.length) return
   const columns = ['peringkat', 'nama_tampil', 'nama', 'kode_kelas', 'skor', 'total_kg', 'kg_per_siswa', 'hari_sekolah', 'rata_per_hari_sekolah', 'organic', 'inorganic', 'paper', 'residual', 'hazardous', 'kepatuhan', 'days', 'tren_persen']
   const present = columns.filter((column) => rows.some((row) => column in row))
-  const csv = [present.join(','), ...rows.map((row) => present.map((key) => `"${String(row[key] ?? '').replaceAll('"', '""')}"`).join(','))].join('\r\n')
+  const csv = [present.join(','), ...rows.map((row) => present.map((key) => csvCell(row[key])).join(','))].join('\r\n')
   const url = URL.createObjectURL(new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' }))
   const link = document.createElement('a')
   link.href = url
@@ -83,8 +105,26 @@ export function LeaderboardPage({ initialTab = 'pengguna', initialInitials = fal
     }
     return query.toString()
   }, [tab, grade, game, scope, wastePeriod, wasteType, metric, sort, customFrom, customTo])
-  const { data, error, isLoading, mutate } = useSWR<LeaderboardPayload>(`/api/leaderboard?${params}`, fetcher, { refreshInterval: 60_000, revalidateOnFocus: true, keepPreviousData: true })
-  const rows = data?.rows ?? []
+  // Rentang kustom yang belum lengkap/tidak valid tidak boleh diam-diam
+  // jatuh ke data bulan ini (perilaku server): tahan pengambilan data
+  // dan tampilkan pesan sampai kedua tanggal terisi dengan benar.
+  const isCustomPeriod = tab === 'sampah' && wastePeriod === 'custom'
+  const customError = !isCustomPeriod ? '' : !customFrom || !customTo
+    ? 'Pilih tanggal "Dari" dan "Sampai" untuk melihat rentang kustom.'
+    : !tanggalIsoValid(customFrom) || !tanggalIsoValid(customTo)
+      ? 'Tanggal rentang kustom tidak valid.'
+      : customFrom > customTo
+        ? 'Tanggal "Dari" tidak boleh setelah tanggal "Sampai".'
+        : ''
+  const { data, error, isLoading, mutate } = useSWR<LeaderboardPayload>(customError ? null : `/api/leaderboard?${params}`, fetcher, { refreshInterval: 60_000, revalidateOnFocus: true, keepPreviousData: true })
+  const rows = customError ? [] : data?.rows ?? []
+  // Urutan efektif dari server (tindak lanjut D-08): bila urutan yang
+  // diminta dinonaktifkan admin, server memakai urutan satunya dan
+  // mengembalikannya di data.sort — selaraskan pemilih dengan itu.
+  const effectiveSort = data?.sort
+  useEffect(() => {
+    if (tab === 'sampah' && (effectiveSort === 'terbanyak' || effectiveSort === 'tersedikit') && effectiveSort !== sort) setSort(effectiveSort)
+  }, [tab, effectiveSort, sort])
   const maxSkor = useMemo(() => rows.reduce((max, row) => Math.max(max, Number(row.skor ?? 0)), 0), [rows])
   const maxTotalKg = useMemo(() => rows.reduce((max, row) => Math.max(max, Number(row.total_kg ?? 0)), 0), [rows])
   const showWasteSort = sort === 'terbanyak' ? data?.settings?.tampil_terbanyak !== false : data?.settings?.tampil_tersedikit !== false
@@ -135,8 +175,9 @@ export function LeaderboardPage({ initialTab = 'pengguna', initialInitials = fal
 
         {isLoading && <div className="leaderboard-state">Memuat peringkat terbaru…</div>}
         {error && <div className="leaderboard-state is-error" role="alert">{error.message}<button onClick={() => void mutate()}>Coba lagi</button></div>}
-        {!isLoading && !error && rows.length === 0 && <div className="leaderboard-state">Belum ada data pada periode ini. Jadilah yang pertama memulai aksi baik.</div>}
-        {!isLoading && !error && rows.length > 0 && <>
+        {customError && <div className="leaderboard-state" role="alert">{customError}</div>}
+        {!isLoading && !error && !customError && rows.length === 0 && <div className="leaderboard-state">Belum ada data pada periode ini. Jadilah yang pertama memulai aksi baik.</div>}
+        {!isLoading && !error && !customError && rows.length > 0 && <>
           {tab !== 'riwayat' && tab !== 'sampah' && <motion.div className="leaderboard-podium" aria-label="Tiga peringkat teratas" variants={staggerParent} initial="hidden" animate="show">{rows.slice(0, 3).map((row, index) => <motion.article className={`podium-card place-${Number(row.peringkat ?? index + 1)}`} key={`${String(row.user_id ?? row.kode_kelas)}-${index}`} variants={fadeUpChild} whileHover={{ y: -4 }}><span className="podium-medal"><Medal aria-hidden="true" /></span><strong>#{String(row.peringkat ?? index + 1)}</strong><b title={String(row.nama_tampil ?? row.nama ?? row.kode_kelas ?? '')}>{String(row.nama_tampil ?? row.nama ?? row.kode_kelas ?? '')}</b><span>{tab === 'kelas' ? `${formatNumber(row.skor, 1)} poin rata-rata` : `${formatNumber(row.skor)} poin`}</span></motion.article>)}</motion.div>}
           <div className="leaderboard-table-wrap" data-lenis-prevent><table className="leaderboard-table"><thead><tr>{tab === 'sampah' ? <><th scope="col">Peringkat</th><th scope="col">Kelas</th><th scope="col">Total</th><th scope="col">Per siswa</th><th scope="col">Rata-rata</th><th scope="col">Organik</th><th scope="col">Anorganik</th><th scope="col">Kertas</th><th scope="col">Residu</th><th scope="col">B3</th><th scope="col">Kepatuhan</th><th scope="col">Hari input</th><th scope="col">Tren</th></> : tab === 'riwayat' ? <><th scope="col">Tanggal arsip</th><th scope="col">Papan</th><th scope="col">Peringkat</th><th scope="col">Nama / kelas</th><th scope="col">Skor</th></> : <><th scope="col">Peringkat</th><th scope="col">Nama / kelas</th><th scope="col">Lencana</th><th scope="col">Poin</th></>}</tr></thead><tbody>{rows.map((row, index) => {
             const isOwn = tab === 'sampah' ? row.kode_kelas === data?.currentClass : row.user_id === data?.currentUserId
