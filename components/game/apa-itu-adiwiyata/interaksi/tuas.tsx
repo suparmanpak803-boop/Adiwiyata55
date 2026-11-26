@@ -6,7 +6,7 @@
 'use client'
 
 import { useRef, useState } from 'react'
-import { Minus, Plus } from 'lucide-react'
+import { Minus, MoveHorizontal, Plus } from 'lucide-react'
 import { klik } from '../suara'
 import { clamp } from './util'
 
@@ -161,8 +161,8 @@ export function SliderLever({
           aria-valuetext={`${nilai}${satuan ? ` ${satuan}` : ''}`}
           onKeyDown={onKeyDown}
         >
-          {/* C-26: slider ini horizontal — gagang memakai "↔", bukan "↕". */}
-          ↔
+          {/* C-26: slider ini horizontal, gagang memakai ikon panah horizontal. */}
+          <MoveHorizontal aria-hidden="true" />
         </button>
       </div>
 

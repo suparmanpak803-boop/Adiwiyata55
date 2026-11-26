@@ -164,7 +164,7 @@ export function CariPerbedaan({
         <span className="aia-stat">Ketukan salah {salahKetuk}</span>
         {batasWaktuMs > 0 && (
           <span className="aia-stat" aria-label={`Sisa waktu ${detik} detik`}>
-            ⏱ {detik} detik
+            {detik} detik
           </span>
         )}
       </div>

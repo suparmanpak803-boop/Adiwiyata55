@@ -196,7 +196,7 @@ export function KuisKilat({
         )}
         {!tanpaWaktu && (
           <span className="aia-stat" aria-label={`Sisa waktu ${detik} detik`}>
-            ⏱ {detik} detik
+            {detik} detik
           </span>
         )}
       </div>
@@ -251,7 +251,7 @@ export function KuisKilat({
             <div className="aia-stack">
               {kini.penjelasan && (
                 <p style={{ margin: 0, padding: 12, borderRadius: 12, background: 'var(--card, #fff)', border: '1px solid var(--line, #e5e7eb)' }}>
-                  💡 {kini.penjelasan}
+                  {kini.penjelasan}
                 </p>
               )}
               <div className="aia-actions" style={{ justifyContent: 'flex-end' }}>

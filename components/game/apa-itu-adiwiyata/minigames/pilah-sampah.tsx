@@ -538,8 +538,8 @@ export function PilahSampah({
             <p className="aia-muted" style={{ textAlign: 'center', margin: 0 }}>
               Petunjuk:{' '}
               {tahap === 0
-                ? 'sisa makanan, kulit buah & daun → Organik; plastik, kaleng & kaca → Anorganik; kertas, koran & kardus → Kertas.'
-                : 'styrofoam, tisu, masker & bungkus berminyak → Residu; sisanya seperti tahap 1.'}
+                ? 'sisa makanan, kulit buah dan daun masuk Organik; plastik, kaleng dan kaca masuk Anorganik; kertas, koran dan kardus masuk Kertas.'
+                : 'styrofoam, tisu, masker dan bungkus berminyak masuk Residu; sisanya seperti tahap 1.'}
             </p>
           )}
           <p className="aia-muted" style={{ textAlign: 'center', margin: 0 }}>

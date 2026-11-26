@@ -75,11 +75,7 @@ function potonganPoster(judul: string, brief: string, teksBenar: string): Potong
     potongan.push({
       id: `potongan-${i}`,
       label: kelompok.join(' '),
-      konten: (
-        <span aria-hidden="true" style={{ fontSize: 22 }}>
-          🧩
-        </span>
-      ),
+      konten: null,
     })
   }
   return potongan

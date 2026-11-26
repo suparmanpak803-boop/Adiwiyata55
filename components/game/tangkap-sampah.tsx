@@ -152,7 +152,13 @@ export function TangkapSampah({ onExit, onFinished }: { onExit: () => void; onFi
       }
       ctx.fillStyle = active.color
       ctx.beginPath(); ctx.roundRect(basketX - BASKET_W / 2, BASKET_Y, BASKET_W, 22, 6); ctx.fill()
-      ctx.fillStyle = '#ffffff'; ctx.font = '700 11px sans-serif'; ctx.fillText(active.label, basketX, BASKET_Y + 15)
+      // Label bak di atas pil putih + teks gelap (seperti item jatuh):
+      // teks putih 11px di atas warna bak gagal AA (mis. Kertas 2,93:1).
+      ctx.font = '700 11px sans-serif'
+      const labelW = ctx.measureText(active.label).width + 14
+      ctx.fillStyle = '#ffffff'
+      ctx.beginPath(); ctx.roundRect(basketX - labelW / 2, BASKET_Y + 3, labelW, 16, 8); ctx.fill()
+      ctx.fillStyle = '#1d2b1d'; ctx.fillText(active.label, basketX, BASKET_Y + 15)
     }
 
     const frame = (now: number) => {

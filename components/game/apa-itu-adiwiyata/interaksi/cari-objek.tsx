@@ -156,7 +156,7 @@ export function HiddenObject({
         </span>
         {batasWaktuMs > 0 && (
           <span className="aia-stat" aria-label={`Sisa waktu ${detik} detik`}>
-            ⏱ {detik} detik
+            {detik} detik
           </span>
         )}
       </div>

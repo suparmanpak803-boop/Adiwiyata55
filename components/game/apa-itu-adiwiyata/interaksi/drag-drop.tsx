@@ -287,7 +287,6 @@ export function DragDrop({
           >
             {t.ikon}
             {t.label}
-            {menempel === t.id ? ' ✓' : ''}
           </button>
         ))}
       </div>

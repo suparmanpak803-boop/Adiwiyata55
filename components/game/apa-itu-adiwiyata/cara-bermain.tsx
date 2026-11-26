@@ -89,7 +89,7 @@ export function CaraBermain({ onTutup }: { onTutup: () => void }) {
         <section className="aia-keyboard" aria-label="Kontrol keyboard untuk laptop">
           <h3 className="aia-section-title">Kontrol keyboard (laptop)</h3>
           <ul style={{ margin: '0 0 12px', paddingLeft: 20 }}>
-            <li><kbd>WASD</kbd> / <kbd>←</kbd> <kbd>↑</kbd> <kbd>↓</kbd> <kbd>→</kbd> — gerak</li>
+            <li><kbd>WASD</kbd> / <kbd>Kiri</kbd> <kbd>Atas</kbd> <kbd>Bawah</kbd> <kbd>Kanan</kbd>, gerak</li>
             <li><kbd>E</kbd> / <kbd>Enter</kbd> — bicara dengan NPC (atau buka Tempat Sampah Terpilah / Bank Sampah bila dekat)</li>
             <li><kbd>Spasi</kbd> — lanjut dialog</li>
             <li><kbd>Esc</kbd> — tutup dialog</li>

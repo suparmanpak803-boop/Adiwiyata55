@@ -17,7 +17,7 @@ export const TUGAS: Record<
     npcId: 'npc-bank-sampah',
     zona: 'Bank Sampah',
     menit: 10,
-    icon: '♻️',
+    icon: '',
   },
   'lingkungan-sehat': {
     id: 'lingkungan-sehat',
@@ -27,7 +27,7 @@ export const TUGAS: Record<
     npcId: 'npc-lingkungan-sehat',
     zona: 'Taman & Toilet',
     menit: 10,
-    icon: '🧹',
+    icon: '',
   },
   'edu-lingkungan': {
     id: 'edu-lingkungan',
@@ -37,7 +37,7 @@ export const TUGAS: Record<
     npcId: 'npc-edu-lingkungan',
     zona: 'Kebun',
     menit: 10,
-    icon: '📚',
+    icon: '',
   },
   'inovasi-hijau': {
     id: 'inovasi-hijau',
@@ -47,7 +47,7 @@ export const TUGAS: Record<
     npcId: 'npc-inovasi-hijau',
     zona: 'Taman',
     menit: 10,
-    icon: '💡',
+    icon: '',
   },
   'kantin-hijau': {
     id: 'kantin-hijau',
@@ -57,7 +57,7 @@ export const TUGAS: Record<
     npcId: 'npc-kantin-hijau',
     zona: 'Kantin',
     menit: 10,
-    icon: '🍱',
+    icon: '',
   },
   'data-hijau': {
     id: 'data-hijau',
@@ -67,7 +67,7 @@ export const TUGAS: Record<
     npcId: 'npc-data-hijau',
     zona: 'Pos Data',
     menit: 10,
-    icon: '📊',
+    icon: '',
   },
   'eco-communication': {
     id: 'eco-communication',
@@ -77,7 +77,7 @@ export const TUGAS: Record<
     npcId: 'npc-eco-communication',
     zona: 'Kebun',
     menit: 10,
-    icon: '📣',
+    icon: '',
   },
   'jejaring-hijau': {
     id: 'jejaring-hijau',
@@ -87,6 +87,6 @@ export const TUGAS: Record<
     npcId: 'npc-jejaring-hijau',
     zona: 'Gerbang',
     menit: 10,
-    icon: '🤝',
+    icon: '',
   },
 }

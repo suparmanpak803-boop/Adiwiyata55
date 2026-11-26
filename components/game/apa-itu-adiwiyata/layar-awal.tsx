@@ -70,7 +70,7 @@ function HeroAwal() {
       ctx.fill()
     }
     // Rumput + bunga kecil.
-    ctx.fillStyle = '#7cb85c'
+    ctx.fillStyle = '#93cc6f'
     ctx.fillRect(0, 250, W, 110)
     ctx.fillStyle = '#ffffff'
     for (const [fx, fy] of [

@@ -155,7 +155,7 @@ function bangunStatis(peta: PetaDunia, sempit = false, panelSurya = false, pohon
   if (!g) return c
 
   // Rumput + petak halus.
-  g.fillStyle = '#7cb85c'
+  g.fillStyle = '#93cc6f'
   g.fillRect(0, 0, peta.lebar, peta.tinggi)
   const petak = 60
   g.fillStyle = 'rgba(255,255,255,0.05)'
@@ -166,7 +166,7 @@ function bangunStatis(peta: PetaDunia, sempit = false, panelSurya = false, pohon
   }
 
   // Jalan tanah utama (nanti tertutup zona/bangunan bila bersilangan).
-  g.fillStyle = 'rgba(217,196,154,0.55)'
+  g.fillStyle = 'rgba(233,212,166,0.6)'
   g.fillRect(0, peta.tinggi / 2 - 26, peta.lebar, 52)
   g.fillRect(peta.lebar / 2 - 26, 0, 52, peta.tinggi)
 
@@ -431,7 +431,7 @@ function gambarPetak(g: CanvasRenderingContext2D, petak: PetakKebun, pos: { x: n
   }
   // Tanda layu: tetes air di atas tanaman (tanda butuh disiram).
   if (petak.layu) {
-    g.fillStyle = '#29b6f6'
+    g.fillStyle = '#2e7fa8'
     g.beginPath()
     g.moveTo(cx, cy - 22)
     g.quadraticCurveTo(cx + 5, cy - 14, cx, cy - 11)
@@ -590,7 +590,7 @@ function gambarBankSampah(g: CanvasRenderingContext2D, disorot: boolean, pos: { 
   // Bayangan alas di bawah meja.
   gambarBayangan(g, cx, cy + h / 2 + 3, w / 2, 7)
   // Meja hijau + label.
-  g.fillStyle = '#43a047'
+  g.fillStyle = '#236b4d'
   rr(g, cx - w / 2, cy - h / 2, w, h, 6)
   g.fill()
   g.strokeStyle = 'rgba(0,0,0,0.35)'
@@ -623,7 +623,7 @@ function gambarBoothEco(g: CanvasRenderingContext2D, disorot: boolean, pos: { x:
     g.setLineDash([])
   }
   // Atap bergaris hijau-putih di atas stan.
-  g.fillStyle = '#2e7d32'
+  g.fillStyle = '#236b4d'
   rr(g, cx - w / 2, cy - h / 2 - 10, w, 10, 5)
   g.fill()
   g.fillStyle = '#ffffff'
@@ -657,10 +657,10 @@ function gambarPanelSurya(g: CanvasRenderingContext2D, pos: { x: number; y: numb
   const y = pos.y
   const w = 168
   const h = 20
-  g.fillStyle = '#1e88e5'
+  g.fillStyle = '#2e7fa8'
   rr(g, x, y, w, h, 4)
   g.fill()
-  g.strokeStyle = '#0d47a1'
+  g.strokeStyle = '#1f5f7d'
   g.lineWidth = 1.5
   rr(g, x, y, w, h, 4)
   g.stroke()
@@ -740,7 +740,7 @@ function gambarNpc(g: CanvasRenderingContext2D, n: NpcJalan, disorot: boolean, r
     g.lineWidth = 1.5
     rr(g, -8, -12, 16, 24, 6)
     g.stroke()
-    g.fillStyle = '#29b6f6'
+    g.fillStyle = '#2e7fa8'
     g.fillRect(-3.5, -19, 7, 7)
     g.fillRect(-8, -1, 16, 6)
     g.fillStyle = '#37474f'

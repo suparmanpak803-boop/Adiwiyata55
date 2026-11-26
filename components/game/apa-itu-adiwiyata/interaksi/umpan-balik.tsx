@@ -53,7 +53,7 @@ export function EfekBenar({ tampil, label = 'Benar!' }: { tampil: boolean; label
             }}
           />
         ))}
-      <span className="aia-gi-efek-label">✓ {label}</span>
+      <span className="aia-gi-efek-label">{label}</span>
     </div>
   )
 }

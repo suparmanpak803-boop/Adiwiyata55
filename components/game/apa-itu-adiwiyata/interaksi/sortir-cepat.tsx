@@ -193,7 +193,7 @@ export function SortirCepat({
         </span>
         <span className="aia-stat">Benar {benarHitung}</span>
         <span className="aia-stat" aria-label={`Sisa waktu ${detik} detik`}>
-          ⏱ {detik} detik
+          {detik} detik
         </span>
       </div>
 

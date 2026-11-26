@@ -233,8 +233,8 @@ export function SimulasiKantin({
           {aktif.pelanggan}
         </strong>
         <p style={{ margin: '6px 0 0' }}>{aktif.permintaan}</p>
-        {hasil === 'senang' && <p style={{ margin: '8px 0 0' }}>😊 Pelanggan senang, terima kasih!</p>}
-        {hasil === 'kecewa' && <p style={{ margin: '8px 0 0' }}>😞 Pelanggan pergi kecewa.</p>}
+        {hasil === 'senang' && <p style={{ margin: '8px 0 0' }}>Pelanggan senang, terima kasih!</p>}
+        {hasil === 'kecewa' && <p style={{ margin: '8px 0 0' }}>Pelanggan pergi kecewa.</p>}
         {/* C-33: jawaban salah menyorot tindakan benar (teks) sebagai
             umpan belajar — sebelumnya hanya "pergi kecewa" tanpa petunjuk
             mana tindakan yang benar. Waktu habis tidak menyorot, karena

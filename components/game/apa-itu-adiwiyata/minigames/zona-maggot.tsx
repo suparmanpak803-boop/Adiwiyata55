@@ -925,7 +925,7 @@ function FasePanen({
             <Check aria-hidden="true" /> Panen berhasil! Maggot jadi pakan ikan, kasgotnya jadi pupuk kebun.
           </p>
           <p>
-            <Fish aria-hidden="true" /> Pakan ikan <strong>→</strong> <Sprout aria-hidden="true" /> masuk ke kebun.
+            <Fish aria-hidden="true" /> Pakan ikan dan <Sprout aria-hidden="true" /> masuk ke kebun.
           </p>
           <div className="aia-card" aria-label="Kartu fakta maggot">
             <span className="aia-kicker">Kartu fakta · Maggot BSF</span>
@@ -1041,7 +1041,7 @@ function FasePanenGestur({
             <Check aria-hidden="true" /> Panen berhasil! Maggot jadi pakan ikan, kasgotnya jadi pupuk kebun.
           </p>
           <p>
-            <Fish aria-hidden="true" /> Pakan ikan <strong>→</strong> <Sprout aria-hidden="true" /> masuk ke kebun.
+            <Fish aria-hidden="true" /> Pakan ikan dan <Sprout aria-hidden="true" /> masuk ke kebun.
           </p>
           <div className="aia-card" aria-label="Kartu fakta maggot">
             <span className="aia-kicker">Kartu fakta · Maggot BSF</span>

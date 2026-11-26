@@ -1006,7 +1006,15 @@ function CatatTimbangan({
                       </td>
                     ))}
                     <td style={{ padding: '8px 4px', borderBottom: '1px solid var(--line)' }}>
-                      {hasil[i] === true ? '✓' : hasil[i] === false ? '✗' : i === rowIdx ? '…' : '—'}
+                      {hasil[i] === true ? (
+                        <Check size={16} role="img" aria-label="Benar" />
+                      ) : hasil[i] === false ? (
+                        <X size={16} role="img" aria-label="Salah" />
+                      ) : i === rowIdx ? (
+                        '…'
+                      ) : (
+                        ''
+                      )}
                     </td>
                   </tr>
                 ))}

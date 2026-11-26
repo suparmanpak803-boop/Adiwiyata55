@@ -231,7 +231,7 @@ export function BalasCepat({
       )}
       {jawaban?.benar && jawaban.alasan && (
         <p className="aia-muted" role="status" style={{ margin: 0 }}>
-          ✓ Benar! {jawaban.alasan}
+          Benar! {jawaban.alasan}
         </p>
       )}
 
