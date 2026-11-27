@@ -8,18 +8,18 @@ import './adiwiyata.css'
 
 export const metadata: Metadata = {
   title: 'Informasi Adiwiyata',
-  description: 'Temukan program lingkungan, kegiatan warga sekolah, artikel, dan arsip Adiwiyata SMAN 55 Jakarta — dari pemilahan sampah dan bank sampah sampai kebun sekolah.',
+  description: 'Temukan program lingkungan, kegiatan warga sekolah, artikel, dan arsip Adiwiyata SMAN 55 Jakarta, dari pemilahan sampah dan bank sampah sampai kebun sekolah.',
   alternates: { canonical: 'https://www.adiwiyata55jkt.my.id/adiwiyata' },
   openGraph: {
     title: 'Informasi Adiwiyata | Adiwiyata SMAN 55 Jakarta',
-    description: 'Temukan program lingkungan, kegiatan warga sekolah, artikel, dan arsip Adiwiyata SMAN 55 Jakarta — dari pemilahan sampah dan bank sampah sampai kebun sekolah.',
+    description: 'Temukan program lingkungan, kegiatan warga sekolah, artikel, dan arsip Adiwiyata SMAN 55 Jakarta, dari pemilahan sampah dan bank sampah sampai kebun sekolah.',
     url: 'https://www.adiwiyata55jkt.my.id/adiwiyata',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Informasi Adiwiyata | Adiwiyata SMAN 55 Jakarta',
-    description: 'Temukan program lingkungan, kegiatan warga sekolah, artikel, dan arsip Adiwiyata SMAN 55 Jakarta — dari pemilahan sampah dan bank sampah sampai kebun sekolah.',
+    description: 'Temukan program lingkungan, kegiatan warga sekolah, artikel, dan arsip Adiwiyata SMAN 55 Jakarta, dari pemilahan sampah dan bank sampah sampai kebun sekolah.',
   },
 }
 
@@ -32,7 +32,7 @@ const jsonLd = {
   url: 'https://www.adiwiyata55jkt.my.id/adiwiyata',
   logo: 'https://www.adiwiyata55jkt.my.id/adiwiyata-logo.png',
   // Diselaraskan dengan deskripsi meta halaman ini (120–160 karakter).
-  description: 'Temukan program lingkungan, kegiatan warga sekolah, artikel, dan arsip Adiwiyata SMAN 55 Jakarta — dari pemilahan sampah dan bank sampah sampai kebun sekolah.',
+  description: 'Temukan program lingkungan, kegiatan warga sekolah, artikel, dan arsip Adiwiyata SMAN 55 Jakarta, dari pemilahan sampah dan bank sampah sampai kebun sekolah.',
   inLanguage: 'id',
 }
 

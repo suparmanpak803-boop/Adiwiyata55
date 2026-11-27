@@ -85,7 +85,7 @@ async function validateInput(input: DepositInput) {
     Kertas: input.paper,
   })) {
     if (!Number.isFinite(value) || value < 0 || value > 500 || Math.round(value * 100) !== value * 100) {
-      throw new Error(`Berat ${label} harus 0–500 kg dengan maksimal dua angka desimal.`)
+      throw new Error(`Berat ${label} harus 0 sampai 500 kg dengan maksimal dua angka desimal.`)
     }
   }
   for (const [label, value] of [['Tumbler', input.tumbler], ['Lunch box', input.lunchbox]] as const) {
@@ -249,7 +249,7 @@ export async function saveClass(input: { name: string; studentCount: number | nu
     return { success: false, error: 'Kelas harus terdaftar dan aktif di Master_Kelas.' }
   }
   if (input.studentCount !== null && (!Number.isInteger(input.studentCount) || input.studentCount < 1 || input.studentCount > 100)) {
-    return { success: false, error: 'Jumlah siswa harus bilangan bulat 1–100 atau dikosongkan.' }
+    return { success: false, error: 'Jumlah siswa harus bilangan bulat 1 sampai 100 atau dikosongkan.' }
   }
   const homeroomTeacher = input.homeroomTeacher.trim().slice(0, 100)
   const officerName = input.officerName.trim().slice(0, 100)

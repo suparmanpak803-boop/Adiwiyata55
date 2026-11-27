@@ -28,7 +28,7 @@ function validateVideoInput(input: EducationVideoInput) {
   if (!title) throw new Error('Judul video wajib diisi.')
   if (!allowedVideoCategories.some((category) => category === input.category)) throw new Error('Pilih kategori video yang valid.')
   if (typeof input.description !== 'string' || input.description.length > 500) throw new Error('Deskripsi maksimal 500 karakter.')
-  if (!Number.isInteger(input.displayOrder) || input.displayOrder < 0 || input.displayOrder > 1000) throw new Error('Urutan video harus bilangan bulat 0–1000.')
+  if (!Number.isInteger(input.displayOrder) || input.displayOrder < 0 || input.displayOrder > 1000) throw new Error('Urutan video harus bilangan bulat 0 sampai 1000.')
   if (typeof input.enabled !== 'boolean') throw new Error('Status tayang video tidak valid.')
   return { videoId, youtubeUrl, title, category: input.category, description: input.description.trim(), displayOrder: input.displayOrder, enabled: input.enabled }
 }

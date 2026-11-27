@@ -24,13 +24,13 @@ const sectionDescriptions: Record<string, string> = {
   profil:
     'Perjalanan Adiwiyata SMAN 55 Jakarta: dari kebiasaan memilah sampah di kelas dan membawa tumbler hingga program yang melibatkan seluruh warga sekolah.',
   program:
-    'Lima belas kader menjalankan sepuluh kegiatan lingkungan di SMAN 55 Jakarta — pembibitan TOGA, hidroponik, bank sampah, dan kerja bakti membersihkan sekolah.',
+    'Lima belas kader menjalankan sepuluh kegiatan lingkungan di SMAN 55 Jakarta: pembibitan TOGA, hidroponik, bank sampah, dan kerja bakti membersihkan sekolah.',
   dokumentasi:
     'Kenali 15 kader Adiwiyata SMAN 55 Jakarta beserta uraian tugasnya, dan lihat foto dokumentasi kegiatan lingkungan warga sekolah sejak 2024.',
   publikasi:
     'Artikel dan kabar terbaru seputar gerakan Adiwiyata SMAN 55 Jakarta: pemilahan sampah, bank sampah, kebun sekolah, dan kegiatan warga sekolah.',
   dokumen:
-    'Arsip dokumen resmi program Adiwiyata SMAN 55 Jakarta yang diunggah admin — rujukan kegiatan, laporan, dan bukti pendukung program sekolah.',
+    'Arsip dokumen resmi program Adiwiyata SMAN 55 Jakarta yang diunggah admin: rujukan kegiatan, laporan, dan bukti pendukung program sekolah.',
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ section: string }> }): Promise<Metadata> {

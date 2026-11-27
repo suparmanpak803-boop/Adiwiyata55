@@ -85,12 +85,12 @@ export function DepositWorkspace({ data }: { data: DepositPageData }) {
     for (const [name, label] of weightFields) {
       const weight = input[name]
       if (!String(form.get(name) ?? '').trim()) validation[name] = `Berat ${label} wajib diisi.`
-      else if (!Number.isFinite(weight) || weight < 0 || weight > 500 || Math.round(weight * 100) !== weight * 100) validation[name] = `Berat ${label} harus 0–500 kg, maksimal dua desimal.`
+      else if (!Number.isFinite(weight) || weight < 0 || weight > 500 || Math.round(weight * 100) !== weight * 100) validation[name] = `Berat ${label} harus 0 sampai 500 kg, maksimal dua desimal.`
     }
     for (const [name, label] of [['tumbler', 'Tumbler'], ['lunchbox', 'Lunch box']] as const) {
       const count = input[name]
       if (!String(form.get(name) ?? '').trim()) validation[name] = `Jumlah ${label} wajib diisi.`
-      else if (!Number.isInteger(count) || count < 0 || count > 100) validation[name] = `Jumlah ${label} harus bilangan bulat 0–100.`
+      else if (!Number.isInteger(count) || count < 0 || count > 100) validation[name] = `Jumlah ${label} harus bilangan bulat 0 sampai 100.`
     }
     if (!weightFields.some(([name]) => input[name] > 0)) validation.organic = 'Isi berat lebih dari 0 kg pada sedikitnya satu jenis sampah.'
     const note = String(form.get('note') || '').trim().replace(/\s+/g, ' ')

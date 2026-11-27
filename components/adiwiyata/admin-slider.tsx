@@ -268,7 +268,7 @@ export function AdminSlider({ data }: { data: SliderPageData }) {
       <form className="slider-settings-card" onSubmit={saveSettings}>
         <div className="slider-card-heading"><div><span className="eyebrow">KONTROL TAYANG</span><h2>Pengaturan Slider</h2></div><span className="slider-settings-mark"><Move aria-hidden="true" /> Pengaturan global</span></div>
         <div className="slider-settings-grid">
-          <label className="slider-field"><span>Kecepatan autoplay <small>(2–15 detik)</small></span><input type="number" min={2} max={15} value={settingsDraft.intervalDetik} onChange={(event) => setSettingsDraft((current) => ({ ...current, intervalDetik: Number(event.target.value) }))} /></label>
+          <label className="slider-field"><span>Kecepatan autoplay <small>(2 sampai 15 detik)</small></span><input type="number" min={2} max={15} value={settingsDraft.intervalDetik} onChange={(event) => setSettingsDraft((current) => ({ ...current, intervalDetik: Number(event.target.value) }))} /></label>
           <label className="slider-field"><span>Jenis transisi</span><select value={settingsDraft.transisi} onChange={(event) => setSettingsDraft((current) => ({ ...current, transisi: event.target.value as SliderSettings['transisi'] }))}><option value="fade">Fade</option><option value="slide">Geser</option></select></label>
           <div className="slider-setting-toggles">
             <Toggle label="Autoplay" description="Ganti slide otomatis" checked={settingsDraft.autoplay} onChange={(checked) => setSettingsDraft((current) => ({ ...current, autoplay: checked }))} />

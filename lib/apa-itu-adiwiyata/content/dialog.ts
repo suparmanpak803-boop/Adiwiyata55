@@ -19,7 +19,7 @@ export const DIALOG_AWAL: Record<ChapterId, DialogLine[]> = {
     },
     {
       tokoh: 'Magi',
-      teks: 'Hai! Aku Magi. Kamu siswa baru yang ditugaskan bikin sekolah ini Adiwiyata, ya? Di sini, satu orang yang berani duluan bisa mengubah semuanya.',
+      teks: 'Hai! Aku Magi. Kamu siswa baru yang ditugaskan bikin sekolah ini Adiwiyata, ya? Di sini, satu orang yang berani duluan bisa bikin yang lain ikut.',
     },
     {
       tokoh: 'Pak Plastik',
@@ -81,7 +81,7 @@ export const DIALOG_AWAL: Record<ChapterId, DialogLine[]> = {
     },
     {
       tokoh: 'Magi',
-      teks: 'Tanaman butuh air yang cukup, cahaya, dan pupuk yang benar. Yang rusak masih bisa diperbaiki, asal ada yang mau mulai.',
+      teks: 'Tanaman butuh air yang cukup, cahaya, dan pupuk yang benar. Aduk lagi, tambah daun kering, tumpukan ini masih bisa pulih.',
     },
   ],
   'air-energi': [
@@ -117,7 +117,7 @@ export const DIALOG_AWAL: Record<ChapterId, DialogLine[]> = {
     },
     {
       tokoh: 'Narator',
-      teks: 'Tim penilai sudah di gerbang. Saatnya buktikan kalau peduli itu tidak sia-sia.',
+      teks: 'Tim penilai sudah di gerbang. Giliranmu bicara.',
     },
   ],
 }

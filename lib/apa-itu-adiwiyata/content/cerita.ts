@@ -237,7 +237,7 @@ export const PILIHAN_CERITA: Record<ChapterId, [TitikPilihan, TitikPilihan]> = {
         {
           id: 'aduk-kompos',
           teks: 'Aduk kompos dan tambah daun kering',
-          akibat: 'Udara masuk ke tumpukan, baunya perlahan hilang, dan kamu membuktikan yang rusak bisa diperbaiki sendiri.',
+          akibat: 'Udara masuk ke tumpukan, baunya perlahan hilang, dan tumpukan itu pulih lagi.',
         },
         {
           id: 'siram-eco',
@@ -305,7 +305,7 @@ export const PILIHAN_CERITA: Record<ChapterId, [TitikPilihan, TitikPilihan]> = {
         {
           id: 'siapkan-cerita',
           teks: 'Siapkan cerita tentang kebun untuk tim inspeksi',
-          akibat: 'Kamu menyiapkan cerita yang jujur: tentang botol, Magi, dan kenapa peduli itu tidak sia-sia.',
+          akibat: 'Kamu menyiapkan cerita yang jujur: tentang botol, Magi, dan kebun yang sudah kamu rawat.',
         },
       ],
     },
@@ -368,7 +368,7 @@ export const EPILOG_MISI: Record<ChapterId, EpilogMisi> = {
   maggot: {
     kunci: 'maggot:titik-2',
     opsiBaik: 'pisah-minyak',
-    teksBaik: 'Magi sehat dan lahap lagi. Ternyata peduli itu tidak sia-sia, dan kotak maggotmu jadi contoh buat yang lain.',
+    teksBaik: 'Magi sehat dan lahap lagi. Kotak maggotmu jadi contoh buat yang lain.',
     teksLain: 'Magi tetap makan, tapi kamu mencatat untuk lebih teliti lain kali.',
     bonusBaik: BONUS_EPILOG_BAIK,
     bonusLain: BONUS_EPILOG_LAIN,
@@ -376,7 +376,7 @@ export const EPILOG_MISI: Record<ChapterId, EpilogMisi> = {
   kompos: {
     kunci: 'kompos:titik-2',
     opsiBaik: 'aduk-kompos',
-    teksBaik: 'Kompos yang bau itu sudah kamu perbaiki sendiri, dan kebun ini bukti pertamamu: yang rusak bisa dibetulkan.',
+    teksBaik: 'Kompos yang bau itu sudah kamu perbaiki sendiri, dan kebun ini bukti pertamamu.',
     teksLain: 'Kompos sudah jadi, meski aromanya sempat bikin Pak Kebun menahan napas.',
     bonusBaik: BONUS_EPILOG_BAIK,
     bonusLain: BONUS_EPILOG_LAIN,
@@ -384,7 +384,7 @@ export const EPILOG_MISI: Record<ChapterId, EpilogMisi> = {
   'air-energi': {
     kunci: 'air-energi:titik-2',
     opsiBaik: 'tutup-dulu',
-    teksBaik: 'Tidak ada yang melihat, tapi kamu tetap berbuat benar. Keran berhenti menetes, lampu padam, dan Mbak Rani mencatat penghematan hari ini.',
+    teksBaik: 'Keran berhenti menetes, lampu padam, dan Mbak Rani mencatat penghematan hari ini.',
     teksLain: 'Air dan listrik sudah aman, meski semuanya sempat menunggu laporanmu.',
     bonusBaik: BONUS_EPILOG_BAIK,
     bonusLain: BONUS_EPILOG_LAIN,
@@ -393,7 +393,7 @@ export const EPILOG_MISI: Record<ChapterId, EpilogMisi> = {
     kunci: 'biodiversitas:titik-1',
     opsiBaik: 'cek-taman',
     teksBaik: 'Tim inspeksi tersenyum melihat taman yang terawat. Kamu bicara di depan semua orang, dan Bu Sari bangga.',
-    teksLain: 'Inspeksi berjalan lancar, dan kamu belajar bahwa persiapan tidak bisa dadakan.',
+    teksLain: 'Inspeksi berjalan lancar, tapi lain kali siapkan semuanya lebih awal.',
     bonusBaik: BONUS_EPILOG_BAIK,
     bonusLain: BONUS_EPILOG_LAIN,
   },

@@ -9,19 +9,19 @@ const questions = [
     prompt: 'Botol minummu habis saat istirahat. Apa langkah paling ramah lingkungan?',
     options: ['Beli botol sekali pakai lagi', 'Isi ulang tumbler yang kamu bawa', 'Tinggalkan botol di kelas'],
     answer: 1,
-    feedback: 'Tumbler dan air isi ulang tercatat sebagai kebiasaan yang didorong di sekolah.',
+    feedback: 'Sekolah mendorong kebiasaan ini: bawa tumbler dan isi ulang airnya.',
   },
   {
     prompt: 'Ada sisa daun dan makanan dari kegiatan kelas. Sebaiknya bagaimana?',
     options: ['Campur dengan semua jenis sampah', 'Pilah agar bisa diolah bersama sampah organik', 'Buang ke selokan'],
     answer: 1,
-    feedback: 'Pemilahan organik mendukung kegiatan kompos dan pengolahan organik yang tercatat di sekolah.',
+    feedback: 'Sampah organik yang terpilah diolah jadi kompos di sekolah.',
   },
   {
     prompt: 'Kamu keluar kelas dan tidak ada orang lagi di dalam. Apa aksi kecilmu?',
     options: ['Matikan lampu dan perangkat yang tidak dipakai', 'Biarkan semua tetap menyala', 'Menunggu teman lain melakukannya'],
     answer: 0,
-    feedback: 'Menghemat energi bisa dimulai dari kebiasaan sederhana setiap hari.',
+    feedback: 'Lampu dan perangkat yang dimatikan menghemat energi sekolah.',
   },
 ]
 

@@ -236,7 +236,7 @@ export function StrukturEditor({ data }: { data: StrukturPetugas }) {
 
       <div className="information-admin-groups">
         <section className="information-admin-group" aria-labelledby="struktur-pengurus-title">
-          <div className="information-group-heading"><span className="information-group-number">01</span><div><h2 id="struktur-pengurus-title">Pengurus Inti</h2><p>Pembina dan pengurus yang menopang seluruh gerakan Adiwiyata. Urutan di sini sama dengan urutan tampil di halaman.</p></div></div>
+          <div className="information-group-heading"><span className="information-group-number">01</span><div><h2 id="struktur-pengurus-title">Pengurus Inti</h2><p>Pembina dan pengurus Adiwiyata. Urutan di sini sama dengan urutan tampil di halaman.</p></div></div>
           <div className="information-entry-list">
             {struktur.pengurusInti.map((orang, index) => (
               <article className="information-entry-card" key={kunciUnik(orang, index)}>

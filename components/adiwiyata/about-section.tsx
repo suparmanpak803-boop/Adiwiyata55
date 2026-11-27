@@ -14,7 +14,7 @@ const team = [
 
 const features = [
   { icon: Database, title: 'Data terhubung', description: 'Integrasi otomatis dengan Google Sheets membantu pencatatan tersusun dan mudah ditinjau.' },
-  { icon: Activity, title: 'Pantau lebih dinamis', description: 'Filter rentang tanggal memudahkan pemantauan penggunaan tumbler, lunch box, dan volume sampah.' },
+  { icon: Activity, title: 'Pantau per tanggal', description: 'Filter rentang tanggal memudahkan pemantauan penggunaan tumbler, lunch box, dan volume sampah.' },
   { icon: BookOpenCheck, title: 'Mudah diakses', description: 'Informasi dan edukasi interaktif dirancang untuk siswa maupun admin sekolah.' },
 ]
 
@@ -26,7 +26,7 @@ export function AboutSection() {
           <span className="adi-about-kicker"><Leaf aria-hidden="true" /> PLATFORM DIGITAL · SMAN 55 JAKARTA</span>
           <h2>Data yang lebih jernih untuk sekolah yang lebih hijau.</h2>
           <p>Adiwiyata 55 adalah platform digital berbasis web untuk sistem monitoring program Adiwiyata di lingkungan SMAN 55 Jakarta.</p>
-          <p>Platform ini lahir untuk menggantikan pencatatan volume sampah manual berbasis kertas dengan sistem digital yang transparan, akurat, dan dapat dipantau secara real-time.</p>
+          <p>Platform ini lahir untuk menggantikan pencatatan volume sampah manual berbasis kertas dengan sistem digital yang transparan dan akurat, yang bisa dipantau kapan saja.</p>
           <div className="adi-about-transition" aria-label="Perubahan pencatatan dari manual menjadi digital">
             <span><BookOpenCheck aria-hidden="true" /> Catatan kertas</span>
             <ArrowDownUp aria-hidden="true" />

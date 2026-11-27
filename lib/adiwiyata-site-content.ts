@@ -59,7 +59,7 @@ export const DEFAULT_ADIWIYATA_SITE_CONTENT: AdiwiyataSiteContent = {
     title: 'Sekolah Peduli',
     emphasis: 'dan Berbudaya Lingkungan',
     description:
-      'SMAN 55 Jakarta mengajak seluruh warga sekolah memilah sampah, menghemat energi, dan merawat lingkungan, setiap hari, bukan hanya saat lomba.',
+      'SMAN 55 Jakarta mengajak seluruh warga sekolah memilah sampah, menghemat energi, dan merawat lingkungan setiap hari.',
     primaryAction: 'Lihat program & kegiatan',
     secondaryAction: 'Unduh dokumen',
     caption: 'Aksi nyata, tercatat bersama.',
@@ -82,17 +82,17 @@ export const DEFAULT_ADIWIYATA_SITE_CONTENT: AdiwiyataSiteContent = {
       historyEyebrow: 'SEJARAH',
       historyTitle: 'Bagaimana perjalanan Adiwiyata 55?',
       historyBody:
-        'Gerakan Adiwiyata di SMAN 55 Jakarta dimulai dari kebiasaan sederhana: memilah sampah di kelas, membawa tumbler, dan merawat taman sekolah. Dari kebiasaan itu tumbuh program yang melibatkan seluruh warga sekolah. Kebiasaan memilah memakai lima kategori sampah — Organik, Anorganik, Residu, B3, dan Kertas — dan setiap kelas mencatat setoran hariannya, sehingga kebiasaan kecil itu tercatat dan bisa dipantau bersama.',
+        'Gerakan Adiwiyata di SMAN 55 Jakarta dimulai dari kebiasaan sederhana: memilah sampah di kelas, membawa tumbler, dan merawat taman sekolah. Dari kebiasaan itu tumbuh program yang melibatkan seluruh warga sekolah. Pemilahan memakai lima kategori sampah (Organik, Anorganik, Residu, B3, dan Kertas), dan setiap kelas mencatat setoran hariannya, sehingga kebiasaan kecil itu tercatat dan bisa dipantau bersama.',
       programsEyebrow: 'PRAKTIK SEKOLAH',
       programsTitle: 'Apa yang dilakukan warga sekolah setiap hari?',
       programsBody:
-        'Setiap kelas memilah sampah dan mencatat setoran hariannya. Kader lingkungan memantau kebersihan, drainase, dan taman. Hasilnya dipantau lewat dashboard dan diapresiasi lewat leaderboard. Pemantauan itu mencakup kebiasaan membawa tumbler dan tempat makan dari rumah, serta volume sampah yang terpilah ke dalam lima kategori. Dengan begitu, setiap kelas bisa melihat sendiri hasil kebiasaan baiknya — bukan hanya saat lomba, melainkan setiap hari.',
+        'Setiap kelas memilah sampah dan mencatat setoran hariannya. Kader lingkungan memantau kebersihan, drainase, dan taman. Hasilnya tampil di dashboard dan leaderboard. Pemantauan itu juga mencakup kebiasaan membawa tumbler dan tempat makan dari rumah, serta volume sampah yang terpilah ke dalam lima kategori. Dengan begitu, setiap kelas bisa melihat sendiri hasil kebiasaan baiknya setiap hari.',
       noteTitle: 'Catatan kelengkapan',
       noteBody: 'Dokumen pendukung program Adiwiyata tersedia di halaman Dokumen & Arsip.',
     },
     program: {
       title: 'Program & kegiatan',
-      intro: 'Program dan kegiatan lingkungan yang dijalankan warga SMAN 55 Jakarta. Lima belas kader membagi tugas — dari pemilahan sampah, kompos, dan maggot sampai TOGA, hidroponik, dan bank sampah — dan setiap kegiatan tercatat beserta tanggal dan foto dokumentasinya.',
+      intro: 'Program dan kegiatan lingkungan yang dijalankan warga SMAN 55 Jakarta. Lima belas kader membagi tugas, dari pemilahan sampah, kompos, dan maggot sampai TOGA, hidroponik, dan bank sampah, dan setiap kegiatan tercatat beserta tanggal dan foto dokumentasinya.',
     },
     dokumentasi: {
       title: 'Kader & dokumentasi',
@@ -108,7 +108,7 @@ export const DEFAULT_ADIWIYATA_SITE_CONTENT: AdiwiyataSiteContent = {
     },
     dokumen: {
       title: 'Dokumen & arsip',
-      intro: 'Arsip dokumen resmi program Adiwiyata SMAN 55 Jakarta — rujukan kegiatan, laporan, dan bukti pendukung program yang diunggah oleh Admin.',
+      intro: 'Arsip dokumen resmi program Adiwiyata SMAN 55 Jakarta yang diunggah oleh Admin: rujukan kegiatan, laporan, dan bukti pendukung program.',
       noteTitle: 'Pemberitahuan',
       noteBody: 'Dokumen diunggah oleh Admin. Bila tautan tidak dapat dibuka, hubungi Admin Adiwiyata.',
     },
@@ -125,7 +125,7 @@ export const DEFAULT_ADIWIYATA_SITE_CONTENT: AdiwiyataSiteContent = {
     {
       title: 'Pemeliharaan Hidroponik',
       category: 'Hidroponik',
-      date: 'Juli 2024 – Januari 2025',
+      date: 'Juli 2024 sampai Januari 2025',
       description:
         'Piket harian kader guru dan siswa: membuat cairan nutrisi AB Mix, mengecek tanaman, serta memantau pH dan suhu air. Periode 1 (17 Juli 2024) dan periode 2 (23 Januari 2025).',
       images: ['/dokumentasi/pemeliharaan-hidroponik-1.jpg', '/dokumentasi/pemeliharaan-hidroponik-2.jpg'],
@@ -158,7 +158,7 @@ export const DEFAULT_ADIWIYATA_SITE_CONTENT: AdiwiyataSiteContent = {
       category: 'Kebersihan',
       date: 'Setiap hari & 13 Agustus 2024',
       description:
-        'Rutin setiap hari oleh petugas kebersihan (caraka); peserta didik membantu saat kerja bakti dua mingguan. 9 peserta. Bentuk kesadaran bersama menjaga toilet tetap bersih.',
+        'Rutin setiap hari oleh petugas kebersihan (caraka); peserta didik membantu saat kerja bakti dua mingguan. 9 peserta.',
       images: ['/dokumentasi/membersihkan-toilet-1.jpg', '/dokumentasi/membersihkan-toilet-2.jpg'],
     },
     {
@@ -296,7 +296,7 @@ export const DEFAULT_ADIWIYATA_SITE_CONTENT: AdiwiyataSiteContent = {
         'Melakukan patroli rutin untuk mematikan lampu, kipas angin, AC, dan proyektor di kelas atau ruang operasional yang tidak sedang digunakan.',
         'Memastikan peralatan elektronik dalam posisi off (bukan standby) saat kepulangan sekolah, dan akhir pekan.',
         'Memasang dan merawat media edukasi visual (stiker/label imbauan hemat energi) di dekat sakelar listrik, AC, dan perangkat elektronik.',
-        'Membantu memantau pengaturan suhu standar AC sekolah (disarankan pada suhu efisien 24°C–26°C).',
+        'Membantu memantau pengaturan suhu standar AC sekolah (disarankan pada suhu efisien 24°C sampai 26°C).',
         'Mengedukasi dan mengampanyekan Gerakan Hemat Energi kepada warga sekolah melalui aksi sosialisasi antarkelas atau kampanye digital.',
         'Berpartisipasi aktif dalam pengorganisasian agenda berkala sekolah seperti "Hari Bebas Kendaraan Bermotor Sekolah" (School Car-Free Day).',
         'Mendokumentasikan serta membuat kolase dokumentasi seluruh kegiatan terkait Kader Energi Lestari.',

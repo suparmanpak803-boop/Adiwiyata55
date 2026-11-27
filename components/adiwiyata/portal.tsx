@@ -154,7 +154,7 @@ function EducationSections() {
     <section className="education-section" id="edukasi" aria-labelledby="education-title">
       <div className="section-intro">
         <div><span className="eyebrow">BELAJAR & BERGERAK</span><h2 id="education-title" aria-label="Kenali gerakan Adiwiyata"><WordReveal text="Kenali gerakan Adiwiyata" /></h2></div>
-        <p>Memahami lingkungan adalah langkah pertama untuk merawatnya bersama.</p>
+        <p>Merawat lingkungan dimulai dari memahaminya.</p>
       </div>
       <motion.div className="education-list" variants={staggerParent} initial="hidden" animate="show">
         {EDU_DEFAULTS.sections.map((section, index) => {

@@ -231,7 +231,7 @@ export async function saveSliderSettings(input: {
   await ensureSliderSchema()
   // B-04: batas laju perubahan slider (30/jam per admin).
   if (!(await allowRequest(`slider:${admin.id}`, 30, 3600))) throw new Error('Terlalu banyak perubahan. Coba lagi nanti.')
-  if (!input || !Number.isInteger(input.intervalDetik) || input.intervalDetik < 2 || input.intervalDetik > 15) throw new Error('Kecepatan slider harus 2–15 detik.')
+  if (!input || !Number.isInteger(input.intervalDetik) || input.intervalDetik < 2 || input.intervalDetik > 15) throw new Error('Kecepatan slider harus 2 sampai 15 detik.')
   if (input.transisi !== 'fade' && input.transisi !== 'slide') throw new Error('Jenis transisi tidak valid.')
   if ([input.autoplay, input.tampilPanah, input.tampilDots].some((value) => typeof value !== 'boolean')) throw new Error('Pengaturan kontrol tidak valid.')
   await db.insert(sliderSettings).values({

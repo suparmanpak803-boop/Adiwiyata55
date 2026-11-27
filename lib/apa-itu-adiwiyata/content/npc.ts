@@ -43,7 +43,7 @@ export const DIALOG_NPC: Record<string, DialogNpc> = {
   'kang-kantin': {
     sapaan: 'Selamat datang di kantin! Makan dulu, pilah belakangan juga boleh.',
     baris: [
-      'Di sini yang paling penting: sisa makanan ke bak Organik, botol bersih ke bak Anorganik, kardus dan koran ke bak Kertas.',
+      'Di sini aturannya: sisa makanan ke bak Organik, botol bersih ke bak Anorganik, kardus dan koran ke bak Kertas.',
       'Bungkus berminyak jangan masuk bak hijau, nanti maggot-nya Magi bisa sakit.',
       'Kalau bingung, lihat baknya: warnanya beda-beda, tinggal ikuti saja.',
     ],
@@ -71,10 +71,10 @@ export const DIALOG_NPC: Record<string, DialogNpc> = {
     sapaan: 'Selamat pagi, Nak. Ibu Sari, guru di sini.',
     baris: [
       'Tim Adiwiyata itu bukan datang untuk menakut-nakuti. Mereka datang melihat kebiasaan baik yang sudah jalan.',
-      'Tim penilai menilai kebiasaan sehari-hari, bukan sekali bersih-bersih. Kalau kamu sudah berani duluan, sisanya mengikuti.',
+      'Tim penilai menilai kebiasaan sehari-hari, bukan sekali bersih-bersih. Kamu sudah mulai duluan. Teruskan saja.',
       'Ibu bangga sama kalian yang mau belajar dari bab pertama sampai sekarang.',
     ],
-    tips: 'Sekolah Adiwiyata itu soal budaya, bukan soal sekali bersih-bersih.',
+    tips: 'Sekolah Adiwiyata itu soal kebiasaan sehari-hari.',
   },
   dimas: {
     sapaan: 'Eh, hai! Aku Dimas, kelas sebelah.',
