@@ -45,6 +45,7 @@ ALTER TABLE public.adiwiyata_user_roles ADD COLUMN IF NOT EXISTS total_poin inte
 ALTER TABLE public.adiwiyata_user_roles ADD COLUMN IF NOT EXISTS tampil_inisial boolean NOT NULL DEFAULT false;
 ALTER TABLE public.adiwiyata_user_roles ADD COLUMN IF NOT EXISTS diblokir_leaderboard boolean NOT NULL DEFAULT false;
 ALTER TABLE public.adiwiyata_user_roles ADD COLUMN IF NOT EXISTS expires_on date;
+ALTER TABLE public.adiwiyata_user_roles ADD COLUMN IF NOT EXISTS nomor_absen smallint CHECK (nomor_absen IS NULL OR nomor_absen BETWEEN 1 AND 40);
 
 -- Kolom paper (Kertas) dan residual (Residu) sudah menjadi kolom numerik terpisah.
 CREATE TABLE IF NOT EXISTS public.adiwiyata_deposits (

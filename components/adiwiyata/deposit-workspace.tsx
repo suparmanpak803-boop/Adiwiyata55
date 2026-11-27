@@ -35,7 +35,7 @@ const weightFields = [
   ['paper', 'Kertas'],
 ] as const
 
-export function DepositWorkspace({ data }: { data: DepositPageData }) {
+export function DepositWorkspace({ data, defaultClassName }: { data: DepositPageData; defaultClassName?: string | null }) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [message, setMessage] = useState('')
@@ -217,7 +217,7 @@ export function DepositWorkspace({ data }: { data: DepositPageData }) {
       </section> : <form className="deposit-form" onSubmit={submit} noValidate>
         <div className="deposit-form-grid">
           <label className="deposit-field"><span>Tanggal</span><input name="date" type="date" max={new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta' }).format(new Date())} defaultValue={new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta' }).format(new Date())} required />{fieldErrors.date && <small className="field-error">{fieldErrors.date}</small>}</label>
-          <div className="deposit-field class-location-field"><ClassLocationPicker classes={classes} invalid={Boolean(fieldErrors.className)} errorId="class-name-error" />{fieldErrors.className && <small id="class-name-error" className="field-error">{fieldErrors.className}</small>}</div>
+          <div className="deposit-field class-location-field"><ClassLocationPicker classes={classes} invalid={Boolean(fieldErrors.className)} errorId="class-name-error" defaultValue={defaultClassName ?? null} />{fieldErrors.className && <small id="class-name-error" className="field-error">{fieldErrors.className}</small>}</div>
           {weightFields.map(([name, label]) => <label className="deposit-field" key={name}><span>{label} (kg)</span><input name={name} type="number" min="0" max="500" step="0.01" defaultValue="0" required />{fieldErrors[name] && <small className="field-error">{fieldErrors[name]}</small>}</label>)}
           <div className="deposit-field-group"><strong>Pembiasaan membawa wadah pakai ulang</strong><span>Isi jumlah siswa yang membawa tumbler dan lunch box, setelah data pilah sampah.</span></div>
           <label className="deposit-field"><span>Siswa membawa tumbler</span><input name="tumbler" type="number" min="0" max="100" step="1" defaultValue="0" required />{fieldErrors.tumbler && <small className="field-error">{fieldErrors.tumbler}</small>}</label>

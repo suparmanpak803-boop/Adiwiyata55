@@ -17,13 +17,11 @@ import {
   GraduationCap, Handshake, Landmark,
   ImagePlus,
   Leaf,
-  LogOut,
   Menu,
-  Moon, Recycle,
+  Recycle,
   ScrollText,
   Settings,
   ShieldCheck, Sprout,
-  Sun,
   Trophy,
   Users,
   X,
@@ -34,11 +32,13 @@ const EDU_SECTION_ICONS: Record<string, typeof Leaf> = { sprout: Sprout, landmar
 import { DEFAULT_ADIWIYATA_SITE_CONTENT } from '@/lib/adiwiyata-site-content'
 import { DepositWorkspace } from '@/components/adiwiyata/deposit-workspace'
 import { MonitoringDashboard } from '@/components/adiwiyata/monitoring-dashboard'
+import UserProfileDropdown from '@/components/adiwiyata/user-profile-dropdown'
 import { SheetsSettingsPanel } from '@/components/adiwiyata/sheets-settings-panel'
 import { ClassDirectory } from '@/components/adiwiyata/class-directory'
 import { EducationVideoSettingsPanel } from '@/components/adiwiyata/education-video-settings-panel'
 import type { getDepositPageData } from '@/app/actions/deposits'
 import { authClient } from '@/lib/auth/client'
+import type { PortalUser } from '@/lib/auth/access'
 import { HomeSlider } from '@/components/adiwiyata/home-slider'
 import { AdiwiyataLogoMark } from '@/components/adiwiyata/logo-mark'
 import type { SliderPageData } from '@/lib/slider/data'
@@ -248,13 +248,25 @@ function SyaratPetugasView() {
   )
 }
 
-export function AdiwiyataPortal({ user, depositData, sheetsConfig, educationVideoData, sliderData }: { user: { name: string; role: 'admin' | 'petugas' | 'pengunjung' }; depositData: Awaited<ReturnType<typeof getDepositPageData>>; sheetsConfig: { url: string; configured: boolean } | null; educationVideoData: EducationVideoAdminData | null; sliderData: SliderPageData }) {
+export type ProfileStats = { setoran: number; hariTumbler: number }
+
+const DISPLAY_NAME_KEY = 'adiwiyata-nama-tampilan-v1'
+
+export function AdiwiyataPortal({ user, depositData, sheetsConfig, educationVideoData, sliderData, profileStats }: { user: PortalUser; depositData: Awaited<ReturnType<typeof getDepositPageData>>; sheetsConfig: { url: string; configured: boolean } | null; educationVideoData: EducationVideoAdminData | null; sliderData: SliderPageData; profileStats?: ProfileStats | null }) {
   const router = useRouter()
   const [view, setView] = useState<View>('beranda')
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [dark, setDark] = useState<boolean | null>(null)
   const [guideOpen, setGuideOpen] = useState(false)
   const [signingOut, setSigningOut] = useState(false)
+  // Salinan pengguna lokal: diperbarui saat kelas disimpan dari
+  // dropdown, supaya badge trigger berubah tanpa muat ulang.
+  const [profileUser, setProfileUser] = useState(user)
+  // Nama tampilan: awal dari nama akun, lalu ditimpa simpanan lokal.
+  const [displayName, setDisplayName] = useState(user.name)
+  // Filter kelas awal dashboard monitoring, diisi dari riwayat kelas
+  // di dropdown. Null berarti tampilkan semua kelas.
+  const [monitoringClassFilter, setMonitoringClassFilter] = useState<string | null>(null)
 
   async function handleSignOut() {
     if (signingOut) return
@@ -277,8 +289,41 @@ export function AdiwiyataPortal({ user, depositData, sheetsConfig, educationVide
     }
   }
 
+  function handleDisplayNameChange(next: string) {
+    setDisplayName(next)
+    try {
+      if (next.trim()) localStorage.setItem(DISPLAY_NAME_KEY, next)
+      else localStorage.removeItem(DISPLAY_NAME_KEY)
+    } catch {
+      // Simpanan lokal tidak tersedia: nama tetap berlaku di sesi ini.
+    }
+  }
+
+  // Riwayat kelas di dropdown: buka dashboard monitoring yang sudah
+  // difilter ke kelas itu. Dropdown menutup dirinya sendiri.
+  function handleOpenClassHistory(className: string) {
+    setMonitoringClassFilter(className)
+    selectView('monitoring')
+  }
+
+  // Kelas disimpan dari dropdown: perbarui pengguna lokal supaya badge
+  // langsung berubah, lalu segarkan data server.
+  function handleClassSaved(className: string | null, nomorAbsen: number | null) {
+    setProfileUser((current) => ({ ...current, className, nomorAbsen }))
+    router.refresh()
+  }
+
   useEffect(() => {
     setDark(window.matchMedia('(prefers-color-scheme: dark)').matches)
+  }, [])
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(DISPLAY_NAME_KEY)
+      if (saved) setDisplayName(saved)
+    } catch {
+      // Simpanan lokal tidak tersedia: pakai nama akun.
+    }
   }, [])
 
   useEffect(() => {
@@ -293,6 +338,9 @@ export function AdiwiyataPortal({ user, depositData, sheetsConfig, educationVide
 
   const selectView = (next: View) => {
     setDrawerOpen(false)
+    // Pindah dari dashboard monitoring berarti filter kelas awal tidak
+    // lagi berlaku; kembali ke monitoring nanti menampilkan semua kelas.
+    if (next !== 'monitoring') setMonitoringClassFilter(null)
     if (next === 'edukasi') { router.push('/edukasi'); return }
     if (next === 'slider') { router.push('/admin/slider'); return }
     if (next === 'struktur') { router.push('/admin/struktur'); return }
@@ -325,13 +373,13 @@ export function AdiwiyataPortal({ user, depositData, sheetsConfig, educationVide
           <button className="icon-button menu-trigger" aria-label="Buka menu navigasi" aria-expanded={drawerOpen} onClick={() => setDrawerOpen(true)}><Menu /></button>
           <div className="brand-lockup"><a className="brand-emblem" href="/adiwiyata-logo.png" target="_blank" rel="noreferrer" aria-label="Lihat logo Adiwiyata di tab baru"><AdiwiyataLogoMark /></a><button type="button" className="brand-text" onClick={() => selectView('beranda')} aria-label="Adiwiyata 55 SMAN 55 Jakarta, kembali ke beranda"><span><strong>Adiwiyata <span>55</span></strong><small>SMAN 55 JAKARTA</small></span></button></div>
           <nav className="desktop-nav" aria-label="Navigasi utama"><a className="nav-link" href="/adiwiyata">INFORMASI ADIWIYATA</a><a className="nav-link" href="/adiwiyata/tentang">TENTANG KAMI</a>{visibleNavigation(user.role).map((item) => <button className={view === item.id ? 'nav-link active' : 'nav-link'} key={item.id} onClick={() => selectView(item.id)}>{item.label}</button>)}</nav>
-          <div className="topbar-actions"><span className="school-label" title={`${user.name} · ${user.role}`}>{user.role === 'admin' ? 'ADMIN' : user.role === 'petugas' ? 'PETUGAS' : 'PENGUNJUNG'}</span><button className="icon-button theme-toggle" aria-label={dark ? 'Aktifkan mode terang' : 'Aktifkan mode gelap'} onClick={() => setDark((value) => !value)}>{dark ? <Sun /> : <Moon />}</button><button className="icon-button signout-button" aria-label="Keluar dari akun" disabled={signingOut} onClick={() => { void handleSignOut() }} title="Keluar"><LogOut aria-hidden="true" /></button></div>
+          <div className="topbar-actions"><UserProfileDropdown user={profileUser} displayName={displayName} onDisplayNameChange={handleDisplayNameChange} classes={depositData.classes} dark={dark ?? false} onToggleDark={() => setDark((value) => !value)} onSignOut={() => { void handleSignOut() }} onOpenClassHistory={handleOpenClassHistory} profileStats={profileStats ?? null} onClassSaved={handleClassSaved} /></div>
         </div>
       </header>
 
       {drawerOpen && <div className="drawer-scrim" onClick={() => setDrawerOpen(false)}><aside className="nav-drawer" aria-label="Menu navigasi" data-lenis-prevent onClick={(event) => event.stopPropagation()}><div className="drawer-header"><span className="eyebrow">MENU UTAMA</span><button className="icon-button" aria-label="Tutup menu" onClick={() => setDrawerOpen(false)}><X /></button></div><nav><a className="drawer-link" href="/adiwiyata"><Leaf aria-hidden="true" /><span>INFORMASI ADIWIYATA</span><ArrowRight className="drawer-arrow" aria-hidden="true" /></a><a className="drawer-link" href="/adiwiyata/tentang"><BookOpen aria-hidden="true" /><span>TENTANG KAMI</span><ArrowRight className="drawer-arrow" aria-hidden="true" /></a>{visibleNavigation(user.role).map((item) => { const Icon = item.icon; return <button key={item.id} className={view === item.id ? 'drawer-link active' : 'drawer-link'} onClick={() => selectView(item.id)}><Icon aria-hidden="true" /><span>{item.label}</span></button> })}<button className="drawer-link" onClick={() => { setDrawerOpen(false); setGuideOpen(true) }}><CircleHelp aria-hidden="true" /><span>Panduan</span><ArrowRight className="drawer-arrow" aria-hidden="true" /></button></nav><div className="drawer-footer"><a className="brand-emblem" href="/adiwiyata-logo.png" target="_blank" rel="noreferrer" aria-label="Lihat logo Adiwiyata di tab baru"><AdiwiyataLogoMark /></a><span>Peduli lingkungan,<br />mulai dari sekolah.</span></div></aside></div>}
 
-      {view === 'pengaturan' ? <SheetsSettingsPanel initialUrl={sheetsConfig?.url ?? ''} initiallyConfigured={sheetsConfig?.configured ?? false} /> : view === 'video' ? <EducationVideoSettingsPanel data={educationVideoData ?? { videos: [], error: null }} /> : view === 'monitoring' ? <MonitoringDashboard summary={depositData.sheetsSummary} initialError={depositData.sheetsError} classes={depositData.classes} role={user.role} /> : view === 'setoran' ? <DepositWorkspace data={depositData} /> : view === 'kelas' ? <ClassDirectory classes={depositData.classes} isAdmin={user.role === 'admin'} /> : view === 'syaratpetugas' ? <SyaratPetugasView /> : <>
+      {view === 'pengaturan' ? <SheetsSettingsPanel initialUrl={sheetsConfig?.url ?? ''} initiallyConfigured={sheetsConfig?.configured ?? false} /> : view === 'video' ? <EducationVideoSettingsPanel data={educationVideoData ?? { videos: [], error: null }} /> : view === 'monitoring' ? <MonitoringDashboard summary={depositData.sheetsSummary} initialError={depositData.sheetsError} classes={depositData.classes} role={user.role} initialClassName={monitoringClassFilter} /> : view === 'setoran' ? <DepositWorkspace data={depositData} defaultClassName={profileUser.className} /> : view === 'kelas' ? <ClassDirectory classes={depositData.classes} isAdmin={user.role === 'admin'} /> : view === 'syaratpetugas' ? <SyaratPetugasView /> : <>
         <section className="hero-section">
           <div className="hero-copy"><span className="hero-kicker">MASALAH DI SEKOLAH KITA</span><h1 aria-label="Sampah menumpuk. Saatnya memilah."><WordReveal text="Sampah menumpuk." /><br /><em><WordReveal text="Saatnya memilah." /></em></h1><p>{totalKg > 0 ? <>Sekolah kita sudah memilah <strong>{formatKg(pilahKg)} kg</strong> sampah, tapi <strong>{formatKg(residualKg)} kg</strong> masih berakhir sebagai residu. Bersama warga SMAN 55 Jakarta, rawat lingkungan mulai hari ini. Bumi ini kita pinjam dari generasi mendatang.</> : <>Sekolah kita memilah sampah setiap hari, tapi sebagian masih berakhir sebagai residu. Bersama warga SMAN 55 Jakarta, rawat lingkungan mulai hari ini. Bumi ini kita pinjam dari generasi mendatang.</>}</p><div className="hero-actions"><button className="primary-button" onClick={() => document.getElementById('edukasi')?.scrollIntoView({ behavior: 'smooth' })}>Jelajahi Adiwiyata <ArrowDownRight aria-hidden="true" /></button><button className="text-button" onClick={() => selectView('edukasi')}>Video edukasi <ArrowRight aria-hidden="true" /></button></div><div className="hero-caption"><span className="hero-caption-line" /> <span>MASALAH · AKSI · BUKTI</span></div></div>
           <div className="hero-art"><HomeSlider slides={sliderData.slides} settings={sliderData.settings} /></div>

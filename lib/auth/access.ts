@@ -15,8 +15,10 @@ export type PortalRole = 'admin' | 'petugas' | 'pengunjung'
 export type PortalUser = {
   id: string
   name: string
+  email: string
   role: PortalRole
   className: string | null
+  nomorAbsen: number | null
 }
 
 function toPortalRole(dbRole: string | null | undefined): PortalRole {
@@ -49,11 +51,27 @@ export async function getPortalUser(): Promise<PortalUser | null> {
     role = 'pengunjung'
     className = null
   }
+  // Nomor absen dibaca lewat query kedua: kolomnya baru ada di DB
+  // setelah admin mengetuk perbaikan tabel, jadi kegagalan di sini
+  // tidak boleh menggagalkan pembacaan peran dan kelas di atas.
+  let nomorAbsen: number | null = null
+  try {
+    const absen = await pool.query<{ nomor_absen: number | null }>(
+      `SELECT nomor_absen FROM public.adiwiyata_user_roles WHERE user_id = $1 LIMIT 1`,
+      [authUser.id],
+    )
+    const value = absen.rows[0]?.nomor_absen
+    nomorAbsen = typeof value === 'number' ? value : null
+  } catch {
+    nomorAbsen = null
+  }
   return {
     id: authUser.id,
     name: (authUser as { name?: string | null }).name ?? '',
+    email: (authUser as { email?: string | null }).email ?? '',
     role,
     className,
+    nomorAbsen,
   }
 }
 

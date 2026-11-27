@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition, type FormEvent } from 'react'
+import { useEffect, useRef, useState, useTransition, type FormEvent } from 'react'
 import { motion } from 'motion/react'
 import { BarFill, CountUp, WordReveal, fadeUpChild, staggerParent } from '@/components/animations'
 import { Bar, BarChart, CartesianGrid, Cell, Legend, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
@@ -10,16 +10,22 @@ import { fetchJson } from '@/lib/api-client'
 
 const chartColors = ['#236b4d', '#8dbb78', '#d7e8a5', '#5f8d73', '#c99b61']
 
-export function MonitoringDashboard({ summary: initialSummary, initialError, classes, role }: {
+export function MonitoringDashboard({ summary: initialSummary, initialError, classes, role, initialClassName }: {
   summary: SpreadsheetSummary | null
   initialError: string | null
   classes: { name: string; grade: string; rombel: string }[]
   role: 'admin' | 'petugas' | 'pengunjung'
+  // Filter kelas awal (mis. dari riwayat kelas di profil): diterapkan
+  // diam-diam saat mount untuk semua peran, tanpa membuka kontrol
+  // filter kelas untuk non-admin.
+  initialClassName?: string | null
 }) {
   const [summary, setSummary] = useState(initialSummary)
   const [error, setError] = useState(initialError)
   const [pending, startTransition] = useTransition()
-  const [filters, setFilters] = useState({ from: '', to: '', grade: 'all', classNames: [] as string[] })
+  const [filters, setFilters] = useState({ from: '', to: '', grade: 'all', classNames: initialClassName ? [initialClassName] : [] as string[] })
+  // Keterangan filter awal tampil selama kelas awal masih terpilih.
+  const [initialFilterActive, setInitialFilterActive] = useState(Boolean(initialClassName))
   const totalKg = summary?.totalKg ?? 0
   const entryCount = summary?.recordCount ?? 0
   const classRows = summary?.byClass ?? []
@@ -38,16 +44,17 @@ export function MonitoringDashboard({ summary: initialSummary, initialError, cla
   const weightRanking = classRankRows.slice().sort((a, b) => b.totalKg - a.totalKg || a.className.localeCompare(b.className))
   const complianceRanking = classRankRows.filter((item) => item.entries > 0).slice().sort((a, b) => b.compliancePercent - a.compliancePercent || a.className.localeCompare(b.className))
 
-  function applyFilters(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
+  // Muat ringkasan dengan satu set filter; dipakai saat menerapkan
+  // filter dari form maupun saat filter awal dipasang ketika mount.
+  function fetchSummary(next: { from: string; to: string; grade: string; classNames: string[] }) {
     setError(null)
     startTransition(async () => {
       try {
         const params = new URLSearchParams()
-        if (filters.from) params.set('from', filters.from)
-        if (filters.to) params.set('to', filters.to)
-        if (filters.grade !== 'all') params.set('grade', filters.grade)
-        if (filters.classNames.length) params.set('classNames', filters.classNames.join(','))
+        if (next.from) params.set('from', next.from)
+        if (next.to) params.set('to', next.to)
+        if (next.grade !== 'all') params.set('grade', next.grade)
+        if (next.classNames.length) params.set('classNames', next.classNames.join(','))
         const result = await fetchJson<{ success?: boolean; error?: string } & Partial<SpreadsheetSummary>>(`/api/submit?${params.toString()}`, { cache: 'no-store' })
         if (!result.success) throw new Error(result.error || 'Rekap Spreadsheet belum dapat dimuat. Periksa koneksi, lalu muat ulang halaman.')
         setSummary(result as SpreadsheetSummary)
@@ -55,6 +62,29 @@ export function MonitoringDashboard({ summary: initialSummary, initialError, cla
         setError(cause instanceof Error ? cause.message : 'Rekap Spreadsheet belum dapat dimuat. Periksa koneksi, lalu muat ulang halaman.')
       }
     })
+  }
+
+  function applyFilters(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    fetchSummary(filters)
+  }
+
+  // Filter kelas awal: muat ringkasan yang sudah difilter saat mount.
+  const initialClassRef = useRef(initialClassName ?? null)
+  useEffect(() => {
+    const initial = initialClassRef.current
+    if (initial) fetchSummary({ from: '', to: '', grade: 'all', classNames: [initial] })
+    // Hanya saat mount: filter awal tidak berubah selama komponen hidup.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Kembali menampilkan semua kelas: hapus filter kelas awal lalu muat
+  // ulang ringkasan tanpa filter kelas.
+  function clearInitialFilter() {
+    const next = { ...filters, classNames: [] as string[] }
+    setFilters(next)
+    setInitialFilterActive(false)
+    fetchSummary(next)
   }
 
 
@@ -73,6 +103,7 @@ export function MonitoringDashboard({ summary: initialSummary, initialError, cla
         </>}
         <button className="primary-button" type="submit" disabled={pending}>{pending ? 'Memuat…' : 'Terapkan filter'}</button>
       </form>
+      {initialFilterActive && filters.classNames.length > 0 && <p className="monitoring-footnote">Menampilkan kelas {filters.classNames.join(', ')}. <button className="text-button" type="button" onClick={clearInitialFilter}>Tampilkan semua</button></p>}
       {error && <div className="sheets-error" role="alert"><strong>Belum dapat terhubung ke Google Sheets</strong><span>{error}</span>{role === 'admin' && <details><summary>Panduan konfigurasi untuk Admin</summary><ol><li>Buat Google Spreadsheet dan buka Extensions → Apps Script.</li><li>Salin kode dari folder <code>apps-script/Code.gs</code> ke editor Apps Script.</li><li>Tambahkan <code>SHEETS_SECRET_TOKEN</code> di Script Properties Apps Script.</li><li>Pilih Deploy → New deployment → Web app; Execute as: Me, Access: Anyone, lalu Deploy.</li><li>Salin URL deployment dan token ke menu <strong>Pengaturan Sheets</strong> di portal Admin.</li></ol></details>}</div>}
       <motion.div className="monitoring-kpis" variants={staggerParent} initial="hidden" animate="show">
         <motion.article className="monitoring-kpi" variants={fadeUpChild} whileHover={{ y: -4 }}><span><Recycle aria-hidden="true" /></span><small>Total sampah terpilah</small><strong><CountUp value={totalKg} decimals={2} /><em> kg</em></strong></motion.article>

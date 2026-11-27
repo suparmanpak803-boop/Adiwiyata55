@@ -14,13 +14,24 @@ async function fetchClassList(url: string) {
   return { classes: result.classes }
 }
 
-export function ClassLocationPicker({ classes, invalid, errorId }: {
+export function ClassLocationPicker({ classes, invalid, errorId, defaultValue }: {
   classes: ClassOption[]
   invalid?: boolean
   errorId?: string
+  // Nilai awal "TINGKAT-ROMBEL" (mis. "XII-E") dari profil pengguna.
+  // Hanya dipakai saat mount; pilihan setelah itu milik komponen ini.
+  defaultValue?: string | null
 }) {
-  const [grade, setGrade] = useState('')
-  const [selection, setSelection] = useState('')
+  const initial = (() => {
+    if (!defaultValue) return { grade: '', selection: '' }
+    const dash = defaultValue.indexOf('-')
+    if (dash <= 0) return { grade: '', selection: '' }
+    const grade = defaultValue.slice(0, dash)
+    if (!GRADES.includes(grade)) return { grade: '', selection: '' }
+    return { grade, selection: defaultValue }
+  })()
+  const [grade, setGrade] = useState(initial.grade)
+  const [selection, setSelection] = useState(initial.selection)
   const { data: masterData } = useSWR('/api/classes', fetchClassList, {
     fallbackData: { classes },
     refreshInterval: 60_000,
