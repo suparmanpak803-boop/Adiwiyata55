@@ -20,6 +20,7 @@ import {
 } from 'lucide-react'
 import { saveKelasProfil } from '@/app/actions/profile'
 import { loadSave } from '@/lib/apa-itu-adiwiyata/storage'
+import type { JenisPengguna } from '@/lib/auth/access'
 
 export type UserProfileDropdownProps = {
   user: {
@@ -27,6 +28,7 @@ export type UserProfileDropdownProps = {
     name: string
     email: string
     role: 'admin' | 'petugas' | 'pengunjung'
+    jenisPengguna: JenisPengguna
     className: string | null
     nomorAbsen: number | null
   }
@@ -201,6 +203,8 @@ export default function UserProfileDropdown({
   profileStats,
   onClassSaved,
 }: Props) {
+  const isGuru = user.jenisPengguna === 'guru'
+  const isStaffTu = user.jenisPengguna === 'staff_tu'
   const triggerRef = useRef<HTMLButtonElement>(null)
   const panelRef = useRef<HTMLDivElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -214,7 +218,11 @@ export default function UserProfileDropdown({
   const [photoError, setPhotoError] = useState<string | null>(null)
   const [coins, setCoins] = useState(0)
   const [selectedClass, setSelectedClass] = useState(user.className ?? '')
-  const [absen, setAbsen] = useState(user.nomorAbsen === null ? '' : String(user.nomorAbsen))
+  // Guru tidak memakai nomor absen: state absen dikosongkan supaya nilai
+  // lama yang tersimpan tidak tampil sebagai nilai aktif.
+  const [absen, setAbsen] = useState(
+    isGuru || user.nomorAbsen === null ? '' : String(user.nomorAbsen),
+  )
   const [savingClass, setSavingClass] = useState(false)
   const [classError, setClassError] = useState<string | null>(null)
   const [editingName, setEditingName] = useState(false)
@@ -230,8 +238,8 @@ export default function UserProfileDropdown({
 
   useEffect(() => {
     setSelectedClass(user.className ?? '')
-    setAbsen(user.nomorAbsen === null ? '' : String(user.nomorAbsen))
-  }, [user.className, user.nomorAbsen])
+    setAbsen(isGuru || user.nomorAbsen === null ? '' : String(user.nomorAbsen))
+  }, [user.className, user.nomorAbsen, isGuru])
 
   useEffect(() => {
     setNameDraft(displayName)
@@ -352,7 +360,8 @@ export default function UserProfileDropdown({
     setClassError(null)
     const className = selectedClass.trim() === '' ? null : selectedClass.trim()
     let nomorAbsen: number | null = null
-    if (absen.trim() !== '') {
+    // Guru tidak memakai absen: isi state absen diabaikan dan null yang dikirim.
+    if (!isGuru && absen.trim() !== '') {
       const parsed = Number(absen)
       if (!Number.isInteger(parsed) || parsed < 1 || parsed > 36) {
         setClassError('Nomor absen 1 sampai 36. Perbaiki nomornya, lalu simpan lagi.')
@@ -406,8 +415,16 @@ export default function UserProfileDropdown({
     showToast('Nama tampilan diperbarui')
   }
 
+  // Jenis pengguna mengalahkan pemetaan peran di badge: akun admin yang
+  // jenisnya guru menampilkan "Guru", tapi izinnya tetap admin.
+  const roleBadge =
+    user.jenisPengguna === 'guru'
+      ? 'Guru'
+      : user.jenisPengguna === 'staff_tu'
+        ? 'Staff TU'
+        : ROLE_LABEL[user.role]
   const classBadge = user.className
-    ? user.nomorAbsen === null
+    ? isGuru || user.nomorAbsen === null
       ? user.className
       : `${user.className} \u2022 ${formatAbsen(user.nomorAbsen)}`
     : 'Belum ada kelas'
@@ -458,7 +475,7 @@ export default function UserProfileDropdown({
           <div className="upd-header-text">
             <strong className="upd-display-name">{displayName}</strong>
             <span className="upd-email">{user.email}</span>
-            <span className="upd-role-badge">{ROLE_LABEL[user.role]}</span>
+            <span className="upd-role-badge">{roleBadge}</span>
           </div>
         </div>
 
@@ -538,66 +555,72 @@ export default function UserProfileDropdown({
           </div>
         </div>
 
-        <section className="upd-section" aria-labelledby="upd-kelas-title">
-          <h2 id="upd-kelas-title" className="upd-section-title">
-            Kelas dan absen
-          </h2>
-          <div className="upd-class-row">
-            <label className="upd-field">
-              <span className="upd-field-label">Kelas</span>
-              <select
-                className="upd-select"
-                value={selectedClass}
-                disabled={classes.length === 0 || savingClass}
-                onChange={(e) => setSelectedClass(e.target.value)}
-              >
-                <option value="">Pilih kelas</option>
-                {groupedClasses.map((group) => (
-                  <optgroup key={group.label} label={group.label}>
-                    {group.items.map((c) => (
-                      <option key={c.name} value={c.name}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </optgroup>
-                ))}
-              </select>
-            </label>
-            <label className="upd-field upd-field-absen">
-              <span className="upd-field-label">Absen</span>
-              <input
-                className="upd-input"
-                type="number"
-                inputMode="numeric"
-                min={1}
-                max={36}
-                value={absen}
-                disabled={savingClass}
-                placeholder="08"
-                aria-label="Nomor absen, 1 sampai 36"
-                onChange={(e) => setAbsen(e.target.value.replace(/[^0-9]/g, '').slice(0, 2))}
-              />
-            </label>
-          </div>
-          {classes.length === 0 && (
-            <p className="upd-note">
-              Belum ada kelas yang bisa dipilih. Hubungi admin bila kelasmu belum terdaftar.
-            </p>
-          )}
-          <button
-            type="button"
-            className="upd-save-btn"
-            onClick={handleSaveClass}
-            disabled={savingClass || classes.length === 0}
-          >
-            {savingClass ? 'Menyimpan...' : 'Simpan kelas'}
-          </button>
-          {classError && (
-            <p className="upd-error" role="alert">
-              {classError}
-            </p>
-          )}
-        </section>
+        {!isStaffTu && (
+          <section className="upd-section" aria-labelledby="upd-kelas-title">
+            <h2 id="upd-kelas-title" className="upd-section-title">
+              {isGuru ? 'Kelas yang diampu' : 'Kelas dan absen'}
+            </h2>
+            <div className="upd-class-row">
+              <label className="upd-field">
+                <span className="upd-field-label">Kelas</span>
+                <select
+                  className="upd-select"
+                  value={selectedClass}
+                  disabled={classes.length === 0 || savingClass}
+                  onChange={(e) => setSelectedClass(e.target.value)}
+                >
+                  <option value="">Pilih kelas</option>
+                  {groupedClasses.map((group) => (
+                    <optgroup key={group.label} label={group.label}>
+                      {group.items.map((c) => (
+                        <option key={c.name} value={c.name}>
+                          {c.name}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
+              </label>
+              {!isGuru && (
+                <label className="upd-field upd-field-absen">
+                  <span className="upd-field-label">Absen</span>
+                  <input
+                    className="upd-input"
+                    type="number"
+                    inputMode="numeric"
+                    min={1}
+                    max={36}
+                    value={absen}
+                    disabled={savingClass}
+                    placeholder="08"
+                    aria-label="Nomor absen, 1 sampai 36"
+                    onChange={(e) => setAbsen(e.target.value.replace(/[^0-9]/g, '').slice(0, 2))}
+                  />
+                </label>
+              )}
+            </div>
+            {classes.length === 0 && (
+              <p className="upd-note">
+                {isGuru
+                  ? 'Belum ada kelas yang bisa dipilih. Hubungi admin bila kelas yang diampu belum terdaftar.'
+                  : 'Belum ada kelas yang bisa dipilih. Hubungi admin bila kelasmu belum terdaftar.'}
+              </p>
+            )}
+            <button
+              type="button"
+              className="upd-save-btn"
+              onClick={handleSaveClass}
+              disabled={savingClass || classes.length === 0}
+            >
+              {savingClass ? 'Menyimpan...' : 'Simpan kelas'}
+            </button>
+            {classError && (
+              <p className="upd-error" role="alert">
+                {classError}
+              </p>
+            )}
+          </section>
+        )}
 
         <section className="upd-section" aria-labelledby="upd-pengaturan-title">
           <h2 id="upd-pengaturan-title" className="upd-section-title">
@@ -619,22 +642,28 @@ export default function UserProfileDropdown({
               <span className="upd-switch-knob" />
             </button>
           </div>
-          <button
-            type="button"
-            className="upd-menu-btn"
-            disabled={!user.className}
-            onClick={() => {
-              if (user.className) onOpenClassHistory(user.className)
-            }}
-          >
-            <History size={16} aria-hidden="true" />
-            <span className="upd-menu-btn-text">
-              Riwayat Aktivitas Kelas
-              {!user.className && (
-                <small>Pilih kelas dulu supaya riwayat kelasmu bisa dibuka.</small>
-              )}
-            </span>
-          </button>
+          {!isStaffTu && (
+            <button
+              type="button"
+              className="upd-menu-btn"
+              disabled={!user.className}
+              onClick={() => {
+                if (user.className) onOpenClassHistory(user.className)
+              }}
+            >
+              <History size={16} aria-hidden="true" />
+              <span className="upd-menu-btn-text">
+                Riwayat Aktivitas Kelas
+                {!user.className && (
+                  <small>
+                    {isGuru
+                      ? 'Pilih kelas dulu supaya riwayat kelas yang diampu bisa dibuka.'
+                      : 'Pilih kelas dulu supaya riwayat kelasmu bisa dibuka.'}
+                  </small>
+                )}
+              </span>
+            </button>
+          )}
           <button
             type="button"
             className="upd-menu-btn"

@@ -31,6 +31,15 @@ export async function saveKelasProfil(
     return { ok: false, error: 'Terlalu banyak perubahan profil. Coba lagi satu jam lagi.' }
   }
 
+  // Jenis pengguna dibaca dari DB lewat getPortalUser, bukan dari
+  // parameter klien. Guru tidak memakai nomor absen, jadi nilai yang
+  // dikirim klien diabaikan. Akun Staff TU tidak menyimpan kelas
+  // maupun nomor absen, jadi keduanya harus kosong.
+  if (user.jenisPengguna === 'staff_tu' && (className !== null || nomorAbsen !== null)) {
+    return { ok: false, error: 'Akun Staff TU tidak menyimpan kelas. Kosongkan kelas dan nomor absen, lalu simpan lagi.' }
+  }
+  const nomorAbsenSimpan = user.jenisPengguna === 'guru' ? null : nomorAbsen
+
   let kelas: string | null = null
   if (className !== null) {
     const kode = normalizeClassCode(className)
@@ -40,7 +49,7 @@ export async function saveKelasProfil(
     }
     kelas = kode
   }
-  if (nomorAbsen !== null && (!Number.isInteger(nomorAbsen) || nomorAbsen < 1 || nomorAbsen > 36)) {
+  if (nomorAbsenSimpan !== null && (!Number.isInteger(nomorAbsenSimpan) || nomorAbsenSimpan < 1 || nomorAbsenSimpan > 36)) {
     return { ok: false, error: 'Nomor absen harus 1 sampai 36, atau dikosongkan.' }
   }
 
@@ -50,13 +59,13 @@ export async function saveKelasProfil(
        VALUES ($1, 'visitor', $2, $3)
        ON CONFLICT (user_id) DO UPDATE SET
          class_name = EXCLUDED.class_name, nomor_absen = EXCLUDED.nomor_absen, updated_at = NOW()`,
-      [user.id, kelas, nomorAbsen],
+      [user.id, kelas, nomorAbsenSimpan],
     )
   } catch {
     return { ok: false, error: 'Kelas belum berhasil disimpan. Periksa koneksi, lalu coba lagi.' }
   }
   revalidatePath('/')
-  return { ok: true, className: kelas, nomorAbsen }
+  return { ok: true, className: kelas, nomorAbsen: nomorAbsenSimpan }
 }
 
 // Statistik profil dari data setoran asli pengguna: jumlah setoran yang

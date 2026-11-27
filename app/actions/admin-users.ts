@@ -6,7 +6,7 @@ import { db } from '@/lib/db'
 import { adiwiyataUserRoles, neonAuthUsers } from '@/lib/db/schema'
 import { getFallbackClassMaster, getClassMasterData } from '@/lib/class-master'
 import { normalizeClassCode } from '@/lib/class-codes'
-import { requirePortalRole } from '@/lib/auth/access'
+import { requirePortalRole, type JenisPengguna } from '@/lib/auth/access'
 import { allowRequest } from '@/lib/rate-limit'
 import { getManagedAccounts, type ManagedPortalRole } from '@/lib/admin-user-management'
 
@@ -16,6 +16,10 @@ class UserManagementError extends Error {}
 
 function isManagedPortalRole(value: unknown): value is ManagedPortalRole {
   return value === 'admin' || value === 'petugas' || value === 'pengunjung'
+}
+
+function isJenisPengguna(value: unknown): value is JenisPengguna {
+  return value === 'siswa' || value === 'guru' || value === 'staff_tu'
 }
 
 function toDatabaseRole(role: ManagedPortalRole) {
@@ -111,5 +115,47 @@ export async function updateAdminUserRole(input: { userId: string; role: Managed
       return { success: false as const, error: 'Sesi Admin tidak valid. Silakan masuk kembali.' }
     }
     return { success: false as const, error: 'Perubahan akses belum berhasil disimpan. Periksa koneksi, lalu coba lagi.' }
+  }
+}
+
+export async function setJenisPengguna(targetUserId: string, jenis: JenisPengguna) {
+  try {
+    const actor = await requirePortalRole(['admin'])
+    // Batas laju perubahan jenis pengguna (10/menit per admin).
+    if (!(await allowRequest(`jenis-pengguna:${actor.id}`, 10, 60))) throw new UserManagementError('Terlalu banyak perubahan jenis pengguna. Coba lagi sebentar.')
+    if (typeof targetUserId !== 'string' || !UUID_PATTERN.test(targetUserId)) {
+      throw new UserManagementError('Akun yang dipilih tidak ditemukan. Muat ulang halaman lalu coba lagi.')
+    }
+    if (!isJenisPengguna(jenis)) throw new UserManagementError('Jenis pengguna yang dipilih tidak dikenali. Pilih jenis yang tersedia.')
+
+    await db.transaction(async (transaction) => {
+      const [target] = await transaction
+        .select({ id: neonAuthUsers.id, role: adiwiyataUserRoles.role })
+        .from(neonAuthUsers)
+        .leftJoin(adiwiyataUserRoles, eq(adiwiyataUserRoles.userId, neonAuthUsers.id))
+        .where(eq(neonAuthUsers.id, targetUserId))
+        .limit(1)
+
+      if (!target) throw new UserManagementError('Akun tidak ditemukan.')
+      // Jenis pengguna hanya label identitas akun dan tidak mengubah
+      // izin apa pun, jadi admin boleh mengubah jenis dirinya sendiri
+      // maupun admin lain. Tidak ada guard admin-terakhir di sini.
+      await transaction
+        .insert(adiwiyataUserRoles)
+        .values({ userId: targetUserId, role: target.role ?? 'visitor', jenisPengguna: jenis, updatedAt: new Date() })
+        .onConflictDoUpdate({
+          target: adiwiyataUserRoles.userId,
+          set: { jenisPengguna: jenis, updatedAt: new Date() },
+        })
+    })
+
+    revalidatePath('/admin/petugas')
+    return { success: true as const }
+  } catch (error) {
+    if (error instanceof UserManagementError) return { success: false as const, error: error.message }
+    if (error instanceof Error && (error.message === 'UNAUTHORIZED' || error.message === 'FORBIDDEN')) {
+      return { success: false as const, error: 'Sesi Admin tidak valid. Silakan masuk kembali.' }
+    }
+    return { success: false as const, error: 'Perubahan jenis pengguna belum berhasil disimpan. Periksa koneksi, lalu coba lagi.' }
   }
 }

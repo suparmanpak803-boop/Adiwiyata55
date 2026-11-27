@@ -3,15 +3,22 @@
 import { useState, useTransition, type FormEvent, type KeyboardEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Check, Search, ShieldCheck, Users } from 'lucide-react'
-import { searchAdminUsers, updateAdminUserRole } from '@/app/actions/admin-users'
+import { searchAdminUsers, setJenisPengguna, updateAdminUserRole } from '@/app/actions/admin-users'
 import type { ManagedAccount, ManagedPortalRole } from '@/lib/admin-user-management'
+import type { JenisPengguna } from '@/lib/auth/access'
 
-type AccountDraft = { role: ManagedPortalRole; className: string; expiresOn: string }
+type AccountDraft = { role: ManagedPortalRole; jenisPengguna: JenisPengguna; className: string; expiresOn: string }
 
 const roleLabels: Record<ManagedPortalRole, string> = {
   admin: 'Admin',
   petugas: 'Petugas',
   pengunjung: 'Pengunjung',
+}
+
+const jenisLabels: Record<JenisPengguna, string> = {
+  siswa: 'Siswa',
+  guru: 'Guru',
+  staff_tu: 'Staff TU',
 }
 
 export function AdminUserManagement({ initialAccounts, classes, currentUserId }: {
@@ -26,11 +33,13 @@ export function AdminUserManagement({ initialAccounts, classes, currentUserId }:
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
   const [savingId, setSavingId] = useState<string | null>(null)
+  const [savingJenisId, setSavingJenisId] = useState<string | null>(null)
   const [searchPending, startSearch] = useTransition()
   const [savePending, startSave] = useTransition()
+  const [saveJenisPending, startSaveJenis] = useTransition()
 
   function getDraft(account: ManagedAccount): AccountDraft {
-    return drafts[account.id] ?? { role: account.role, className: account.className ?? '', expiresOn: account.expiresOn ?? '' }
+    return drafts[account.id] ?? { role: account.role, jenisPengguna: account.jenisPengguna, className: account.className ?? '', expiresOn: account.expiresOn ?? '' }
   }
 
   function updateDraft(account: ManagedAccount, change: Partial<AccountDraft>) {
@@ -91,6 +100,29 @@ export function AdminUserManagement({ initialAccounts, classes, currentUserId }:
     })
   }
 
+  // Simpan jenis terpisah dari simpan peran: alur simpan peran di atas
+  // tidak berubah, dan kegagalan salah satunya tidak menimpa yang lain.
+  function saveJenis(event: FormEvent<HTMLFormElement>, account: ManagedAccount) {
+    event.preventDefault()
+    const draft = getDraft(account)
+    setSavingJenisId(account.id)
+    setMessage('')
+    setError('')
+    startSaveJenis(async () => {
+      try {
+        const result = await setJenisPengguna(account.id, draft.jenisPengguna)
+        if (!result.success) throw new Error(result.error)
+        setAccounts((current) => current.map((item) => item.id === account.id ? { ...item, jenisPengguna: draft.jenisPengguna } : item))
+        setMessage(`Jenis pengguna ${account.name} berhasil disimpan sebagai ${jenisLabels[draft.jenisPengguna]}.`)
+        router.refresh()
+      } catch (cause) {
+        setError(cause instanceof Error ? cause.message : 'Jenis pengguna belum berhasil disimpan. Periksa koneksi, lalu coba lagi.')
+      } finally {
+        setSavingJenisId(null)
+      }
+    })
+  }
+
   return (
     <main className="user-admin-page">
       <header className="user-admin-header">
@@ -99,7 +131,7 @@ export function AdminUserManagement({ initialAccounts, classes, currentUserId }:
           <span className="slider-admin-mark"><ShieldCheck aria-hidden="true" /></span>
           <div><span className="eyebrow">PENGATURAN ADMIN</span><h1>Akses Pengguna</h1></div>
         </div>
-        <p>Atur peran akun portal dan kelas yang menjadi tanggung jawab setiap petugas.</p>
+        <p>Atur peran, jenis pengguna, dan kelas yang menjadi tanggung jawab setiap petugas.</p>
       </header>
 
       <section className="user-admin-overview" aria-label="Tentang pengelolaan akses">
@@ -121,10 +153,12 @@ export function AdminUserManagement({ initialAccounts, classes, currentUserId }:
         {accounts.map((account) => {
           const draft = getDraft(account)
           const isSaving = savePending && savingId === account.id
+          const isSavingJenis = saveJenisPending && savingJenisId === account.id
           return <article className="user-admin-card" key={account.id}>
             <div className="user-admin-card-heading">
               <span className="user-admin-avatar" aria-hidden="true">{account.name.trim().slice(0, 1).toUpperCase() || '?'}</span>
               <div className="user-admin-identity"><h2>{account.name}</h2><p>{account.email}</p></div>
+              <span className="user-admin-role-badge">{jenisLabels[account.jenisPengguna]}</span>
               <span className={`user-admin-role-badge role-${account.role}`}>{roleLabels[account.role]}</span>
             </div>
             <form className="user-admin-controls" onSubmit={(event) => saveAccount(event, account)}>
@@ -138,10 +172,23 @@ export function AdminUserManagement({ initialAccounts, classes, currentUserId }:
                 <label className="user-admin-field"><span>Peran berlaku sampai</span><input type="date" value={draft.expiresOn} min={new Date().toISOString().slice(0, 10)} disabled={isSaving} onChange={(event) => updateDraft(account, { expiresOn: event.target.value })} /><small>Kosongkan jika masa tugas tidak dibatasi.</small></label>
               </>}
               <div className="user-admin-save-wrap">
-                <button className="primary-button" type="submit" disabled={isSaving || savePending || (draft.role === 'petugas' && !draft.className)}>
+                <button className="primary-button" type="submit" disabled={isSaving || savePending || isSavingJenis || (draft.role === 'petugas' && !draft.className)}>
                   {isSaving ? 'Menyimpan…' : <><Check aria-hidden="true" /> Simpan akses</>}
                 </button>
                 {account.id === currentUserId && <small>Peran Admin akun aktif tidak dapat diturunkan dari panel ini.</small>}
+              </div>
+            </form>
+            <form className="user-admin-controls user-admin-jenis-controls" onSubmit={(event) => saveJenis(event, account)}>
+              <label className="user-admin-field"><span>Jenis pengguna</span>
+                {/* Jenis boleh diubah untuk akun sendiri, tidak seperti Peran di atas. */}
+                <select value={draft.jenisPengguna} disabled={isSaving || isSavingJenis} onChange={(event) => updateDraft(account, { jenisPengguna: event.target.value as JenisPengguna })}>
+                  <option value="siswa">Siswa</option><option value="guru">Guru</option><option value="staff_tu">Staff TU</option>
+                </select>
+              </label>
+              <div className="user-admin-save-wrap">
+                <button className="primary-button" type="submit" disabled={isSaving || isSavingJenis}>
+                  {isSavingJenis ? 'Menyimpan…' : <><Check aria-hidden="true" /> Simpan jenis</>}
+                </button>
               </div>
             </form>
           </article>

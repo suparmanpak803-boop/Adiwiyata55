@@ -49,6 +49,9 @@ export const adiwiyataUserRoles = pgTable('adiwiyata_user_roles', {
   tampilInisial: boolean('tampil_inisial').notNull().default(false),
   diblokirLeaderboard: boolean('diblokir_leaderboard').notNull().default(false),
   expiresOn: date('expires_on'),
+  // Jenis pengguna: 'siswa' | 'guru' | 'staff_tu'. Hanya label
+  // identitas akun, tidak mengubah izin apa pun.
+  jenisPengguna: text('jenis_pengguna').notNull().default('siswa'),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 })
 

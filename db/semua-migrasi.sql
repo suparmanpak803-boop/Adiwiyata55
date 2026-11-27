@@ -52,6 +52,7 @@ ALTER TABLE public.adiwiyata_user_roles ADD COLUMN IF NOT EXISTS nomor_absen sma
 UPDATE public.adiwiyata_user_roles SET nomor_absen = NULL WHERE nomor_absen > 36;
 ALTER TABLE public.adiwiyata_user_roles DROP CONSTRAINT IF EXISTS adiwiyata_user_roles_nomor_absen_check;
 ALTER TABLE public.adiwiyata_user_roles ADD CONSTRAINT adiwiyata_user_roles_nomor_absen_check CHECK (nomor_absen IS NULL OR nomor_absen BETWEEN 1 AND 36);
+ALTER TABLE public.adiwiyata_user_roles ADD COLUMN IF NOT EXISTS jenis_pengguna text NOT NULL DEFAULT 'siswa' CHECK (jenis_pengguna IN ('siswa', 'guru', 'staff_tu'));
 
 -- Kolom paper (Kertas) dan residual (Residu) sudah menjadi kolom numerik terpisah.
 CREATE TABLE IF NOT EXISTS public.adiwiyata_deposits (

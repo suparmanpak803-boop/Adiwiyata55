@@ -12,6 +12,8 @@ import { getAuth } from '@/lib/auth/server'
 
 export type PortalRole = 'admin' | 'petugas' | 'pengunjung'
 
+export type JenisPengguna = 'siswa' | 'guru' | 'staff_tu'
+
 export type PortalUser = {
   id: string
   name: string
@@ -19,6 +21,12 @@ export type PortalUser = {
   role: PortalRole
   className: string | null
   nomorAbsen: number | null
+  jenisPengguna: JenisPengguna
+}
+
+function toJenisPengguna(dbValue: string | null | undefined): JenisPengguna {
+  if (dbValue === 'guru' || dbValue === 'staff_tu') return dbValue
+  return 'siswa'
 }
 
 function toPortalRole(dbRole: string | null | undefined): PortalRole {
@@ -65,6 +73,20 @@ export async function getPortalUser(): Promise<PortalUser | null> {
   } catch {
     nomorAbsen = null
   }
+  // Jenis pengguna dibaca lewat query ketiga dengan pola yang sama:
+  // kolomnya baru ada di DB setelah admin mengetuk perbaikan tabel,
+  // jadi kegagalan di sini tidak boleh menggagalkan pembacaan di atas.
+  // Nilai yang tidak dikenali dibaca sebagai siswa.
+  let jenisPengguna: JenisPengguna = 'siswa'
+  try {
+    const jenis = await pool.query<{ jenis_pengguna: string | null }>(
+      `SELECT jenis_pengguna FROM public.adiwiyata_user_roles WHERE user_id = $1 LIMIT 1`,
+      [authUser.id],
+    )
+    jenisPengguna = toJenisPengguna(jenis.rows[0]?.jenis_pengguna)
+  } catch {
+    jenisPengguna = 'siswa'
+  }
   return {
     id: authUser.id,
     name: (authUser as { name?: string | null }).name ?? '',
@@ -72,6 +94,7 @@ export async function getPortalUser(): Promise<PortalUser | null> {
     role,
     className,
     nomorAbsen,
+    jenisPengguna,
   }
 }
 
