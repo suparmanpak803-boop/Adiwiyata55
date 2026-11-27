@@ -3,8 +3,8 @@
 // lib/adiwiyata-site-content.server.ts (key app_settings
 // 'adiwiyata_site_content').
 //
-// PERINGATAN: string default di bawah ini adalah rekonstruksi —
-// tidak ada salinan teks aslinya yang tersisa di repo (lihat
+// PERINGATAN: string default di bawah ini adalah rekonstruksi.
+// Tidak ada salinan teks aslinya yang tersisa di repo (lihat
 // PERBAIKAN.md). Satu-satunya petunjuk yang tersisa: ada aktivitas
 // default yang judulnya mengandung "Drainase". Admin dapat mengubah
 // semua teks ini lewat panel "Atur Informasi Adiwiyata" tanpa
@@ -91,11 +91,11 @@ export const DEFAULT_ADIWIYATA_SITE_CONTENT: AdiwiyataSiteContent = {
       noteBody: 'Dokumen pendukung program Adiwiyata tersedia di halaman Dokumen & Arsip.',
     },
     program: {
-      title: 'Program & kegiatan',
-      intro: 'Program dan kegiatan lingkungan yang dijalankan warga SMAN 55 Jakarta. Lima belas kader membagi tugas, dari pemilahan sampah, kompos, dan maggot sampai TOGA, hidroponik, dan bank sampah, dan setiap kegiatan tercatat beserta tanggal dan foto dokumentasinya.',
+      title: 'Program & Kegiatan',
+      intro: 'Lima belas kader menjalankan sepuluh kegiatan lingkungan di SMAN 55 Jakarta, dari pemilahan sampah, kompos, dan maggot sampai TOGA, hidroponik, dan bank sampah. Setiap kegiatan tercatat beserta tanggal dan foto dokumentasinya.',
     },
     dokumentasi: {
-      title: 'Kader & dokumentasi',
+      title: 'Kader & Dokumentasi',
       intro: 'Daftar 15 kader Adiwiyata SMAN 55 Jakarta beserta uraian tugas masing-masing (2026). Di bawah daftar kader, halaman ini juga menampilkan foto dokumentasi kegiatan lingkungan warga sekolah, dari pembibitan TOGA sampai kerja bakti.',
     },
     struktur: {
@@ -103,11 +103,11 @@ export const DEFAULT_ADIWIYATA_SITE_CONTENT: AdiwiyataSiteContent = {
       intro: 'Batang, cabang, dan daun: kenali pembina, pengurus inti, dan tim yang merawat SMAN 55 Jakarta.',
     },
     publikasi: {
-      title: 'Artikel & berita',
-      intro: 'Artikel dan kabar terbaru seputar gerakan Adiwiyata SMAN 55 Jakarta. Artikel ditulis oleh Tim Adiwiyata SMAN 55 Jakarta dan merangkum kegiatan yang sudah berjalan di sekolah, seperti pemilahan sampah, bank sampah, dan kebun sekolah.',
+      title: 'Artikel & Berita',
+      intro: 'Warga sekolah menjalankan pemilahan sampah, bank sampah, dan kebun sekolah secara rutin, dan kabar kegiatannya terbit di halaman ini. Artikel ditulis oleh Tim Adiwiyata SMAN 55 Jakarta dan merangkum kegiatan yang sudah berjalan di sekolah.',
     },
     dokumen: {
-      title: 'Dokumen & arsip',
+      title: 'Dokumen & Arsip',
       intro: 'Arsip dokumen resmi program Adiwiyata SMAN 55 Jakarta yang diunggah oleh Admin: rujukan kegiatan, laporan, dan bukti pendukung program.',
       noteTitle: 'Pemberitahuan',
       noteBody: 'Dokumen diunggah oleh Admin. Bila tautan tidak dapat dibuka, hubungi Admin Adiwiyata.',
@@ -143,7 +143,7 @@ export const DEFAULT_ADIWIYATA_SITE_CONTENT: AdiwiyataSiteContent = {
       category: 'Kebersihan',
       date: '17 & 20 September 2024',
       description:
-        'Kerja bakti warga sekolah dua minggu sekali dan petugas kebersihan setiap hari. Pembersihan detail juga dilakukan sebelum kegiatan kesiswaan yang dikoordinir OSIS.',
+        'Kerja bakti warga sekolah dua minggu sekali dan petugas kebersihan setiap hari. Pembersihan detail juga dilakukan sebelum kegiatan kesiswaan yang dikoordinasi OSIS.',
       images: ['/dokumentasi/membersihkan-lapangan-1.jpg', '/dokumentasi/membersihkan-lapangan-2.jpg'],
     },
     {
@@ -213,11 +213,11 @@ export const DEFAULT_ADIWIYATA_SITE_CONTENT: AdiwiyataSiteContent = {
       duties: 'Mengolah sampah organik menjadi kompos, pupuk organik cair, dan Eco Enzyme.',
       tasks: [
         'Mengoperasikan dan merawat fasilitas komposter sekolah (seperti biopori atau bak komposting).',
-        'Melakukan pencacahan, pembalikan, pencampuran aktivator (EM4/molase), dan pencapaian tingkat kelembapan serta suhu kompos secara berkala.',
+        'Mencacah, membalik, mencampur aktivator (EM4/molase), dan menjaga kelembapan serta suhu kompos secara berkala.',
         'Mengemas dan memanen pupuk organik padat maupun Pupuk Organik Cair (POC) hasil komposting.',
         'Mendistribusikan pupuk hasil olahan untuk kebutuhan kebun sekolah (Kader TOGA dan Taman) atau dimanfaatkan dalam program kewirausahaan lingkungan (Ecopreneurship).',
-        'Membuat dan mencatat tanggal pembuatan larutan Eco Enzyme dalam wadah kedap udara yang sesuai standar safety.',
-        'Melakukan pemantauan dan perawatan berkala selama masa fermentasi minimum 3 bulan (termasuk membukakan wadah secara berkala di minggu-minggu awal untuk membuang gas).',
+        'Membuat dan mencatat tanggal pembuatan larutan Eco Enzyme dalam wadah kedap udara yang sesuai standar keselamatan.',
+        'Memantau dan merawat larutan secara berkala selama masa fermentasi minimum 3 bulan (termasuk membukakan wadah secara berkala di minggu-minggu awal untuk membuang gas).',
         'Memanen, menyaring, dan mengemas cairan Eco Enzyme serta ampasnya setelah masa fermentasi selesai.',
         'Mengaplikasikan hasil Eco Enzyme untuk kebutuhan operasional sekolah, seperti untuk cairan pembersih lantai dan kaca ramah lingkungan, penghilang bau tak sedap di area toilet/saluran air, serta cairan penyubur tanaman/pengusir hama tanaman.',
         'Mendokumentasikan serta membuat kolase dokumentasi seluruh kegiatan Kader Olah Organik.',
@@ -229,7 +229,7 @@ export const DEFAULT_ADIWIYATA_SITE_CONTENT: AdiwiyataSiteContent = {
       duties: 'Mengolah sampah dapur/kantin menjadi pakan larva maggot (BSF).',
       tasks: [
         'Mengumpulkan dan memilah sampah dapur/kantin sekolah (sisa nasi, lauk, dan buah) yang cocok dijadikan pakan larva maggot.',
-        'Melakukan pencacahan atau pemrosesan awal pakan organik agar konsistensinya sesuai untuk konsumsi larva.',
+        'Mencacah atau memproses awal pakan organik agar konsistensinya sesuai untuk konsumsi larva.',
         'Mengelola fasilitas biopond (area pembesaran), kandang lalat BSF dewasa, serta tempat penetasan telur.',
         'Mengatur dan memberi pakan maggot secara teratur serta menjaga tingkat kelembapan media biopond.',
         'Memanen maggot segar/kering untuk dimanfaatkan sebagai pakan ternak (ikan di kolam sekolah, unggas) atau diolah menjadi produk Ecopreneur.',
@@ -255,16 +255,16 @@ export const DEFAULT_ADIWIYATA_SITE_CONTENT: AdiwiyataSiteContent = {
       focus: 'Kebersihan & sanitasi',
       duties: 'Menjaga kebersihan toilet, drainase, dan taman sekolah serta budaya PHBS.',
       tasks: [
-        'Melakukan pemeriksaan rutin terhadap kebersihan, kelayakan, dan kesegaran toilet/jamban sekolah (ketersediaan air, sabun cuci tangan, dan gayung/toilet flush).',
+        'Memeriksa kebersihan, kelayakan, dan kesegaran toilet/jamban sekolah secara rutin (ketersediaan air, sabun cuci tangan, dan gayung/toilet flush).',
         'Memantau kelancaran saluran air limbah/drainase sekolah agar bebas dari genangan, sampah, maupun potensi sarang nyamuk.',
         'Menjadi pelopor dan mengoordinasikan kegiatan kebersihan rutin, seperti piket kelas harian Pra KBM Pertamanan dan kerja bakti lingkungan.',
-        'Melakukan penyiraman, pemangkasan daun kering, dan penyiangan rumput liar/gulma di area taman sekolah secara rutin.',
-        'Melakukan pemupukan berkala menggunakan pupuk organik padat/cair buatan Kader Komposting dan Eco-Enzyme.',
+        'Menyiram, memangkas daun kering, dan menyiangi rumput liar/gulma di area taman sekolah secara rutin.',
+        'Memupuk secara berkala menggunakan pupuk organik padat/cair buatan Kader Komposting dan Eco-Enzyme.',
         'Membantu penanaman bibit tanaman hias, pohon pelindung, atau vegetasi baru untuk meningkatkan variasi tanaman di sekolah.',
         'Mengawasi dan mengingatkan warga sekolah agar tidak membuang sampah sembarangan di area koridor, taman, lapangan, maupun sudut-sudut sekolah.',
         'Mengedukasi dan mengampanyekan budaya PHBS kepada teman sebaya, seperti tata cara mencuci tangan 6 langkah yang benar dan etika penggunaan toilet bersama.',
         'Memasang dan merawat media edukasi visual (poster/stiker imbauan) mengenai kebersihan dan sanitasi di area strategis.',
-        'Melakukan pemantauan keberadaan jentik nyamuk (Jumantik) secara berkala di bak mandi, penampungan air, dan tempat yang berpotensi menampung air hujan.',
+        'Memantau keberadaan jentik nyamuk (Jumantik) secara berkala di bak mandi, penampungan air, dan tempat yang berpotensi menampung air hujan.',
         'Melaporkan dengan cepat kepada Guru Pembina/Ketua Tim Adiwiyata jika ditemukan kerusakan fasilitas sanitasi (seperti kran bocor, saluran tersumbat, atau ketersediaan air bersih terganggu).',
         'Mendokumentasikan serta membuat kolase dokumentasi seluruh kegiatan terkait Kader Lingkungan Sehat.',
       ],
@@ -274,13 +274,13 @@ export const DEFAULT_ADIWIYATA_SITE_CONTENT: AdiwiyataSiteContent = {
       focus: 'TOGA & hidroponik',
       duties: 'Merawat tanaman TOGA dan hidroponik serta keanekaragaman hayati sekolah.',
       tasks: [
-        'Melakukan proses penyemaian benih tanaman (seperti kangkung, bayam, pakcoy, atau selada) pada media semai (rockwool atau spons) secara berkala.',
+        'Menyemai benih tanaman (seperti kangkung, bayam, pakcoy, atau selada) pada media semai (rockwool atau spons) secara berkala.',
         'Memindahkan bibit yang telah tumbuh ke instalasi hidroponik (netpot).',
         'Mengukur dan mengatur tingkat kepekatan nutrisi (PPM) serta derajat keasaman (pH) air nutrisi pada tanaman Hidroponik secara rutin.',
         'Memeriksa dan memastikan kelancaran sirkulasi air pada sistem instalasi (pompa, pipa, atau talang hidroponik).',
         'Menjaga kebersihan bak penampung nutrisi dan instalasi dari lumut, jentik nyamuk, serta kotoran.',
-        'Melakukan penanaman tanaman TOGA baru sehingga memenuhi target sekolah yaitu memiliki minimal 100 jenis tanaman TOGA.',
-        'Melakukan penyiraman, pemupukan organik (menggunakan kompos dari Tim 3P), dan pemangkasan tanaman obat (TOGA) secara rutin.',
+        'Menanam tanaman TOGA baru sehingga memenuhi target sekolah, yaitu memiliki minimal 100 jenis tanaman TOGA.',
+        'Menyiram, memupuk secara organik dengan kompos dari Tim 3P, dan memangkas tanaman obat (TOGA) secara rutin.',
         'Merawat media tanam serta membersihkan area kebun TOGA dari gulma, rumput liar, dan hama tanaman.',
         'Memanen hasil tanaman obat (TOGA) dan hidroponik yang sudah siap panen.',
         'Berpartisipasi dalam pengolahan hasil TOGA menjadi produk herbal sederhana ramah lingkungan (seperti minuman jamu tradisional, teh herbal, atau olahan pembersih alami) serta hasil Hidroponik.',
@@ -293,7 +293,7 @@ export const DEFAULT_ADIWIYATA_SITE_CONTENT: AdiwiyataSiteContent = {
       focus: 'Hemat energi',
       duties: 'Mengawal penghematan listrik dan Gerakan Hemat Energi di sekolah.',
       tasks: [
-        'Melakukan patroli rutin untuk mematikan lampu, kipas angin, AC, dan proyektor di kelas atau ruang operasional yang tidak sedang digunakan.',
+        'Berpatroli rutin untuk mematikan lampu, kipas angin, AC, dan proyektor di kelas atau ruang operasional yang tidak sedang digunakan.',
         'Memastikan peralatan elektronik dalam posisi off (bukan standby) saat kepulangan sekolah, dan akhir pekan.',
         'Memasang dan merawat media edukasi visual (stiker/label imbauan hemat energi) di dekat sakelar listrik, AC, dan perangkat elektronik.',
         'Membantu memantau pengaturan suhu standar AC sekolah (disarankan pada suhu efisien 24°C sampai 26°C).',
@@ -307,7 +307,7 @@ export const DEFAULT_ADIWIYATA_SITE_CONTENT: AdiwiyataSiteContent = {
       focus: 'Hemat air',
       duties: 'Mengawal penghematan dan konservasi air di sekolah.',
       tasks: [
-        'Melakukan pemantauan rutin ke area tempat cuci tangan (CTPS), toilet/jamban, kantin, dan kebun sekolah untuk memastikan kran air ditutup rapat setelah digunakan.',
+        'Memantau area tempat cuci tangan (CTPS), toilet/jamban, kantin, dan kebun sekolah secara rutin untuk memastikan kran air ditutup rapat setelah digunakan.',
         'Mengawasi penggunaan air agar warga sekolah tidak membuang-buang air (water wasting) saat berwudhu, mencuci tangan, atau membersihkan alat kebersihan.',
         'Memasang dan merawat media edukasi visual (stiker/label imbauan hemat air) di dekat seluruh titik kran air dan wastafel sekolah.',
         'Membantu memantau keberfungsian dan kebersihan sarana konservasi air sekolah, seperti penampungan air hujan (rainwater harvesting), sumur resapan, dan lubang biopori.',
@@ -328,7 +328,7 @@ export const DEFAULT_ADIWIYATA_SITE_CONTENT: AdiwiyataSiteContent = {
       tasks: [
         'Mengoordinasi dan memantau pelaksanaan piket kelas, pemilahan sampah harian, serta gerakan kebersihan lingkungan sekolah.',
         'Mengajak dan memastikan warga sekolah membiasakan diri membawa tempat makan dan tempat minum guna ulang (tumbler dan lunchbox) sendiri dari rumah.',
-        'Mengelola kegiatan Lomba Kebersihan berkala serta memberikan penghargaan atau pengakuan (Adiwiyata Award tingkat kelas) bagi kelas paling bersih dan konsisten menjaga lingkungan.',
+        'Mengelola kegiatan Lomba Kebersihan berkala serta memberi penghargaan atau pengakuan (Adiwiyata Award tingkat kelas) bagi kelas paling bersih dan konsisten menjaga lingkungan.',
         'Memperbarui media edukasi visual seperti poster, infografis, atau slogan ajakan menjaga lingkungan di area strategis sekolah.',
         'Mengadakan aksi kampanye interaktif, pertunjukan seni lingkungan, atau ajakan langsung (orasi pendek/flashmob) saat apel atau kegiatan sekolah.',
       ],
@@ -369,10 +369,10 @@ export const DEFAULT_ADIWIYATA_SITE_CONTENT: AdiwiyataSiteContent = {
       duties: 'Mengumpulkan, memvalidasi, dan melaporkan data program Adiwiyata.',
       tasks: [
         'Mengumpulkan dan mencatat data dasar (baseline data) terkait pengelolaan lingkungan sekolah, seperti volume sampah harian, jumlah penggunaan listrik/air, serta jumlah dan jenis tanaman.',
-        'Menyusun dan memperbarui database program Adiwiyata secara rapi, terstruktur, dan terintegrasi dalam bentuk rekapitulasi digital/fisik termasuk membuat dan memasang atau melakukan peremajaan label nama (papan deskripsi/QR Code) pada setiap jenis tanaman yang memuat nama latin, nama lokal, serta khasiat utamanya.',
+        'Menyusun dan memperbarui database program Adiwiyata secara rapi, terstruktur, dan terintegrasi dalam bentuk rekapitulasi digital/fisik termasuk membuat dan memasang atau memperbarui label nama (papan deskripsi/QR Code) pada setiap jenis tanaman yang memuat nama latin, nama lokal, serta khasiat utamanya.',
         'Memastikan validitas dan akurasi data yang dihimpun dari setiap unit atau kader kelompok kerja (pokja) lain.',
         'Bersama tim Adiwiyata menetapkan target kuantitatif dan kualitatif (misal: persentase penurunan sampah plastik, tingkat efisiensi energi).',
-        'Melakukan pemantauan secara rutin terhadap ketercapaian indikator-indikator Adiwiyata di setiap divisi atau kelas.',
+        'Memantau ketercapaian indikator-indikator Adiwiyata di setiap divisi atau kelas secara rutin.',
         'Menyusun laporan berkala mengenai ketercapaian target Adiwiyata sebagai bahan refleksi bagi Tim Pembina Adiwiyata Sekolah.',
         'Memberikan masukan berbasis data (data-driven) kepada pihak sekolah dan kader lain guna meningkatkan efektivitas program Adiwiyata secara berkelanjutan.',
       ],
@@ -386,7 +386,7 @@ export const DEFAULT_ADIWIYATA_SITE_CONTENT: AdiwiyataSiteContent = {
         'Mengoordinasi forum Adiwiyata melalui media sosial.',
         'Merancang dan membuat konten edukatif (infografis, poster, poster digital, video pendek/reels) terkait budaya ramah lingkungan.',
         'Menayangkan kampanye serta ajakan aksi lingkungan (seperti zero waste, hemat energi, dan pengolahan sampah) secara konsisten.',
-        'Mengoordinasi kerjasama dengan pihak/instansi Kesehatan dan Lingkungan Hidup.',
+        'Mengoordinasi kerja sama dengan pihak/instansi Kesehatan dan Lingkungan Hidup.',
         'Mengelola dan menyusun arsip digital (foto/video kegiatan) secara rapi sebagai bukti fisik/portofolio penilaian dokumen Adiwiyata.',
       ],
     },
@@ -399,7 +399,7 @@ export const DEFAULT_ADIWIYATA_SITE_CONTENT: AdiwiyataSiteContent = {
         'Mengoordinasi penyampaian laporan kegiatan lingkungan sekolah ke DLH serta memfasilitasi program bantuan (seperti bibit tanaman, pemilah sampah, atau pelatihan) dari pemerintah.',
         'Memfasilitasi kehadiran narasumber atau verifikator dari DLH saat peninjauan atau penilaian Adiwiyata.',
         'Menyusun proposal kemitraan (sponsorship/CSR) dengan perusahaan atau pelaku usaha lokal untuk mendukung pendanaan dan sarana lingkungan sekolah.',
-        'Menjaga transparansi dan memberikan laporan pertanggungjawaban kegiatan (progress report) kepada pihak mitra dunia usaha.',
+        'Menjaga transparansi dan memberi laporan pertanggungjawaban kegiatan (progress report) kepada pihak mitra dunia usaha.',
         'Membangun kemitraan dengan LSM lingkungan, komunitas daur ulang, bank sampah lokal, atau kelompok pemuda lingkungan.',
         'Mengajak komunitas untuk terlibat dalam aksi lingkungan sekolah atau sebaliknya (seperti program bersih sungai, penghijauan wilayah sekitar, atau lokakarya daur ulang).',
         'Melibatkan warga di sekitar lingkungan sekolah dalam gerakan pembiasaan pemilahan sampah dan pengelolaan lingkungan hidup.',

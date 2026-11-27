@@ -54,7 +54,7 @@ export function DepositWorkspace({ data }: { data: DepositPageData }) {
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ records, replace: true }),
     })
-    if (!result.success) throw new Error(result.error || 'Pengiriman ke Spreadsheet gagal.')
+    if (!result.success) throw new Error(result.error || 'Pengiriman ke Spreadsheet gagal. Periksa koneksi, lalu coba lagi.')
   }
 
   function submit(event: FormEvent<HTMLFormElement>) {
@@ -87,7 +87,7 @@ export function DepositWorkspace({ data }: { data: DepositPageData }) {
       if (!String(form.get(name) ?? '').trim()) validation[name] = `Berat ${label} wajib diisi.`
       else if (!Number.isFinite(weight) || weight < 0 || weight > 500 || Math.round(weight * 100) !== weight * 100) validation[name] = `Berat ${label} harus 0 sampai 500 kg, maksimal dua desimal.`
     }
-    for (const [name, label] of [['tumbler', 'Tumbler'], ['lunchbox', 'Lunch box']] as const) {
+    for (const [name, label] of [['tumbler', 'tumbler'], ['lunchbox', 'lunch box']] as const) {
       const count = input[name]
       if (!String(form.get(name) ?? '').trim()) validation[name] = `Jumlah ${label} wajib diisi.`
       else if (!Number.isInteger(count) || count < 0 || count > 100) validation[name] = `Jumlah ${label} harus bilangan bulat 0 sampai 100.`
@@ -114,7 +114,7 @@ export function DepositWorkspace({ data }: { data: DepositPageData }) {
       try {
         const saved = await saveDeposit(preview.input)
         if (saved.needsConfirmation) {
-          if (!window.confirm(`Setoran ${preview.className} tanggal ${preview.date} sudah tersimpan. Timpa data tersebut?`)) return
+          if (!window.confirm(`Setoran ${preview.className} tanggal ${preview.date} sudah tersimpan. Timpa data lama? Data lama akan diganti dan tidak bisa dikembalikan.`)) return
           const overwritten = await saveDeposit({ ...preview.input, overwrite: true })
           if (overwritten.needsConfirmation) throw new Error('Data belum dapat ditimpa. Muat ulang halaman lalu coba lagi.')
         }
@@ -140,7 +140,7 @@ export function DepositWorkspace({ data }: { data: DepositPageData }) {
           }
         }
       } catch (cause) {
-        setError(cause instanceof Error ? cause.message : 'Setoran belum berhasil disimpan.')
+        setError(cause instanceof Error ? cause.message : 'Setoran belum berhasil disimpan. Periksa koneksi, lalu coba lagi.')
       }
     })
   }
@@ -156,7 +156,7 @@ export function DepositWorkspace({ data }: { data: DepositPageData }) {
         setPendingSync(null)
         setPreview(null)
       } catch (cause) {
-        setError(cause instanceof Error ? cause.message : 'Pengiriman ke Spreadsheet gagal.')
+        setError(cause instanceof Error ? cause.message : 'Pengiriman ke Spreadsheet gagal. Periksa koneksi, lalu coba lagi.')
       }
     })
   }
@@ -180,7 +180,7 @@ export function DepositWorkspace({ data }: { data: DepositPageData }) {
 
   function removeDeposit(id: string) {
     if (deletingId) return
-    if (!window.confirm('Hapus laporan ini? Tindakan ini tidak dapat dibatalkan.')) return
+    if (!window.confirm('Hapus laporan ini? Laporan yang dihapus tidak bisa dikembalikan.')) return
     setDeletingId(id)
     setError('')
     startTransition(async () => {
@@ -189,7 +189,7 @@ export function DepositWorkspace({ data }: { data: DepositPageData }) {
         setMessage('Laporan berhasil dihapus.')
         router.refresh()
       } catch (cause) {
-        setError(cause instanceof Error ? cause.message : 'Setoran belum berhasil dihapus.')
+        setError(cause instanceof Error ? cause.message : 'Setoran belum berhasil dihapus. Periksa koneksi, lalu coba lagi.')
       } finally {
         setDeletingId(null)
       }
@@ -229,7 +229,7 @@ export function DepositWorkspace({ data }: { data: DepositPageData }) {
 
       <div className="deposit-history">
         <div className="subsection-heading"><div><span className="eyebrow">RIWAYAT</span><h2>Laporan terbaru</h2></div></div>
-        {data.deposits.length === 0 ? <div className="empty-search"><strong>Belum ada laporan</strong><span>Laporan yang berhasil disimpan akan muncul di sini.</span></div> : (
+        {data.deposits.length === 0 ? <div className="empty-search"><strong>Belum ada laporan</strong><span>Isi formulir di atas untuk mengirim laporan pertama.</span></div> : (
           <div className="deposit-list">{data.deposits.map((row) => <article className="deposit-row" key={row.id}>
             <div><strong>{row.class_name}</strong><span>{new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium', timeZone: 'Asia/Jakarta' }).format(new Date(`${row.date}T12:00:00+07:00`))}</span></div>
             <p>{Number(row.organic) + Number(row.inorganic) + Number(row.residual) + Number(row.hazardous) + Number(row.paper)} kg total · {row.tumbler} tumbler · {row.lunchbox} lunch box</p>

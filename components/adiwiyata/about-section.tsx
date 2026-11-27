@@ -24,7 +24,7 @@ export function AboutSection() {
       <motion.div className="adi-about-grid" variants={staggerParent} initial="hidden" animate="show">
         <motion.article className="adi-about-card adi-about-story" variants={fadeUpChild} whileHover={{ y: -4 }}>
           <span className="adi-about-kicker"><Leaf aria-hidden="true" /> PLATFORM DIGITAL · SMAN 55 JAKARTA</span>
-          <h2>Data yang lebih jernih untuk sekolah yang lebih hijau.</h2>
+          <h2>Pemantauan digital menggantikan catatan kertas</h2>
           <p>Adiwiyata 55 adalah platform digital berbasis web untuk sistem monitoring program Adiwiyata di lingkungan SMAN 55 Jakarta.</p>
           <p>Platform ini lahir untuk menggantikan pencatatan volume sampah manual berbasis kertas dengan sistem digital yang transparan dan akurat, yang bisa dipantau kapan saja.</p>
           <div className="adi-about-transition" aria-label="Perubahan pencatatan dari manual menjadi digital">
@@ -48,7 +48,7 @@ export function AboutSection() {
         <motion.article className="adi-about-card adi-about-awareness" variants={fadeUpChild} whileHover={{ y: -4 }}>
           <span className="adi-about-icon"><ShieldCheck aria-hidden="true" /></span>
           <span className="adi-about-kicker">DAMPAK YANG DIHARAPKAN</span>
-          <h2>Kebiasaan baik, tumbuh bersama.</h2>
+          <h2>Dampak yang diharapkan: kesadaran, kedisiplinan, dan literasi</h2>
           <p>Meningkatkan kesadaran, kedisiplinan, dan literasi lingkungan seluruh warga sekolah SMAN 55 Jakarta.</p>
           <div className="adi-about-pillars"><span>Kesadaran</span><span>Kedisiplinan</span><span>Literasi</span></div>
         </motion.article>

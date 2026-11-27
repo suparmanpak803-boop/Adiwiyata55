@@ -47,7 +47,7 @@ export async function saveSliderSlide(formData: FormData) {
 
   const rawId = String(formData.get('id') ?? '').trim()
   const id = rawId || crypto.randomUUID()
-  if (!uuidPattern.test(id)) throw new Error('Identitas slide tidak valid.')
+  if (!uuidPattern.test(id)) throw new Error('Slide tidak ditemukan. Muat ulang halaman lalu coba lagi.')
 
   const judul = String(formData.get('judul') ?? '').trim().slice(0, 120) || null
   const deskripsi = String(formData.get('deskripsi') ?? '').trim().slice(0, 280) || null
@@ -58,7 +58,7 @@ export async function saveSliderSlide(formData: FormData) {
   const tanggalMulai = validateDate(String(formData.get('tanggal_mulai') ?? '').trim(), 'Tanggal mulai')
   const tanggalSelesai = validateDate(String(formData.get('tanggal_selesai') ?? '').trim(), 'Tanggal selesai')
   const rawActive = String(formData.get('aktif') ?? '')
-  if (rawActive !== 'true' && rawActive !== 'false') throw new Error('Status slide tidak valid.')
+  if (rawActive !== 'true' && rawActive !== 'false') throw new Error('Status slide tidak dapat disimpan. Muat ulang halaman lalu coba lagi.')
   const aktif = rawActive === 'true'
 
   if (!altText) throw new Error('Teks alternatif gambar wajib diisi.')
@@ -140,7 +140,7 @@ export async function toggleSliderSlide(id: string, aktif: boolean) {
   await ensureSliderSchema()
   // B-04: batas laju perubahan slider (30/jam per admin).
   if (!(await allowRequest(`slider:${admin.id}`, 30, 3600))) throw new Error('Terlalu banyak perubahan. Coba lagi nanti.')
-  if (!uuidPattern.test(id) || typeof aktif !== 'boolean') throw new Error('Perubahan status slide tidak valid.')
+  if (!uuidPattern.test(id) || typeof aktif !== 'boolean') throw new Error('Status slide tidak dapat disimpan. Muat ulang halaman lalu coba lagi.')
   await db.transaction(async (transaction) => {
     const [slide] = await transaction.update(sliderSlides).set({ aktif }).where(eq(sliderSlides.id, id)).returning({ id: sliderSlides.id, judul: sliderSlides.judul })
     if (!slide) throw new Error('Slide tidak ditemukan.')
@@ -206,7 +206,7 @@ export async function saveSliderOrder(ids: string[]) {
   // B-04: batas laju perubahan slider (30/jam per admin).
   if (!(await allowRequest(`slider:${admin.id}`, 30, 3600))) throw new Error('Terlalu banyak perubahan. Coba lagi nanti.')
   if (!Array.isArray(ids) || ids.length > 100 || ids.some((id) => !uuidPattern.test(id)) || new Set(ids).size !== ids.length) {
-    throw new Error('Urutan slide tidak valid.')
+    throw new Error('Urutan slide tidak dapat disimpan. Muat ulang halaman lalu coba lagi.')
   }
   const rows = await db.select({ id: sliderSlides.id }).from(sliderSlides)
   if (rows.length !== ids.length || rows.some((row) => !ids.includes(row.id))) throw new Error('Daftar slide berubah. Muat ulang halaman lalu coba lagi.')
@@ -232,8 +232,8 @@ export async function saveSliderSettings(input: {
   // B-04: batas laju perubahan slider (30/jam per admin).
   if (!(await allowRequest(`slider:${admin.id}`, 30, 3600))) throw new Error('Terlalu banyak perubahan. Coba lagi nanti.')
   if (!input || !Number.isInteger(input.intervalDetik) || input.intervalDetik < 2 || input.intervalDetik > 15) throw new Error('Kecepatan slider harus 2 sampai 15 detik.')
-  if (input.transisi !== 'fade' && input.transisi !== 'slide') throw new Error('Jenis transisi tidak valid.')
-  if ([input.autoplay, input.tampilPanah, input.tampilDots].some((value) => typeof value !== 'boolean')) throw new Error('Pengaturan kontrol tidak valid.')
+  if (input.transisi !== 'fade' && input.transisi !== 'slide') throw new Error('Jenis transisi tidak dapat disimpan. Muat ulang halaman lalu coba lagi.')
+  if ([input.autoplay, input.tampilPanah, input.tampilDots].some((value) => typeof value !== 'boolean')) throw new Error('Pengaturan kontrol tidak dapat disimpan. Muat ulang halaman lalu coba lagi.')
   await db.insert(sliderSettings).values({
     id: true,
     intervalDetik: input.intervalDetik,

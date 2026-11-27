@@ -28,9 +28,22 @@ const sectionDescriptions: Record<string, string> = {
   dokumentasi:
     'Kenali 15 kader Adiwiyata SMAN 55 Jakarta beserta uraian tugasnya, dan lihat foto dokumentasi kegiatan lingkungan warga sekolah sejak 2024.',
   publikasi:
-    'Artikel dan kabar terbaru seputar gerakan Adiwiyata SMAN 55 Jakarta: pemilahan sampah, bank sampah, kebun sekolah, dan kegiatan warga sekolah.',
+    'Artikel dan kabar seputar gerakan Adiwiyata SMAN 55 Jakarta: pemilahan sampah, bank sampah, kebun sekolah, dan kegiatan warga sekolah.',
   dokumen:
     'Arsip dokumen resmi program Adiwiyata SMAN 55 Jakarta yang diunggah admin: rujukan kegiatan, laporan, dan bukti pendukung program sekolah.',
+}
+
+// Judul lengkap untuk <title> (50–60 karakter, kata kunci di depan).
+// Dipakai absolut supaya template title di root layout tidak menambah
+// sufiks lagi. Judul H1 yang tampil di halaman tetap memakai
+// content.pages[section].title.
+const sectionAbsoluteTitles: Record<string, string> = {
+  tentang: 'Adiwiyata SMAN 55 Jakarta: Tentang Kami dan Program Sekolah',
+  profil: 'Adiwiyata SMAN 55 Jakarta: Profil dan Sejarah Sekolah',
+  program: 'Adiwiyata SMAN 55 Jakarta: Program dan Kegiatan Sekolah',
+  dokumentasi: 'Adiwiyata SMAN 55 Jakarta: Kader dan Dokumentasi Kegiatan',
+  publikasi: 'Adiwiyata SMAN 55 Jakarta: Artikel dan Berita Sekolah',
+  dokumen: 'Adiwiyata SMAN 55 Jakarta: Dokumen dan Arsip Resmi',
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ section: string }> }): Promise<Metadata> {
@@ -39,20 +52,19 @@ export async function generateMetadata({ params }: { params: Promise<{ section: 
   const page = Object.hasOwn(content.pages, section) ? content.pages[section as keyof typeof content.pages] : null
   const title = section === 'tentang' ? 'Tentang Kami' : page?.title ?? 'Informasi Adiwiyata'
   const description = sectionDescriptions[section] ?? 'Pusat Informasi Adiwiyata SMAN 55 Jakarta.'
-  // Judul lengkap (dengan nama sekolah) dirakit template title di root
-  // layout; di sini cukup nama section-nya saja.
   const url = `https://www.adiwiyata55jkt.my.id/adiwiyata/${section}`
   // Struktur petugas hanya tampil lengkap bila sudah login: jangan
   // sampai terindeks.
   if (section === 'struktur') {
     return { title, description, robots: { index: false, follow: false } }
   }
+  const absoluteTitle = sectionAbsoluteTitles[section] ?? 'Adiwiyata SMAN 55 Jakarta'
   return {
-    title,
+    title: { absolute: absoluteTitle },
     description,
     alternates: { canonical: url },
-    openGraph: { title: `${title} | Adiwiyata SMAN 55 Jakarta`, description, url, type: 'website' },
-    twitter: { card: 'summary_large_image', title: `${title} | Adiwiyata SMAN 55 Jakarta`, description },
+    openGraph: { title: absoluteTitle, description, url, type: 'website' },
+    twitter: { card: 'summary_large_image', title: absoluteTitle, description },
   }
 }
 

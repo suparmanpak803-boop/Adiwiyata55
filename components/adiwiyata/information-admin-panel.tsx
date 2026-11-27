@@ -133,11 +133,11 @@ export function InformationAdminPanel({ initialContent }: { initialContent: Adiw
         body: JSON.stringify({ content }),
       })
       const result = await response.json() as { content?: AdiwiyataSiteContent; error?: string }
-      if (!response.ok || !result.content) throw new Error(result.error || 'Informasi belum berhasil disimpan.')
+      if (!response.ok || !result.content) throw new Error(result.error || 'Informasi belum berhasil disimpan. Periksa koneksi, lalu coba lagi.')
       setContent(result.content)
       setMessage('Informasi Adiwiyata berhasil diperbarui dan tampil di halaman publik.')
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Informasi belum berhasil disimpan.')
+      setError(cause instanceof Error ? cause.message : 'Informasi belum berhasil disimpan. Periksa koneksi, lalu coba lagi.')
     } finally {
       setSaving(false)
     }
@@ -150,7 +150,7 @@ export function InformationAdminPanel({ initialContent }: { initialContent: Adiw
         <span className="information-admin-mark"><Leaf aria-hidden="true" /></span>
         <span className="eyebrow">PENGELOLAAN KONTEN · ADMIN</span>
         <h1 id="information-admin-title">Informasi Adiwiyata</h1>
-        <p>Atur judul dan informasi di seluruh halaman publik. Perubahan tersimpan di database dan langsung digunakan oleh halaman Informasi Adiwiyata.</p>
+        <p>Atur judul dan informasi di seluruh halaman publik. Perubahan tersimpan di basis data dan langsung tampil di halaman Informasi Adiwiyata.</p>
         <Link className="information-public-link" href="/adiwiyata" target="_blank" rel="noreferrer"><Eye aria-hidden="true" /> Lihat halaman publik</Link>
       </header>
 

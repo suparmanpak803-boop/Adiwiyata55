@@ -12,7 +12,7 @@ function pesanGalat(error: unknown): string {
   const message = error instanceof Error ? error.message : ''
   if (message === 'UNAUTHORIZED') return 'Silakan login kembali.'
   if (message === 'FORBIDDEN') return 'Halaman ini hanya untuk Admin.'
-  return 'Struktur belum berhasil disimpan. Silakan coba lagi.'
+  return 'Struktur belum berhasil disimpan. Periksa koneksi, lalu coba lagi.'
 }
 
 // Menyimpan seluruh struktur (pengurus inti + tim) dari editor admin.

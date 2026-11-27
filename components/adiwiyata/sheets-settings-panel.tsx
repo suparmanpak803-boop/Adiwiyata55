@@ -27,7 +27,7 @@ export function SheetsSettingsPanel({ initialUrl, initiallyConfigured }: { initi
         setMessage('Pengaturan berhasil disimpan. Integrasi Spreadsheet siap digunakan.')
         router.refresh()
       } catch (cause) {
-        setError(cause instanceof Error ? cause.message : 'Pengaturan tidak dapat disimpan.')
+        setError(cause instanceof Error ? cause.message : 'Pengaturan belum tersimpan. Periksa isian, lalu coba lagi.')
       }
     })
   }
@@ -48,10 +48,10 @@ export function SheetsSettingsPanel({ initialUrl, initiallyConfigured }: { initi
           <label className="deposit-field"><span><KeyRound aria-hidden="true" /> Token rahasia</span><input type="password" autoComplete="new-password" placeholder={configured ? 'Token tersimpan, kosongkan untuk mempertahankan' : 'Masukkan token yang sama dengan Script Properties'} value={token} onChange={(event) => setToken(event.target.value)} maxLength={5000} aria-describedby="sheets-token-help" /><small id="sheets-token-help">Token harus sama dengan nilai <code>SHEETS_SECRET_TOKEN</code> di Script Properties Apps Script. Kosongkan jika tidak ingin menggantinya.</small></label>
           {error && <p className="sheets-settings-message is-error" role="alert">{error}</p>}
           {message && <p className="sheets-settings-message is-success" role="status"><CheckCircle2 aria-hidden="true" />{message}</p>}
-          <div className="sheets-settings-footer"><p>Gunakan URL deployment Web App yang berakhiran <code>/exec</code>. Akses Petugas dibatasi berdasarkan kelasnya.</p><button className="primary-button" type="submit" disabled={pending}><Save aria-hidden="true" />{pending ? 'Menyimpan…' : 'Simpan pengaturan'}</button></div>
+          <div className="sheets-settings-footer"><p>Gunakan URL deployment Web App yang berakhiran <code>/exec</code>. Petugas bisa mengisi laporan untuk semua kelas; rekap di Spreadsheet tetap terkunci ke kelas penugasan.</p><button className="primary-button" type="submit" disabled={pending}><Save aria-hidden="true" />{pending ? 'Menyimpan…' : 'Simpan pengaturan'}</button></div>
         </form>
       </div>
-      <aside className="sheets-setup-note"><span className="eyebrow">SEBELUM MENYIMPAN</span><ol><li>Deploy versi terbaru Apps Script sebagai Web App dengan akses yang sesuai.</li><li>Pastikan Script Properties berisi <code>SHEETS_SECRET_TOKEN</code>.</li><li>Masukkan URL deployment dan token yang sama di formulir ini.</li></ol><p>Apps Script menyiapkan tab <code>Master_Kelas</code> berisi X-A sampai X-H, XI-A sampai XI-H, dan XII-A sampai XII-H, <code>Rekap</code>, <code>Video_Edukasi</code>, dan <code>Statistik_Video</code>. Admin dapat menambah atau menonaktifkan kelas di <code>Master_Kelas</code>; dropdown portal mengikuti kelas aktif dan diperbarui dalam waktu maksimal 5 menit. Pertahankan format kode seperti <code>XI-C</code>, isi <code>Aktif</code> dengan <code>Ya</code> atau <code>Tidak</code>, dan atur wali kelas di kolomnya. Tab <code>Rekap</code> menghitung berat dan kepatuhan per kelas. Untuk video, lengkapi tautan YouTube dan set <code>Tampil</code> ke <code>Ya</code>; status tayang website serta urutannya diatur lewat menu <strong>Atur Video Edukasi</strong>.</p></aside>
+      <aside className="sheets-setup-note"><span className="eyebrow">SEBELUM MENYIMPAN</span><ol><li>Deploy versi terbaru Apps Script sebagai Web App dengan akses yang sesuai.</li><li>Pastikan Script Properties berisi <code>SHEETS_SECRET_TOKEN</code>.</li><li>Masukkan URL deployment dan token yang sama di formulir ini.</li></ol><p>Apps Script menyiapkan tab <code>Master_Kelas</code> berisi X-A sampai X-H, XI-A sampai XI-H, dan XII-A sampai XII-H, <code>Rekap</code>, <code>Video_Edukasi</code>, dan <code>Statistik_Video</code>. Admin dapat menambah atau menonaktifkan kelas di <code>Master_Kelas</code>; dropdown portal mengikuti kelas aktif dan diperbarui dalam waktu maksimal 5 menit. Pertahankan format kode seperti <code>XI-C</code>, isi <code>Aktif</code> dengan <code>Ya</code> atau <code>Tidak</code>, dan atur wali kelas di kolomnya. Tab <code>Rekap</code> menghitung berat dan kepatuhan per kelas. Untuk video, lengkapi tautan YouTube dan isi <code>Tampil</code> dengan <code>Ya</code>; status tayang website serta urutannya diatur lewat menu <strong>Atur Video Edukasi</strong>.</p></aside>
     </section>
   )
 }

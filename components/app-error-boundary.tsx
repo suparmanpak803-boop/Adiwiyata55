@@ -8,7 +8,7 @@ export function AppErrorBoundary({ reset, section }: { reset: () => void; sectio
       <section className="game-stage" role="alert" aria-live="assertive">
         <span className="eyebrow">{section}</span>
         <h1>Halaman belum dapat dimuat</h1>
-        <p>Terjadi gangguan saat mengambil data. Coba muat ulang bagian ini.</p>
+        <p>Data belum termuat. Periksa koneksi, lalu coba lagi.</p>
         <div className="game-actions">
           <button className="game-play" type="button" onClick={reset}>Coba lagi</button>
           <a className="game-ghost" href="/">Kembali ke beranda</a>

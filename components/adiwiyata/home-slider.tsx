@@ -162,7 +162,7 @@ export function HomeSlider({ slides, settings, preview = false, titleAsH1 = fals
         <div className="home-slider-empty">
           <span className="home-slider-empty-mark" aria-hidden="true"><span /><span /><span /></span>
           <span className="home-slider-kicker">ADIWIYATA · SMAN 55 JAKARTA</span>
-          {titleAsH1 ? <h1>Selamat datang</h1> : <h2>Selamat datang</h2>}
+          {titleAsH1 ? <h1>Adiwiyata SMAN 55 Jakarta</h1> : <h2>Selamat datang</h2>}
           <p>Bersama merawat lingkungan sekolah, satu kebiasaan baik setiap hari.</p>
         </div>
       )}

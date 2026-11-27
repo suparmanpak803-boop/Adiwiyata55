@@ -49,10 +49,10 @@ export function MonitoringDashboard({ summary: initialSummary, initialError, cla
         if (filters.grade !== 'all') params.set('grade', filters.grade)
         if (filters.classNames.length) params.set('classNames', filters.classNames.join(','))
         const result = await fetchJson<{ success?: boolean; error?: string } & Partial<SpreadsheetSummary>>(`/api/submit?${params.toString()}`, { cache: 'no-store' })
-        if (!result.success) throw new Error(result.error || 'Rekap Spreadsheet belum dapat dimuat.')
+        if (!result.success) throw new Error(result.error || 'Rekap Spreadsheet belum dapat dimuat. Periksa koneksi, lalu muat ulang halaman.')
         setSummary(result as SpreadsheetSummary)
       } catch (cause) {
-        setError(cause instanceof Error ? cause.message : 'Rekap Spreadsheet belum dapat dimuat.')
+        setError(cause instanceof Error ? cause.message : 'Rekap Spreadsheet belum dapat dimuat. Periksa koneksi, lalu muat ulang halaman.')
       }
     })
   }
@@ -99,7 +99,7 @@ export function MonitoringDashboard({ summary: initialSummary, initialError, cla
         const rows = classRankRows.filter((item) => item.grade === grade).slice().sort((a, b) => b.totalKg - a.totalKg || a.className.localeCompare(b.className))
         return <article className="grade-ranking-card" key={grade}><h3>Tingkat {grade}</h3><div className="monitoring-table-scroll" data-lenis-prevent><table className="monitoring-table"><thead><tr><th scope="col">#</th><th scope="col">Kelas</th><th scope="col">Berat</th><th scope="col">Patuh</th></tr></thead><tbody>{rows.map((row, index) => <tr key={row.className}><td><span className={`rank-chip${index < 3 ? ' rank-highlight' : ''}`}>{String(index + 1).padStart(2, '0')}</span></td><th scope="row">{row.className}</th><td>{row.totalKg.toLocaleString('id-ID', { maximumFractionDigits: 1 })} kg</td><td>{Math.round(row.compliancePercent)}%</td></tr>)}</tbody></table></div></article>
       })}</div></section>
-      <p className="monitoring-footnote">Persentase kepatuhan dihitung dari laporan harian yang mencatat setidaknya satu siswa membawa tumbler atau lunch box. Rekap bersumber dari Google Sheets; akses Petugas dibatasi ke kelas yang ditugaskan.</p>
+      <p className="monitoring-footnote">Persentase kepatuhan dihitung dari laporan harian yang mencatat setidaknya satu siswa membawa tumbler atau lunch box. Rekap bersumber dari Google Sheets; rekap tiap petugas hanya menampilkan kelas penugasannya.</p>
     </section>
   )
 }

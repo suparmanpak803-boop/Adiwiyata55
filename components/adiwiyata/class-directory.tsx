@@ -35,7 +35,7 @@ export function ClassDirectory({ classes, isAdmin }: { classes: Classes; isAdmin
         setError('')
         router.refresh()
       } catch (cause) {
-        setError(cause instanceof Error ? cause.message : 'Data kelas belum berhasil disimpan.')
+        setError(cause instanceof Error ? cause.message : 'Data kelas belum berhasil disimpan. Periksa koneksi, lalu coba lagi.')
       }
     })
   }

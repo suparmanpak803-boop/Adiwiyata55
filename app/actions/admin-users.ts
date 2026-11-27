@@ -40,9 +40,9 @@ export async function updateAdminUserRole(input: { userId: string; role: Managed
     // M-07: batas laju perubahan peran (10/menit per admin).
     if (!(await allowRequest(`peran:${actor.id}`, 10, 60))) throw new UserManagementError('Terlalu banyak perubahan peran. Coba lagi sebentar.')
     if (!input || typeof input !== 'object' || typeof input.userId !== 'string' || !UUID_PATTERN.test(input.userId)) {
-      throw new UserManagementError('Akun yang dipilih tidak valid.')
+      throw new UserManagementError('Akun yang dipilih tidak ditemukan. Muat ulang halaman lalu coba lagi.')
     }
-    if (!isManagedPortalRole(input.role)) throw new UserManagementError('Role yang dipilih tidak valid.')
+    if (!isManagedPortalRole(input.role)) throw new UserManagementError('Peran yang dipilih tidak dikenali. Pilih peran yang tersedia.')
 
     const userId = input.userId
     const role = input.role
@@ -79,7 +79,7 @@ export async function updateAdminUserRole(input: { userId: string; role: Managed
 
       if (!target) throw new UserManagementError('Akun tidak ditemukan.')
       if (target.id === actor.id && role !== 'admin') {
-        throw new UserManagementError('Role Admin akun yang sedang digunakan tidak dapat diturunkan dari panel ini.')
+        throw new UserManagementError('Peran Admin akun yang sedang digunakan tidak dapat diturunkan dari panel ini.')
       }
 
       if (target.role === 'admin' && databaseRole !== 'admin') {
@@ -89,7 +89,7 @@ export async function updateAdminUserRole(input: { userId: string; role: Managed
           .where(eq(adiwiyataUserRoles.role, 'admin'))
           .orderBy(asc(adiwiyataUserRoles.userId))
           .for('update')
-        if (admins.length <= 1) throw new UserManagementError('Role Admin terakhir tidak dapat dihapus. Tetapkan Admin lain terlebih dahulu.')
+        if (admins.length <= 1) throw new UserManagementError('Peran Admin terakhir tidak dapat dihapus. Tetapkan Admin lain terlebih dahulu.')
       }
 
       await transaction
@@ -110,6 +110,6 @@ export async function updateAdminUserRole(input: { userId: string; role: Managed
     if (error instanceof Error && (error.message === 'UNAUTHORIZED' || error.message === 'FORBIDDEN')) {
       return { success: false as const, error: 'Sesi Admin tidak valid. Silakan masuk kembali.' }
     }
-    return { success: false as const, error: 'Perubahan akses belum berhasil disimpan. Coba lagi.' }
+    return { success: false as const, error: 'Perubahan akses belum berhasil disimpan. Periksa koneksi, lalu coba lagi.' }
   }
 }

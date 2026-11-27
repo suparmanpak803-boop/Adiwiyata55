@@ -212,7 +212,7 @@ function GuideDialog({ onClose, role }: { onClose: () => void; role: 'admin' | '
     </ul></>}
     <h3>Butuh bantuan?</h3>
     <p>Hubungi kader Adiwiyata atau admin sekolah.</p>
-  </div><button className="primary-button" onClick={onClose}>Mengerti <ArrowRight aria-hidden="true" /></button></section></div>
+  </div><button className="primary-button" onClick={onClose}>Tutup panduan <ArrowRight aria-hidden="true" /></button></section></div>
 }
 
 // Syarat dan Ketentuan Petugas — halaman statis berpoin untuk petugas

@@ -29,15 +29,15 @@ export function useGameSession(gameKey: string, onFinished: (score: number) => v
       // Server mengembalikan { error } bila gagal (mis. game nonaktif,
       // soal belum cukup, atau gangguan server). Tampilkan pesan aslinya
       // agar tidak tertutup pesan generik di bawah.
-      if (!response.ok || typeof body.error === 'string') throw new Error(typeof body.error === 'string' && body.error.trim() ? body.error : `Gagal memulai game (${response.status}).`)
-      if (typeof body.token !== 'string' || typeof body.durasiDetik !== 'number') throw new Error('Respons sesi game tidak lengkap.')
+      if (!response.ok || typeof body.error === 'string') throw new Error(typeof body.error === 'string' && body.error.trim() ? body.error : 'Game belum bisa dimulai. Periksa koneksi, lalu coba lagi.')
+      if (typeof body.token !== 'string' || typeof body.durasiDetik !== 'number') throw new Error('Data game tidak lengkap. Coba lagi.')
       token.current = body.token
       setSessionData(body)
       setDuration(body.durasiDetik)
       startedAt.current = Date.now()
       setPhase('main')
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Game belum dapat dimulai.')
+      setMessage(error instanceof Error ? error.message : 'Game belum dapat dimulai. Periksa koneksi, lalu coba lagi.')
       setPhase('galat')
     }
   }, [gameKey])
@@ -51,13 +51,13 @@ export function useGameSession(gameKey: string, onFinished: (score: number) => v
     try {
       const response = await fetch('/api/game/score', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: token.current, log: log.current }) })
       const body = await readJsonResponse<Record<string, unknown> & { error?: unknown }>(response)
-      if (!response.ok || typeof body.error === 'string') throw new Error(typeof body.error === 'string' && body.error.trim() ? body.error : `Gagal menyimpan skor (${response.status}).`)
-      if (typeof body.skor !== 'number' || typeof body.poin !== 'number') throw new Error('Respons skor tidak lengkap.')
+      if (!response.ok || typeof body.error === 'string') throw new Error(typeof body.error === 'string' && body.error.trim() ? body.error : 'Skor belum tersimpan. Periksa koneksi, lalu coba lagi.')
+      if (typeof body.skor !== 'number' || typeof body.poin !== 'number') throw new Error('Data skor tidak lengkap. Coba lagi.')
       setResult(body as unknown as SessionResult)
       onFinished(body.skor)
       setPhase('selesai')
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Skor belum dapat disimpan.')
+      setMessage(error instanceof Error ? error.message : 'Skor belum dapat disimpan. Periksa koneksi, lalu coba lagi.')
       setPhase('galat')
     }
   }, [onFinished])

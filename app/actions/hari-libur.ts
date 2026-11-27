@@ -12,7 +12,7 @@ function pesanGalat(error: unknown): string {
   const message = error instanceof Error ? error.message : ''
   if (message === 'UNAUTHORIZED') return 'Silakan login kembali.'
   if (message === 'FORBIDDEN') return 'Halaman ini hanya untuk Admin.'
-  return 'Hari libur belum berhasil disimpan. Silakan coba lagi.'
+  return 'Hari libur belum berhasil disimpan. Periksa koneksi, lalu coba lagi.'
 }
 
 // Menambah (atau memperbarui keterangan) satu tanggal libur.

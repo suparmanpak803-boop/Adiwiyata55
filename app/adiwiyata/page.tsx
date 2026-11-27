@@ -7,18 +7,18 @@ import { JsonLd, SITE_URL, breadcrumbJsonLd } from '@/lib/seo-schema'
 import './adiwiyata.css'
 
 export const metadata: Metadata = {
-  title: 'Informasi Adiwiyata',
+  title: { absolute: 'Adiwiyata SMAN 55 Jakarta: Sekolah Peduli Lingkungan' },
   description: 'Temukan program lingkungan, kegiatan warga sekolah, artikel, dan arsip Adiwiyata SMAN 55 Jakarta, dari pemilahan sampah dan bank sampah sampai kebun sekolah.',
   alternates: { canonical: 'https://www.adiwiyata55jkt.my.id/adiwiyata' },
   openGraph: {
-    title: 'Informasi Adiwiyata | Adiwiyata SMAN 55 Jakarta',
+    title: 'Adiwiyata SMAN 55 Jakarta: Sekolah Peduli Lingkungan',
     description: 'Temukan program lingkungan, kegiatan warga sekolah, artikel, dan arsip Adiwiyata SMAN 55 Jakarta, dari pemilahan sampah dan bank sampah sampai kebun sekolah.',
     url: 'https://www.adiwiyata55jkt.my.id/adiwiyata',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Informasi Adiwiyata | Adiwiyata SMAN 55 Jakarta',
+    title: 'Adiwiyata SMAN 55 Jakarta: Sekolah Peduli Lingkungan',
     description: 'Temukan program lingkungan, kegiatan warga sekolah, artikel, dan arsip Adiwiyata SMAN 55 Jakarta, dari pemilahan sampah dan bank sampah sampai kebun sekolah.',
   },
 }

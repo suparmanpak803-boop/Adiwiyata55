@@ -190,7 +190,7 @@ export function StrukturEditor({ data }: { data: StrukturPetugas }) {
       setMessage('Struktur berhasil disimpan dan tampil di halaman Struktur.')
       router.refresh()
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Struktur belum berhasil disimpan.')
+      setError(cause instanceof Error ? cause.message : 'Struktur belum berhasil disimpan. Periksa koneksi, lalu coba lagi.')
     } finally {
       setSaving(false)
     }
@@ -215,7 +215,7 @@ export function StrukturEditor({ data }: { data: StrukturPetugas }) {
       setMessage('Struktur dikembalikan ke daftar SK.')
       router.refresh()
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Struktur belum berhasil dikembalikan.')
+      setError(cause instanceof Error ? cause.message : 'Struktur belum berhasil dikembalikan. Periksa koneksi, lalu coba lagi.')
     } finally {
       setResetting(false)
     }
@@ -230,7 +230,7 @@ export function StrukturEditor({ data }: { data: StrukturPetugas }) {
         <span className="information-admin-mark"><Leaf aria-hidden="true" /></span>
         <span className="eyebrow">PENGELOLAAN KONTEN · ADMIN</span>
         <h1 id="struktur-admin-title">Struktur Adiwiyata</h1>
-        <p>Atur pengurus inti dan tim kader yang tampil di halaman Struktur. Perubahan tersimpan di database dan langsung digunakan oleh halaman Struktur setelah disimpan.</p>
+        <p>Atur pengurus inti dan tim kader yang tampil di halaman Struktur.</p>
         <Link className="information-public-link" href="/adiwiyata/struktur" target="_blank" rel="noreferrer"><Eye aria-hidden="true" /> Lihat halaman Struktur</Link>
       </header>
 
@@ -252,7 +252,7 @@ export function StrukturEditor({ data }: { data: StrukturPetugas }) {
               </article>
             ))}
           </div>
-          {struktur.pengurusInti.length === 0 && <p className="struktur-admin-empty">Belum ada pengurus inti.</p>}
+          {struktur.pengurusInti.length === 0 && <p className="struktur-admin-empty">Belum ada pengurus inti. Ketuk Tambah pengurus di bawah untuk menambah.</p>}
           <button className="information-reset-button information-add-button" type="button" disabled={sibuk} onClick={tambahPengurus}><Plus aria-hidden="true" /> Tambah pengurus</button>
         </section>
 
@@ -328,7 +328,7 @@ export function StrukturEditor({ data }: { data: StrukturPetugas }) {
               )
             })}
           </div>
-          {struktur.tim.length === 0 && <p className="struktur-admin-empty">Belum ada tim kader.</p>}
+          {struktur.tim.length === 0 && <p className="struktur-admin-empty">Belum ada tim kader. Ketuk Tambah tim di bawah untuk menambah.</p>}
           <button className="information-reset-button information-add-button" type="button" disabled={sibuk} onClick={tambahTim}><Plus aria-hidden="true" /> Tambah tim</button>
         </section>
       </div>

@@ -27,20 +27,20 @@ export function DocumentAdminPanel({ documents }: { documents: AdiwiyataDocument
     try {
       const response = await fetch('/api/admin/documents', { method: 'POST', body: formData })
       const result = await response.json() as { error?: string }
-      if (!response.ok) throw new Error(result.error || 'Dokumen belum berhasil diunggah.')
+      if (!response.ok) throw new Error(result.error || 'Dokumen belum berhasil diunggah. Periksa koneksi dan ukuran berkas, lalu coba lagi.')
       form.reset()
       if (fileRef.current) fileRef.current.value = ''
       setMessage('Dokumen berhasil ditambahkan ke arsip publik.')
       router.refresh()
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Dokumen belum berhasil diunggah.')
+      setError(cause instanceof Error ? cause.message : 'Dokumen belum berhasil diunggah. Periksa koneksi dan ukuran berkas, lalu coba lagi.')
     } finally {
       setUploading(false)
     }
   }
 
   function removeDocument(document: AdiwiyataDocument) {
-    if (!window.confirm(`Hapus “${document.title}” dari arsip? Tindakan ini tidak dapat dibatalkan.`)) return
+    if (!window.confirm(`Hapus “${document.title}” dari arsip? Dokumen yang dihapus tidak bisa dikembalikan.`)) return
     setError('')
     setMessage('')
     startTransition(async () => {
@@ -49,7 +49,7 @@ export function DocumentAdminPanel({ documents }: { documents: AdiwiyataDocument
         setMessage('Dokumen berhasil dihapus.')
         router.refresh()
       } catch (cause) {
-        setError(cause instanceof Error ? cause.message : 'Dokumen belum berhasil dihapus.')
+        setError(cause instanceof Error ? cause.message : 'Dokumen belum berhasil dihapus. Periksa koneksi, lalu coba lagi.')
       }
     })
   }
@@ -62,7 +62,7 @@ export function DocumentAdminPanel({ documents }: { documents: AdiwiyataDocument
       </header>
 
       <form className="document-upload-card" onSubmit={(event) => { void submitDocument(event) }}>
-        <div className="document-upload-intro"><span className="document-upload-icon"><Upload aria-hidden="true" /></span><div><h2>Tambahkan dokumen</h2><p>Berkas akan tersimpan di Blob dan tampil pada arsip publik.</p></div></div>
+        <div className="document-upload-intro"><span className="document-upload-icon"><Upload aria-hidden="true" /></span><div><h2>Tambahkan dokumen</h2><p>Berkas tersimpan dan tampil pada arsip publik.</p></div></div>
         <div className="document-upload-fields">
           <label><span>Judul dokumen <b aria-hidden="true">*</b></span><input name="title" required maxLength={160} placeholder="Contoh: Laporan kegiatan kebun sekolah" /></label>
           <label><span>Kategori</span><input name="category" maxLength={80} placeholder="Contoh: Kebersihan" /></label>

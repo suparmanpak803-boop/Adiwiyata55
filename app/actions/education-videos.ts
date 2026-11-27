@@ -20,7 +20,7 @@ export type EducationVideoInput = {
 }
 
 function validateVideoInput(input: EducationVideoInput) {
-  if (!input || typeof input !== 'object') throw new Error('Data video tidak valid.')
+  if (!input || typeof input !== 'object') throw new Error('Data video tidak lengkap. Periksa isian, lalu coba lagi.')
   const youtubeUrl = typeof input.youtubeUrl === 'string' ? input.youtubeUrl.trim().slice(0, 500) : ''
   const videoId = getYouTubeId(youtubeUrl)
   if (!videoId) throw new Error('Masukkan tautan YouTube yang valid.')
@@ -29,7 +29,7 @@ function validateVideoInput(input: EducationVideoInput) {
   if (!allowedVideoCategories.some((category) => category === input.category)) throw new Error('Pilih kategori video yang valid.')
   if (typeof input.description !== 'string' || input.description.length > 500) throw new Error('Deskripsi maksimal 500 karakter.')
   if (!Number.isInteger(input.displayOrder) || input.displayOrder < 0 || input.displayOrder > 1000) throw new Error('Urutan video harus bilangan bulat 0 sampai 1000.')
-  if (typeof input.enabled !== 'boolean') throw new Error('Status tayang video tidak valid.')
+  if (typeof input.enabled !== 'boolean') throw new Error('Status tayang video tidak dapat disimpan. Periksa isian, lalu coba lagi.')
   return { videoId, youtubeUrl, title, category: input.category, description: input.description.trim(), displayOrder: input.displayOrder, enabled: input.enabled }
 }
 
@@ -108,7 +108,7 @@ export async function saveEducationVideoSettings(settings: EducationVideoSetting
   const admin = await requirePortalRole(['admin'])
   // B-04: batas laju perubahan video edukasi (30/jam per admin).
   if (!(await allowRequest(`video-edukasi:${admin.id}`, 30, 3600))) throw new Error('Terlalu banyak perubahan. Coba lagi nanti.')
-  if (!Array.isArray(settings) || settings.length > 300) throw new Error('Daftar pengaturan video tidak valid.')
+  if (!Array.isArray(settings) || settings.length > 300) throw new Error('Daftar pengaturan video tidak dapat diproses. Muat ulang halaman lalu coba lagi.')
   const rows = await db.select({ videoId: adiwiyataEducationVideos.videoId }).from(adiwiyataEducationVideos)
   const availableIds = new Set(rows.map((row) => row.videoId))
   const seen = new Set<string>()
@@ -117,7 +117,7 @@ export async function saveEducationVideoSettings(settings: EducationVideoSetting
       throw new Error('Daftar video berubah atau berisi tautan yang tidak valid. Muat ulang halaman lalu coba lagi.')
     }
     if (typeof setting.enabled !== 'boolean' || !Number.isInteger(setting.displayOrder) || setting.displayOrder < 0 || setting.displayOrder > 1000) {
-      throw new Error('Status dan urutan video tidak valid.')
+      throw new Error('Status dan urutan video tidak dapat disimpan. Periksa isian, lalu coba lagi.')
     }
     seen.add(setting.videoId)
   }

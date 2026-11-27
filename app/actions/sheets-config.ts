@@ -16,13 +16,13 @@ export async function saveSheetsConfig(input: { url: string; token: string }) {
   // B-04: batas laju perubahan konfigurasi Sheets (30/jam per admin).
   if (!(await allowRequest(`sheets-config:${admin.id}`, 30, 3600))) throw new Error('Terlalu banyak perubahan. Coba lagi nanti.')
   if (!input || typeof input !== 'object' || typeof input.url !== 'string' || typeof input.token !== 'string') {
-    throw new Error('Data konfigurasi tidak valid.')
+    throw new Error('Data konfigurasi tidak lengkap. Periksa isian, lalu coba lagi.')
   }
   const url = input.url.trim()
   const token = input.token.trim()
   if (!validateAppsScriptUrl(url)) throw new Error('Masukkan URL Web App Apps Script yang valid (script.google.com/macros/s/.../exec).')
-  if (url.length > 500) throw new Error('URL terlalu panjang.')
-  if (token.length > 5000) throw new Error('Token terlalu panjang.')
+  if (url.length > 500) throw new Error('URL terlalu panjang, maksimal 500 karakter.')
+  if (token.length > 5000) throw new Error('Token terlalu panjang, maksimal 5000 karakter.')
 
   const existing = await pool.query<{ sheets_secret_token_encrypted: string | null }>(
     `SELECT sheets_secret_token_encrypted FROM public.adiwiyata_settings WHERE id = 1 LIMIT 1`,

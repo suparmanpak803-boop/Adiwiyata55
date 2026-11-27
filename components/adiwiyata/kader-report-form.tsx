@@ -98,7 +98,7 @@ export function KaderReportForm({ staffName, className }: KaderReportFormProps) 
         headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
         body,
       })
-      setFeedback('Permintaan pengiriman sudah dikirim. Karena Google Form memakai no-cors, status penerimaan akhir tidak dapat diverifikasi dari aplikasi.')
+      setFeedback('Laporan sudah dikirim. Aplikasi tidak bisa memastikan Google Form sudah menerimanya, jadi cek kembali di Google Form bila perlu.')
       setValues({ reportedAt: currentLocalDateTime(), category: '', tasks: [], notes: '', evidenceUrl: '' })
     } catch {
       setFeedback('Laporan belum berhasil dikirim. Periksa koneksi internet, lalu coba lagi atau gunakan Google Form langsung.')
@@ -122,7 +122,7 @@ export function KaderReportForm({ staffName, className }: KaderReportFormProps) 
           <div className="kader-report-number" aria-hidden="true"><strong>{KADER_REPORT_TASKS.length}</strong><span>JENIS KADER<br />ADIWIYATA 2026</span></div>
         </section>
 
-        {!formConfigured && <aside className="kader-report-config-note" role="status"><strong>Google Form belum dikonfigurasi.</strong><span>Isi formId dan seluruh ID entry pada <code>lib/kader-report-gform.ts</code> agar pengiriman dan tautan pre-filled aktif.</span></aside>}
+        {!formConfigured && <aside className="kader-report-config-note" role="status"><strong>Google Form belum dikonfigurasi.</strong><span>Isi formId dan seluruh ID entry pada <code>lib/kader-report-gform.ts</code> agar pengiriman dan tautan terisi otomatis aktif.</span></aside>}
 
         <form className="kader-report-grid" onSubmit={submitReport}>
           <section className="kader-report-card kader-report-identity" aria-labelledby="identity-title">
@@ -146,12 +146,12 @@ export function KaderReportForm({ staffName, className }: KaderReportFormProps) 
             <div className="kader-report-card-head"><span className="kader-report-step">03 / CATATAN &amp; BUKTI</span><span className="kader-report-card-icon"><FileImage aria-hidden="true" /></span></div>
             <h2 id="notes-title">Kondisi lapangan</h2>
             <label className="kader-report-field"><span>Catatan / kendala <small>OPSIONAL</small></span><textarea rows={4} placeholder="Ceritakan hasil kegiatan atau kendala yang ditemui..." value={values.notes} onChange={(event) => setValues((current) => ({ ...current, notes: event.target.value }))} /></label>
-            <label className="kader-report-field"><span>Link bukti kolase dokumentasi</span><input type="url" placeholder="https://drive.google.com/..." value={values.evidenceUrl} onChange={(event) => setValues((current) => ({ ...current, evidenceUrl: event.target.value }))} /><small className="kader-report-hint">Pastikan akses tautan dapat dibuka oleh pembina.</small></label>
+            <label className="kader-report-field"><span>Tautan bukti kolase dokumentasi</span><input type="url" placeholder="https://drive.google.com/..." value={values.evidenceUrl} onChange={(event) => setValues((current) => ({ ...current, evidenceUrl: event.target.value }))} /><small className="kader-report-hint">Pastikan akses tautan dapat dibuka oleh pembina.</small></label>
           </section>
 
           <section className="kader-report-submit-card">
             <div><span className="kader-report-step">SIAP DILAPORKAN?</span><h2>Aksi kecil, dampak nyata.</h2><p>{values.tasks.length ? `${values.tasks.length} uraian tugas ditandai terlaksana.` : 'Pilih tugas yang terlaksana sebelum mengirim laporan.'}</p></div>
-            <div className="kader-report-actions"><a className={`kader-report-secondary${!prefilledUrl ? ' is-disabled' : ''}`} href={prefilledUrl || undefined} target="_blank" rel="noreferrer" aria-disabled={!prefilledUrl} onClick={(event) => { if (!prefilledUrl) event.preventDefault() }}>Buka &amp; Isi Langsung via Google Form (Pre-filled) <ArrowUpRight aria-hidden="true" /></a><button className="kader-report-primary" type="submit" disabled={!formConfigured || !selectedKader || submitting}>{submitting ? 'Mengirim laporan…' : 'Kirim laporan'} <ArrowUpRight aria-hidden="true" /></button></div>
+            <div className="kader-report-actions"><a className={`kader-report-secondary${!prefilledUrl ? ' is-disabled' : ''}`} href={prefilledUrl || undefined} target="_blank" rel="noreferrer" aria-disabled={!prefilledUrl} onClick={(event) => { if (!prefilledUrl) event.preventDefault() }}>Buka di Google Form (terisi otomatis) <ArrowUpRight aria-hidden="true" /></a><button className="kader-report-primary" type="submit" disabled={!formConfigured || !selectedKader || submitting}>{submitting ? 'Mengirim laporan…' : 'Kirim laporan'} <ArrowUpRight aria-hidden="true" /></button></div>
           </section>
         </form>
         <p className="kader-report-feedback" role="status" aria-live="polite">{feedback}</p>

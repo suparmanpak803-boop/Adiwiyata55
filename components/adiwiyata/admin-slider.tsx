@@ -74,7 +74,7 @@ export function AdminSlider({ data }: { data: SliderPageData }) {
 
   function report(errorValue: unknown) {
     setMessage('')
-    setError(errorValue instanceof Error ? errorValue.message : 'Perubahan tidak dapat disimpan. Silakan coba lagi.')
+    setError(errorValue instanceof Error ? errorValue.message : 'Perubahan belum tersimpan. Periksa koneksi, lalu coba lagi.')
   }
 
   function beginCreate() {
@@ -162,7 +162,7 @@ export function AdminSlider({ data }: { data: SliderPageData }) {
     setBusy(true)
     try {
       await duplicateSliderSlide(slide.id)
-      announce('Slide berhasil diduplikat sebagai nonaktif.')
+      announce('Salinan slide dibuat dan tidak aktif.')
       router.refresh()
     } catch (caught) {
       report(caught)
@@ -259,7 +259,7 @@ export function AdminSlider({ data }: { data: SliderPageData }) {
       <header className="slider-admin-header">
         <a className="slider-admin-back" href="/"><ArrowLeft aria-hidden="true" /> Kembali ke portal</a>
         <div className="slider-admin-title-row"><span className="slider-admin-mark"><Leaf aria-hidden="true" /></span><div><span className="eyebrow">PENGELOLAAN BERANDA</span><h1>Slider Beranda</h1></div></div>
-        <p>Atur cerita visual, jadwal tayang, dan kontrol carousel Adiwiyata SMAN 55 Jakarta.</p>
+        <p>Atur cerita visual dan jadwal tayang slider Beranda.</p>
         <div className="slider-admin-header-actions"><button type="button" className="secondary-button" onClick={() => setPreview(true)}><Eye aria-hidden="true" /> Pratinjau</button><button type="button" className="primary-button" onClick={beginCreate}><Plus aria-hidden="true" /> Tambah Slide</button></div>
       </header>
 
@@ -271,12 +271,12 @@ export function AdminSlider({ data }: { data: SliderPageData }) {
           <label className="slider-field"><span>Kecepatan autoplay <small>(2 sampai 15 detik)</small></span><input type="number" min={2} max={15} value={settingsDraft.intervalDetik} onChange={(event) => setSettingsDraft((current) => ({ ...current, intervalDetik: Number(event.target.value) }))} /></label>
           <label className="slider-field"><span>Jenis transisi</span><select value={settingsDraft.transisi} onChange={(event) => setSettingsDraft((current) => ({ ...current, transisi: event.target.value as SliderSettings['transisi'] }))}><option value="fade">Fade</option><option value="slide">Geser</option></select></label>
           <div className="slider-setting-toggles">
-            <Toggle label="Autoplay" description="Ganti slide otomatis" checked={settingsDraft.autoplay} onChange={(checked) => setSettingsDraft((current) => ({ ...current, autoplay: checked }))} />
+            <Toggle label="Putar otomatis" description="Ganti slide otomatis" checked={settingsDraft.autoplay} onChange={(checked) => setSettingsDraft((current) => ({ ...current, autoplay: checked }))} />
             <Toggle label="Panah navigasi" description="Tampilkan tombol sebelumnya/berikutnya" checked={settingsDraft.tampilPanah} onChange={(checked) => setSettingsDraft((current) => ({ ...current, tampilPanah: checked }))} />
             <Toggle label="Indikator titik" description="Tampilkan pilihan slide" checked={settingsDraft.tampilDots} onChange={(checked) => setSettingsDraft((current) => ({ ...current, tampilDots: checked }))} />
           </div>
         </div>
-        <div className="slider-admin-footer"><p>Autoplay otomatis berhenti saat pointer berada di slider, tab tidak aktif, atau preferensi gerak dikurangi.</p><button className="primary-button" type="submit" disabled={busy}><Save aria-hidden="true" /> Simpan Pengaturan</button></div>
+        <div className="slider-admin-footer"><p>Pemutaran otomatis berhenti saat kursor berada di slider, tab tidak aktif, atau preferensi gerak dikurangi.</p><button className="primary-button" type="submit" disabled={busy}><Save aria-hidden="true" /> Simpan pengaturan</button></div>
       </form>
 
       <section className="slider-admin-list" aria-labelledby="slider-list-heading">
@@ -297,7 +297,7 @@ export function AdminSlider({ data }: { data: SliderPageData }) {
             <div className="slider-card-actions"><button className="slider-icon-button" type="button" aria-label={`Edit ${slide.judul || 'slide'}`} onClick={() => beginEdit(slide)}><Eye aria-hidden="true" /></button><button className="slider-icon-button" type="button" aria-label={`Duplikat ${slide.judul || 'slide'}`} disabled={busy} onClick={() => void duplicate(slide)}><Copy aria-hidden="true" /></button><button className="slider-icon-button is-danger" type="button" aria-label={`Hapus ${slide.judul || 'slide'}`} disabled={busy} onClick={() => void remove(slide)}><Trash2 aria-hidden="true" /></button><button className={`slider-status-button${slide.aktif ? ' is-on' : ''}`} type="button" aria-pressed={slide.aktif} disabled={busy} onClick={() => void changeStatus(slide)}>{slide.aktif ? 'Nonaktifkan' : 'Aktifkan'}</button></div>
           </article>) : <div className="slider-empty-list"><ImagePlus aria-hidden="true" /><strong>Belum ada slide</strong><p>Tambahkan slide untuk menampilkan sorotan di halaman Beranda.</p><button type="button" className="primary-button" onClick={beginCreate}><Plus aria-hidden="true" /> Tambah Slide</button></div>}
         </div>
-        <p className="slider-storage-note">Gambar unggahan dikompresi menjadi WebP dan disimpan di basis data Neon yang sudah terhubung. Ukuran berkas awal maksimal 2 MB; ukuran anjuran 1600 × 900 px.</p>
+        <p className="slider-storage-note">Gambar unggahan diubah menjadi WebP dan disimpan di basis data Neon yang sudah terhubung. Ukuran berkas awal maksimal 2 MB; ukuran anjuran 1600 × 900 px.</p>
       </section>
 
       {draft && <SlideEditor
@@ -368,8 +368,8 @@ function SlideEditor({ draft, setDraft, file, setFile, imagePreview, busy, onClo
       if (!context) throw new Error('Gambar tidak dapat diproses di peramban ini.')
       context.drawImage(bitmap, 0, 0, canvas.width, canvas.height)
       bitmap.close()
-      const compressed = await new Promise<Blob>((resolve, reject) => canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error('Gambar gagal dikompresi.')), 'image/webp', 0.84))
-      if (compressed.size > 2 * 1024 * 1024) throw new Error('Hasil kompresi masih melebihi 2 MB.')
+      const compressed = await new Promise<Blob>((resolve, reject) => canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error('Gambar gagal diproses. Coba berkas lain.')), 'image/webp', 0.84))
+      if (compressed.size > 2 * 1024 * 1024) throw new Error('Hasilnya masih melebihi 2 MB.')
       onUploadError('')
       setFile(new File([compressed], `${crypto.randomUUID()}.webp`, { type: 'image/webp' }))
     } catch (caught) {
@@ -388,7 +388,7 @@ function SlideEditor({ draft, setDraft, file, setFile, imagePreview, busy, onClo
         </label>
         <div className="slider-editor-grid">
           <label className="slider-field"><span>Judul <small>opsional</small></span><input maxLength={120} value={draft.judul} onChange={(event) => patch({ judul: event.target.value })} placeholder="Contoh: Mulai dari Pilah" /></label>
-          <label className="slider-field"><span>Alt text gambar <b aria-hidden="true">*</b></span><input required maxLength={240} value={draft.altText} onChange={(event) => patch({ altText: event.target.value })} placeholder="Jelaskan isi gambar secara singkat" /></label>
+          <label className="slider-field"><span>Teks alternatif gambar <b aria-hidden="true">*</b></span><input required maxLength={240} value={draft.altText} onChange={(event) => patch({ altText: event.target.value })} placeholder="Jelaskan isi gambar secara singkat" /></label>
           <label className="slider-field slider-field-full"><span>Deskripsi singkat <small>opsional · maks. 280 karakter</small></span><textarea maxLength={280} rows={3} value={draft.deskripsi} onChange={(event) => patch({ deskripsi: event.target.value })} /></label>
           <label className="slider-field"><span>Teks tombol <small>opsional</small></span><input maxLength={48} value={draft.ctaTeks} onChange={(event) => patch({ ctaTeks: event.target.value })} placeholder="Jelajahi program" /></label>
           <label className="slider-field"><span>Tautan tombol <small>jalur / atau http/https</small></span><input maxLength={500} value={draft.ctaUrl} onChange={(event) => patch({ ctaUrl: event.target.value })} placeholder="/edukasi atau https://..." /></label>
@@ -396,7 +396,7 @@ function SlideEditor({ draft, setDraft, file, setFile, imagePreview, busy, onClo
           <label className="slider-field"><span>Tanggal selesai <small>opsional</small></span><input type="date" value={draft.tanggalSelesai} onChange={(event) => patch({ tanggalSelesai: event.target.value })} /></label>
         </div>
         <Toggle label="Tampilkan slide" description="Slide aktif akan tampil sesuai jadwal tayang" checked={draft.aktif} onChange={(aktif) => patch({ aktif })} />
-        <div className="slider-editor-footer"><button type="button" className="secondary-button" onClick={onPreview}><Eye aria-hidden="true" /> Pratinjau</button><button type="button" className="secondary-button" onClick={onClose}>Batal</button><button type="submit" className="primary-button" disabled={busy}><Check aria-hidden="true" /> {busy ? 'Menyimpan…' : 'Simpan Slide'}</button></div>
+        <div className="slider-editor-footer"><button type="button" className="secondary-button" onClick={onPreview}><Eye aria-hidden="true" /> Pratinjau</button><button type="button" className="secondary-button" onClick={onClose}>Batal</button><button type="submit" className="primary-button" disabled={busy}><Check aria-hidden="true" /> {busy ? 'Menyimpan…' : 'Simpan slide'}</button></div>
       </form>
     </section>
   </div>

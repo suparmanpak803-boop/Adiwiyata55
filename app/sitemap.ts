@@ -17,6 +17,9 @@ const SITE_URL = 'https://www.adiwiyata55jkt.my.id'
 //   (deskripsi meta baru 120–160 karakter, H1 beranda, heading pertanyaan,
 //   intro section, tautan internal, judul "Kader & dokumentasi"),
 //   jadi lastmod semua URL = 2026-11-26.
+// - 2026-11-27: putaran bahasa-skills mengubah lagi isi semua 8 halaman
+//   (title tag 50–60 karakter, meta publikasi, intro program/publikasi,
+//   H1/H2), jadi lastmod semua URL = 2026-11-27.
 // Saat mengubah isi halaman di lain waktu, perbarui tanggal URL itu saja
 // (patokan: tanggal commit yang menyentuh file sumber halaman itu).
 export default function sitemap(): MetadataRoute.Sitemap {
@@ -27,13 +30,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority,
   })
   return [
-    weekly(`${SITE_URL}/adiwiyata`, 1, new Date('2026-11-26')),
-    weekly(`${SITE_URL}/adiwiyata/tentang`, 0.8, new Date('2026-11-26')),
-    weekly(`${SITE_URL}/adiwiyata/profil`, 0.8, new Date('2026-11-26')),
-    weekly(`${SITE_URL}/adiwiyata/program`, 0.8, new Date('2026-11-26')),
-    weekly(`${SITE_URL}/adiwiyata/dokumentasi`, 0.8, new Date('2026-11-26')),
-    weekly(`${SITE_URL}/adiwiyata/publikasi`, 0.8, new Date('2026-11-26')),
-    weekly(`${SITE_URL}/adiwiyata/dokumen`, 0.8, new Date('2026-11-26')),
-    weekly(`${SITE_URL}/edukasi`, 0.8, new Date('2026-11-26')),
+    weekly(`${SITE_URL}/adiwiyata`, 1, new Date('2026-11-27')),
+    weekly(`${SITE_URL}/adiwiyata/tentang`, 0.8, new Date('2026-11-27')),
+    weekly(`${SITE_URL}/adiwiyata/profil`, 0.8, new Date('2026-11-27')),
+    weekly(`${SITE_URL}/adiwiyata/program`, 0.8, new Date('2026-11-27')),
+    weekly(`${SITE_URL}/adiwiyata/dokumentasi`, 0.8, new Date('2026-11-27')),
+    weekly(`${SITE_URL}/adiwiyata/publikasi`, 0.8, new Date('2026-11-27')),
+    weekly(`${SITE_URL}/adiwiyata/dokumen`, 0.8, new Date('2026-11-27')),
+    weekly(`${SITE_URL}/edukasi`, 0.8, new Date('2026-11-27')),
   ]
 }

@@ -51,7 +51,7 @@ export function AdminUserManagement({ initialAccounts, classes, currentUserId }:
         setAccounts(result.accounts)
         setDrafts({})
       } catch (cause) {
-        setError(cause instanceof Error ? cause.message : 'Pencarian akun belum berhasil.')
+        setError(cause instanceof Error ? cause.message : 'Pencarian akun belum berhasil. Periksa koneksi, lalu coba lagi.')
       }
     })
   }
@@ -84,7 +84,7 @@ export function AdminUserManagement({ initialAccounts, classes, currentUserId }:
         setMessage(`Akses ${account.name} berhasil diperbarui.`)
         router.refresh()
       } catch (cause) {
-        setError(cause instanceof Error ? cause.message : 'Perubahan akses belum berhasil disimpan.')
+        setError(cause instanceof Error ? cause.message : 'Perubahan akses belum berhasil disimpan. Periksa koneksi, lalu coba lagi.')
       } finally {
         setSavingId(null)
       }
@@ -135,13 +135,13 @@ export function AdminUserManagement({ initialAccounts, classes, currentUserId }:
                 <label className="user-admin-field"><span>Kelas tugas</span><select value={draft.className} required disabled={isSaving} onChange={(event) => updateDraft(account, { className: event.target.value })}>
                   <option value="" disabled>Pilih kelas</option>{classes.map((className) => <option value={className} key={className}>{className}</option>)}
                 </select></label>
-                <label className="user-admin-field"><span>Role berlaku sampai</span><input type="date" value={draft.expiresOn} min={new Date().toISOString().slice(0, 10)} disabled={isSaving} onChange={(event) => updateDraft(account, { expiresOn: event.target.value })} /><small>Kosongkan jika masa tugas tidak dibatasi.</small></label>
+                <label className="user-admin-field"><span>Peran berlaku sampai</span><input type="date" value={draft.expiresOn} min={new Date().toISOString().slice(0, 10)} disabled={isSaving} onChange={(event) => updateDraft(account, { expiresOn: event.target.value })} /><small>Kosongkan jika masa tugas tidak dibatasi.</small></label>
               </>}
               <div className="user-admin-save-wrap">
                 <button className="primary-button" type="submit" disabled={isSaving || savePending || (draft.role === 'petugas' && !draft.className)}>
                   {isSaving ? 'Menyimpan…' : <><Check aria-hidden="true" /> Simpan akses</>}
                 </button>
-                {account.id === currentUserId && <small>Role Admin akun aktif tidak dapat diturunkan dari panel ini.</small>}
+                {account.id === currentUserId && <small>Peran Admin akun aktif tidak dapat diturunkan dari panel ini.</small>}
               </div>
             </form>
           </article>

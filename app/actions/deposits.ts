@@ -108,7 +108,7 @@ async function fetchSheetSummary(user: NonNullable<Awaited<ReturnType<typeof get
       from: filters.from,
       to: filters.to,
     })
-    if (!result.success) return { summary: null, error: result.error || 'Rekap Spreadsheet belum dapat dimuat.' }
+    if (!result.success) return { summary: null, error: result.error || 'Rekap Spreadsheet belum dapat dimuat. Periksa koneksi, lalu muat ulang halaman.' }
     return { summary: result as SpreadsheetSummary, error: null }
   } catch {
     return { summary: null, error: 'Spreadsheet belum dapat dihubungi. Periksa koneksi atau konfigurasi Apps Script.' }
@@ -119,7 +119,7 @@ export async function getSheetsReport(filters: { from?: string; to?: string; cla
   const user = await getPortalUser()
   if (!user || (user.role !== 'admin' && user.role !== 'petugas' && user.role !== 'pengunjung')) throw new Error('Akses rekap tidak diizinkan.')
   const validFilter = (value?: string) => !value || /^\d{4}-\d{2}-\d{2}$/.test(value)
-  if (!validFilter(filters.from) || !validFilter(filters.to)) throw new Error('Filter tanggal tidak valid.')
+  if (!validFilter(filters.from) || !validFilter(filters.to)) throw new Error('Filter tanggal tidak valid. Periksa tanggal yang dipilih.')
   return fetchSheetSummary(user, filters)
 }
 
@@ -196,7 +196,7 @@ export async function saveDeposit(input: DepositInput) {
     const hariIni = new Date(`${todayInJakarta()}T00:00:00Z`)
     hariIni.setUTCDate(hariIni.getUTCDate() - 30)
     if (input.date < hariIni.toISOString().slice(0, 10)) {
-      throw new Error('Tanggal setoran maksimal 30 hari ke belakang. Untuk tanggal yang lebih lama, minta admin.')
+      throw new Error('Tanggal setoran maksimal 30 hari ke belakang. Untuk tanggal yang lebih lama, minta bantuan admin.')
     }
   }
   // Petugas boleh menginput setoran untuk kelas mana pun (bukan hanya
@@ -264,7 +264,7 @@ export async function saveClass(input: { name: string; studentCount: number | nu
     revalidatePath('/')
     return { success: true as const }
   } catch {
-    return { success: false as const, error: 'Data kelas gagal disimpan. Coba lagi beberapa saat.' }
+    return { success: false as const, error: 'Data kelas belum berhasil disimpan. Coba lagi beberapa saat.' }
   }
 }
 

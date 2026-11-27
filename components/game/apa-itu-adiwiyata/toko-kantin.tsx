@@ -387,7 +387,7 @@ export function TokoKantin({
                 klik()
                 if (!pembelianBaru('PAKAI_BEKAL')) return
                 if (sisa <= 0) {
-                  setPesan('Jatah bekal hari ini sudah habis.')
+                  setPesan('Jatah bekal hari ini sudah habis. Coba lagi besok.')
                   return
                 }
                 dispatch({ type: 'PAKAI_BEKAL' })
@@ -520,7 +520,7 @@ export function TokoKantin({
               klik()
               if (!pembelianBaru('TANAM_POHON')) return
               if (koinDaun < HARGA_POHON_KOIN_DAUN) {
-                setPesan('Koin Daun tidak cukup untuk menanam pohon.')
+                setPesan('Koin Daun tidak cukup untuk menanam pohon. Mainkan misi untuk mendapat Koin Daun.')
                 return
               }
               dispatch({ type: 'TANAM_POHON' })

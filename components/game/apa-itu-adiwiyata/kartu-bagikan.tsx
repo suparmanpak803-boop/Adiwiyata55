@@ -103,12 +103,12 @@ export function KartuBagikan({
     try {
       const canvas = gambarKartu(nickname, coins, kalimat)
       if (!canvas) {
-        setPesan('Maaf, kartu belum bisa dibuat di perangkat ini. Coba lagi nanti.')
+        setPesan('Maaf, kartu belum bisa dibuat di perangkat ini.')
         return
       }
       const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'))
       if (!blob) {
-        setPesan('Maaf, gambar kartu gagal dibuat. Coba lagi nanti.')
+        setPesan('Maaf, gambar kartu belum bisa dibuat. Coba lagi nanti.')
         return
       }
       const url = URL.createObjectURL(blob)
@@ -134,12 +134,12 @@ export function KartuBagikan({
     try {
       const canvas = gambarKartu(nickname, coins, kalimat)
       if (!canvas) {
-        setPesan('Maaf, kartu belum bisa dibuat di perangkat ini. Coba lagi nanti.')
+        setPesan('Maaf, kartu belum bisa dibuat di perangkat ini.')
         return
       }
       const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'))
       if (!blob) {
-        setPesan('Maaf, gambar kartu gagal dibuat. Coba lagi nanti.')
+        setPesan('Maaf, gambar kartu belum bisa dibuat. Coba lagi nanti.')
         return
       }
       const file = new File([blob], 'kartu-adiwiyata.png', { type: 'image/png' })
