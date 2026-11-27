@@ -40,8 +40,8 @@ export async function saveKelasProfil(
     }
     kelas = kode
   }
-  if (nomorAbsen !== null && (!Number.isInteger(nomorAbsen) || nomorAbsen < 1 || nomorAbsen > 40)) {
-    return { ok: false, error: 'Nomor absen harus 1 sampai 40, atau dikosongkan.' }
+  if (nomorAbsen !== null && (!Number.isInteger(nomorAbsen) || nomorAbsen < 1 || nomorAbsen > 36)) {
+    return { ok: false, error: 'Nomor absen harus 1 sampai 36, atau dikosongkan.' }
   }
 
   try {

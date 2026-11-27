@@ -354,8 +354,8 @@ export default function UserProfileDropdown({
     let nomorAbsen: number | null = null
     if (absen.trim() !== '') {
       const parsed = Number(absen)
-      if (!Number.isInteger(parsed) || parsed < 1 || parsed > 40) {
-        setClassError('Nomor absen 1 sampai 40. Perbaiki nomornya, lalu simpan lagi.')
+      if (!Number.isInteger(parsed) || parsed < 1 || parsed > 36) {
+        setClassError('Nomor absen 1 sampai 36. Perbaiki nomornya, lalu simpan lagi.')
         return
       }
       nomorAbsen = parsed
@@ -570,11 +570,11 @@ export default function UserProfileDropdown({
                 type="number"
                 inputMode="numeric"
                 min={1}
-                max={40}
+                max={36}
                 value={absen}
                 disabled={savingClass}
                 placeholder="08"
-                aria-label="Nomor absen, 1 sampai 40"
+                aria-label="Nomor absen, 1 sampai 36"
                 onChange={(e) => setAbsen(e.target.value.replace(/[^0-9]/g, '').slice(0, 2))}
               />
             </label>
