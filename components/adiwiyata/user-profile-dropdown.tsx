@@ -527,7 +527,7 @@ export default function UserProfileDropdown({
             <span className="upd-stat-value">
               {profileStats === null ? 'Belum ada data' : String(profileStats.hariTumbler)}
             </span>
-            <span className="upd-stat-label">Kepatuhan Tumbler</span>
+            <span className="upd-stat-label">Kebiasaan Tumbler</span>
             <span className="upd-stat-sub">hari tercatat membawa tumbler</span>
           </div>
           <div className="upd-stat">
